@@ -154,7 +154,7 @@ export function HomeHero() {
           DESKTOP: vertically centered single content block, no figure-area
           reservation needed.
         */}
-        <div className="hero-content flex min-h-[calc(100dvh-72px)] flex-col items-stretch justify-center pt-6 sm:pt-10 xl:justify-start xl:py-28">
+        <div className="hero-content flex min-h-[calc(100svh-72px)] flex-col items-stretch justify-center pt-6 sm:pt-10 xl:justify-start xl:py-28">
           {/* DESKTOP CONTENT BLOCK — vertically centered with my-auto */}
           <div className="hidden xl:block xl:my-auto max-w-[640px]">
             <h1 className="text-balance text-7xl font-extrabold leading-[1.02]">
