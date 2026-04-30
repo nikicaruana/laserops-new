@@ -63,7 +63,10 @@ export default function DashboardsTestPage() {
             <span aria-hidden className="absolute bottom-0 right-0 h-5 w-[2px] bg-accent" />
           </div>
 
-          {/* Aspect-ratio box. Fills available width, height locked to canvas ratio. */}
+          {/* Aspect-ratio box. The iframe is rendered ~36px taller than
+              visible so the Looker watermark sits below the clip line.
+              Wrapper background matches the Looker report's interior
+              (#141414) so the clipped area is seamless with the leaderboard. */}
           <div
             className="relative w-full overflow-hidden bg-bg-elevated"
             style={{ aspectRatio: `${CANVAS_WIDTH} / ${CANVAS_HEIGHT}` }}
@@ -73,8 +76,8 @@ export default function DashboardsTestPage() {
               title="All-Time XP Leaderboard"
               loading="lazy"
               allowFullScreen
-              className="absolute inset-0 h-full w-full border-0"
-              // Looker requires this sandbox value
+              className="absolute inset-x-0 top-0 w-full border-0"
+              style={{ height: "calc(100% + 36px)" }}
               sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
             />
           </div>
