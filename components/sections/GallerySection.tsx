@@ -328,7 +328,7 @@ function InstagramCard({
       className={cn(
         "group relative block aspect-square overflow-hidden bg-bg-elevated",
         // Mobile horizontal scroll: fixed-width card, snap-aligned
-        mobileScroll && "w-[75vw] max-w-[420px] shrink-0 snap-center",
+        mobileScroll && "w-[75vw] max-w-[420px] shrink-0 snap-center snap-always",
       )}
     >
       <Image
@@ -369,7 +369,7 @@ function GoogleReviewCard({
       className={cn(
         "group relative flex aspect-square flex-col justify-between overflow-hidden border border-border bg-bg-elevated p-6 transition-colors duration-300 hover:border-border-strong sm:p-7",
         // Mobile horizontal scroll: fixed-width card, snap-aligned
-        mobileScroll && "w-[75vw] max-w-[420px] shrink-0 snap-center",
+        mobileScroll && "w-[75vw] max-w-[420px] shrink-0 snap-center snap-always",
       )}
     >
       <div className="flex items-center gap-1" aria-label={`${item.rating} out of 5 stars`}>
