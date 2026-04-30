@@ -15,19 +15,19 @@ export function Header() {
       <Container size="wide">
         <div className="flex h-[72px] items-center justify-between gap-8">
           {/* Brand mark
-              - <lg (mobile + tablet): full yellow wordmark, sm size
-              - lg+ (desktop): smaller xs wordmark, fits beside nav */}
-          <div className="lg:hidden">
+              - <xl (mobile + tablet): full yellow wordmark, sm size
+              - xl+ (desktop): smaller xs wordmark, fits beside nav */}
+          <div className="xl:hidden">
             <Logo variant="wordmark" color="yellow" size="sm" />
           </div>
-          <div className="hidden lg:block">
+          <div className="hidden xl:block">
             <Logo variant="wordmark" color="yellow" size="xs" />
           </div>
 
-          {/* Desktop nav — only shown lg+ */}
+          {/* Desktop nav — only shown xl+ */}
           <nav
             aria-label="Primary"
-            className="hidden items-center gap-6 xl:gap-8 lg:flex"
+            className="hidden items-center gap-6 2xl:gap-8 xl:flex"
           >
             {primaryNav.map((link) => (
               <Link
@@ -51,8 +51,8 @@ export function Header() {
             ))}
           </nav>
 
-          {/* Desktop CTA — only shown lg+ */}
-          <div className="hidden lg:block">
+          {/* Desktop CTA — only shown xl+ */}
+          <div className="hidden xl:block">
             <Button href={ctaLinks.primary.href} variant="primary" size="md">
               {ctaLinks.primary.label}
             </Button>

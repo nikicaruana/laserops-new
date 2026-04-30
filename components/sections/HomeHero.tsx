@@ -55,11 +55,11 @@ export function HomeHero() {
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* ===================================================================
-          MOBILE LAYERS (lg:hidden)
+          MOBILE LAYERS (xl:hidden)
           =================================================================== */}
 
       {/* Layer 1: BACKGROUND yellow textured */}
-      <div className="absolute inset-0 lg:hidden" aria-hidden>
+      <div className="absolute inset-0 xl:hidden" aria-hidden>
         <Image
           src="/images/hero/hero-mobile-bg.png"
           alt=""
@@ -71,16 +71,19 @@ export function HomeHero() {
         />
       </div>
 
-      {/* Layer 2 + 3: FIGURE — anchored to bottom, sized 130vw for prominence */}
-      <div className="absolute inset-x-0 bottom-0 lg:hidden flex justify-center" aria-hidden>
-        <div className="relative w-[130%] max-w-none">
+      {/* Layer 2 + 3: FIGURE — anchored to bottom, height-capped via .hero-figure
+          class which uses media queries to vary cap by viewport height:
+          50vh on short phones (iPhone SE) so layout fits;
+          60vh on taller phones for stronger figure presence. */}
+      <div className="absolute inset-x-0 bottom-0 xl:hidden flex justify-center pointer-events-none" aria-hidden>
+        <div className="hero-figure relative max-w-none">
           <Image
             src="/images/hero/hero-mobile-figure-color.png"
             alt=""
             width={1080}
             height={890}
             priority
-            sizes="130vw"
+            sizes="(max-height: 700px) 60vh, 70vh"
             className="block w-full h-auto"
           />
           <Image
@@ -89,7 +92,7 @@ export function HomeHero() {
             width={1080}
             height={890}
             priority
-            sizes="130vw"
+            sizes="(max-height: 700px) 60vh, 70vh"
             className="absolute inset-0 block w-full h-auto"
             style={{
               opacity: 1 - scrollProgress,
@@ -101,7 +104,7 @@ export function HomeHero() {
 
       {/* MOBILE SCRIM */}
       <div
-        className="pointer-events-none absolute inset-0 lg:hidden"
+        className="pointer-events-none absolute inset-0 xl:hidden"
         aria-hidden
         style={{
           background:
@@ -110,10 +113,10 @@ export function HomeHero() {
       />
 
       {/* ===================================================================
-          DESKTOP LAYERS (hidden lg:block)
+          DESKTOP LAYERS (hidden xl:block)
           =================================================================== */}
 
-      <div className="absolute inset-0 hidden lg:block" aria-hidden>
+      <div className="absolute inset-0 hidden xl:block" aria-hidden>
         <DuotoneImage
           brandedSrc="/images/hero/hero-01-branded.jpg"
           colorSrc="/images/hero/hero-01-color.jpg"
@@ -129,7 +132,7 @@ export function HomeHero() {
       </div>
 
       <div
-        className="pointer-events-none absolute inset-0 hidden lg:block"
+        className="pointer-events-none absolute inset-0 hidden xl:block"
         aria-hidden
         style={{
           background:
@@ -151,9 +154,9 @@ export function HomeHero() {
           DESKTOP: vertically centered single content block, no figure-area
           reservation needed.
         */}
-        <div className="hero-content flex min-h-[calc(100dvh-72px)] flex-col items-stretch justify-center pt-6 sm:pt-10 lg:justify-start lg:py-28">
+        <div className="hero-content flex min-h-[calc(100dvh-72px)] flex-col items-stretch justify-center pt-6 sm:pt-10 xl:justify-start xl:py-28">
           {/* DESKTOP CONTENT BLOCK — vertically centered with my-auto */}
-          <div className="hidden lg:block lg:my-auto max-w-[640px]">
+          <div className="hidden xl:block xl:my-auto max-w-[640px]">
             <h1 className="text-balance text-7xl font-extrabold leading-[1.02]">
               Outdoor Laser Tag in Malta.{" "}
               <span className="text-accent">Built for Competition.</span>
@@ -187,7 +190,7 @@ export function HomeHero() {
           </div>
 
           {/* MOBILE TEXT BLOCK — centered in the yellow zone above the figure */}
-          <div className="max-w-2xl lg:hidden">
+          <div className="max-w-2xl xl:hidden">
             <h1 className="text-balance text-4xl font-extrabold leading-[1.02] sm:text-5xl">
               Outdoor Laser Tag in Malta.{" "}
               <span className="text-accent">Built for Competition.</span>
@@ -201,9 +204,9 @@ export function HomeHero() {
       </Container>
 
       {/* MOBILE CTAs — absolutely positioned at bottom of section, over figure */}
-      <div className="absolute inset-x-0 bottom-0 z-20 lg:hidden">
+      <div className="absolute inset-x-0 bottom-0 z-20 xl:hidden">
         <Container size="wide">
-          <div className="flex flex-col gap-2.5 pb-6">
+          <div className="flex flex-col gap-2 pb-4">
             <Button href={ctaLinks.primary.href} variant="primary" size="md">
               {ctaLinks.primary.label}
             </Button>

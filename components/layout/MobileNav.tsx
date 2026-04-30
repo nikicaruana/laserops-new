@@ -26,7 +26,7 @@ export function MobileNav() {
         aria-label={open ? "Close menu" : "Open menu"}
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="relative inline-flex h-10 w-10 items-center justify-center lg:hidden"
+        className="relative inline-flex h-10 w-10 items-center justify-center xl:hidden"
         style={{ color: "#f5f5f5" }}
       >
         <span style={{ position: "relative", display: "block", height: "14px", width: "24px" }}>
@@ -68,7 +68,7 @@ export function MobileNav() {
         aria-modal={open}
         aria-label="Site navigation"
         aria-hidden={!open}
-        className="lg:!hidden"
+        className="xl:!hidden"
         style={{
           display: open ? "flex" : "none",
           position: "fixed",

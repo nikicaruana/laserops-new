@@ -201,19 +201,39 @@
 }
 
 /* ============================================================
-   HERO CONTENT — mobile-only padding to reserve figure area.
-   The figure is 130vw wide × 890/1080 aspect ≈ 107vw tall,
-   anchored to the bottom. This padding pushes the text-centering
-   flex container to ignore that bottom area and center text in
-   the yellow zone above the figure.
-   At lg+ the figure layout doesn't apply, so padding resets.
+   HERO — viewport-aware mobile sizing.
+   The figure size and the text-centering padding both depend on
+   viewport height so that:
+     - Short viewports (iPhone SE etc): figure is capped at 50vh
+       so the headline + 2 CTAs fit comfortably above the fold.
+     - Taller phones (iPhone 14 Pro Max, S20, etc): figure can
+       grow up to 60vh for stronger visual presence.
+   Both the figure's max-width and the content's padding-bottom
+   are derived from the same height cap so they stay in sync.
    ============================================================ */
 
-.hero-content {
-  padding-bottom: calc(107vw + 16px);
+/* Default (short viewports < 700px tall): 50vh height cap.
+   Figure aspect 1080:890 → 50vh tall × 1.213 = 60.65vh wide */
+.hero-figure {
+  width: min(130vw, calc(50vh * 1.213));
 }
 
-@media (min-width: 1024px) {
+.hero-content {
+  padding-bottom: calc(min(107vw, 50vh) + 16px);
+}
+
+/* Tall viewports: bigger figure at 60vh height cap */
+@media (min-height: 700px) {
+  .hero-figure {
+    width: min(130vw, calc(60vh * 1.213));
+  }
+  .hero-content {
+    padding-bottom: calc(min(107vw, 60vh) + 16px);
+  }
+}
+
+/* Desktop: figure layout doesn't apply, padding resets */
+@media (min-width: 1280px) {
   .hero-content {
     padding-bottom: 0;
   }
