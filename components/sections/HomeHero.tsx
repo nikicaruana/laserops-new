@@ -149,7 +149,7 @@ export function HomeHero() {
 
           DESKTOP: vertically centered single content block.
         */}
-        <div className="flex min-h-[calc(100dvh-72px)] flex-col py-6 sm:py-10 lg:min-h-[760px] lg:py-28">
+        <div className="flex min-h-[calc(100dvh-72px)] flex-col py-6 sm:py-10 lg:py-28">
           {/* Top breathing space (mobile only) — gives the headline visual margin
               from the sticky header without anchoring it to the very top. */}
           <div className="h-[8%] lg:hidden" aria-hidden />
