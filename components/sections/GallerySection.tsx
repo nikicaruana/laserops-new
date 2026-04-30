@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Container } from "@/components/ui/Container";
@@ -7,49 +8,82 @@ import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 
 /**
- * Gallery section — mixed-content social proof grid.
+ * Gallery section — mixed-content social proof.
  *
- * Renders a uniform-cell grid of two card types:
- *   - Instagram posts (image + IG icon + click-to-post)
- *   - Google reviews (quote + stars + reviewer name + click-to-Maps)
+ * MOBILE/TABLET (< xl): two horizontal scroll rows with scroll-snap-center
+ *   Row 1: Instagram posts (swipe through)
+ *   Row 2: Google reviews (swipe through)
+ *   Each row has its own eyebrow + (optional) "view all" link.
+ *   Items are duplicated 3× and the row is initially scrolled to the
+ *   middle copy, giving an effectively infinite-feeling swipe in either
+ *   direction. Cards are 75vw wide with 12.5vw padding on each side so
+ *   the focused card centers in the viewport with peek on both sides.
  *
- * All cards are square (aspect-1) for visual consistency. Grid is
- * responsive: 1 col narrow mobile, 2 col wider mobile/tablet, 3 col desktop.
+ * DESKTOP (xl+): unified 3-column grid mixing both content types.
  *
- * For now the data is hardcoded. In a follow-up session this will be
- * replaced by a Google Sheets-backed CMS so the user can update the
- * gallery without touching code.
+ * Data is currently hardcoded; will be replaced by Google Sheets
+ * CMS in a follow-up session.
  */
 
-// === Sample data — to be replaced by Sheets fetch in next session ===
-type GalleryItem =
-  | {
-      type: "instagram";
-      id: string;
-      imageSrc: string;
-      caption: string;
-      postUrl: string;
-    }
-  | {
-      type: "google_review";
-      id: string;
-      rating: number; // 1-5
-      quote: string;
-      reviewer: string;
-      relativeTime: string; // e.g. "3 weeks ago"
-      reviewsUrl: string;
-    };
+// === Data shapes ===
+type InstagramItem = {
+  id: string;
+  imageSrc: string;
+  caption: string;
+  postUrl: string;
+};
 
-const sampleItems: GalleryItem[] = [
+type ReviewItem = {
+  id: string;
+  rating: number;
+  quote: string;
+  reviewer: string;
+  relativeTime: string;
+  reviewsUrl: string;
+};
+
+// === Sample data — to be replaced by Sheets fetch in next session ===
+const instagramItems: InstagramItem[] = [
   {
-    type: "instagram",
     id: "ig1",
     imageSrc: "/images/gallery/action-1.jpg",
     caption: "Squad up. Match day at the quarry.",
     postUrl: "https://instagram.com/laseropsmalta",
   },
   {
-    type: "google_review",
+    id: "ig2",
+    imageSrc: "/images/gallery/action-2.jpg",
+    caption: "Capture the flag — final round chaos.",
+    postUrl: "https://instagram.com/laseropsmalta",
+  },
+  {
+    id: "ig3",
+    imageSrc: "/images/gallery/action-3.jpg",
+    caption: "Sunset ops. Visibility low, intensity high.",
+    postUrl: "https://instagram.com/laseropsmalta",
+  },
+  {
+    id: "ig4",
+    imageSrc: "/images/gallery/action-4.jpg",
+    caption: "When the squad rotates left flank.",
+    postUrl: "https://instagram.com/laseropsmalta",
+  },
+  {
+    id: "ig5",
+    imageSrc: "/images/gallery/action-5.jpg",
+    caption: "Search & destroy. Last man standing wins.",
+    postUrl: "https://instagram.com/laseropsmalta",
+  },
+  {
+    id: "ig6",
+    imageSrc: "/images/gallery/action-6.jpg",
+    caption: "Real weapons, real terrain, real tactics.",
+    postUrl: "https://instagram.com/laseropsmalta",
+  },
+];
+
+const reviewItems: ReviewItem[] = [
+  {
     id: "gr1",
     rating: 5,
     quote:
@@ -59,21 +93,6 @@ const sampleItems: GalleryItem[] = [
     reviewsUrl: "https://maps.google.com/?cid=laserops",
   },
   {
-    type: "instagram",
-    id: "ig2",
-    imageSrc: "/images/gallery/action-2.jpg",
-    caption: "Capture the flag — final round chaos.",
-    postUrl: "https://instagram.com/laseropsmalta",
-  },
-  {
-    type: "instagram",
-    id: "ig3",
-    imageSrc: "/images/gallery/action-3.jpg",
-    caption: "Sunset ops. Visibility low, intensity high.",
-    postUrl: "https://instagram.com/laseropsmalta",
-  },
-  {
-    type: "google_review",
     id: "gr2",
     rating: 5,
     quote:
@@ -83,21 +102,6 @@ const sampleItems: GalleryItem[] = [
     reviewsUrl: "https://maps.google.com/?cid=laserops",
   },
   {
-    type: "instagram",
-    id: "ig4",
-    imageSrc: "/images/gallery/action-4.jpg",
-    caption: "When the squad rotates left flank.",
-    postUrl: "https://instagram.com/laseropsmalta",
-  },
-  {
-    type: "instagram",
-    id: "ig5",
-    imageSrc: "/images/gallery/action-5.jpg",
-    caption: "Search & destroy. Last man standing wins.",
-    postUrl: "https://instagram.com/laseropsmalta",
-  },
-  {
-    type: "google_review",
     id: "gr3",
     rating: 5,
     quote:
@@ -107,11 +111,13 @@ const sampleItems: GalleryItem[] = [
     reviewsUrl: "https://maps.google.com/?cid=laserops",
   },
   {
-    type: "instagram",
-    id: "ig6",
-    imageSrc: "/images/gallery/action-6.jpg",
-    caption: "Real weapons, real terrain, real tactics.",
-    postUrl: "https://instagram.com/laseropsmalta",
+    id: "gr4",
+    rating: 5,
+    quote:
+      "Game changer. Way more thrilling than paintball — no bruises and the missions are properly tactical.",
+    reviewer: "Daniel B.",
+    relativeTime: "2 months ago",
+    reviewsUrl: "https://maps.google.com/?cid=laserops",
   },
 ];
 
@@ -121,9 +127,9 @@ export function GallerySection() {
       aria-labelledby="gallery-heading"
       className="relative bg-bg"
     >
-      <Container size="wide" className="py-20 sm:py-28 lg:py-32">
+      <Container size="wide" className="pt-20 sm:pt-28 lg:pt-32">
         {/* Header */}
-        <div className="mb-12 max-w-2xl sm:mb-16">
+        <div className="mb-10 max-w-2xl sm:mb-14">
           <div className="flex items-center gap-3">
             <span aria-hidden className="block h-px w-12 bg-accent" />
             <span className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
@@ -137,20 +143,48 @@ export function GallerySection() {
             Real games. Real reviews.
           </h2>
         </div>
+      </Container>
 
-        {/* Grid */}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
-          {sampleItems.map((item) =>
-            item.type === "instagram" ? (
-              <InstagramCard key={item.id} item={item} />
-            ) : (
-              <GoogleReviewCard key={item.id} item={item} />
-            ),
-          )}
+      {/* === MOBILE/TABLET: two horizontal scroll rows === */}
+      <div className="xl:hidden">
+        <ScrollRow
+          eyebrow="Latest from Instagram"
+          viewAllHref="https://instagram.com/laseropsmalta"
+          viewAllLabel="View all"
+          items={instagramItems}
+          renderItem={(item, key) => <InstagramCard key={key} item={item} mobileScroll />}
+        />
+
+        <div className="h-12 sm:h-16" aria-hidden />
+
+        <ScrollRow
+          eyebrow="What players say"
+          viewAllHref="https://maps.google.com/?cid=laserops"
+          viewAllLabel="All reviews"
+          items={reviewItems}
+          renderItem={(item, key) => <GoogleReviewCard key={key} item={item} mobileScroll />}
+        />
+      </div>
+
+      {/* === DESKTOP: 3-col grid mixing both content types === */}
+      <Container size="wide" className="hidden xl:block">
+        <div className="grid grid-cols-3 gap-4">
+          {/* Interleave: ig, ig, review, ig, review, ig, ig, review, ig */}
+          <InstagramCard item={instagramItems[0]} />
+          <InstagramCard item={instagramItems[1]} />
+          <GoogleReviewCard item={reviewItems[0]} />
+          <InstagramCard item={instagramItems[2]} />
+          <GoogleReviewCard item={reviewItems[1]} />
+          <InstagramCard item={instagramItems[3]} />
+          <InstagramCard item={instagramItems[4]} />
+          <GoogleReviewCard item={reviewItems[2]} />
+          <InstagramCard item={instagramItems[5]} />
         </div>
+      </Container>
 
-        {/* Footer CTAs */}
-        <div className="mt-12 flex flex-col items-center gap-4 sm:mt-16 sm:flex-row sm:justify-center">
+      {/* Footer CTAs */}
+      <Container size="wide" className="pb-20 pt-12 sm:pb-28 sm:pt-16 lg:pb-32">
+        <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
           <Button
             href="https://instagram.com/laseropsmalta"
             target="_blank"
@@ -178,35 +212,141 @@ export function GallerySection() {
 }
 
 // ============================================================
+// Horizontal scrolling row container
+// ============================================================
+//
+// Renders the items 3× in a continuous track, scroll-snap-center,
+// and on mount scrolls to the middle copy. Result: user has many cards
+// to swipe through in either direction before "hitting the end" — feels
+// effectively infinite for normal swipe distances.
+//
+// Cards are 75vw wide; the track has 12.5vw padding on each side, so
+// the focused card sits in the viewport center with prev/next cards
+// peeking equally.
+
+function ScrollRow<T extends { id: string }>({
+  eyebrow,
+  viewAllHref,
+  viewAllLabel,
+  items,
+  renderItem,
+}: {
+  eyebrow: string;
+  viewAllHref?: string;
+  viewAllLabel?: string;
+  items: T[];
+  renderItem: (item: T, key: string) => React.ReactNode;
+}) {
+  const trackRef = useRef<HTMLDivElement>(null);
+
+  // On mount, scroll the track to the middle copy so user has equal swipe
+  // distance in both directions. We temporarily override scroll-behavior to
+  // ensure this jump is instant (no visible animation on load).
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+
+    const id = window.requestAnimationFrame(() => {
+      const prev = el.style.scrollBehavior;
+      el.style.scrollBehavior = "auto";
+      el.scrollLeft = el.scrollWidth / 3;
+      // Restore on next frame so subsequent user scrolls use scroll-smooth.
+      window.requestAnimationFrame(() => {
+        el.style.scrollBehavior = prev;
+      });
+    });
+
+    return () => window.cancelAnimationFrame(id);
+  }, []);
+
+  // 3× the items so user can swipe freely in either direction without
+  // hitting an edge for a long time.
+  const tripled: Array<{ item: T; key: string }> = [];
+  for (let copy = 0; copy < 3; copy++) {
+    for (const item of items) {
+      tripled.push({ item, key: `${copy}-${item.id}` });
+    }
+  }
+
+  return (
+    <div>
+      {/* Row header */}
+      <Container size="wide" className="mb-4 flex items-baseline justify-between gap-4 sm:mb-5">
+        <div className="flex items-center gap-3">
+          <span aria-hidden className="block h-px w-8 bg-text-subtle" />
+          <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-text-muted">
+            {eyebrow}
+          </span>
+        </div>
+        {viewAllHref && viewAllLabel && (
+          <Link
+            href={viewAllHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[11px] font-semibold uppercase tracking-[0.14em] text-text-muted transition-colors hover:text-accent"
+          >
+            {viewAllLabel}
+            <span aria-hidden className="ml-1">&rarr;</span>
+          </Link>
+        )}
+      </Container>
+
+      {/* Scroll track. Padding-x is 12.5vw so 75vw cards (the actual card
+          width set via .gallery-card-w in CSS) center in the viewport with
+          equal peek on both sides. snap-center for symmetric snap behavior. */}
+      <div
+        ref={trackRef}
+        className="flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth pb-3 sm:gap-4 [&::-webkit-scrollbar]:hidden"
+        style={{
+          scrollbarWidth: "none",
+          paddingLeft: "12.5vw",
+          paddingRight: "12.5vw",
+        }}
+      >
+        {tripled.map(({ item, key }) => renderItem(item, key))}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
 // Card components
 // ============================================================
 
 function InstagramCard({
   item,
+  mobileScroll = false,
 }: {
-  item: Extract<GalleryItem, { type: "instagram" }>;
+  item: InstagramItem;
+  mobileScroll?: boolean;
 }) {
   return (
     <Link
       href={item.postUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className="group relative block aspect-square overflow-hidden bg-bg-elevated"
+      className={cn(
+        "group relative block aspect-square overflow-hidden bg-bg-elevated",
+        // Mobile horizontal scroll: fixed-width card, snap-aligned
+        mobileScroll && "w-[75vw] max-w-[420px] shrink-0 snap-center",
+      )}
     >
       <Image
         src={item.imageSrc}
         alt={item.caption}
         width={800}
         height={800}
-        sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+        sizes={
+          mobileScroll
+            ? "(min-width: 1280px) 33vw, 75vw"
+            : "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+        }
         className="h-full w-full object-cover transition-transform duration-500 ease-[var(--ease-out-tactical)] group-hover:scale-105"
       />
-      {/* Overlay — visible on hover (desktop) and always faintly on touch */}
       <div className="pointer-events-none absolute inset-0 flex items-end justify-between gap-3 bg-gradient-to-t from-black/85 via-black/30 to-transparent p-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100">
         <p className="line-clamp-2 text-xs font-medium text-white/95">{item.caption}</p>
         <InstagramIcon className="h-5 w-5 shrink-0 text-white" />
       </div>
-      {/* Always-visible IG icon in corner — small subtle indicator */}
       <div className="pointer-events-none absolute right-3 top-3 transition-opacity duration-300 group-hover:opacity-0">
         <InstagramIcon className="h-5 w-5 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]" />
       </div>
@@ -216,17 +356,22 @@ function InstagramCard({
 
 function GoogleReviewCard({
   item,
+  mobileScroll = false,
 }: {
-  item: Extract<GalleryItem, { type: "google_review" }>;
+  item: ReviewItem;
+  mobileScroll?: boolean;
 }) {
   return (
     <Link
       href={item.reviewsUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className="group relative flex aspect-square flex-col justify-between overflow-hidden border border-border bg-bg-elevated p-6 transition-colors duration-300 hover:border-border-strong sm:p-7"
+      className={cn(
+        "group relative flex aspect-square flex-col justify-between overflow-hidden border border-border bg-bg-elevated p-6 transition-colors duration-300 hover:border-border-strong sm:p-7",
+        // Mobile horizontal scroll: fixed-width card, snap-aligned
+        mobileScroll && "w-[75vw] max-w-[420px] shrink-0 snap-center",
+      )}
     >
-      {/* Top: stars */}
       <div className="flex items-center gap-1" aria-label={`${item.rating} out of 5 stars`}>
         {Array.from({ length: 5 }).map((_, i) => (
           <StarIcon
@@ -238,15 +383,11 @@ function GoogleReviewCard({
           />
         ))}
       </div>
-
-      {/* Middle: quote */}
       <blockquote className="my-4 flex-1 overflow-hidden">
         <p className="line-clamp-6 text-sm leading-relaxed text-text sm:text-base">
           &ldquo;{item.quote}&rdquo;
         </p>
       </blockquote>
-
-      {/* Bottom: attribution */}
       <div className="flex items-end justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-text">{item.reviewer}</p>
@@ -259,7 +400,7 @@ function GoogleReviewCard({
 }
 
 // ============================================================
-// Inline icons — small enough to keep here rather than a library
+// Inline icons
 // ============================================================
 
 function InstagramIcon({ className }: { className?: string }) {
@@ -283,11 +424,7 @@ function InstagramIcon({ className }: { className?: string }) {
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      className={className}
-      aria-hidden
-    >
+    <svg viewBox="0 0 24 24" className={className} aria-hidden>
       <path
         fill="currentColor"
         d="M21.35 11.1h-9.17v2.73h6.51c-.33 3.81-3.5 5.44-6.5 5.44C8.36 19.27 5 16.25 5 12c0-4.1 3.2-7.27 7.2-7.27 3.09 0 4.9 1.97 4.9 1.97L19 4.72S16.56 2 12.1 2C6.42 2 2.03 6.8 2.03 12c0 5.05 4.13 10 10.22 10 5.35 0 9.25-3.67 9.25-9.09 0-1.15-.15-1.81-.15-1.81z"
@@ -298,12 +435,7 @@ function GoogleIcon({ className }: { className?: string }) {
 
 function StarIcon({ className }: { className?: string }) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className={className}
-      aria-hidden
-    >
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden>
       <path d="M12 2l2.95 6.7 7.05.7-5.34 4.95L18.27 22 12 18.4 5.73 22l1.61-7.65L2 9.4l7.05-.7z" />
     </svg>
   );
