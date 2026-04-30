@@ -199,3 +199,22 @@
     transform: translateX(0);
   }
 }
+
+/* ============================================================
+   HERO CONTENT — mobile-only padding to reserve figure area.
+   The figure is 130vw wide × 890/1080 aspect ≈ 107vw tall,
+   anchored to the bottom. This padding pushes the text-centering
+   flex container to ignore that bottom area and center text in
+   the yellow zone above the figure.
+   At lg+ the figure layout doesn't apply, so padding resets.
+   ============================================================ */
+
+.hero-content {
+  padding-bottom: calc(107vw + 16px);
+}
+
+@media (min-width: 1024px) {
+  .hero-content {
+    padding-bottom: 0;
+  }
+}

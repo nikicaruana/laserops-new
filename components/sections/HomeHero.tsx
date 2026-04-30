@@ -143,30 +143,26 @@ export function HomeHero() {
 
       <Container size="wide" className="relative z-10">
         {/*
-          MOBILE: full viewport (minus header). Text block sits in the upper
-          third with breathing room above (8% spacer) so it's not crammed
-          against the header. CTAs anchored at bottom.
+          MOBILE: text vertically centered within the yellow zone above the figure.
+          The bottom-padding reserves space equal to the figure's visible height
+          (figure is 130vw wide × 890/1080 aspect = ~107vw tall), so the flex
+          centering ignores that area and centers text in what's left above.
 
-          DESKTOP: vertically centered single content block.
+          DESKTOP: vertically centered single content block, no figure-area
+          reservation needed.
         */}
-        <div className="flex min-h-[calc(100dvh-72px)] flex-col py-6 sm:py-10 lg:py-28">
-          {/* Top breathing space (mobile only) — gives the headline visual margin
-              from the sticky header without anchoring it to the very top. */}
-          <div className="h-[8%] lg:hidden" aria-hidden />
-
-          {/* Text block */}
-          <div className="lg:my-auto max-w-2xl lg:max-w-[640px]">
-            <h1 className="text-balance text-4xl font-extrabold leading-[1.02] sm:text-5xl lg:text-7xl">
+        <div className="hero-content flex min-h-[calc(100dvh-72px)] flex-col items-stretch justify-center pt-6 sm:pt-10 lg:justify-start lg:py-28">
+          {/* DESKTOP CONTENT BLOCK — vertically centered with my-auto */}
+          <div className="hidden lg:block lg:my-auto max-w-[640px]">
+            <h1 className="text-balance text-7xl font-extrabold leading-[1.02]">
               Outdoor Laser Tag in Malta.{" "}
               <span className="text-accent">Built for Competition.</span>
             </h1>
-            <p className="mt-5 max-w-xl text-base text-white/80 sm:text-lg lg:text-text-muted">
+            <p className="mt-5 max-w-xl text-lg text-text-muted">
               Tactical missions, team battles, and competitive player stats — LaserOps is a new
               kind of laser tag experience.
             </p>
-
-            {/* DESKTOP CTAs inline */}
-            <div className="mt-10 hidden flex-col gap-3 sm:flex-row sm:gap-4 lg:flex">
+            <div className="mt-10 flex gap-4">
               <Button href={ctaLinks.primary.href} variant="primary" size="lg">
                 {ctaLinks.primary.label}
               </Button>
@@ -174,29 +170,40 @@ export function HomeHero() {
                 {ctaLinks.secondary.label}
               </Button>
             </div>
-
-            {/* HUD stat strip — desktop only */}
-            <dl className="mt-12 hidden max-w-xl grid-cols-3 gap-px border-y border-border bg-border sm:mt-16 lg:grid">
+            <dl className="mt-16 grid max-w-xl grid-cols-3 gap-px border-y border-border bg-border">
               {[
                 { value: "12+", label: "Game Modes" },
                 { value: "1000+", label: "Matches Played" },
                 { value: "Outdoor", label: "Real Terrain" },
               ].map((stat) => (
-                <div key={stat.label} className="bg-bg p-4 sm:p-5">
+                <div key={stat.label} className="bg-bg p-5">
                   <dt className="text-[10px] font-semibold uppercase tracking-[0.16em] text-text-subtle">
                     {stat.label}
                   </dt>
-                  <dd className="mt-2 text-2xl font-bold text-text sm:text-3xl">{stat.value}</dd>
+                  <dd className="mt-2 text-3xl font-bold text-text">{stat.value}</dd>
                 </div>
               ))}
             </dl>
           </div>
 
-          {/* MOBILE: spacer pushes CTAs to the bottom */}
-          <div className="flex-1 lg:hidden" aria-hidden />
+          {/* MOBILE TEXT BLOCK — centered in the yellow zone above the figure */}
+          <div className="max-w-2xl lg:hidden">
+            <h1 className="text-balance text-4xl font-extrabold leading-[1.02] sm:text-5xl">
+              Outdoor Laser Tag in Malta.{" "}
+              <span className="text-accent">Built for Competition.</span>
+            </h1>
+            <p className="mt-5 max-w-xl text-base text-white/80 sm:text-lg">
+              Tactical missions, team battles, and competitive player stats — LaserOps is a new
+              kind of laser tag experience.
+            </p>
+          </div>
+        </div>
+      </Container>
 
-          {/* MOBILE CTAs anchored at bottom */}
-          <div className="flex flex-col gap-2.5 lg:hidden">
+      {/* MOBILE CTAs — absolutely positioned at bottom of section, over figure */}
+      <div className="absolute inset-x-0 bottom-0 z-20 lg:hidden">
+        <Container size="wide">
+          <div className="flex flex-col gap-2.5 pb-6">
             <Button href={ctaLinks.primary.href} variant="primary" size="md">
               {ctaLinks.primary.label}
             </Button>
@@ -204,8 +211,8 @@ export function HomeHero() {
               {ctaLinks.secondary.label}
             </Button>
           </div>
-        </div>
-      </Container>
+        </Container>
+      </div>
     </section>
   );
 }
