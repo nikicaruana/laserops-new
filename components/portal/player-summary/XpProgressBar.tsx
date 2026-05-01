@@ -57,8 +57,9 @@ export function XpProgressBar({ pct, ariaLabel, className }: XpProgressBarProps)
     // This is the key to making the transition reliable: the browser
     // genuinely sees an "unfilled → filled" transition rather than only
     // the final state.
-    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-    fill.offsetWidth;
+    // `void` discards the read while keeping ESLint happy about the bare
+    // expression (no-unused-expressions).
+    void fill.offsetWidth;
 
     const reduceMotion =
       typeof window !== "undefined" &&
@@ -81,8 +82,7 @@ export function XpProgressBar({ pct, ariaLabel, className }: XpProgressBarProps)
           if (entry.isIntersecting) {
             // Force another reflow to lock in the unfilled state, then
             // add the class. Belt and braces.
-            // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-            fill.offsetWidth;
+            void fill.offsetWidth;
             fill.classList.add("is-filled");
             observer.disconnect();
             break;
