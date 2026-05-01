@@ -4,6 +4,7 @@ import { AddToHomeScreen } from "@/components/portal/AddToHomeScreen";
 import { CollapsibleSection } from "@/components/portal/CollapsibleSection";
 import { XPLevelsLeaderboard } from "@/components/portal/tables/XPLevelsLeaderboard";
 import { MatchRoundWinsLeaderboard } from "@/components/portal/tables/MatchRoundWinsLeaderboard";
+import { ScoreLeaderboard } from "@/components/portal/tables/ScoreLeaderboard";
 
 export const metadata: Metadata = {
   title: "All Time",
@@ -30,8 +31,9 @@ export const metadata: Metadata = {
  * Suspense boundary: any leaderboard whose client component reads URL search
  * params (useSearchParams) needs to be inside a Suspense boundary, otherwise
  * the entire page opts out of static rendering with a build-time warning.
- * MatchRoundWinsLeaderboard reads ?year and ?month, so it gets its own
- * Suspense wrapper; XPLevelsLeaderboard doesn't read params and doesn't need one.
+ * MatchRoundWinsLeaderboard and ScoreLeaderboard read ?year and ?month, so
+ * each gets a Suspense wrapper. XPLevelsLeaderboard doesn't read params and
+ * doesn't need one.
  */
 export default async function AllTimeLeaderboardPage() {
   return (
@@ -44,7 +46,7 @@ export default async function AllTimeLeaderboardPage() {
       </div>
 
       {/* Stacked collapsible sections. Add more <CollapsibleSection> blocks
-          below this one as new leaderboards come online. */}
+          below as new leaderboards come online. */}
       <CollapsibleSection title="XP / Levels">
         <XPLevelsLeaderboard />
       </CollapsibleSection>
@@ -52,6 +54,12 @@ export default async function AllTimeLeaderboardPage() {
       <CollapsibleSection title="Match / Round Wins">
         <Suspense fallback={null}>
           <MatchRoundWinsLeaderboard />
+        </Suspense>
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Score">
+        <Suspense fallback={null}>
+          <ScoreLeaderboard />
         </Suspense>
       </CollapsibleSection>
     </div>
