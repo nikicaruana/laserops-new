@@ -65,6 +65,12 @@
        so it doesn't interfere with internal scroll regions like the mobile
        nav panel's link list. */
     overflow-x: clip;
+    /* Allow CSS transitions to interpolate from explicit values (like 0)
+       to keywords (auto). Required for animated <details>/::details-content
+       collapse. Browsers that don't support this property ignore it
+       entirely and the affected elements just snap rather than animate —
+       graceful fallback. Chrome 129+, Firefox 137+, Safari 18.2+. */
+    interpolate-size: allow-keywords;
   }
 
   body {
@@ -172,6 +178,57 @@
       7px 7px,
       0 0,
       0 0;
+  }
+
+  /* Leaderboard table row — grid template driven by CSS custom properties
+     set inline by the LeaderboardTable component. We use this class because
+     Tailwind's JIT can't see runtime-composed grid-cols-[...] strings, and
+     hardcoding every leaderboard's column widths as Tailwind class strings
+     would duplicate information that's already in the typed column list.
+
+     Mobile uses --lb-grid; sm+ switches to --lb-grid-sm so each leaderboard
+     can have a different column shape on phone vs desktop. */
+  .lb-row {
+    display: grid;
+    grid-template-columns: var(--lb-grid);
+  }
+  @media (min-width: 640px) {
+    .lb-row {
+      grid-template-columns: var(--lb-grid-sm);
+    }
+  }
+
+  /* Animated <details> sections.
+     The animation uses ::details-content (modern browsers) plus the html-level
+     `interpolate-size: allow-keywords` to interpolate height between 0 and auto.
+     `transition-behavior: allow-discrete` lets content-visibility (which is a
+     discrete property) participate in the transition, so content fades out
+     properly on close instead of disappearing instantly.
+     Browsers without support for ::details-content or interpolate-size will
+     ignore these rules and the section will snap open/closed — graceful fallback. */
+  .collapsible-section::details-content {
+    block-size: 0;
+    overflow: clip;
+    transition:
+      block-size 280ms cubic-bezier(0.22, 1, 0.36, 1),
+      content-visibility 280ms cubic-bezier(0.22, 1, 0.36, 1) allow-discrete;
+  }
+  .collapsible-section[open]::details-content {
+    block-size: auto;
+  }
+  /* Rotate the chevron when the parent <details> is open.
+     We toggle this in CSS rather than a Tailwind variant because relying on a
+     specific group-open syntax across Tailwind versions is fragile, and the
+     selector is short enough to live here. */
+  .collapsible-section[open] > summary svg.collapsible-chevron {
+    transform: rotate(90deg);
+  }
+  /* Honour reduced-motion preferences — collapse with no animation. */
+  @media (prefers-reduced-motion: reduce) {
+    .collapsible-section::details-content,
+    .collapsible-section svg.collapsible-chevron {
+      transition: none;
+    }
   }
 }
 
