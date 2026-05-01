@@ -46,8 +46,14 @@ export type ColumnAlign = "left" | "center" | "right";
  *      asc/desc default direction. Default "number".
  *   - `accessor`: how to extract the sort value from a row. Defaults to
  *      `row[key]`. Provide explicitly for computed sort orders.
- *   - `width`: Tailwind grid-column-width fragment, e.g. "32px", "1fr".
- *      Used to compose the responsive grid template.
+ *   - `width`: CSS grid track size, e.g. "32px", "minmax(0, 1fr)". Used to
+ *      compose grid-template-columns. IMPORTANT: for flexible columns that
+ *      may contain unbreakable text (long nicknames, URLs etc.), use
+ *      "minmax(0, 1fr)" not bare "1fr". A bare 1fr track has an implicit
+ *      min-content floor — unbreakable content forces it wider than its
+ *      fair share, which pushes the row's other columns out of alignment
+ *      with the rest of the table. minmax(0, 1fr) caps the floor at 0 so
+ *      content wraps inside the cell instead.
  *   - `widthSm`: optional override at sm breakpoint. Defaults to width.
  *   - `cell`: render function for the cell content given a row.
  */

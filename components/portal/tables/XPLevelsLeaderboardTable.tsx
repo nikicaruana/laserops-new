@@ -67,15 +67,21 @@ export function XPLevelsLeaderboardTable({ rows }: Props) {
         sortable: true,
         sortType: "string",
         accessor: (row) => row.nickname,
-        // Flex column — takes whatever's left after fixed widths
-        width: "1fr",
-        widthSm: "1fr",
+        // minmax(0, 1fr) instead of plain 1fr: a bare 1fr track has an implicit
+        // min-content floor, so unbreakable content (e.g. "TheHolySpirit" with
+        // no spaces) would force the track wider than its fair share and push
+        // sibling columns out of alignment with the rest of the rows. minmax(0, 1fr)
+        // sets the floor to 0 so the track sticks to its allocated share and
+        // overflowing content wraps inside the cell instead.
+        width: "minmax(0, 1fr)",
+        widthSm: "minmax(0, 1fr)",
         cell: (row) => (
-          // break-words allows long single-word nicknames (no spaces) to
-          // wrap to multiple lines on narrow viewports rather than overflow
-          // or get truncated. text-center keeps wrapped lines visually
-          // centered within the column.
-          <span className="block break-words text-center text-xs font-semibold leading-tight text-text sm:text-base">
+          // [overflow-wrap:anywhere] breaks mid-word when no other break is
+          // available — required for nicknames like "TheHolySpirit" that have
+          // no whitespace or hyphens. Tailwind v3-style break-words / break-all
+          // either don't break inside words or break too aggressively; the
+          // arbitrary CSS value here is the cleanest cross-version answer.
+          <span className="block text-center text-xs font-semibold leading-tight text-text [overflow-wrap:anywhere] sm:text-base">
             {row.nickname}
           </span>
         ),
