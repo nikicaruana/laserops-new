@@ -64,6 +64,27 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
+  // Site icons. Files live in /public/icons/. Next.js emits the right
+  // <link> tags from this metadata — no need to write them manually.
+  //
+  //   - icon: browser tab favicons. Multiple sizes so browsers pick the
+  //     best fit. The .ico is a fallback for older browsers and offline
+  //     contexts (it's multi-resolution, containing 16/32/48 inside).
+  //   - apple: shown when iOS users "Add to Home Screen". Pre-composited
+  //     on the dark brand background so iOS doesn't put yellow art on
+  //     a default white square.
+  //   - shortcut: legacy Windows shortcut icon. Same as the .ico.
+  icons: {
+    icon: [
+      { url: "/icons/favicon.ico", sizes: "any" },
+      { url: "/icons/favicon-16.png", sizes: "16x16", type: "image/png" },
+      { url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: [
+      { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+    shortcut: ["/icons/favicon.ico"],
+  },
 };
 
 export const viewport: Viewport = {

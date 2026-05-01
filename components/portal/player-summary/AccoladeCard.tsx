@@ -28,15 +28,17 @@ export function AccoladeCard({ data }: AccoladeCardProps) {
     <div className="flex flex-col items-center gap-2 border border-border bg-bg-elevated p-3 sm:gap-3 sm:p-4">
       {/* Badge artwork — brand yellow silhouette on transparent. The
           ribbon name baked into the artwork serves as the label.
-          h-28 on mobile (was h-24) so the badge fills more of the card's
-          available width — at 3-up grid on a 430px viewport, h-24 felt
-          slightly squished against the ~135px card width. */}
+          Sized by WIDTH (w-full) rather than height: the badges are
+          roughly square, so filling the card's content width gives
+          maximum visible badge size on mobile while preserving the
+          natural aspect ratio. Caps at max-w-[10rem] on desktop so
+          they don't get absurdly large in wider cards. */}
       <img
         src={definition.iconPath}
         alt={`${definition.name} accolade`}
         loading="lazy"
         decoding="async"
-        className="block h-28 w-auto sm:h-32"
+        className="block h-auto w-full max-w-[10rem]"
       />
 
       {/* Count pill — lighter elevated grey for contrast against the
