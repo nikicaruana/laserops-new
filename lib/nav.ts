@@ -17,8 +17,7 @@ export const primaryNav: NavLink[] = [
   { label: "Weapons", href: "/weapons" },
   { label: "Locations", href: "/locations" },
   { label: "Events", href: "/events" },
-  // TODO: change to "/dashboards" once real page is built
-  { label: "Dashboards", href: "/dashboards-test", highlight: true },
+  { label: "Player Portal", href: "/player-portal", highlight: true },
   { label: "About", href: "/about" },
 ];
 
@@ -30,6 +29,5 @@ export const utilityNav: NavLink[] = [
 
 export const ctaLinks = {
   primary: { label: "Book a Game", href: "/booking" },
-  // TODO: change to "/dashboards" once real page is built
-  secondary: { label: "View Leaderboards", href: "/dashboards-test" },
+  secondary: { label: "View Leaderboards", href: "/player-portal" },
 };
