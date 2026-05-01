@@ -14,6 +14,9 @@ import {
 import { ProfileCard } from "@/components/portal/player-summary/ProfileCard";
 import { LevelCard } from "@/components/portal/player-summary/LevelCard";
 import { FavouriteWeaponCard } from "@/components/portal/player-summary/FavouriteWeaponCard";
+import { StatsSection } from "@/components/portal/player-summary/StatsSection";
+import { AccoladesSection } from "@/components/portal/player-summary/AccoladesSection";
+import { CollapsibleSection } from "@/components/portal/CollapsibleSection";
 
 /** Same key as PlayerSearch — kept in sync to keep the autoload-then-clear flow honest. */
 const LOCALSTORAGE_KEY = "laserops:last-ops-tag";
@@ -99,11 +102,28 @@ export function PlayerSummaryView({
       {/* States:
           1. URL has no ?ops= and no autoload happened → show empty hint
           2. URL has ?ops= but no match in data → show "not found" hint
-          3. URL has ?ops= and match found → show the cards
+          3. URL has ?ops= and match found → show the cards + Stats section
         */}
       {opsParam === "" && <SearchPrompt />}
       {opsParam !== "" && !player && <PlayerNotFound opsTag={opsParam} />}
-      {top && <TopSection top={top} />}
+      {top && player && (
+        <>
+          <TopSection top={top} />
+          {/* Stats section sits below the top cards, collapsible. Spacing
+              top-margin comes from the section's natural <details> margin
+              plus our wrapper. */}
+          <div className="mt-2">
+            <CollapsibleSection title="Stats">
+              <StatsSection row={player} />
+            </CollapsibleSection>
+          </div>
+          {/* Accolades section — same collapsible pattern, sits below Stats.
+              Has its own internal tier subsections and definitions list. */}
+          <CollapsibleSection title="Accolades">
+            <AccoladesSection row={player} />
+          </CollapsibleSection>
+        </>
+      )}
     </>
   );
 }
