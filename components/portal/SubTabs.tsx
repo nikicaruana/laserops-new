@@ -34,10 +34,15 @@ export function SubTabs({ tabs }: SubTabsProps) {
   return (
     <div className="border-b border-border bg-bg-elevated/40">
       <div className="mx-auto w-full max-w-[90rem] px-4 sm:px-8 lg:px-12">
-        {/* overflow-x-auto with hidden scrollbars for the mobile fallback
-            if labels grow. Whitespace-nowrap keeps each pill on one line.
-            sm:justify-center mirrors the PortalTabs centering. */}
-        <div className="flex items-center justify-center gap-2 overflow-x-auto py-3 sm:gap-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {/* overflow-x-auto + safe center: a flex row with both `justify-content:
+            center` and `overflow-x: auto` has a known browser quirk — when
+            content is wider than the container, the left half of the overflow
+            becomes unscrollable (you can't scroll past scroll-left: 0, but
+            centering pushes content into negative space).
+            `justify-content: safe center` is the modern CSS keyword that
+            falls back to `flex-start` when content overflows, so the leftmost
+            pill stays reachable on narrow viewports. */}
+        <div className="flex items-center [justify-content:safe_center] gap-2 overflow-x-auto py-3 sm:gap-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {tabs.map((tab) => {
             const isActive = pathname === tab.href || pathname.startsWith(`${tab.href}/`);
             return (

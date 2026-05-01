@@ -9,17 +9,22 @@ import type { MetadataRoute } from "next";
  * behaviour.
  *
  * Icon set served from /public/icons/:
- *   - 192px and 512px PNGs for Android / PWA installs (yellow on
- *     transparent — Android handles transparency cleanly)
- *   - 180px apple-touch-icon (yellow on dark bg) wired separately via
- *     the root layout's metadata, since Apple uses its own <link> tag
- *     rather than reading from this manifest.
+ *   - 192px and 512px PNGs for Android / PWA installs.
+ *   - 180px apple-touch-icon wired separately via the root layout's
+ *     metadata, since Apple uses its own <link> tag rather than reading
+ *     from this manifest.
  *
- * theme_color: the brand black. Used by Android Chrome to tint the
- * address bar / splash screen. Brand yellow would be too bright as
- * chrome.
+ * Icon design: black target silhouette on solid yellow square. Solid
+ * background (rather than transparent) means the icon looks the same
+ * on every phone regardless of light/dark theme — no system-coloured
+ * tile bleeding through. Yellow square is also the most distinctive
+ * brand cue, so the icon reads as LASEROPS at a glance even at small
+ * sizes.
  *
- * background_color: same as theme_color so PWA install splash stays
+ * theme_color: brand black. Used by Android Chrome to tint the address
+ * bar / splash screen. Brand yellow would be too bright as chrome.
+ *
+ * background_color: matches theme_color so PWA install splash stays
  * cohesive with the dark site aesthetic.
  *
  * display: 'standalone' — when installed as a PWA, opens in its own

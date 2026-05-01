@@ -50,7 +50,7 @@ export function PortalTabs() {
       aria-label="Player portal sections"
       className="border-b border-border bg-bg"
     >
-      <div className="mx-auto flex w-full max-w-[90rem] items-stretch justify-center gap-1 px-4 sm:gap-6 sm:px-8 lg:gap-10 lg:px-12">
+      <div className="mx-auto flex w-full max-w-[90rem] items-stretch [justify-content:safe_center] gap-1 px-4 sm:gap-6 sm:px-8 lg:gap-10 lg:px-12">
         {tabs.map((tab) => {
           const isActive = pathname.startsWith(tab.matchPrefix);
           return (
