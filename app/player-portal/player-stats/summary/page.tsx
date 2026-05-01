@@ -6,6 +6,7 @@ import {
 } from "@/lib/player-stats/shared";
 import { TableErrorState } from "@/components/portal/tables/TableErrorState";
 import { PlayerSummaryView } from "@/components/portal/player-summary/PlayerSummaryView";
+import { InstallAppButton } from "@/components/portal/AddToHomeScreen";
 
 export const metadata: Metadata = {
   title: "Summary",
@@ -18,10 +19,7 @@ export const metadata: Metadata = {
  * client view, which:
  *   - Reads ?ops= from the URL to determine which player to show
  *   - Renders the search input with full autocomplete suggestions
- *   - Renders the player's top-section cards (profile, level, weapon)
- *
- * Stats and Accolades sections will be added later as collapsible blocks
- * below the top section.
+ *   - Renders the top section, stats, and accolades
  *
  * Suspense boundary: PlayerSummaryView reads useSearchParams, so it must
  * sit inside a Suspense boundary or the entire page bails out of static
@@ -31,8 +29,6 @@ export default async function PlayerSummaryPage() {
   const result = await fetchAllPlayerStats();
 
   if (!result.ok) {
-    // Same error treatment we use elsewhere in the portal — keeps the
-    // failure mode visually consistent across leaderboards and the summary.
     return <TableErrorState detail={result.error} />;
   }
 
@@ -40,6 +36,16 @@ export default async function PlayerSummaryPage() {
 
   return (
     <div className="mx-auto w-full max-w-4xl">
+      {/* Mobile-only Install App button row. Hidden on desktop because the
+          button itself is sm:hidden — desktop install is a niche flow we're
+          not actively pushing. The button only renders if the device has an
+          install path (Android Chrome with prompt available, or iOS Safari).
+          On the player summary page specifically: high-intent users who've
+          already engaged are the most likely to install. */}
+      <div className="mb-4 flex justify-end sm:hidden">
+        <InstallAppButton />
+      </div>
+
       <Suspense fallback={null}>
         <PlayerSummaryView
           allRows={result.rows}

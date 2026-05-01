@@ -38,9 +38,11 @@ export const metadata: Metadata = {
 export default async function AllTimeLeaderboardPage() {
   return (
     <div className="mx-auto w-full max-w-4xl">
-      {/* Mobile-only Pin to Home button row. Hidden entirely on desktop —
-          the A2HS button itself is sm:hidden, so on desktop this row would
-          just be empty whitespace. */}
+      {/* Mobile-only Install App button row. Hidden entirely on desktop —
+          the button itself is sm:hidden, so on desktop this row would
+          just be empty whitespace. The button only shows when the device
+          has a real install path: native prompt on Android, instructional
+          modal on iOS, hidden if already installed or no path available. */}
       <div className="mb-4 flex justify-end sm:hidden">
         <AddToHomeScreen />
       </div>
