@@ -12,11 +12,10 @@ import { cn } from "@/lib/cn";
  * level (SubTabs) uses a different treatment (pills) so the two levels
  * read as distinct without introducing a second hue.
  *
- * Layout:
- *   - Mobile: left-aligned. Centering on a narrow viewport with only 2
- *     items leaves big empty space on either side and shrinks tap targets.
- *   - sm+ (640px+): centered. Reinforces the "portal" feel — symmetric,
- *     unified, deliberately distinct from the marketing site's left-aligned chrome.
+ * Layout: centered at all viewport widths. Mobile centering with only 2
+ * items leaves some empty space on either side, but reads as deliberate
+ * portal-like symmetry — and the tap targets stay full-size since
+ * centering doesn't shrink anything.
  *
  * URL-driven: the active tab is derived from the pathname. Each tab links
  * to the section root, which in turn redirects to its first subtab via
@@ -51,7 +50,7 @@ export function PortalTabs() {
       aria-label="Player portal sections"
       className="border-b border-border bg-bg"
     >
-      <div className="mx-auto flex w-full max-w-[90rem] items-stretch gap-1 px-4 sm:justify-center sm:gap-6 sm:px-8 lg:gap-10 lg:px-12">
+      <div className="mx-auto flex w-full max-w-[90rem] items-stretch justify-center gap-1 px-4 sm:gap-6 sm:px-8 lg:gap-10 lg:px-12">
         {tabs.map((tab) => {
           const isActive = pathname.startsWith(tab.matchPrefix);
           return (

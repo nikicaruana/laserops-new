@@ -12,8 +12,11 @@ import { cn } from "@/lib/cn";
  * This is deliberately distinct from PortalTabs (underline + text color)
  * so the two navigation levels don't read as the same control.
  *
- * Layout: matches PortalTabs — left-aligned on mobile, centered at sm+.
- * Mobile keeps overflow-x-auto as a safety net if labels ever grow.
+ * Layout: centered at all viewport widths. Mobile keeps overflow-x-auto
+ * as a safety net if labels ever grow past the viewport — when content
+ * fits, justify-center keeps the pills centered; when it overflows,
+ * the scroll naturally takes over (left-edge anchored, as with any
+ * overflowing centered flex container).
  */
 
 type SubTab = {
@@ -34,7 +37,7 @@ export function SubTabs({ tabs }: SubTabsProps) {
         {/* overflow-x-auto with hidden scrollbars for the mobile fallback
             if labels grow. Whitespace-nowrap keeps each pill on one line.
             sm:justify-center mirrors the PortalTabs centering. */}
-        <div className="flex items-center gap-2 overflow-x-auto py-3 sm:justify-center sm:gap-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex items-center justify-center gap-2 overflow-x-auto py-3 sm:gap-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {tabs.map((tab) => {
             const isActive = pathname === tab.href || pathname.startsWith(`${tab.href}/`);
             return (
