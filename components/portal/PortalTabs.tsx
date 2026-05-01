@@ -50,37 +50,44 @@ export function PortalTabs() {
       aria-label="Player portal sections"
       className="border-b border-border bg-bg"
     >
-      <div className="mx-auto flex w-full max-w-[90rem] items-stretch [justify-content:safe_center] gap-1 px-4 sm:gap-6 sm:px-8 lg:gap-10 lg:px-12">
-        {tabs.map((tab) => {
-          const isActive = pathname.startsWith(tab.matchPrefix);
-          return (
-            <Link
-              key={tab.href}
-              href={tab.href}
-              aria-current={isActive ? "page" : undefined}
-              className={cn(
-                // Layout: no padding-left, just generous tap target. The relative
-                // box hosts the underline pseudo-bar.
-                "relative flex items-center px-3 py-3.5 sm:px-4 sm:py-4",
-                "text-xs font-bold uppercase tracking-[0.16em] transition-colors",
-                isActive
-                  ? "text-accent"
-                  : "text-text-muted hover:text-text",
-              )}
-            >
-              {tab.label}
-              {/* Underline bar — fills the tab's bottom edge when active.
-                  Sits on top of the parent's bottom border for a clean overlap. */}
-              <span
-                aria-hidden
+      {/* Outer container: width cap + horizontal padding inset. */}
+      <div className="mx-auto w-full max-w-[90rem] px-4 sm:px-8 lg:px-12">
+        {/* Inner row: w-max + mx-auto centers when content fits, falls
+            back to left-anchored when content overflows. Same pattern
+            as SubTabs — sidesteps the `justify-content: center +
+            overflow` quirk. */}
+        <div className="mx-auto flex w-max max-w-full items-stretch gap-1 sm:gap-6 lg:gap-10">
+          {tabs.map((tab) => {
+            const isActive = pathname.startsWith(tab.matchPrefix);
+            return (
+              <Link
+                key={tab.href}
+                href={tab.href}
+                aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "absolute inset-x-0 -bottom-px h-[2px] transition-colors",
-                  isActive ? "bg-accent" : "bg-transparent",
+                  // Layout: no padding-left, just generous tap target. The relative
+                  // box hosts the underline pseudo-bar.
+                  "relative flex items-center px-3 py-3.5 sm:px-4 sm:py-4",
+                  "text-xs font-bold uppercase tracking-[0.16em] transition-colors",
+                  isActive
+                    ? "text-accent"
+                    : "text-text-muted hover:text-text",
                 )}
-              />
-            </Link>
-          );
-        })}
+              >
+                {tab.label}
+                {/* Underline bar — fills the tab's bottom edge when active.
+                    Sits on top of the parent's bottom border for a clean overlap. */}
+                <span
+                  aria-hidden
+                  className={cn(
+                    "absolute inset-x-0 -bottom-px h-[2px] transition-colors",
+                    isActive ? "bg-accent" : "bg-transparent",
+                  )}
+                />
+              </Link>
+            );
+          })}
+        </div>
       </div>
     </nav>
   );
