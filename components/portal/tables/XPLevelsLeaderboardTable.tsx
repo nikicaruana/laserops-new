@@ -157,6 +157,14 @@ export function XPLevelsLeaderboardTable({ rows }: Props) {
       // by a different column, the row at index 0 isn't necessarily rank 1
       // anymore, so the yellow bar would mislead.
       isTopRank={(_row, idx, isDefaultSort) => isDefaultSort && idx === 0}
+      // Tap any row → navigate to that player's summary. Empty nickname →
+      // null (skip linking). encodeURIComponent handles spaces/special chars.
+      rowHref={(row) =>
+        row.nickname
+          ? `/player-portal/player-stats/summary?ops=${encodeURIComponent(row.nickname)}`
+          : null
+      }
+      rowLinkAriaLabel={(row) => `View ${row.nickname}'s player summary`}
     />
   );
 }

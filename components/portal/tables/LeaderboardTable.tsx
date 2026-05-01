@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
@@ -86,6 +87,21 @@ type LeaderboardTableProps<T> = {
   isTopRank?: (row: T, index: number, isDefaultSort: boolean) => boolean;
   /** Max scroll height. Defaults to ~10 rows on the larger row sizes. */
   maxHeight?: string;
+  /**
+   * Optional: make each row link to a destination URL (typically the
+   * player's summary page). When provided, the row gets a transparent
+   * absolute-positioned <Link> overlay covering the full row clickable
+   * area. Returning null for a given row leaves that row non-clickable
+   * (useful for rows with missing identifying data).
+   */
+  rowHref?: (row: T) => string | null;
+  /**
+   * Optional: aria-label generator for the row link overlay. Receives
+   * the row and should return a screen-reader-friendly label
+   * describing the destination, e.g. "View KKKyle's player summary".
+   * Required if rowHref is provided.
+   */
+  rowLinkAriaLabel?: (row: T) => string;
 };
 
 /* ---------- Internal sort state types ---------- */
@@ -104,6 +120,8 @@ export function LeaderboardTable<T>({
   rowKey,
   isTopRank,
   maxHeight = "720px",
+  rowHref,
+  rowLinkAriaLabel,
 }: LeaderboardTableProps<T>) {
   const [sort, setSort] = useState<SortState>({ kind: "default" });
 
@@ -223,6 +241,7 @@ export function LeaderboardTable<T>({
         <div role="rowgroup">
           {displayedRows.map((row, idx) => {
             const highlight = isTopRank ? isTopRank(row, idx, isDefaultSort) : false;
+            const href = rowHref ? rowHref(row) : null;
             return (
               <div
                 key={rowKey(row)}
@@ -232,11 +251,36 @@ export function LeaderboardTable<T>({
                   "transition-colors hover:bg-bg-overlay/60",
                   "last:border-b-0",
                   highlight && "bg-accent/[0.03]",
+                  href && "cursor-pointer",
                 )}
               >
                 {highlight && (
                   <span aria-hidden className="absolute inset-y-0 left-0 w-[3px] bg-accent" />
                 )}
+                {/* Link overlay — when href is provided, an invisible <Link>
+                    spans the full row, making the entire row a single
+                    tap target that navigates on click.
+                    z-1 puts the link above the cell content so clicks
+                    anywhere on the row hit the link. Cells render at the
+                    default z-0; if a future cell needs to host an
+                    interactive child (its own button/link), give that
+                    cell `position: relative; z-2` to claim hit priority
+                    above this overlay.
+                    The link itself has zero visible content — only an
+                    sr-only label for screen readers. The hit area is
+                    just the absolute box. */}
+                {href ? (
+                  <Link
+                    href={href}
+                    aria-label={rowLinkAriaLabel ? rowLinkAriaLabel(row) : undefined}
+                    className="absolute inset-0 z-[1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset"
+                    tabIndex={0}
+                  >
+                    <span className="sr-only">
+                      {rowLinkAriaLabel ? rowLinkAriaLabel(row) : "View row details"}
+                    </span>
+                  </Link>
+                ) : null}
                 {columns.map((col) => (
                   <DataCell key={col.key} column={col} row={row} />
                 ))}

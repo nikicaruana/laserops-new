@@ -144,6 +144,12 @@ export function ScoreLeaderboardTable({ allRows }: Props) {
           rows={displayRows}
           rowKey={(row) => `${row.rank}-${row.nickname}`}
           isTopRank={(_row, idx, isDefaultSort) => isDefaultSort && idx === 0}
+          rowHref={(row) =>
+            row.nickname
+              ? `/player-portal/player-stats/summary?ops=${encodeURIComponent(row.nickname)}`
+              : null
+          }
+          rowLinkAriaLabel={(row) => `View ${row.nickname}'s player summary`}
         />
       )}
     </>
