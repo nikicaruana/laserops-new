@@ -230,6 +230,25 @@
       transition: none;
     }
   }
+
+  /* XP progress bar fill.
+     The pattern: declare both states (unfilled = 0, filled = var) and toggle
+     between them via class. This is the most reliable way to animate a
+     transition because the browser sees a clear "before" and "after" state
+     and runs the transition between them. The is-filled class is added by
+     React after the unfilled state has committed to a paint. */
+  .xp-fill {
+    width: 0;
+    transition: width 1500ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .xp-fill.is-filled {
+    width: var(--xp-target-pct, 0%);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .xp-fill {
+      transition: none;
+    }
+  }
 }
 
 /* ============================================================
