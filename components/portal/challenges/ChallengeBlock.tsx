@@ -2,6 +2,7 @@ import { CollapsibleSection } from "@/components/portal/CollapsibleSection";
 import { ChallengeLeaderboardTable } from "./ChallengeLeaderboardTable";
 import type { Challenge } from "@/lib/cms/challenges";
 import type { ChallengeEntry } from "@/lib/leaderboards/season-challenges";
+import { cn } from "@/lib/cn";
 
 /**
  * ChallengeBlock
@@ -52,37 +53,48 @@ export function ChallengeBlock({ challenge, entries, defaultOpen = true }: Chall
       }
       defaultOpen={defaultOpen}
     >
-      {/* Yellow info card */}
-      <div className="rounded-sm bg-accent px-4 py-4 text-bg sm:px-6 sm:py-5">
-        {challenge.description !== "" && (
-          <p className="text-sm leading-snug sm:text-base">
-            <span className="font-extrabold">Criteria: </span>
-            {challenge.description}
-          </p>
-        )}
-        {challenge.prize !== "" && (
+      {/* Yellow info card.
+          Width follows the same variant-based cap as the table below
+          so the two visually align as a single unit. mx-auto centers
+          within the parent on wide screens. */}
+      <div className={cn("mx-auto w-full", maxWidthForVariant(variant))}>
+        <div className="rounded-sm bg-accent px-4 py-4 text-bg sm:px-6 sm:py-5">
+          {challenge.description !== "" && (
+            <p className="text-sm leading-snug sm:text-base">
+              <span className="font-extrabold">Criteria: </span>
+              {challenge.description}
+            </p>
+          )}
+          {challenge.prize !== "" && (
+            <p className="mt-2 text-sm leading-snug sm:text-base">
+              <span className="font-extrabold">Prize: </span>
+              {challenge.prize}
+            </p>
+          )}
           <p className="mt-2 text-sm leading-snug sm:text-base">
-            <span className="font-extrabold">Prize: </span>
-            {challenge.prize}
+            <span className="font-extrabold">Challenge Priority: </span>
+            {challenge.priority}
           </p>
-        )}
-        <p className="mt-2 text-sm leading-snug sm:text-base">
-          <span className="font-extrabold">Challenge Priority: </span>
-          {challenge.priority}
-        </p>
-      </div>
+        </div>
 
-      {/* Leaderboard table or empty state */}
-      <div className="mt-3">
-        {entries.length === 0 ? (
-          <EmptyEntries />
-        ) : (
-          <ChallengeLeaderboardTable
-            entries={entries}
-            variant={variant}
-            metricLabel={metricLabel}
-          />
-        )}
+        {/* Leaderboard table or empty state.
+            Same width container as the info card above. The variant
+            determines the max-width: tables with fewer columns are
+            capped narrower so the cells don't end up rattling around
+            with vast empty space between rank, name, and metric on
+            wide desktops. Mobile is always full-width regardless —
+            phone screens don't have the stretching problem. */}
+        <div className="mt-3">
+          {entries.length === 0 ? (
+            <EmptyEntries />
+          ) : (
+            <ChallengeLeaderboardTable
+              entries={entries}
+              variant={variant}
+              metricLabel={metricLabel}
+            />
+          )}
+        </div>
       </div>
     </CollapsibleSection>
   );
@@ -107,6 +119,32 @@ function deriveMetricLabel(challenge: Challenge): string {
       return "Kills";
     default:
       return challenge.metric.replace(/_/g, " ");
+  }
+}
+
+/**
+ * Per-variant max-width for the challenge block (yellow info card +
+ * leaderboard table). Without this, blocks stretch to fill the parent's
+ * full width — causing tables with few columns (Round Wins: 4 cols) to
+ * have huge empty gutters between the rank, name, and metric on desktop.
+ *
+ * Tailwind v4 max-w utilities — these are the responsive caps:
+ *   - default (4 cols: rank, photo, name, metric) → narrowest
+ *   - match_top (5 cols: + match id) → medium
+ *   - xp (6 cols: + rank badge + level) → widest
+ *
+ * All variants are full-width on mobile (sm:max-w-... only). Below sm
+ * the entire content uses the parent's width because phones never have
+ * enough room to need a cap.
+ */
+function maxWidthForVariant(variant: "xp" | "match_top" | "default"): string {
+  switch (variant) {
+    case "xp":
+      return "sm:max-w-3xl"; // 48rem — accommodates 6 columns with breathing room
+    case "match_top":
+      return "sm:max-w-2xl"; // 42rem — 5 columns
+    case "default":
+      return "sm:max-w-xl"; // 36rem — 4 columns, kept tight
   }
 }
 

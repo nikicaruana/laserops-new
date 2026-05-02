@@ -40,9 +40,10 @@ export function SeasonalChallengesView({ season, challengeData }: SeasonalChalle
     <div className="flex flex-col gap-6 sm:gap-8">
       {/* Season header — just the name + date range. The "Seasonal
           Challenges" title comes from the page header (DashboardPageHeader)
-          to avoid duplication. */}
+          to avoid duplication. Season name uses the brand accent yellow
+          to make the active season stand out within the page. */}
       <header className="text-center">
-        <h2 className="text-xl font-extrabold uppercase tracking-tight text-text sm:text-2xl">
+        <h2 className="text-xl font-extrabold uppercase tracking-tight text-accent sm:text-2xl">
           {season.name}
         </h2>
         <p className="mt-1 text-sm text-text-muted">{dateRange}</p>
