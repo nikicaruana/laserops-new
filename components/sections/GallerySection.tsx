@@ -21,8 +21,14 @@ import { cn } from "@/lib/cn";
  *
  * DESKTOP (xl+): unified 3-column grid mixing both content types.
  *
- * Data is currently hardcoded; will be replaced by Google Sheets
- * CMS in a follow-up session.
+ * Data source:
+ *   - Preferred: CMS-driven via props from the server. The homepage
+ *     page.tsx fetches Instagram_Posts and Google_Reviews from the CMS
+ *     and passes them in.
+ *   - Fallback: hardcoded sample data baked into this component —
+ *     used when the CMS has no data yet (e.g. during initial staging,
+ *     or if the CMS fetch fails). Lets the section render meaningfully
+ *     in dev / preview environments without requiring an active CMS.
  */
 
 // === Data shapes ===
@@ -42,8 +48,10 @@ type ReviewItem = {
   reviewsUrl: string;
 };
 
-// === Sample data — to be replaced by Sheets fetch in next session ===
-const instagramItems: InstagramItem[] = [
+// === Fallback sample data ===
+// Used when the CMS has no entries (e.g. before any data is added, or if
+// the CMS fetch failed). Keeps the section meaningful in staging / dev.
+const sampleInstagramItems: InstagramItem[] = [
   {
     id: "ig1",
     imageSrc: "/images/gallery/action-1.jpg",
@@ -82,7 +90,7 @@ const instagramItems: InstagramItem[] = [
   },
 ];
 
-const reviewItems: ReviewItem[] = [
+const sampleReviewItems: ReviewItem[] = [
   {
     id: "gr1",
     rating: 5,
@@ -121,7 +129,32 @@ const reviewItems: ReviewItem[] = [
   },
 ];
 
-export function GallerySection() {
+/**
+ * Props for GallerySection. Both arrays are optional — when omitted or
+ * empty, the component falls back to its baked-in sample data so the
+ * homepage stays visually populated regardless of CMS state.
+ */
+type GallerySectionProps = {
+  instagramItems?: InstagramItem[];
+  reviewItems?: ReviewItem[];
+};
+
+export function GallerySection({
+  instagramItems: instagramItemsProp,
+  reviewItems: reviewItemsProp,
+}: GallerySectionProps = {}) {
+  // Use CMS data if provided AND non-empty; otherwise fall back to
+  // sample. The "and non-empty" check matters because an empty CMS
+  // returns [] not undefined — we want the fallback in either case.
+  const instagramItems =
+    instagramItemsProp && instagramItemsProp.length > 0
+      ? instagramItemsProp
+      : sampleInstagramItems;
+  const reviewItems =
+    reviewItemsProp && reviewItemsProp.length > 0
+      ? reviewItemsProp
+      : sampleReviewItems;
+
   return (
     <section
       aria-labelledby="gallery-heading"
@@ -166,19 +199,19 @@ export function GallerySection() {
         />
       </div>
 
-      {/* === DESKTOP: 3-col grid mixing both content types === */}
+      {/* === DESKTOP: 3-col grid mixing both content types ===
+          Interleave pattern: 2 IG, 1 review, repeat. Caps at 9 cells
+          to keep the section a reasonable height regardless of how
+          much CMS content exists. */}
       <Container size="wide" className="hidden xl:block">
         <div className="grid grid-cols-3 gap-4">
-          {/* Interleave: ig, ig, review, ig, review, ig, ig, review, ig */}
-          <InstagramCard item={instagramItems[0]} />
-          <InstagramCard item={instagramItems[1]} />
-          <GoogleReviewCard item={reviewItems[0]} />
-          <InstagramCard item={instagramItems[2]} />
-          <GoogleReviewCard item={reviewItems[1]} />
-          <InstagramCard item={instagramItems[3]} />
-          <InstagramCard item={instagramItems[4]} />
-          <GoogleReviewCard item={reviewItems[2]} />
-          <InstagramCard item={instagramItems[5]} />
+          {interleaveForGrid(instagramItems, reviewItems, 9).map((cell) =>
+            cell.kind === "instagram" ? (
+              <InstagramCard key={`ig-${cell.item.id}`} item={cell.item} />
+            ) : (
+              <GoogleReviewCard key={`gr-${cell.item.id}`} item={cell.item} />
+            ),
+          )}
         </div>
       </Container>
 
@@ -400,8 +433,61 @@ function GoogleReviewCard({
 }
 
 // ============================================================
-// Inline icons
+// Interleave helper for the desktop grid
 // ============================================================
+
+type GridCell =
+  | { kind: "instagram"; item: InstagramItem }
+  | { kind: "review"; item: ReviewItem };
+
+/**
+ * Build a stable interleaved sequence for the desktop grid.
+ *
+ * Pattern: 2 instagram items, then 1 review, repeat. Falls back
+ * gracefully when one stream is shorter than the other — uses whatever
+ * stream still has items left. Caps at `maxCells` total to keep the
+ * section a fixed visual height.
+ *
+ * Why hand-rolled rather than a clever zip: the desired interleave is
+ * 2:1 (IG:review), not 1:1, and we want the pattern to keep going even
+ * after one stream is exhausted. Easier to read as imperative code.
+ */
+function interleaveForGrid(
+  instagram: InstagramItem[],
+  reviews: ReviewItem[],
+  maxCells: number,
+): GridCell[] {
+  const out: GridCell[] = [];
+  let igIdx = 0;
+  let revIdx = 0;
+  let igConsumedSinceLastReview = 0;
+
+  while (out.length < maxCells) {
+    const moreInstagram = igIdx < instagram.length;
+    const moreReviews = revIdx < reviews.length;
+    if (!moreInstagram && !moreReviews) break;
+
+    // Decide what kind of cell to emit next.
+    // Prefer instagram unless we've already emitted 2 in a row, in which
+    // case prefer a review. Fall through to whichever stream is non-empty.
+    const wantReviewNext = igConsumedSinceLastReview >= 2;
+
+    if (wantReviewNext && moreReviews) {
+      out.push({ kind: "review", item: reviews[revIdx++] });
+      igConsumedSinceLastReview = 0;
+    } else if (moreInstagram) {
+      out.push({ kind: "instagram", item: instagram[igIdx++] });
+      igConsumedSinceLastReview++;
+    } else if (moreReviews) {
+      // Instagram exhausted, finish with reviews
+      out.push({ kind: "review", item: reviews[revIdx++] });
+    }
+  }
+
+  return out;
+}
+
+
 
 function InstagramIcon({ className }: { className?: string }) {
   return (

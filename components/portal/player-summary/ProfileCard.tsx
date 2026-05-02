@@ -1,33 +1,50 @@
 import { BracketFrame } from "@/components/portal/BracketFrame";
+import {
+  RATING_UNLOCK_MIN_MATCHES,
+  RATING_UNLOCK_MIN_LEVEL,
+} from "@/lib/player-stats/summary-top";
 
 /**
  * ProfileCard — top-left card of the Player Summary.
  *
  * Layout (vertical):
  *   - Player nickname (top, centered)
- *   - Profile photo with yellow corner-bracket frame. Photo flexes vertically
- *     to absorb the card's height, so when this card is alongside a taller
- *     right column the photo wrapper grows to match. Keeps both columns the
- *     same overall height on desktop without JS.
- *   - 5-star rating image straddling the photo's bottom edge — its midpoint
+ *   - Profile photo with yellow corner-bracket frame.
+ *   - Rating image straddling the photo's bottom edge — its midpoint
  *     sits exactly on the edge so the top half overlaps the photo and the
- *     bottom half hangs into the card's space below. No border, slightly
- *     translucent dark background, tight padding so the rating itself
- *     dominates and the backdrop reads as integrated rather than "a separate
- *     element."
+ *     bottom half hangs into the card's space below.
+ *   - Bottom band:
+ *       - When the player's rating is unlocked: empty spacer giving the
+ *         overhanging rating image room to breathe.
+ *       - When the rating is locked: an explainer line telling the user
+ *         how to unlock their rating. The 0-stars image (with a lock
+ *         symbol) still renders normally — the text is supporting copy,
+ *         not a replacement.
+ *
+ * Whether the rating is unlocked is computed in the projection layer
+ * (lib/player-stats/summary-top.ts) using the unlock thresholds. The
+ * thresholds are imported from there so the explainer text and the
+ * unlock check can never drift out of sync.
  */
 
 type ProfileCardProps = {
   nickname: string;
   profilePicUrl: string;
-  /** URL to the 5-star rating image. Empty if not yet earned. */
+  /** URL to the rating image (5-stars / lock-icon variant / etc). */
   overallRatingImageUrl: string;
+  /**
+   * True when the player has met the rating unlock criteria. The rating
+   * image is shown either way — the source already provides a "locked"
+   * variant — but we add explainer copy underneath when locked.
+   */
+  ratingUnlocked: boolean;
 };
 
 export function ProfileCard({
   nickname,
   profilePicUrl,
   overallRatingImageUrl,
+  ratingUnlocked,
 }: ProfileCardProps) {
   return (
     <div className="flex h-full flex-col items-center gap-4 border border-border bg-bg-elevated p-4 sm:p-6">
@@ -70,10 +87,7 @@ export function ProfileCard({
               className={[
                 "absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2",
                 "rounded-full bg-bg/85 backdrop-blur-sm",
-                // Tight horizontal padding, minimal vertical padding —
-                // the rating image's height defines the pill's height.
                 "px-3 py-1",
-                // Above the bracket overlay
                 "z-10",
               ].join(" ")}
             >
@@ -89,9 +103,26 @@ export function ProfileCard({
         </BracketFrame>
       </div>
 
-      {/* Bottom spacer so the overhanging rating's lower half has room.
-          Roughly half the rating image's height + the pill's vertical padding. */}
-      <div aria-hidden className="h-7 sm:h-8" />
+      {/* Bottom band.
+          The rating pill overhangs the photo's bottom edge by ~half its
+          height. Anything in this band needs to clear that overhang.
+          When unlocked: empty space, just reserves room for the pill.
+          When locked: the explainer text gets explicit top margin equal
+          to the pill's lower-half height so it sits cleanly BELOW the
+          pill rather than rendering behind it. */}
+      {ratingUnlocked ? (
+        <div aria-hidden className="h-7 sm:h-8" />
+      ) : (
+        <div className="flex flex-col items-center">
+          {/* Spacer = pill's lower-half height. Lives outside the text
+              so the text's own line-height isn't compressed. */}
+          <div aria-hidden className="h-7 sm:h-8" />
+          <p className="text-balance px-2 text-center text-[0.65rem] leading-snug text-text-subtle sm:text-xs">
+            Ratings unlock after {RATING_UNLOCK_MIN_MATCHES} matches and
+            reaching Level {RATING_UNLOCK_MIN_LEVEL}.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

@@ -170,6 +170,7 @@ function TopSection({ top }: { top: ReturnType<typeof projectSummaryTop> }) {
           nickname={top.nickname}
           profilePicUrl={top.profilePicUrl}
           overallRatingImageUrl={top.overallRatingImageUrl}
+          ratingUnlocked={top.ratingUnlocked}
         />
       </div>
       <div className="flex flex-col gap-4 sm:col-span-7 sm:gap-5">

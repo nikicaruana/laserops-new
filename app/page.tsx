@@ -1,14 +1,71 @@
 import { HomeHero } from "@/components/sections/HomeHero";
 import { WeaponsSection } from "@/components/sections/WeaponsSection";
 import { GallerySection } from "@/components/sections/GallerySection";
+import { SeasonLeadersSection } from "@/components/home/SeasonLeadersSection";
 import { Container } from "@/components/ui/Container";
+import { fetchInstagramPosts } from "@/lib/cms/instagram-posts";
+import { fetchGoogleReviews } from "@/lib/cms/google-reviews";
 
-export default function HomePage() {
+/**
+ * Homepage.
+ *
+ * Server-side fetches CMS data for the GallerySection, transforms it
+ * into the shapes that component expects, and passes it as props.
+ * GallerySection itself remains a client component because it needs
+ * useEffect for the mobile scroll-to-middle behaviour. The fetch
+ * happens here (server) so it doesn't run client-side on every render.
+ *
+ * If the CMS returns no data (empty tabs, fetch fails), GallerySection
+ * falls back to its baked-in sample data — homepage stays meaningful.
+ */
+export default async function HomePage() {
+  // Fetch CMS data in parallel. Both have built-in fallback to []
+  // on error so this never throws.
+  const [instagramPosts, googleReviews] = await Promise.all([
+    fetchInstagramPosts(),
+    fetchGoogleReviews(),
+  ]);
+
+  // Transform CMS shapes into the GallerySection's props shape.
+  // The CMS schema and the legacy hardcoded sample shape diverged a bit
+  // (CMS has Caption_Override + Image_Path + Post_URL; component wants
+  // imageSrc + caption + postUrl). The mapping is straightforward.
+  const instagramItems = instagramPosts.map((post, idx) => ({
+    id: `cms-ig-${idx}`,
+    imageSrc: post.imagePath,
+    caption: post.captionOverride,
+    postUrl: post.postUrl,
+  }));
+
+  // For reviews, the existing component shape includes a "relativeTime"
+  // string (e.g. "3 weeks ago"). The CMS stores an absolute date.
+  // We compute a coarse relative label here so editors can paste plain
+  // dates without thinking about display formatting.
+  const reviewItems = googleReviews.map((review, idx) => ({
+    id: `cms-gr-${idx}`,
+    rating: review.rating,
+    quote: review.reviewText,
+    reviewer: review.reviewerName,
+    relativeTime: formatRelativeTime(review.date),
+    // No per-review URL in the CMS (Google Reviews don't expose stable
+    // per-review URLs anyway). Link to the overall reviews page.
+    reviewsUrl: "https://maps.google.com/?cid=laserops",
+  }));
+
   return (
     <>
       <HomeHero />
       <WeaponsSection />
-      <GallerySection />
+      {/* SeasonLeadersSection is async — fetches CMS + leaderboard data
+          server-side. Auto-hides itself if no active season is configured
+          or if the homepage_show_season_leaders flag is off in
+          Site_Config. Sits between Weapons (marketing hooks) and Gallery
+          (social proof) — a "see the action in progress" beat. */}
+      <SeasonLeadersSection />
+      <GallerySection
+        instagramItems={instagramItems}
+        reviewItems={reviewItems}
+      />
 
       {/*
         Temporary placeholder for sections still to come:
@@ -27,4 +84,32 @@ export default function HomePage() {
       </section>
     </>
   );
+}
+
+/**
+ * Coarse "X ago" formatter. Takes a YYYY-MM-DD string and returns
+ * a casual relative time. Doesn't try to be precise — Google Reviews
+ * uses similar coarseness ("3 weeks ago", "1 month ago").
+ *
+ * Returns the raw string if it can't parse — defensive.
+ */
+function formatRelativeTime(yyyyMmDd: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(yyyyMmDd)) return yyyyMmDd;
+  const reviewDate = new Date(yyyyMmDd + "T00:00:00Z");
+  if (Number.isNaN(reviewDate.getTime())) return yyyyMmDd;
+
+  const now = new Date();
+  const diffMs = now.getTime() - reviewDate.getTime();
+  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (days < 0) return yyyyMmDd; // future date — leave raw
+  if (days === 0) return "today";
+  if (days === 1) return "1 day ago";
+  if (days < 7) return `${days} days ago`;
+  if (days < 14) return "1 week ago";
+  if (days < 30) return `${Math.floor(days / 7)} weeks ago`;
+  if (days < 60) return "1 month ago";
+  if (days < 365) return `${Math.floor(days / 30)} months ago`;
+  if (days < 730) return "1 year ago";
+  return `${Math.floor(days / 365)} years ago`;
 }

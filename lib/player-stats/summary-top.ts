@@ -27,8 +27,19 @@ export type SummaryTop = {
   rankBadgeUrl: string;
   /** Display string for level, e.g. "Level 8". */
   levelDisplay: string;
+  /** Numeric current level, used for unlock-gating logic. */
+  level: number;
   /** Total matches played. */
   matchesPlayed: number;
+  /**
+   * True when the player has met the rating unlock criteria
+   * (at least RATING_UNLOCK_MIN_MATCHES matches AND at least
+   * RATING_UNLOCK_MIN_LEVEL level). Below either threshold the rating
+   * isn't statistically meaningful yet — ProfileCard / StatCards can
+   * use this to suppress the rating image and show an explainer
+   * instead.
+   */
+  ratingUnlocked: boolean;
   /** Lifetime XP. */
   totalXp: number;
   /** Progress within the current level, as 0-100 percentage. Clamped. */
@@ -38,6 +49,15 @@ export type SummaryTop = {
   /** Image URL for the favourite gun. May be empty. */
   favouriteGunImageUrl: string;
 };
+
+/**
+ * Rating unlock thresholds.
+ * Exported so other components (StatCards, share images, etc.) can
+ * reference the same values without drift, and so the explainer text
+ * can be generated from the constants rather than hardcoded.
+ */
+export const RATING_UNLOCK_MIN_MATCHES = 2;
+export const RATING_UNLOCK_MIN_LEVEL = 4;
 
 /**
  * Project a raw row into the top-section shape. Defensive about missing or
@@ -53,13 +73,21 @@ export function projectSummaryTop(row: PlayerStatsRaw): SummaryTop {
   const rawFraction = parseNumericOr(row.XP_Level_Progress_Pct, 0);
   const levelProgressPct = Math.max(0, Math.min(100, rawFraction * 100));
 
+  const matchesPlayed = parseNumericOr(row.Matches_Played, 0);
+  const level = parseNumericOr(row.XP_Current_Level, 0);
+  const ratingUnlocked =
+    matchesPlayed >= RATING_UNLOCK_MIN_MATCHES &&
+    level >= RATING_UNLOCK_MIN_LEVEL;
+
   return {
     nickname: row.Player_Stats_Nickname.trim(),
     profilePicUrl: profileRaw !== "" ? profileRaw : FALLBACK_PROFILE_PIC,
     overallRatingImageUrl: row.Overall_Rating_Image?.trim() ?? "",
     rankBadgeUrl: row.XP_Current_Rank_Badge_URL?.trim() ?? "",
     levelDisplay: row.XP_Current_Level_Display?.trim() ?? "",
-    matchesPlayed: parseNumericOr(row.Matches_Played, 0),
+    level,
+    matchesPlayed,
+    ratingUnlocked,
     totalXp: parseNumericOr(row.XP_Total, 0),
     levelProgressPct,
     favouriteGun: row.Favourite_Gun?.trim() ?? "",
