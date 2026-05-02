@@ -6,7 +6,7 @@ import { fetchSeasonChallenges } from "@/lib/leaderboards/season-challenges";
 import { SeasonalChallengesView } from "@/components/portal/challenges/SeasonalChallengesView";
 
 export const metadata: Metadata = {
-  title: "Challenges",
+  title: "Seasonal Challenges",
 };
 
 /**
@@ -33,7 +33,7 @@ export default async function ChallengesLeaderboardPage() {
 
   return (
     <>
-      <DashboardPageHeader title="Challenges" hideAddToHome />
+      <DashboardPageHeader title="Seasonal Challenges" hideAddToHome />
       <SeasonalChallengesView season={activeSeason} challengeData={challengeData} />
     </>
   );

@@ -38,12 +38,11 @@ export function SeasonalChallengesView({ season, challengeData }: SeasonalChalle
 
   return (
     <div className="flex flex-col gap-6 sm:gap-8">
-      {/* Season header */}
+      {/* Season header — just the name + date range. The "Seasonal
+          Challenges" title comes from the page header (DashboardPageHeader)
+          to avoid duplication. */}
       <header className="text-center">
-        <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-accent">
-          Seasonal Challenges
-        </p>
-        <h2 className="mt-1 text-2xl font-extrabold uppercase tracking-tight text-text sm:text-3xl">
+        <h2 className="text-xl font-extrabold uppercase tracking-tight text-text sm:text-2xl">
           {season.name}
         </h2>
         <p className="mt-1 text-sm text-text-muted">{dateRange}</p>

@@ -400,9 +400,19 @@ function GoogleReviewCard({
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
-        "group relative flex aspect-square flex-col justify-between overflow-hidden border border-border bg-bg-elevated p-6 transition-colors duration-300 hover:border-border-strong sm:p-7",
-        // Mobile horizontal scroll: fixed-width card, snap-aligned
-        mobileScroll && "w-[75vw] max-w-[420px] shrink-0 snap-center snap-always",
+        // Base: column layout, padding, hover state. Notably NO aspect ratio
+        // here — review cards size to content by default.
+        "group relative flex flex-col justify-between overflow-hidden border border-border bg-bg-elevated p-6 transition-colors duration-300 hover:border-border-strong sm:p-7",
+        // Mobile horizontal scroll: fixed-width AND square so the card is
+        // a clean tile in the swipe row, matching the IG cards alongside.
+        // Square only applies in this mode — desktop cards grow to fit text.
+        mobileScroll && "aspect-square w-[75vw] max-w-[420px] shrink-0 snap-center snap-always",
+        // Desktop grid: minimum height matches the IG card's intrinsic
+        // size (1fr column-width, ~aspect-square on a 3-col grid). Cards
+        // grow taller for longer reviews; shorter reviews don't crater.
+        // min-h is approximate — exact alignment with IG cards is not the
+        // goal once we've decided to let reviews breathe.
+        !mobileScroll && "min-h-[22rem] xl:min-h-[26rem]",
       )}
     >
       <div className="flex items-center gap-1" aria-label={`${item.rating} out of 5 stars`}>
@@ -417,7 +427,17 @@ function GoogleReviewCard({
         ))}
       </div>
       <blockquote className="my-4 flex-1 overflow-hidden">
-        <p className="line-clamp-6 text-sm leading-relaxed text-text sm:text-base">
+        {/* Mobile (square card): clamp to 6 lines so text fits without
+            overflowing the square. Desktop: allow up to 14 lines —
+            most reviews are shorter than this so they show in full;
+            very long ones still get an ellipsis but with way more
+            visible content. */}
+        <p
+          className={cn(
+            "text-sm leading-relaxed text-text sm:text-base",
+            mobileScroll ? "line-clamp-6" : "line-clamp-[14]",
+          )}
+        >
           &ldquo;{item.quote}&rdquo;
         </p>
       </blockquote>
