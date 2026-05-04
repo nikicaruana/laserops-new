@@ -291,7 +291,7 @@ export function XpCard({ player, ranks }: Props) {
               <BadgeImage imageUrl={beforeBadgeUrl} altLevel={player.xpCurrentLevelBeforeMatch} />
               <span
                 aria-hidden
-                className="select-none text-2xl leading-none text-red-800 sm:text-3xl"
+                className="select-none text-lg leading-none text-red-800 sm:text-xl"
               >
                 ▶
               </span>
@@ -309,11 +309,15 @@ export function XpCard({ player, ranks }: Props) {
               // "Level 1 ▶ 2" — only the "▶ 2" portion in the muted red,
               // leading "Level 1" stays dark (matches the rest of the
               // card text). The 2nd "Level" word is dropped per spec —
-              // the arrow + new number alone reads cleanly.
+              // the arrow + new number alone reads cleanly. The ▶ glyph
+              // itself is rendered at half the surrounding font size so
+              // it's a subtle visual cue rather than a dominant element;
+              // align-middle keeps it baseline-aligned with the numbers.
               <span className="text-2xl font-extrabold sm:text-3xl">
                 Level {player.xpCurrentLevelBeforeMatch}{" "}
                 <span className="text-red-800">
-                  ▶ {player.xpCurrentLevelAfterMatch}
+                  <span className="align-middle text-base sm:text-lg">▶</span>{" "}
+                  {player.xpCurrentLevelAfterMatch}
                 </span>
               </span>
             ) : (
@@ -426,13 +430,13 @@ function BadgeBox({
   if (imageUrl === "") {
     return (
       <div
-        className="h-16 w-16 rounded-sm bg-bg sm:h-20 sm:w-20"
+        className="h-20 w-20 rounded-sm bg-bg sm:h-24 sm:w-24"
         aria-hidden
       />
     );
   }
   return (
-    <div className="flex h-16 w-16 items-center justify-center rounded-sm bg-bg p-2 sm:h-20 sm:w-20">
+    <div className="flex h-20 w-20 items-center justify-center rounded-sm bg-bg p-2 sm:h-24 sm:w-24">
       <img
         src={imageUrl}
         alt={`Level ${altLevel} badge`}
@@ -459,7 +463,7 @@ function BadgeImage({
   if (imageUrl === "") {
     return (
       <span
-        className="block h-12 w-12 sm:h-16 sm:w-16"
+        className="block h-16 w-16 sm:h-20 sm:w-20"
         aria-hidden
       />
     );
@@ -469,7 +473,7 @@ function BadgeImage({
       src={imageUrl}
       alt={`Level ${altLevel} badge`}
       loading="lazy"
-      className="block h-12 w-12 object-contain sm:h-16 sm:w-16"
+      className="block h-16 w-16 object-contain sm:h-20 sm:w-20"
     />
   );
 }

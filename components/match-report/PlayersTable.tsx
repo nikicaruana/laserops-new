@@ -117,9 +117,19 @@ export function PlayersTable({ players, matchId, selectedPlayer }: Props) {
               <Th align="center">Team</Th>
               <Th align="left">Gun</Th>
               <Th align="right">Score</Th>
-              <Th align="right">Kills</Th>
-              <Th align="right">Deaths</Th>
-              <Th align="right">KD</Th>
+              {/* Compact mobile labels — single letters maximise the
+                  number of stat columns visible without horizontal
+                  scroll on phones. Full words on desktop where width
+                  isn't precious. */}
+              <Th align="right">
+                <span className="sm:hidden">K</span>
+                <span className="hidden sm:inline">Kills</span>
+              </Th>
+              <Th align="right">
+                <span className="sm:hidden">D</span>
+                <span className="hidden sm:inline">Deaths</span>
+              </Th>
+              <Th align="right">K/D</Th>
               <Th align="right">Acc</Th>
               <Th align="right">Damage</Th>
               <Th align="right">Total XP</Th>
@@ -165,20 +175,20 @@ function Th({
       className={cn(
         // Base typography for column headers
         "py-2.5 text-[0.55rem] font-bold uppercase tracking-[0.12em] text-text-muted sm:text-[0.65rem] sm:tracking-[0.16em]",
-        "whitespace-nowrap",
         align === "left" && "text-left",
         align === "center" && "text-center",
         align === "right" && "text-right",
         // Default padding for non-sticky cells
         !sticky && "px-3",
-        // Sticky: explicit widths matching the left-offsets used below
-        // for the ops column. The rank column is w-9 (mobile) / w-12
-        // (desktop) — exactly equal to where the ops column starts —
-        // so they butt up against each other with no gap.
+        // Sticky: explicit widths matching the left-offsets used below.
+        // Rank column is narrower on mobile (28px) than desktop (48px) —
+        // pulls the Ops Tag column closer on small screens to fit more
+        // content in the visible viewport. The ops column's `left-7` and
+        // `left-12` MUST match the rank column's `w-7` and `w-12`.
         sticky === "rank" &&
-          "sticky left-0 z-10 w-9 min-w-9 bg-bg-overlay sm:w-12 sm:min-w-12",
+          "sticky left-0 z-10 w-7 min-w-7 bg-bg-overlay sm:w-12 sm:min-w-12",
         sticky === "ops" &&
-          "sticky left-9 z-10 bg-bg-overlay px-2 sm:left-12 sm:px-3",
+          "sticky left-7 z-10 bg-bg-overlay px-2 sm:left-12 sm:px-3",
       )}
     >
       {children}
@@ -221,7 +231,7 @@ function PlayerRow({
           column's left-offset so the two sit flush, no gap. */}
       <td
         className={cn(
-          "sticky left-0 z-[1] w-9 min-w-9 py-3 text-center sm:w-12 sm:min-w-12",
+          "sticky left-0 z-[1] w-7 min-w-7 py-3 text-center sm:w-12 sm:min-w-12",
           stickyBg,
         )}
       >
@@ -237,23 +247,21 @@ function PlayerRow({
         </RowLink>
       </td>
 
-      {/* Ops Tag — clickable, sticky, the "frozen" identity column.
-          Center-aligned per design feedback: the rank column is also
-          centered, so the two sticky columns read as a unified
-          identity block. */}
+      {/* Ops Tag — clickable, sticky. Allows text wrap on long names
+          (e.g. "Soguk Corbac") rather than truncating with ellipsis,
+          since truncation hides part of the player's identity. The
+          column has min/max widths so it doesn't grow unbounded but
+          long names get a 2nd line if needed. */}
       <td
         className={cn(
-          "sticky left-9 z-[1] py-3 px-2 text-center sm:left-12 sm:px-3",
+          "sticky left-7 z-[1] py-3 px-2 text-center sm:left-12 sm:px-3",
           stickyBg,
-          // Right-edge gradient hint that content scrolls under the
-          // sticky column.
-          "after:absolute after:right-0 after:top-0 after:h-full after:w-3 after:bg-gradient-to-r after:from-bg-elevated after:to-transparent after:pointer-events-none",
         )}
       >
         <RowLink href={href} ariaLabel={`View ${player.nickname}'s match stats`}>
           <span
             className={cn(
-              "mx-auto block max-w-[8rem] truncate text-xs font-semibold leading-tight [overflow-wrap:anywhere] sm:max-w-[10rem] sm:text-sm",
+              "mx-auto block min-w-[5.5rem] max-w-[8rem] break-words text-xs font-semibold leading-tight sm:min-w-[7rem] sm:max-w-[10rem] sm:text-sm",
               isSelected ? "text-accent" : "text-text",
             )}
           >
@@ -285,25 +293,25 @@ function PlayerRow({
 
       <Td align="left">
         <RowLink href={href}>
-          <span className="block max-w-[7rem] truncate text-[0.65rem] text-text-muted sm:max-w-[10rem] sm:text-xs">
+          {/* Highlight the gun name yellow when this player is the
+              top scorer with that specific gun. Reads as "specialist
+              with this weapon" — surfaces gun-class winners alongside
+              the overall stat winners in their own respective columns. */}
+          <span
+            className={cn(
+              "block max-w-[7rem] truncate text-[0.65rem] sm:max-w-[10rem] sm:text-xs",
+              player.gunUsed !== "" &&
+                best.scoreByGun.get(player.gunUsed) === player.score
+                ? "font-bold text-accent"
+                : "text-text-muted",
+            )}
+          >
             {player.gunUsed || "—"}
           </span>
         </RowLink>
       </Td>
 
-      <BestTd
-        value={player.score}
-        best={best.score}
-        format="number"
-        // Score column is special: ALSO highlight if this player is
-        // the top scorer with their specific gun. Each "gun specialist"
-        // (top scorer with a given weapon) gets their Score cell tinted
-        // yellow, on top of the absolute-best highlight.
-        extraHighlight={
-          player.gunUsed !== "" &&
-          best.scoreByGun.get(player.gunUsed) === player.score
-        }
-      >
+      <BestTd value={player.score} best={best.score} format="number">
         <RowLink href={href}>{player.score.toLocaleString("en-US")}</RowLink>
       </BestTd>
 

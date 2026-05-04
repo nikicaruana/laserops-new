@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Link from "next/link";
 import type { MatchPlayer } from "@/lib/match-report/engine";
 import type { RankLevel } from "@/lib/cms/ranking-system";
 import { XpCard } from "./XpCard";
@@ -82,18 +83,27 @@ export function PlayerStatsCard({ player, ranks }: Props) {
           <h2 className="text-2xl font-extrabold leading-tight text-text [overflow-wrap:anywhere] sm:text-3xl">
             {player.nickname}
           </h2>
-          <div className="mt-1 flex items-center gap-2 text-[0.65rem] font-semibold uppercase tracking-[0.14em]">
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-[0.65rem] font-semibold uppercase tracking-[0.14em]">
             <TeamPill team={player.teamColor} />
-            <span
+            {/* Go-to-profile CTA — links to the player's full lifetime
+                summary page. Replaces the previous Winner/Loser pill;
+                the Match Overview card already communicates the match
+                outcome via the winning team highlight, so the
+                redundant per-player Winner/Loser badge wasn't pulling
+                its weight. The CTA gives the user a clear next step
+                from the match-scoped view to the player-scoped view. */}
+            <Link
+              href={`/player-portal/player-stats/summary?ops=${encodeURIComponent(player.nickname)}`}
               className={cn(
-                "px-2 py-1 rounded-sm",
-                player.isWinner
-                  ? "bg-accent text-bg"
-                  : "border border-border-strong text-text-muted",
+                "inline-flex items-center gap-1 px-3 py-1 rounded-sm",
+                "bg-accent text-bg",
+                "transition-colors hover:bg-accent-soft",
+                "focus:outline-none focus-visible:ring-2 focus-visible:ring-accent",
               )}
             >
-              {player.isWinner ? "Winner" : "Loser"}
-            </span>
+              Go To Profile
+              <span aria-hidden className="text-xs">→</span>
+            </Link>
           </div>
         </div>
       </header>
