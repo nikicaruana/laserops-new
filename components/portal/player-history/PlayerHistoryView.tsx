@@ -12,14 +12,15 @@ import { HistoryProfileCard } from "./HistoryProfileCard";
  * --------------------------------------------------------------------
  * Top-level layout for the History page once a player is selected.
  * Composes:
- *   - Profile card (photo + nickname + current rank badge)
- *   - Personal Records (5-tile peak performance row)
+ *   - Profile card (photo + nickname + current rank badge + Level N)
+ *   - Personal Records (5-tile peak performance row, links to matches)
  *   - 4 charts (ELO progression, score vs avg, kills vs KD, shots vs acc)
- *   - Match Summaries table (sortable, all matches)
+ *   - Match Summaries table (sortable, all matches, rows link)
  *
  * Server component — children are individually marked client where
- * needed (charts use recharts which requires browser APIs). Data is
- * passed down as serialised props.
+ * needed (charts use recharts which requires browser APIs, the
+ * Personal Records card is now client because each tile links to
+ * the match report). Data is passed down as serialised props.
  */
 
 type Props = {
@@ -40,9 +41,10 @@ export function PlayerHistoryView({ history, ops }: Props) {
         profilePicUrl={history.profilePicUrl}
         rankBadgeUrl={history.currentRankBadgeUrl}
         rankName={history.currentRankName}
+        currentLevel={history.currentLevel}
       />
 
-      <PersonalRecordsCard records={history.records} />
+      <PersonalRecordsCard records={history.records} ops={ops} />
 
       {/* Charts. Each is a client component because recharts needs
           browser APIs (canvas, ResizeObserver). Match data is passed
@@ -52,7 +54,7 @@ export function PlayerHistoryView({ history, ops }: Props) {
       <KillsVsKdChart matches={history.matches} />
       <ShotsVsAccuracyChart matches={history.matches} />
 
-      <MatchSummariesTable matches={history.matches} />
+      <MatchSummariesTable matches={history.matches} ops={ops} />
     </div>
   );
 }

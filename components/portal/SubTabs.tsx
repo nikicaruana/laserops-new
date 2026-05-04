@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/cn";
 
 /**
@@ -12,17 +12,27 @@ import { cn } from "@/lib/cn";
  * This is deliberately distinct from PortalTabs (underline + text color)
  * so the two navigation levels don't read as the same control.
  *
- * Layout strategy: the inner flex row uses `w-max + mx-auto` so it sizes
- * itself to its content's natural width and centers within the container.
- * If the content fits, you get clean centering. If the content overflows,
- * `max-w-full` clamps the row to the container width and `overflow-x-auto`
- * enables horizontal scroll — with the leftmost item naturally anchored
- * to the container's left edge (because the row is now full-width).
+ * Layout: matches PortalTabs — left-aligned on mobile, centered at sm+.
+ * Mobile keeps overflow-x-auto as a safety net if labels ever grow.
  *
- * This sidesteps the well-known `justify-content: center + overflow-x:
- * auto` quirk where left-overflowing content becomes unreachable. The
- * `safe center` keyword fixes the same issue but has spottier browser
- * support; the w-max pattern works everywhere.
+ * --------------------------------------------------------------------
+ * forwardParams — carrying state across subtab navigation
+ *
+ * Some subtab groups want to keep a piece of URL state when the user
+ * jumps from one subtab to another. The Player Stats group is the
+ * primary example: ?ops=Glenn says "I'm looking at Glenn", and that
+ * should follow you when you bounce from Summary → History.
+ *
+ * Pass `forwardParams` with the query keys that should ride along
+ * (e.g. `["ops"]`). For each tab href that doesn't already specify
+ * those keys, we read them off the current URL and append them. Keys
+ * not present in the current URL are skipped — we don't invent
+ * empty values.
+ *
+ * The "doesn't already specify" check matters: a tab definition can
+ * still hard-code a destination param (e.g. `?ops=__SOME_DEFAULT__`)
+ * and the forward logic won't clobber it.
+ * --------------------------------------------------------------------
  */
 
 type SubTab = {
@@ -32,50 +42,99 @@ type SubTab = {
 
 type SubTabsProps = {
   tabs: SubTab[];
+  /**
+   * Names of query params on the current URL that should be appended
+   * to each tab's href when navigating. Use for state that's
+   * "about which entity I'm looking at" rather than "about how this
+   * page is configured" — the former should follow you across tabs;
+   * the latter shouldn't.
+   *
+   * Example: `forwardParams={["ops"]}` on the Player Stats subtabs
+   * carries the selected player from Summary to History to Armory.
+   */
+  forwardParams?: string[];
 };
 
-export function SubTabs({ tabs }: SubTabsProps) {
+export function SubTabs({ tabs, forwardParams }: SubTabsProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   return (
     <div className="border-b border-border bg-bg-elevated/40">
-      {/* Outer container: caps overall width on huge screens, provides
-          horizontal padding inset from the viewport edges. The padding
-          is deliberately tighter on mobile (px-3) than the rest of the
-          portal chrome (px-4) to give the pill row maximum room. */}
-      <div className="mx-auto w-full max-w-[90rem] px-3 sm:px-8 lg:px-12">
-        {/* Outer wrapper: enables horizontal scroll if content exceeds
-            container width. Hidden scrollbar for cleanliness. */}
-        <div className="overflow-x-auto py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {/* Inner row: w-max sizes to natural content width, mx-auto
-              centers within the scrollable area. When content > container,
-              max-w-full + the parent's overflow handle scrolling. */}
-          <div className="mx-auto flex w-max max-w-full items-center gap-1.5 sm:gap-3">
-            {tabs.map((tab) => {
-              const isActive = pathname === tab.href || pathname.startsWith(`${tab.href}/`);
-              return (
-                <Link
-                  key={tab.href}
-                  href={tab.href}
-                  aria-current={isActive ? "page" : undefined}
-                  className={cn(
-                    // Tighter padding/tracking on mobile so 3-tab rows
-                    // like "ALL TIME / CHALLENGES / HALL OF FAME" fit
-                    // narrow viewports comfortably. sm+ relaxes back.
-                    "shrink-0 whitespace-nowrap rounded-sm border px-2 py-1.5 transition-colors sm:px-3",
-                    "text-[0.65rem] font-semibold uppercase tracking-[0.1em] sm:text-xs sm:tracking-[0.14em]",
-                    isActive
-                      ? "border-accent bg-bg-overlay text-accent"
-                      : "border-transparent text-text-subtle hover:border-border-strong hover:text-text-muted",
-                  )}
-                >
-                  {tab.label}
-                </Link>
-              );
-            })}
-          </div>
+      <div className="mx-auto w-full max-w-[90rem] px-4 sm:px-8 lg:px-12">
+        {/* overflow-x-auto with hidden scrollbars for the mobile fallback
+            if labels grow. Whitespace-nowrap keeps each pill on one line.
+            sm:justify-center mirrors the PortalTabs centering. */}
+        <div className="flex items-center gap-2 overflow-x-auto py-3 sm:justify-center sm:gap-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {tabs.map((tab) => {
+            const isActive =
+              pathname === tab.href || pathname.startsWith(`${tab.href}/`);
+            // Compute the final href once per render. If no
+            // forwardParams or none are present, this returns the
+            // original href untouched.
+            const href = appendForwardedParams(
+              tab.href,
+              searchParams,
+              forwardParams,
+            );
+            return (
+              <Link
+                key={tab.href}
+                href={href}
+                aria-current={isActive ? "page" : undefined}
+                className={cn(
+                  "shrink-0 whitespace-nowrap rounded-sm border px-3 py-1.5 transition-colors",
+                  "text-[0.7rem] font-semibold uppercase tracking-[0.14em] sm:text-xs",
+                  isActive
+                    ? "border-accent bg-bg-overlay text-accent"
+                    : "border-transparent text-text-subtle hover:border-border-strong hover:text-text-muted",
+                )}
+              >
+                {tab.label}
+              </Link>
+            );
+          })}
         </div>
       </div>
     </div>
   );
+}
+
+/**
+ * Append a subset of the current URL's query params to a target href.
+ *
+ * Rules:
+ *   - If the tab's href already specifies a key, the existing value
+ *     wins (no clobber).
+ *   - If the current URL doesn't have a value for a key, we skip it
+ *     (no empty `?ops=` appended).
+ *   - Returns the original href unchanged when there's nothing to add.
+ *
+ * Implementation note: we don't use `new URL(...)` because it requires
+ * a base/origin and our hrefs are root-relative. Splitting on `?` gives
+ * us the path and query separately; URLSearchParams handles the rest.
+ */
+function appendForwardedParams(
+  href: string,
+  current: URLSearchParams,
+  keys: string[] | undefined,
+): string {
+  if (!keys || keys.length === 0) return href;
+
+  const [path, existingQuery = ""] = href.split("?");
+  const params = new URLSearchParams(existingQuery);
+
+  let added = false;
+  for (const key of keys) {
+    // Don't clobber a value the tab definition pinned itself.
+    if (params.has(key)) continue;
+    const value = current.get(key);
+    if (value === null || value === "") continue;
+    params.set(key, value);
+    added = true;
+  }
+
+  if (!added && existingQuery === "") return href;
+  const queryString = params.toString();
+  return queryString === "" ? path : `${path}?${queryString}`;
 }

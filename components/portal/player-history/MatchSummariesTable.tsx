@@ -20,13 +20,39 @@ import type { PlayerMatch } from "@/lib/player-history/engine";
  * Reuses LeaderboardTable for visual + behavioural consistency with
  * the rest of the player portal — same column-header sort UX, same
  * yellow accent strip on top, etc.
+ *
+ * --------------------------------------------------------------------
+ * BUG FIX in this pass:
+ *   The previous version omitted the required `width` and `widthSm`
+ *   props on each column. LeaderboardTable's grid layout uses these
+ *   to build its grid-template-columns CSS variables (--lb-grid /
+ *   --lb-grid-sm); without them every column resolved to nothing and
+ *   the table collapsed into a vertical stack of labels and values.
+ *
+ *   Widths chosen to fit 10 columns into ~600–800px without horizontal
+ *   scroll on desktop, and to wrap reasonably on mobile. Match ID +
+ *   Gun share the available flex space (they're the only string
+ *   columns); numeric columns get fixed pixel widths sized to their
+ *   typical content (e.g. "9,840" for damage, "1.55" for rating).
+ *
+ *   The container will scroll horizontally if total exceeds available
+ *   width — that's fine, it's data-dense and 10 columns is a lot.
+ * --------------------------------------------------------------------
+ *
+ * Niki feedback (pass 2): each row links to the match report, scoped
+ * to the current player. Reuses LeaderboardTable's existing rowHref
+ * prop (same mechanism the all-time leaderboards use to link into
+ * player summaries).
  */
 
 type Props = {
   matches: PlayerMatch[];
+  /** Player's Ops Tag — passed through to the match report URL so
+   *  the linked report opens with this player's stats expanded. */
+  ops: string;
 };
 
-export function MatchSummariesTable({ matches }: Props) {
+export function MatchSummariesTable({ matches, ops }: Props) {
   const columns = useMemo<LeaderboardColumn<PlayerMatch>[]>(
     () => [
       {
@@ -36,8 +62,10 @@ export function MatchSummariesTable({ matches }: Props) {
         sortable: true,
         sortType: "string",
         accessor: (row) => row.matchId,
-        width: "minmax(80px, 1fr)",
-        widthSm: "minmax(110px, 1fr)",
+        // Flex column — match IDs are ~12 chars ("LO-2026-10") and need
+        // to be readable. Generous min so they never truncate.
+        width: "minmax(95px, 1.2fr)",
+        widthSm: "minmax(110px, 1.2fr)",
         cell: (row) => (
           <span className="font-mono text-xs sm:text-sm">{row.matchId}</span>
         ),
@@ -49,8 +77,11 @@ export function MatchSummariesTable({ matches }: Props) {
         sortable: true,
         sortType: "string",
         accessor: (row) => row.gunUsed,
-        width: "minmax(70px, 1.4fr)",
-        widthSm: "minmax(110px, 1.4fr)",
+        // Flex column — gun names are the longest string in the table
+        // ("AK-25 Predator", "Heavy Mk-II"). Bigger flex than match ID
+        // so it gets the lion's share of slack space.
+        width: "minmax(90px, 1.6fr)",
+        widthSm: "minmax(120px, 1.6fr)",
         cell: (row) => (
           <span className="text-xs sm:text-sm">{row.gunUsed || "—"}</span>
         ),
@@ -62,8 +93,11 @@ export function MatchSummariesTable({ matches }: Props) {
         sortable: true,
         numeric: true,
         accessor: (row) => row.score,
+        // Score: 4–5 digit numbers with separators ("13,888"). Need
+        // ~64px on desktop for the full value + a bit of breathing
+        // room for the sort caret.
         width: "56px",
-        widthSm: "72px",
+        widthSm: "70px",
         cell: (row) => row.score.toLocaleString("en-US"),
       },
       {
@@ -73,8 +107,9 @@ export function MatchSummariesTable({ matches }: Props) {
         sortable: true,
         numeric: true,
         accessor: (row) => row.matchRating,
-        width: "52px",
-        widthSm: "62px",
+        // 4 chars max ("3.74") + sort caret.
+        width: "48px",
+        widthSm: "60px",
         cell: (row) => row.matchRating.toFixed(2),
       },
       {
@@ -84,9 +119,10 @@ export function MatchSummariesTable({ matches }: Props) {
         sortable: true,
         numeric: true,
         accessor: (row) => row.kills,
-        width: "44px",
-        widthSm: "56px",
-        cell: (row) => row.kills,
+        // 2-3 digit count.
+        width: "40px",
+        widthSm: "52px",
+        cell: (row) => row.kills.toLocaleString("en-US"),
       },
       {
         key: "kd",
@@ -95,19 +131,20 @@ export function MatchSummariesTable({ matches }: Props) {
         sortable: true,
         numeric: true,
         accessor: (row) => row.kd,
-        width: "44px",
-        widthSm: "52px",
+        width: "40px",
+        widthSm: "50px",
         cell: (row) => row.kd.toFixed(2),
       },
       {
-        key: "acc",
-        header: "Acc %",
+        key: "accuracy",
+        header: "Acc%",
         align: "right",
         sortable: true,
         numeric: true,
         accessor: (row) => row.accuracy,
-        width: "48px",
-        widthSm: "56px",
+        // 2-digit percent + % sign ("27%").
+        width: "44px",
+        widthSm: "54px",
         cell: (row) => `${Math.round(row.accuracy * 100)}%`,
       },
       {
@@ -117,20 +154,26 @@ export function MatchSummariesTable({ matches }: Props) {
         sortable: true,
         numeric: true,
         accessor: (row) => row.damage,
+        // 5-digit comma-separated numbers ("15,270") get a wider slot.
         width: "60px",
         widthSm: "76px",
         cell: (row) => row.damage.toLocaleString("en-US"),
       },
       {
-        key: "elo",
-        header: "ELO +/-",
+        key: "eloChange",
+        header: "ELO ±",
         align: "right",
         sortable: true,
         numeric: true,
         accessor: (row) => row.eloChange,
-        width: "52px",
-        widthSm: "64px",
-        cell: (row) => formatEloChange(row.eloChange),
+        // Most ELO deltas are 1-2 digits with sign; "—" placeholder
+        // for the latest match (no follow-up to compute against).
+        width: "44px",
+        widthSm: "58px",
+        cell: (row) =>
+          row.eloChange === 0
+            ? "—"
+            : (row.eloChange > 0 ? "+" : "") + row.eloChange.toFixed(0),
       },
       {
         key: "xp",
@@ -139,8 +182,9 @@ export function MatchSummariesTable({ matches }: Props) {
         sortable: true,
         numeric: true,
         accessor: (row) => row.xpEarned,
-        width: "60px",
-        widthSm: "76px",
+        // 4-5 digit XP values ("6,500").
+        width: "52px",
+        widthSm: "66px",
         cell: (row) => row.xpEarned.toLocaleString("en-US"),
       },
     ],
@@ -157,24 +201,22 @@ export function MatchSummariesTable({ matches }: Props) {
           Match Summaries
         </h2>
       </header>
-      <LeaderboardTable
-        ariaLabel="Match summaries for this player"
-        columns={columns}
-        rows={matches}
-        rowKey={(row) => row.matchId}
-      />
+      <div className="p-3 sm:p-4">
+        <LeaderboardTable
+          ariaLabel="Match summaries — every match this player has played"
+          columns={columns}
+          rows={matches}
+          rowKey={(row) => row.matchId}
+          rowHref={(row) =>
+            row.matchId
+              ? `/match-report?match=${encodeURIComponent(
+                  row.matchId,
+                )}&player=${encodeURIComponent(ops)}`
+              : null
+          }
+          rowLinkAriaLabel={(row) => `View match report for ${row.matchId}`}
+        />
+      </div>
     </section>
   );
-}
-
-/**
- * Format ELO delta with a leading sign and dash for zero. The most
- * recent match often has zero ELO change because there's no follow-up
- * match yet to compute the delta against — render as "—" so it's
- * visually distinct from a real "0 change" result.
- */
-function formatEloChange(value: number): string {
-  if (value === 0) return "—";
-  const prefix = value > 0 ? "+" : "";
-  return `${prefix}${Math.round(value)}`;
 }

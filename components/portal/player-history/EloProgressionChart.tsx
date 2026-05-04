@@ -16,35 +16,41 @@ import { ChartCard } from "./ChartCard";
 /**
  * EloProgressionChart
  * --------------------------------------------------------------------
- * Single-line chart showing the player's post-match ELO over time,
- * one point per match. Mirrors the Looker dashboard chart of the
- * same name.
+ * Single-line chart showing the player's ELO trajectory from the
+ * default starting rating of 1000 through every recorded match.
  *
- * Shows the player's competitive trajectory — climbing rating means
- * they're winning rounds against strong opposition, dipping rating
- * means losing to weaker teams (or losing to strong teams hurts less).
+ * Pre-pends a synthetic "Start" baseline at 1000 because the dataset
+ * records ELO AFTER each match. Without the baseline, the line
+ * appears to start above 1000 on a player's very first match — which
+ * isn't the truth. Every player begins at 1000 before any matches.
  *
- * Y axis auto-scales — recharts picks a sensible range based on the
- * data, with a small margin top/bottom.
+ * --------------------------------------------------------------------
+ * CHANGES in this pass:
  *
- * X axis ticks: match IDs. With many matches the labels can overlap
- * on narrow viewports; we set angle=-30 on small screens via
- * media-query trick (ugly but works).
+ *   1. Data labels above each point now render as integers. Previous
+ *      version used `v.toLocaleString("en-US")` which preserves
+ *      decimals (so a value of 1039.7 rendered as "1,039.7"). Wrapping
+ *      with `Math.round` first gives "1,040". ELO ratings are
+ *      conventionally whole numbers in display.
+ *
+ *   2. Reduced right-side margin so the rightmost data label has
+ *      room without forcing the chart to compress. The default 16px
+ *      right margin can clip the trailing label on narrow viewports.
+ * --------------------------------------------------------------------
  */
 
 type Props = {
   matches: PlayerMatch[];
 };
 
+const STARTING_ELO = 1000;
+
 export function EloProgressionChart({ matches }: Props) {
-  // Filter out matches with no ELO data (early matches before ELO
-  // tracking was added). The chart should only show the period for
-  // which ELO is available.
-  const data = matches
+  const realPoints = matches
     .filter((m) => m.eloAfter > 0)
     .map((m) => ({ matchId: m.matchId, elo: m.eloAfter }));
 
-  if (data.length === 0) {
+  if (realPoints.length === 0) {
     return (
       <ChartCard
         title="ELO Rating Progression"
@@ -55,14 +61,32 @@ export function EloProgressionChart({ matches }: Props) {
     );
   }
 
+  const data: { matchId: string; elo: number }[] = [
+    { matchId: "Start", elo: STARTING_ELO },
+    ...realPoints,
+  ];
+
+  const eloValues = data.map((d) => d.elo);
+  const minElo = Math.min(...eloValues);
+  const maxElo = Math.max(...eloValues);
+  const spread = Math.max(maxElo - minElo, 0);
+  const pad = Math.max(spread * 0.1, 10);
+  const yMin = Math.floor((minElo - pad) / 5) * 5;
+  const yMax = Math.ceil((maxElo + pad) / 5) * 5;
+
   return (
     <ChartCard
       title="ELO Rating Progression"
-      subtitle="ELO measures your competitive strength — win rounds against strong teams and perform well to climb."
+      subtitle="ELO measures your competitive strength — win rounds against strong teams and perform well to climb. Every player starts at 1000."
     >
       <div className="h-[280px] w-full sm:h-[340px]">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 28, right: 16, left: 0, bottom: 8 }}>
+          {/* Margins kept tight (left:0, right:8) so the chart fills
+              the card. left:0 lets the YAxis manage its own width
+              via the `width` prop below. right:8 leaves just enough
+              breathing room for the rightmost value label not to
+              clip against the card border. */}
+          <LineChart data={data} margin={{ top: 28, right: 8, left: 0, bottom: 8 }}>
             <CartesianGrid stroke="#262626" vertical={false} />
             <XAxis
               dataKey="matchId"
@@ -77,6 +101,8 @@ export function EloProgressionChart({ matches }: Props) {
               tickLine={false}
               axisLine={{ stroke: "#3a3a3a" }}
               width={48}
+              domain={[yMin, yMax]}
+              allowDecimals={false}
             />
             <Tooltip content={<DarkTooltip />} cursor={{ stroke: "#3a3a3a" }} />
             <Line
@@ -88,15 +114,16 @@ export function EloProgressionChart({ matches }: Props) {
               dot={{ fill: "#60a5fa", r: 4, strokeWidth: 0 }}
               activeDot={{ r: 6, fill: "#93c5fd" }}
             >
-              {/* Inline data labels above each point — matches the
-                  Looker chart's "1,025  1,053  1,057  1,084" style. */}
               <LabelList
                 dataKey="elo"
                 position="top"
                 fill="#93c5fd"
                 fontSize={11}
                 offset={10}
-                formatter={(v: number) => v.toLocaleString("en-US")}
+                // Round to whole-number ELO. Source data may carry
+                // decimals (e.g. 1039.7) but ELO is conventionally
+                // displayed as an integer.
+                formatter={(v: number) => Math.round(v).toLocaleString("en-US")}
               />
             </Line>
           </LineChart>
@@ -106,9 +133,7 @@ export function EloProgressionChart({ matches }: Props) {
   );
 }
 
-/* Shared subcomponents (also used by the other charts). The DarkTooltip
-   is exported here and re-imported elsewhere — keeps styling consistent
-   across all four charts on the page. */
+/* Shared subcomponents (also used by the other charts). */
 
 export function DarkTooltip({
   active,
@@ -135,9 +160,7 @@ export function DarkTooltip({
 }
 
 function formatValueForTooltip(value: number, dataKey: string): string {
-  // Per-key formatting: percentages, ratios, or comma'd ints depending
-  // on the metric. Falls back to a comma-formatted integer.
-  if (dataKey === "accuracy") return `${Math.round(value * 100)}%`;
+  if (dataKey === "accuracy") return `${Math.round(value)}%`;
   if (dataKey === "kd" || dataKey === "matchRating") return value.toFixed(2);
   return Math.round(value).toLocaleString("en-US");
 }

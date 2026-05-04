@@ -3,13 +3,18 @@ import { BracketFrame } from "@/components/portal/BracketFrame";
 /**
  * HistoryProfileCard
  * --------------------------------------------------------------------
- * Photo + nickname + current rank badge, wrapped in a yellow
- * corner-bracket frame. Mirrors the Looker dashboard's profile area:
- * photo on the left, rank badge on the right, nickname above.
+ * Photo + nickname + current rank badge + level label, wrapped in a
+ * yellow corner-bracket frame. Mirrors the Looker dashboard's profile
+ * area: photo on the left, rank badge on the right, nickname above.
  *
- * "Current" rank = the rank in the player's most recent match. As the
- * player levels up over time this badge updates to reflect their
- * latest level.
+ * "Current" rank/level = the rank/level in the player's most recent
+ * match. As the player levels up over time this badge and label
+ * update to reflect their latest level.
+ *
+ * Note: previously this card showed the rank NAME under the badge
+ * (e.g. "OPERATIVE"). Niki's feedback after pass 1: show the level
+ * NUMBER instead, since the rank icon already implies the rank name
+ * visually and the number is the more useful data point.
  */
 
 type Props = {
@@ -17,6 +22,8 @@ type Props = {
   profilePicUrl: string;
   rankBadgeUrl: string;
   rankName: string;
+  /** Most recent level — rendered as "Level N" under the badge. */
+  currentLevel: number;
 };
 
 export function HistoryProfileCard({
@@ -24,6 +31,7 @@ export function HistoryProfileCard({
   profilePicUrl,
   rankBadgeUrl,
   rankName,
+  currentLevel,
 }: Props) {
   return (
     <BracketFrame cornerSize="1.25rem" thickness="3px" inset="-0.5rem">
@@ -44,13 +52,16 @@ export function HistoryProfileCard({
             <div className="flex flex-col items-center gap-2">
               <img
                 src={rankBadgeUrl}
+                // alt still uses the rank name for screen readers — they
+                // get the semantic info even though sighted users see
+                // the level number below.
                 alt={rankName}
                 loading="lazy"
                 className="block h-32 w-auto sm:h-40"
               />
-              {rankName !== "" && (
+              {currentLevel > 0 && (
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-text-muted sm:text-sm">
-                  {rankName}
+                  Level {currentLevel}
                 </p>
               )}
             </div>

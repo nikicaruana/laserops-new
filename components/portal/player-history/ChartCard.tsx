@@ -11,10 +11,18 @@ import type { ReactNode } from "react";
  * pill at the top with the chart name in big black text, then the
  * chart sitting on dark below.
  *
- * Usage:
- *   <ChartCard title="ELO Rating Progression" subtitle="...">
- *     <MyChart />
- *   </ChartCard>
+ * --------------------------------------------------------------------
+ * CHANGE in this pass: dropped the inner body padding on mobile so
+ * the chart can use the full viewport width. Combined with the page-
+ * level container's existing horizontal padding, the chart was sitting
+ * inside ~28px of dead space on each side on phones — a meaningful
+ * chunk of a 380px viewport. On desktop the inner padding stays
+ * because the chart already has plenty of width and the inner gutter
+ * helps separate the chart from the card border visually.
+ *
+ * The subtitle and header keep their padding so the text doesn't
+ * touch the card edges. Only the chart body goes full-bleed on mobile.
+ * --------------------------------------------------------------------
  */
 
 type Props = {
@@ -36,7 +44,10 @@ export function ChartCard({ title, subtitle, children }: Props) {
           {subtitle}
         </p>
       )}
-      <div className="px-3 pb-3 pt-3 sm:px-5 sm:pb-5 sm:pt-4">{children}</div>
+      {/* Chart body. Mobile: edge-to-edge (px-0) so recharts gets the
+          full card width. Desktop: restore px-5 so the chart sits
+          inside a comfortable gutter. */}
+      <div className="px-0 pb-3 pt-3 sm:px-5 sm:pb-5 sm:pt-4">{children}</div>
     </section>
   );
 }

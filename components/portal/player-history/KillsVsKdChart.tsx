@@ -20,12 +20,11 @@ import { DarkTooltip, NoDataPanel } from "./EloProgressionChart";
  * KillsVsKdChart
  * --------------------------------------------------------------------
  * Yellow bars: kills per match. Red line on secondary axis: KD ratio.
- * Mirrors the Looker dashboard chart.
  *
- * The two metrics tell different stories — high kills with low KD
- * means lots of action but lots of deaths too. Low kills with high
- * KD means careful, lethal play. Both visible together on one chart
- * makes the trade-off legible.
+ * --------------------------------------------------------------------
+ * CHANGE in this pass: tighter right margin (4 vs 12) to reduce
+ * mobile dead space alongside the ChartCard padding fix.
+ * --------------------------------------------------------------------
  */
 
 type Props = {
@@ -41,20 +40,26 @@ export function KillsVsKdChart({ matches }: Props) {
 
   if (data.length === 0) {
     return (
-      <ChartCard title="Kills vs Kill/Death Ratio">
+      <ChartCard title="Kills vs KD Ratio">
         <NoDataPanel message="No match data available yet." />
       </ChartCard>
     );
   }
 
+  const killValues = data.map((d) => d.kills);
+  const leftMax = niceCeil(Math.max(...killValues) * 1.15);
+
+  const kdValues = data.map((d) => d.kd);
+  const [rMin, rMax] = fittedDomain(kdValues, { padFraction: 0.15, minPad: 0.2 });
+
   return (
     <ChartCard
-      title="Kills vs Kill/Death Ratio"
-      subtitle="The evolution of the number of kills you are getting game on game for the last 10 matches played, overlaid with your kill/death ratio."
+      title="Kills vs KD Ratio"
+      subtitle="Per-match kills (yellow) and your kill/death ratio (red). Two views of the same fight: how active you were and how lethal."
     >
       <div className="h-[300px] w-full sm:h-[360px]">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={data} margin={{ top: 28, right: 12, left: 0, bottom: 8 }}>
+          <ComposedChart data={data} margin={{ top: 28, right: 4, left: 0, bottom: 8 }}>
             <CartesianGrid stroke="#262626" vertical={false} />
             <XAxis
               dataKey="matchId"
@@ -70,12 +75,8 @@ export function KillsVsKdChart({ matches }: Props) {
               tickLine={false}
               axisLine={{ stroke: "#3a3a3a" }}
               width={36}
-              label={{
-                value: "Kills",
-                angle: -90,
-                position: "insideLeft",
-                style: { fontSize: 10, fill: "#737373" },
-              }}
+              domain={[0, leftMax]}
+              allowDecimals={false}
             />
             <YAxis
               yAxisId="right"
@@ -85,16 +86,20 @@ export function KillsVsKdChart({ matches }: Props) {
               tickLine={false}
               axisLine={{ stroke: "#3a3a3a" }}
               width={36}
-              label={{
-                value: "KD Ratio",
-                angle: 90,
-                position: "insideRight",
-                style: { fontSize: 10, fill: "#737373" },
-              }}
+              domain={[rMin, rMax]}
+              tickFormatter={(v: number) => v.toFixed(1)}
             />
             <Tooltip content={<DarkTooltip />} cursor={{ fill: "#26262640" }} />
             <Legend wrapperStyle={{ fontSize: 12, color: "#a3a3a3" }} iconType="rect" />
-            <Bar yAxisId="left" dataKey="kills" name="Kills" fill="#ffde00" radius={[2, 2, 0, 0]} />
+            <Bar yAxisId="left" dataKey="kills" name="Kills" fill="#ffde00" radius={[2, 2, 0, 0]}>
+              <LabelList
+                dataKey="kills"
+                position="top"
+                fill="#ffde00"
+                fontSize={11}
+                offset={6}
+              />
+            </Bar>
             <Line
               yAxisId="right"
               type="monotone"
@@ -104,19 +109,30 @@ export function KillsVsKdChart({ matches }: Props) {
               strokeWidth={2.5}
               dot={{ fill: "#ef4444", r: 3, strokeWidth: 0 }}
               activeDot={{ r: 5, fill: "#fca5a5" }}
-            >
-              <LabelList
-                dataKey="kd"
-                position="top"
-                fill="#fca5a5"
-                fontSize={11}
-                offset={8}
-                formatter={(v: number) => v.toFixed(2)}
-              />
-            </Line>
+            />
           </ComposedChart>
         </ResponsiveContainer>
       </div>
     </ChartCard>
   );
+}
+
+/* ---------- Local axis helpers ---------- */
+
+function fittedDomain(
+  values: number[],
+  opts: { padFraction: number; minPad: number },
+): [number, number] {
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const spread = Math.max(max - min, 0);
+  const pad = Math.max(spread * opts.padFraction, opts.minPad);
+  return [Math.max(min - pad, 0), max + pad];
+}
+
+function niceCeil(value: number): number {
+  if (value <= 0) return 0;
+  const magnitude = Math.pow(10, Math.floor(Math.log10(value)));
+  const step = magnitude / 2;
+  return Math.ceil(value / step) * step;
 }

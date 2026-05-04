@@ -1,71 +1,75 @@
-# LaserOps Malta
+# Pass 8 — proper drop-in replacements (no manual edits)
 
-Production website for LaserOps — outdoor tactical laser tag in Malta.
+Two files, both are drop-in replacements. Extract over your local
+project, restart `npm run dev`, you're done.
 
-**Stack:** Next.js 15 (App Router) · TypeScript · Tailwind CSS v4 · Vercel
-
----
-
-## Quickstart
-
-```bash
-# 1. Install dependencies
-npm install
-
-# 2. Copy the example env file and fill in any values
-cp .env.example .env.local
-
-# 3. Run the dev server
-npm run dev
-```
-
-The site will be live at [http://localhost:3000](http://localhost:3000).
-
-## Scripts
-
-| Command          | What it does                                              |
-| ---------------- | --------------------------------------------------------- |
-| `npm run dev`    | Local development server with hot reload                  |
-| `npm run build`  | Production build                                          |
-| `npm run start`  | Run the production build locally                          |
-| `npm run lint`   | ESLint check                                              |
-| `npm run format` | Format all files with Prettier (Tailwind classes sorted)  |
-
-## Project Structure
+## What's in the zip
 
 ```
-app/                  Next.js App Router routes + global styles
-components/
-  layout/             Header, Footer, MobileNav
-  ui/                 Reusable primitives (Button, Container, etc.)
-  tracking/           GTM / consent (placeholder for now)
-lib/                  Utilities, brand constants, nav config
-public/
-  brand/              Logo files
-  images/             Match photos (added in Phase 2)
+patch/
+├── README.md                                              ← this file
+├── app/
+│   └── player-portal/
+│       └── player-stats/
+│           └── layout.tsx                                 ← REPLACE
+└── lib/
+    └── player-stats/
+        └── shared.ts                                      ← REPLACE
 ```
 
-## Design System
+## What each file fixes
 
-Brand tokens are defined in `app/globals.css` under the `@theme` directive (Tailwind v4 native). Use semantic class names everywhere:
+### `app/player-portal/player-stats/layout.tsx`
+Adds `forwardParams={["ops"]}` to the `<SubTabs />` call. This is
+the prop the patched `SubTabs` component needs to know it should
+carry `?ops=` across subtab clicks.
 
-- `bg-bg` / `bg-bg-elevated` for surfaces
-- `text-text` / `text-text-muted` / `text-text-subtle` for type
-- `text-accent` / `bg-accent` for the brand yellow
-- `border-border` / `border-border-strong` for HUD lines
+Before: `<SubTabs tabs={playerStatsSubTabs} />`
+After:  `<SubTabs tabs={playerStatsSubTabs} forwardParams={["ops"]} />`
 
-## Tracking
+Once this is in, clicking Summary → History will preserve the
+selected player.
 
-The `<GTM />` component reads `NEXT_PUBLIC_GTM_ID` from env. If unset, no scripts load. Consent Mode v2 defaults are denied — to be wired up to a CMP in a later phase.
+### `lib/player-stats/shared.ts`
+Updates `listAllNicknames` to dedupe before returning. Two players
+in your data have "Nick" as their Ops Tag, which made the autocomplete
+`<datalist>` emit two `<option key="Nick">` and React threw a warning.
 
-## Deployment
+The dedupe is case-insensitive (so "Nick" and "nick" collapse to a
+single entry), with the first-seen casing winning. Order is still
+alphabetical, so visually the dropdown will look identical except
+duplicates are collapsed.
 
-Project is designed for Vercel. Connect the repo, set env vars in the Vercel dashboard, and deploy.
+The function signature is unchanged — every existing caller
+continues to work without modification.
 
-## Roadmap
+## Apply
 
-- **Phase 1 (current):** Foundation, layout, design system, holding-page hero
-- **Phase 2:** Brochure pages — Game Modes, Equipment, Locations, Events, About, Contact
-- **Phase 3:** Looker dashboard embeds
-- **Phase 4:** Polish, SEO audit, accessibility, deploy
-- **Phase 5+:** Google Sheets adapter, real booking system, player auth
+1. Extract this zip over your local project (same as you did before
+   — overwrites the existing `layout.tsx` and `shared.ts`).
+2. Stop the dev server (Ctrl+C in the terminal running it).
+3. Start it again: `npm run dev`.
+4. Refresh the browser.
+5. While you're at it, you can delete the two `.PATCH-NOTES.md` files
+   left over in your project from earlier passes:
+     - `app/player-portal/player-stats/layout.tsx.PATCH-NOTES.md`
+     - `lib/player-stats/shared.ts.PATCH-NOTES.md`
+   They're just leftover instruction files, not active code.
+
+## Test
+
+1. Go to `/player-portal/player-stats/summary?ops=KKKyle`. Click
+   "History" — URL should become
+   `/player-portal/player-stats/history?ops=KKKyle` and the page
+   should render KKKyle's history. Same when clicking back to Summary.
+2. Open the browser console — the "Encountered two children with the
+   same key, `Nick`" error should be gone.
+3. Type "Nic" in the search bar — autocomplete should show one
+   "Nick" entry, not two.
+
+## My apologies for the friction
+
+The `.PATCH-NOTES.md` approach was a bad call on my part. Going
+forward I'll always send full file replacements, never instructions
+that require manual editing. If a file is too uncertain (drift, etc.),
+I'll ask you to paste it first like you did this round.

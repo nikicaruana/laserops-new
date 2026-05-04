@@ -74,10 +74,27 @@ export function findPlayerByOpsTag(
 /**
  * Return all nicknames sorted alphabetically — used to populate the search
  * autocomplete datalist.
+ *
+ * Deduplicated: two players in the data can share the same Ops Tag (e.g.
+ * "Nick"), and the React <datalist> requires unique keys when iterating.
+ * We collapse duplicates here at the source so every consumer (Summary
+ * autocomplete, History autocomplete, future Armory) gets a clean list
+ * without having to dedupe individually. Case-insensitive comparison —
+ * "nick" and "Nick" collapse to a single entry, with the first
+ * occurrence's casing winning.
  */
 export function listAllNicknames(rows: PlayerStatsRaw[]): string[] {
-  return rows
-    .map((r) => r.Player_Stats_Nickname.trim())
-    .filter((n) => n !== "")
-    .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+  // Use a Map keyed by lowercased nickname so we can collapse
+  // case-variant duplicates while preserving the original casing of
+  // whichever appeared first in the source data.
+  const seen = new Map<string, string>();
+  for (const r of rows) {
+    const trimmed = r.Player_Stats_Nickname.trim();
+    if (trimmed === "") continue;
+    const key = trimmed.toLowerCase();
+    if (!seen.has(key)) seen.set(key, trimmed);
+  }
+  return Array.from(seen.values()).sort((a, b) =>
+    a.localeCompare(b, undefined, { sensitivity: "base" }),
+  );
 }
