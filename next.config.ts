@@ -2,6 +2,12 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // Recharts ships ESM-only modules that historically have had compat
+  // issues with Next.js's default bundling. Adding it to transpilePackages
+  // tells Next to bundle and transform recharts through SWC, sidestepping
+  // any "module not found" or "unexpected token" errors at runtime.
+  // Harmless if not strictly required.
+  transpilePackages: ["recharts"],
   images: {
     formats: ["image/avif", "image/webp"],
     // Allowlisted external image hosts. Required by Next.js <Image>
