@@ -68,3 +68,19 @@ export function configInt(
   const n = Number(raw);
   return Number.isFinite(n) ? Math.trunc(n) : defaultValue;
 }
+
+/**
+ * Convenience helper: read a config value as a string.
+ * Returns the default if the key is missing or the value is empty
+ * (whitespace-only counts as empty).
+ */
+export function configString(
+  config: Map<string, string>,
+  key: string,
+  defaultValue: string,
+): string {
+  const raw = config.get(key);
+  if (raw === undefined) return defaultValue;
+  const trimmed = raw.trim();
+  return trimmed === "" ? defaultValue : trimmed;
+}

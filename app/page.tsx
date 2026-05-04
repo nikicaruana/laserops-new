@@ -5,6 +5,7 @@ import { SeasonLeadersSection } from "@/components/home/SeasonLeadersSection";
 import { Container } from "@/components/ui/Container";
 import { fetchInstagramPosts } from "@/lib/cms/instagram-posts";
 import { fetchGoogleReviews } from "@/lib/cms/google-reviews";
+import { fetchSiteConfig, configString } from "@/lib/cms/site-config";
 
 /**
  * Homepage.
@@ -19,12 +20,25 @@ import { fetchGoogleReviews } from "@/lib/cms/google-reviews";
  * falls back to its baked-in sample data — homepage stays meaningful.
  */
 export default async function HomePage() {
-  // Fetch CMS data in parallel. Both have built-in fallback to []
-  // on error so this never throws.
-  const [instagramPosts, googleReviews] = await Promise.all([
+  // Fetch CMS data in parallel. Each has built-in fallback so this
+  // never throws.
+  const [instagramPosts, googleReviews, siteConfig] = await Promise.all([
     fetchInstagramPosts(),
     fetchGoogleReviews(),
+    fetchSiteConfig(),
   ]);
+
+  // Resolve the Google Reviews link from Site_Config. Editors set
+  // `google_reviews_url` in the Site_Config CMS sheet to whatever
+  // URL Google's "Write a review" / business profile page is at for
+  // LaserOps Malta. If it's not set, we fall back to a generic
+  // search URL — better than a broken cid=laserops link, but ideally
+  // the editor sets the real URL once and forgets it.
+  const googleReviewsUrl = configString(
+    siteConfig,
+    "google_reviews_url",
+    "https://www.google.com/search?q=laserops+malta+reviews",
+  );
 
   // Transform CMS shapes into the GallerySection's props shape.
   // The CMS schema and the legacy hardcoded sample shape diverged a bit
@@ -47,9 +61,11 @@ export default async function HomePage() {
     quote: review.reviewText,
     reviewer: review.reviewerName,
     relativeTime: formatRelativeTime(review.date),
-    // No per-review URL in the CMS (Google Reviews don't expose stable
-    // per-review URLs anyway). Link to the overall reviews page.
-    reviewsUrl: "https://maps.google.com/?cid=laserops",
+    // All review cards link to the same Google reviews destination —
+    // Google Reviews don't expose stable per-review URLs anyway. The
+    // URL is configured via Site_Config so it can be updated without
+    // a code change if Google's link format changes.
+    reviewsUrl: googleReviewsUrl,
   }));
 
   return (
