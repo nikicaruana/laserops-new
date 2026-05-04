@@ -81,38 +81,37 @@ export function AccoladeTile({ accolade }: { accolade: Accolade }) {
         type="button"
         onClick={handleOpen}
         aria-label={`${accolade.name} — tap for description`}
-        // Visual: bare button that mimics a list-item layout. Hover
-        // and active states give tactile feedback that it's tappable.
+        // Bare button (no visible chrome) — the badge image is the
+        // visual centerpiece. Active scale + ring on focus give
+        // tactile/keyboard feedback. Ring uses an accent tint since
+        // the surrounding container is dark.
         className={cn(
           "flex flex-col items-center gap-2 text-center",
           "transition-transform duration-150 active:scale-[0.97]",
-          "rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-bg/40",
+          "rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60",
         )}
       >
-        {/* Dark inset box for the badge — accolade icons are yellow-themed
-            and would disappear directly on the yellow accolades section
-            background. */}
-        <div className="flex h-16 w-16 items-center justify-center rounded-sm bg-bg p-2 sm:h-20 sm:w-20">
-          {accolade.badgeUrl !== "" ? (
-            <img
-              src={accolade.badgeUrl}
-              alt={accolade.name}
-              loading="lazy"
-              className="block h-full w-full object-contain"
-            />
-          ) : (
-            <span aria-hidden className="block h-full w-full" />
-          )}
-        </div>
-        {/* XP label only — the badge image already shows the accolade name
-            graphically, so showing it as text was redundant. */}
-        {accolade.xp > 0 ? (
-          <p className="text-[0.7rem] font-extrabold uppercase tracking-[0.14em] sm:text-xs">
-            +{accolade.xp} XP
-          </p>
+        {/* Badge artwork sits directly on the dark section background.
+            No wrapper box — the yellow-themed icon has natural
+            contrast on black, so the previous inset-box treatment
+            became redundant after we flipped the section to dark. */}
+        {accolade.badgeUrl !== "" ? (
+          <img
+            src={accolade.badgeUrl}
+            alt={accolade.name}
+            loading="lazy"
+            className="block h-32 w-32 object-contain sm:h-40 sm:w-40"
+          />
         ) : (
-          <p className="text-[0.65rem] font-bold uppercase tracking-[0.14em] text-bg/60">
-            Tap for info
+          <span
+            aria-hidden
+            className="block h-32 w-32 sm:h-40 sm:w-40"
+          />
+        )}
+        {/* XP label, in accent so it stays visible on dark. */}
+        {accolade.xp > 0 && (
+          <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-accent sm:text-sm">
+            +{accolade.xp} XP
           </p>
         )}
       </button>

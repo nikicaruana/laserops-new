@@ -304,7 +304,12 @@ export function XpCard({ player, ranks }: Props) {
 
         {/* Level + total + progress bar */}
         <div className="flex flex-1 flex-col gap-2 min-w-0">
-          <div className="flex flex-wrap items-baseline gap-x-3">
+          {/* Level + Total XP — stacked vertically on mobile so the
+              "Total XP" line doesn't jump up/down during the count-up
+              animation as its width grows from 1 → 1,000 → 10,000.
+              On desktop they sit inline (more horizontal room, no
+              wrapping issue). */}
+          <div className="flex flex-col gap-y-1 sm:flex-row sm:flex-wrap sm:items-baseline sm:gap-x-3 sm:gap-y-0">
             {leveledUp ? (
               // "Level 1 ▶ 2" — only the "▶ 2" portion in the muted red,
               // leading "Level 1" stays dark (matches the rest of the

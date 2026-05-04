@@ -26,26 +26,22 @@ export function MatchOverview({ game, matchDate }: Props) {
 
   return (
     <div className="rounded-sm border border-border bg-bg-elevated p-5 sm:p-7">
-      {/* Top meta row: match id + date + flags */}
+      {/* Top meta row: match id + date + flags. Match ID and date
+          stack vertically under a single MATCH label — the date is
+          obviously match-related so a separate "Date" label was
+          redundant. */}
       <div className="mb-5 flex flex-wrap items-baseline justify-between gap-3 border-b border-border pb-4 sm:mb-6 sm:pb-5">
-        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-          <div>
-            <p className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-text-subtle">
-              Match
-            </p>
-            <p className="font-mono text-lg font-bold tabular-nums text-text sm:text-xl">
-              {game.matchId}
-            </p>
-          </div>
+        <div>
+          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-text-subtle">
+            Match
+          </p>
+          <p className="font-mono text-lg font-bold tabular-nums text-text sm:text-xl">
+            {game.matchId}
+          </p>
           {matchDate !== "" && (
-            <div>
-              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-text-subtle">
-                Date
-              </p>
-              <p className="font-mono text-sm font-bold tabular-nums text-text-muted sm:text-base">
-                {matchDate}
-              </p>
-            </div>
+            <p className="font-mono text-xs font-semibold tabular-nums text-text-subtle sm:text-sm">
+              {matchDate}
+            </p>
           )}
         </div>
         <div className="flex flex-wrap gap-2">
@@ -139,13 +135,16 @@ function TeamColumn({
   return (
     <div className="flex flex-col items-center gap-2 sm:gap-3">
       {/* Badge — already includes the team color label graphically, so
-          we don't render a redundant text label below it. */}
+          we don't render a redundant text label below it.
+          Desktop badge size doubled per design feedback (h-20 → h-40)
+          for more visual presence in the match overview hero. Mobile
+          unchanged since the smaller hero card is space-constrained. */}
       {badgeUrl !== "" && (
         <img
           src={badgeUrl}
           alt={isWinner ? "Winning team badge" : "Losing team badge"}
           loading="lazy"
-          className="block h-16 w-auto sm:h-20"
+          className="block h-16 w-auto sm:h-40"
         />
       )}
       {/* Rounds number — yellow when this team is the winner. */}
@@ -157,9 +156,9 @@ function TeamColumn({
       >
         {rounds}
       </p>
-      {/* Rating — bumped up a step in size, also yellow on the winner. */}
+      {/* Score (the team's rating points) — yellow on the winner. */}
       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-subtle sm:text-sm">
-        Rating:{" "}
+        Score:{" "}
         <span
           className={cn(
             "font-mono text-sm sm:text-base",
@@ -198,7 +197,7 @@ function MultiTeamLayout({ game, teams }: { game: GameInfo; teams: ActiveTeam[] 
               {t.roundWins}
             </p>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-subtle sm:text-sm">
-              Rating:{" "}
+              Score:{" "}
               <span
                 className={cn(
                   "font-mono text-sm sm:text-base",
