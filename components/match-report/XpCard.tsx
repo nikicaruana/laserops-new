@@ -304,69 +304,42 @@ export function XpCard({ player, ranks }: Props) {
 
         {/* Level + total + progress bar */}
         <div className="flex flex-1 flex-col gap-2 min-w-0">
-          {/* Top row of the level area:
-              MOBILE: level/Total XP on the LEFT, breakdown lines on
-                      the RIGHT (right-aligned column). Saves a strip
-                      of vertical space below the bar that the
-                      breakdown previously occupied.
-              DESKTOP: only level/Total XP shown here; the breakdown
-                       lives in its own column to the right of this
-                       whole flex item (further down in the JSX). */}
-          <div className="flex items-start justify-between gap-3 sm:block">
-            {/* Level + Total XP */}
-            <div className="flex flex-col gap-y-1 sm:flex-row sm:flex-wrap sm:items-baseline sm:gap-x-3 sm:gap-y-0">
-              {leveledUp ? (
-                // "Level 1 ▶ 2" — only the "▶ 2" portion in the muted red,
-                // leading "Level 1" stays dark (matches the rest of the
-                // card text). The 2nd "Level" word is dropped per spec —
-                // the arrow + new number alone reads cleanly. The ▶ glyph
-                // itself is rendered at half the surrounding font size so
-                // it's a subtle visual cue rather than a dominant element;
-                // align-middle keeps it baseline-aligned with the numbers.
-                <span className="text-2xl font-extrabold sm:text-3xl">
-                  Level {player.xpCurrentLevelBeforeMatch}{" "}
-                  <span className="text-red-800">
-                    <span className="align-middle text-base sm:text-lg">▶</span>{" "}
-                    {player.xpCurrentLevelAfterMatch}
-                  </span>
+          {/* Level row.
+              MOBILE: smaller text (text-xl) so "Level 7 ▶ 9" fits
+                      cleanly on a 375px iPhone SE. The "+ N Total XP"
+                      sits on its own line below, also smaller, so the
+                      animated count-up doesn't trigger line-wrapping.
+              DESKTOP: bumps back up to text-3xl and lets level + Total
+                       XP sit inline. */}
+          <div className="flex flex-col gap-y-0.5 sm:flex-row sm:flex-wrap sm:items-baseline sm:gap-x-3 sm:gap-y-0">
+            {leveledUp ? (
+              // "Level 1 ▶ 2" — only the "▶ 2" portion in muted red.
+              // Smaller on mobile (text-xl) so it can't wrap onto two
+              // lines on narrow phones — the previous text-2xl
+              // version was wrapping the "▶ Y" portion below
+              // "Level X" on iPhone SE.
+              <span className="text-xl font-extrabold sm:text-3xl">
+                Level {player.xpCurrentLevelBeforeMatch}{" "}
+                <span className="text-red-800">
+                  <span className="align-middle text-sm sm:text-lg">▶</span>{" "}
+                  {player.xpCurrentLevelAfterMatch}
                 </span>
-              ) : (
-                <span className="text-2xl font-extrabold sm:text-3xl">
-                  Level {displayedLevel}
-                </span>
-              )}
-              <span className="text-sm font-bold sm:text-base">
-                +{" "}
-                <AnimatedNumber
-                  key={`${player.nickname}-earned-xp`}
-                  value={player.xpEarnedThisMatch}
-                  format="comma"
-                  duration={TOTAL_ANIMATION_DURATION_MS}
-                />{" "}
-                Total XP
               </span>
-            </div>
-
-            {/* Breakdown — mobile only, right-aligned. On desktop the
-                breakdown lives in a separate column below; this block
-                is hidden via sm:hidden. */}
-            <div className="flex shrink-0 flex-col items-end gap-0.5 sm:hidden">
-              <BreakdownLine
-                key={`${player.nickname}-points-m`}
-                label="from points"
-                value={player.xpFromPoints}
-              />
-              <BreakdownLine
-                key={`${player.nickname}-rounds-m`}
-                label="from rounds"
-                value={player.xpFromWins}
-              />
-              <BreakdownLine
-                key={`${player.nickname}-acco-m`}
-                label="from accolades"
-                value={player.xpFromAccolades}
-              />
-            </div>
+            ) : (
+              <span className="text-xl font-extrabold sm:text-3xl">
+                Level {displayedLevel}
+              </span>
+            )}
+            <span className="text-xs font-bold sm:text-base">
+              +{" "}
+              <AnimatedNumber
+                key={`${player.nickname}-earned-xp`}
+                value={player.xpEarnedThisMatch}
+                format="comma"
+                duration={TOTAL_ANIMATION_DURATION_MS}
+              />{" "}
+              Total XP
+            </span>
           </div>
 
           {/* Progress bar — two stacked colour layers, side by side:
@@ -401,10 +374,35 @@ export function XpCard({ player, ranks }: Props) {
               }}
             />
           </div>
+
+          {/* Mobile breakdown — runs horizontally below the progress
+              bar as a wrap-row of three short labels. Labels are
+              shortened ("from points" → "points") so all three fit
+              on one line on most phones; on the very narrowest viewports
+              (≤320px), they wrap to two lines without breaking layout.
+              Hidden on desktop where the breakdown has its own column
+              to the right of this whole flex item. */}
+          <div className="mt-1 flex flex-wrap justify-between gap-x-2 gap-y-0.5 sm:hidden">
+            <CompactBreakdown
+              key={`${player.nickname}-points-m`}
+              label="points"
+              value={player.xpFromPoints}
+            />
+            <CompactBreakdown
+              key={`${player.nickname}-rounds-m`}
+              label="rounds"
+              value={player.xpFromWins}
+            />
+            <CompactBreakdown
+              key={`${player.nickname}-acco-m`}
+              label="accolades"
+              value={player.xpFromAccolades}
+            />
+          </div>
         </div>
 
-        {/* Desktop breakdown — hidden on mobile (rendered alongside
-            the level info above instead). */}
+        {/* Desktop breakdown — hidden on mobile (the compact mobile
+            version sits below the bar instead). */}
         <div className="hidden flex-col items-end gap-0.5 sm:flex">
           <BreakdownLine
             key={`${player.nickname}-points`}
@@ -497,6 +495,24 @@ function BreakdownLine({ label, value }: { label: string; value: number }) {
     <p className="text-[0.7rem] font-semibold sm:text-xs">
       <span className="font-mono font-bold tabular-nums">
         +<AnimatedNumber value={value} format="comma" duration={TOTAL_ANIMATION_DURATION_MS} /> XP
+      </span>{" "}
+      <span className="font-normal">{label}</span>
+    </p>
+  );
+}
+
+/**
+ * CompactBreakdown — mobile-only horizontal variant of BreakdownLine.
+ * Used in the wrap-row below the progress bar where the three
+ * breakdown items run side-by-side instead of stacked. Shorter label
+ * (just "points" not "from points") + drops the trailing " XP" so
+ * each item is short enough to fit three across on iPhone SE.
+ */
+function CompactBreakdown({ label, value }: { label: string; value: number }) {
+  return (
+    <p className="whitespace-nowrap text-[0.65rem] font-semibold leading-tight">
+      <span className="font-mono font-bold tabular-nums">
+        +<AnimatedNumber value={value} format="comma" duration={TOTAL_ANIMATION_DURATION_MS} />
       </span>{" "}
       <span className="font-normal">{label}</span>
     </p>
