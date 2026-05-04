@@ -199,7 +199,7 @@ export function PlayerStatsCard({ player, ranks }: Props) {
           <h3 className="text-center text-base font-extrabold uppercase tracking-[0.16em] sm:text-lg">
             Accolades Earned
           </h3>
-          <div className="mt-5 grid grid-cols-3 gap-4 sm:grid-cols-4 sm:gap-5 lg:grid-cols-5">
+          <div className="mt-5 grid grid-cols-3 gap-x-4 gap-y-2 sm:grid-cols-4 sm:gap-5 lg:grid-cols-5">
             {player.earnedAccolades.map(({ accolade }) => (
               <AccoladeTile key={accolade.key} accolade={accolade} />
             ))}
@@ -216,19 +216,18 @@ export function PlayerStatsCard({ player, ranks }: Props) {
 /* ---------- Gun used card ---------- */
 
 /**
- * GunUsedCard — same visual idiom as FavouriteWeaponCard from the
- * player summary page (yellow tile housing the gun silhouette).
- *
- * Compact version for the side-by-side desktop layout: the weapon
- * name sits INSIDE the yellow tile (bottom-aligned) rather than as
- * a separate strip below. This keeps the card height closer to the
- * XP card's natural height — when they sat side-by-side previously,
- * the gun card's separate "label strip" pushed it taller and left
- * the XP card with awkward empty space below to match heights.
- *
- * Eyebrow ("GUN USED") still sits above the tile in the dark wrapper
- * for consistency with the player-summary card. Just the label below
- * has moved INTO the tile to save vertical space.
+ * GunUsedCard — at this point a single yellow tile holding the gun
+ * silhouette + weapon name. The dark "GUN USED" eyebrow + wrapper
+ * card was dropped after iterations because:
+ *   - At 280px column width sitting next to the XP card, the eyebrow
+ *     strip + wrapper padding pushed the card noticeably taller than
+ *     the XP card, leaving awkward empty space below the XP card.
+ *   - The card identity ("this is the gun used") is communicated by
+ *     the visual itself — a yellow tile with a gun image is
+ *     recognisable. The eyebrow text was redundant.
+ * If we ever need the eyebrow back (e.g. when this card is used in
+ * a different context with less surrounding context), wrap this in a
+ * card-style component again.
  */
 function GunUsedCard({
   weaponName,
@@ -240,32 +239,23 @@ function GunUsedCard({
   if (weaponName === "" && imageUrl === "") return null;
 
   return (
-    <div className="flex flex-col gap-2 border border-border bg-bg-elevated p-3 sm:p-4">
-      <div className="text-center text-[0.65rem] font-bold uppercase tracking-[0.14em] text-text-muted">
-        Gun Used
-      </div>
-
-      {/* Yellow tile holds gun image AND name, stacked. Removed the
-          aggressive min-h that previously locked in lots of empty
-          padding around the image — natural sizing now. */}
-      <div className="flex flex-col items-center justify-center gap-1 bg-accent px-3 py-3 sm:px-4 sm:py-4">
-        {imageUrl !== "" ? (
-          <img
-            src={imageUrl}
-            alt={weaponName}
-            loading="lazy"
-            decoding="async"
-            className="block h-auto max-h-[100px] w-full object-contain sm:max-h-[120px]"
-          />
-        ) : (
-          <span className="text-xs font-bold uppercase tracking-[0.14em] text-bg/70">
-            No image
-          </span>
-        )}
-        <p className="text-center text-sm font-extrabold tracking-tight text-bg sm:text-base">
-          {weaponName || "Unknown gun"}
-        </p>
-      </div>
+    <div className="flex flex-col items-center justify-center gap-1 rounded-sm bg-accent px-3 py-3 text-bg sm:px-4 sm:py-4">
+      {imageUrl !== "" ? (
+        <img
+          src={imageUrl}
+          alt={weaponName}
+          loading="lazy"
+          decoding="async"
+          className="block h-auto max-h-[80px] w-full object-contain sm:max-h-[100px]"
+        />
+      ) : (
+        <span className="text-xs font-bold uppercase tracking-[0.14em] text-bg/70">
+          No image
+        </span>
+      )}
+      <p className="text-center text-sm font-extrabold tracking-tight sm:text-base">
+        {weaponName || "Unknown gun"}
+      </p>
     </div>
   );
 }

@@ -304,42 +304,69 @@ export function XpCard({ player, ranks }: Props) {
 
         {/* Level + total + progress bar */}
         <div className="flex flex-1 flex-col gap-2 min-w-0">
-          {/* Level + Total XP — stacked vertically on mobile so the
-              "Total XP" line doesn't jump up/down during the count-up
-              animation as its width grows from 1 → 1,000 → 10,000.
-              On desktop they sit inline (more horizontal room, no
-              wrapping issue). */}
-          <div className="flex flex-col gap-y-1 sm:flex-row sm:flex-wrap sm:items-baseline sm:gap-x-3 sm:gap-y-0">
-            {leveledUp ? (
-              // "Level 1 ▶ 2" — only the "▶ 2" portion in the muted red,
-              // leading "Level 1" stays dark (matches the rest of the
-              // card text). The 2nd "Level" word is dropped per spec —
-              // the arrow + new number alone reads cleanly. The ▶ glyph
-              // itself is rendered at half the surrounding font size so
-              // it's a subtle visual cue rather than a dominant element;
-              // align-middle keeps it baseline-aligned with the numbers.
-              <span className="text-2xl font-extrabold sm:text-3xl">
-                Level {player.xpCurrentLevelBeforeMatch}{" "}
-                <span className="text-red-800">
-                  <span className="align-middle text-base sm:text-lg">▶</span>{" "}
-                  {player.xpCurrentLevelAfterMatch}
+          {/* Top row of the level area:
+              MOBILE: level/Total XP on the LEFT, breakdown lines on
+                      the RIGHT (right-aligned column). Saves a strip
+                      of vertical space below the bar that the
+                      breakdown previously occupied.
+              DESKTOP: only level/Total XP shown here; the breakdown
+                       lives in its own column to the right of this
+                       whole flex item (further down in the JSX). */}
+          <div className="flex items-start justify-between gap-3 sm:block">
+            {/* Level + Total XP */}
+            <div className="flex flex-col gap-y-1 sm:flex-row sm:flex-wrap sm:items-baseline sm:gap-x-3 sm:gap-y-0">
+              {leveledUp ? (
+                // "Level 1 ▶ 2" — only the "▶ 2" portion in the muted red,
+                // leading "Level 1" stays dark (matches the rest of the
+                // card text). The 2nd "Level" word is dropped per spec —
+                // the arrow + new number alone reads cleanly. The ▶ glyph
+                // itself is rendered at half the surrounding font size so
+                // it's a subtle visual cue rather than a dominant element;
+                // align-middle keeps it baseline-aligned with the numbers.
+                <span className="text-2xl font-extrabold sm:text-3xl">
+                  Level {player.xpCurrentLevelBeforeMatch}{" "}
+                  <span className="text-red-800">
+                    <span className="align-middle text-base sm:text-lg">▶</span>{" "}
+                    {player.xpCurrentLevelAfterMatch}
+                  </span>
                 </span>
+              ) : (
+                <span className="text-2xl font-extrabold sm:text-3xl">
+                  Level {displayedLevel}
+                </span>
+              )}
+              <span className="text-sm font-bold sm:text-base">
+                +{" "}
+                <AnimatedNumber
+                  key={`${player.nickname}-earned-xp`}
+                  value={player.xpEarnedThisMatch}
+                  format="comma"
+                  duration={TOTAL_ANIMATION_DURATION_MS}
+                />{" "}
+                Total XP
               </span>
-            ) : (
-              <span className="text-2xl font-extrabold sm:text-3xl">
-                Level {displayedLevel}
-              </span>
-            )}
-            <span className="text-sm font-bold sm:text-base">
-              +{" "}
-              <AnimatedNumber
-                key={`${player.nickname}-earned-xp`}
-                value={player.xpEarnedThisMatch}
-                format="comma"
-                duration={TOTAL_ANIMATION_DURATION_MS}
-              />{" "}
-              Total XP
-            </span>
+            </div>
+
+            {/* Breakdown — mobile only, right-aligned. On desktop the
+                breakdown lives in a separate column below; this block
+                is hidden via sm:hidden. */}
+            <div className="flex shrink-0 flex-col items-end gap-0.5 sm:hidden">
+              <BreakdownLine
+                key={`${player.nickname}-points-m`}
+                label="from points"
+                value={player.xpFromPoints}
+              />
+              <BreakdownLine
+                key={`${player.nickname}-rounds-m`}
+                label="from rounds"
+                value={player.xpFromWins}
+              />
+              <BreakdownLine
+                key={`${player.nickname}-acco-m`}
+                label="from accolades"
+                value={player.xpFromAccolades}
+              />
+            </div>
           </div>
 
           {/* Progress bar — two stacked colour layers, side by side:
@@ -376,7 +403,8 @@ export function XpCard({ player, ranks }: Props) {
           </div>
         </div>
 
-        {/* Desktop breakdown */}
+        {/* Desktop breakdown — hidden on mobile (rendered alongside
+            the level info above instead). */}
         <div className="hidden flex-col items-end gap-0.5 sm:flex">
           <BreakdownLine
             key={`${player.nickname}-points`}
@@ -394,25 +422,6 @@ export function XpCard({ player, ranks }: Props) {
             value={player.xpFromAccolades}
           />
         </div>
-      </div>
-
-      {/* Mobile breakdown */}
-      <div className="mt-3 flex flex-col gap-0.5 sm:hidden">
-        <BreakdownLine
-          key={`${player.nickname}-points-m`}
-          label="from points"
-          value={player.xpFromPoints}
-        />
-        <BreakdownLine
-          key={`${player.nickname}-rounds-m`}
-          label="from rounds"
-          value={player.xpFromWins}
-        />
-        <BreakdownLine
-          key={`${player.nickname}-acco-m`}
-          label="from accolades"
-          value={player.xpFromAccolades}
-        />
       </div>
     </div>
   );

@@ -84,9 +84,13 @@ export function AccoladeTile({ accolade }: { accolade: Accolade }) {
         // Bare button (no visible chrome) — the badge image is the
         // visual centerpiece. Active scale + ring on focus give
         // tactile/keyboard feedback. Ring uses an accent tint since
-        // the surrounding container is dark.
+        // the surrounding container is dark. Mobile uses gap-0 (the
+        // badge images themselves include some transparent padding,
+        // so any extra gap creates an awkwardly large floating space
+        // before the XP label); desktop has more room so a small gap
+        // reads better.
         className={cn(
-          "flex flex-col items-center gap-2 text-center",
+          "flex flex-col items-center gap-0 text-center sm:gap-2",
           "transition-transform duration-150 active:scale-[0.97]",
           "rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60",
         )}
