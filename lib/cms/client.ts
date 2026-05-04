@@ -34,4 +34,20 @@ export const CMS_URLS = {
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vQPMYVbKQkhZ9zvHdLAL4aryEV-7OggiuDpHh1-kzuVIlbn5tD7d260U3LNee9M86gYFXEkuLCPCwd0/pub?gid=2135585899&single=true&output=csv",
   excludedPlayers:
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vQPMYVbKQkhZ9zvHdLAL4aryEV-7OggiuDpHh1-kzuVIlbn5tD7d260U3LNee9M86gYFXEkuLCPCwd0/pub?gid=580212816&single=true&output=csv",
+  // Accolades CMS — authoritative metadata for each accolade. Maps an
+  // accolade name (matching the suffix of Accolade_<Name> columns in
+  // Game_Data_Lookup) to its display name, description, badge image,
+  // and XP awarded for earning it.
+  accolades:
+    "https://docs.google.com/spreadsheets/d/e/2PACX-1vQPMYVbKQkhZ9zvHdLAL4aryEV-7OggiuDpHh1-kzuVIlbn5tD7d260U3LNee9M86gYFXEkuLCPCwd0/pub?gid=1530769203&single=true&output=csv",
+  // Ranking system — level → score threshold + rank name + badge image.
+  // Used for the XP card's level transition animation (we need badge
+  // images for any intermediate levels a player passes through during
+  // a single match's XP gain).
+  rankingSystem:
+    "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTLlM4fIfh52DiovbJT2b9A6UyqoiQtoG0c2HoVRCG_OCtLPZvz-uBSC6y1voM8d4jBVCNcpCGctco/pub?gid=1047880912&single=true&output=csv",
+  // Game ID map — match-level metadata: round wins per team, team
+  // ratings, winning/losing team designations, badge images.
+  gameIdMap:
+    "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTLlM4fIfh52DiovbJT2b9A6UyqoiQtoG0c2HoVRCG_OCtLPZvz-uBSC6y1voM8d4jBVCNcpCGctco/pub?gid=489613415&single=true&output=csv",
 } as const;

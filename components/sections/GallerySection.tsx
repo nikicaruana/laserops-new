@@ -158,20 +158,33 @@ export function GallerySection({
   return (
     <section
       aria-labelledby="gallery-heading"
-      className="relative bg-bg"
+      // Yellow band — the "social proof" section is the only yellow-bg
+      // beat on the homepage, anchoring it as a deliberate visual break
+      // from the rest of the dark site. The cards inside (Instagram +
+      // reviews) stay dark so they read as discrete content tiles
+      // popping against the yellow surface.
+      // No border-t here: the dark→yellow transition IS the visual
+      // separator. An explicit border would just compete with the
+      // color shift.
+      className="relative bg-accent text-bg"
     >
-      <Container size="wide" className="pt-20 sm:pt-28 lg:pt-32">
+      <Container size="wide" className="pt-14 sm:pt-20 lg:pt-24">
         {/* Header */}
         <div className="mb-10 max-w-2xl sm:mb-14">
           <div className="flex items-center gap-3">
-            <span aria-hidden className="block h-px w-12 bg-accent" />
-            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
+            {/* Accent line + eyebrow flip from yellow→dark since the bg
+                is now yellow. The dark line on yellow reads as the
+                same "decorative tick + label" treatment, just inverted. */}
+            <span aria-hidden className="block h-px w-12 bg-bg" />
+            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-bg">
               From the Community
             </span>
           </div>
           <h2
             id="gallery-heading"
-            className="mt-4 text-balance text-4xl font-extrabold leading-[1.05] sm:text-5xl lg:text-6xl"
+            // Headline becomes near-black on yellow for maximum contrast.
+            // Stays bold/extrabold so it punches as the section's anchor.
+            className="mt-4 text-balance text-4xl font-extrabold leading-[1.05] text-bg sm:text-5xl lg:text-6xl"
           >
             Real games. Real reviews.
           </h2>
@@ -218,22 +231,32 @@ export function GallerySection({
       {/* Footer CTAs */}
       <Container size="wide" className="pb-20 pt-12 sm:pb-28 sm:pt-16 lg:pb-32">
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+          {/* On a yellow section, the primary button needs to be dark
+              (yellow-on-yellow would be invisible). We override the
+              variant's bg/text via className. The yellow border accent
+              under the button on hover still works since text becomes
+              accent on hover. */}
           <Button
             href="https://instagram.com/laseropsmalta"
             target="_blank"
             rel="noopener noreferrer"
             variant="primary"
             size="md"
+            className="!bg-bg !text-text !shadow-none hover:!bg-bg-elevated hover:!text-accent"
           >
             <InstagramIcon className="h-4 w-4" />
             Follow on Instagram
           </Button>
+          {/* Secondary stays outlined but with dark border + dark text
+              so it has contrast on the yellow background. Hover
+              transitions to a filled dark style for tactile feedback. */}
           <Button
             href="https://maps.google.com/?cid=laserops"
             target="_blank"
             rel="noopener noreferrer"
             variant="secondary"
             size="md"
+            className="!border-bg !text-bg hover:!border-bg hover:!bg-bg hover:!text-accent"
           >
             <GoogleIcon className="h-4 w-4" />
             All reviews on Google
@@ -303,11 +326,14 @@ function ScrollRow<T extends { id: string }>({
 
   return (
     <div>
-      {/* Row header */}
+      {/* Row header.
+          Colors are dark — this component is currently used only inside
+          the yellow Gallery section, so dark text reads against the
+          yellow background. If reused elsewhere, parameterize the tone. */}
       <Container size="wide" className="mb-4 flex items-baseline justify-between gap-4 sm:mb-5">
         <div className="flex items-center gap-3">
-          <span aria-hidden className="block h-px w-8 bg-text-subtle" />
-          <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-text-muted">
+          <span aria-hidden className="block h-px w-8 bg-bg/60" />
+          <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-bg/80">
             {eyebrow}
           </span>
         </div>
@@ -316,7 +342,7 @@ function ScrollRow<T extends { id: string }>({
             href={viewAllHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[11px] font-semibold uppercase tracking-[0.14em] text-text-muted transition-colors hover:text-accent"
+            className="text-[11px] font-semibold uppercase tracking-[0.14em] text-bg/80 transition-colors hover:text-bg"
           >
             {viewAllLabel}
             <span aria-hidden className="ml-1">&rarr;</span>
@@ -400,19 +426,20 @@ function GoogleReviewCard({
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
-        // Base: column layout, padding, hover state. Notably NO aspect ratio
-        // here — review cards size to content by default.
+        // Base: column layout, padding, hover state.
         "group relative flex flex-col justify-between overflow-hidden border border-border bg-bg-elevated p-6 transition-colors duration-300 hover:border-border-strong sm:p-7",
         // Mobile horizontal scroll: fixed-width AND square so the card is
         // a clean tile in the swipe row, matching the IG cards alongside.
-        // Square only applies in this mode — desktop cards grow to fit text.
         mobileScroll && "aspect-square w-[75vw] max-w-[420px] shrink-0 snap-center snap-always",
-        // Desktop grid: minimum height matches the IG card's intrinsic
-        // size (1fr column-width, ~aspect-square on a 3-col grid). Cards
-        // grow taller for longer reviews; shorter reviews don't crater.
-        // min-h is approximate — exact alignment with IG cards is not the
-        // goal once we've decided to let reviews breathe.
-        !mobileScroll && "min-h-[22rem] xl:min-h-[26rem]",
+        // Desktop grid: aspect-square again so review cards match the IG
+        // cards' shape and the row stays visually balanced. The square
+        // shape at desktop column width (~410px on a 3-col grid in a
+        // wide container) gives roughly 410×410px, with ~290px of
+        // text-area room — comfortably fitting line-clamp-12 below.
+        // Earlier iterations let cards grow vertically based on content,
+        // which broke the row alignment when one review was much longer
+        // than another. Bound shape > unbounded text.
+        !mobileScroll && "aspect-square",
       )}
     >
       <div className="flex items-center gap-1" aria-label={`${item.rating} out of 5 stars`}>
@@ -427,15 +454,15 @@ function GoogleReviewCard({
         ))}
       </div>
       <blockquote className="my-4 flex-1 overflow-hidden">
-        {/* Mobile (square card): clamp to 6 lines so text fits without
-            overflowing the square. Desktop: allow up to 14 lines —
-            most reviews are shorter than this so they show in full;
-            very long ones still get an ellipsis but with way more
-            visible content. */}
+        {/* Mobile: 6 lines (square card at 75vw). Desktop: 12 lines
+            (square card at ~410px is bigger so more lines fit naturally).
+            Both bounded — long reviews truncate with an ellipsis. The
+            full review opens via the card's link to the Google reviews
+            page where the user can read it in its entirety. */}
         <p
           className={cn(
             "text-sm leading-relaxed text-text sm:text-base",
-            mobileScroll ? "line-clamp-6" : "line-clamp-[14]",
+            mobileScroll ? "line-clamp-6" : "line-clamp-[12]",
           )}
         >
           &ldquo;{item.quote}&rdquo;

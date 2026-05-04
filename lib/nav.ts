@@ -18,6 +18,7 @@ export const primaryNav: NavLink[] = [
   { label: "Locations", href: "/locations" },
   { label: "Events", href: "/events" },
   { label: "Player Portal", href: "/player-portal", highlight: true },
+  { label: "Match Report", href: "/match-report" },
   { label: "About", href: "/about" },
 ];
 

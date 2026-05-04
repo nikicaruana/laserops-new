@@ -97,3 +97,13 @@ export function filterByMonths(rows: GameDataRow[], months: string[]): GameDataR
 export function readNumeric(row: GameDataRow, columnName: string, defaultValue = 0): number {
   return parseNumericOr(row.raw[columnName], defaultValue);
 }
+
+/**
+ * Filter rows to a single match. Case-insensitive match-id comparison
+ * so user input variations resolve.
+ */
+export function findMatchRows(rows: GameDataRow[], matchId: string): GameDataRow[] {
+  const needle = matchId.trim().toLowerCase();
+  if (needle === "") return [];
+  return rows.filter((r) => r.matchId.toLowerCase() === needle);
+}

@@ -10,33 +10,29 @@ import { cn } from "@/lib/cn";
  * SeasonLeadersSection
  * --------------------------------------------------------------------
  * Homepage section showcasing the top players of the current season.
- * Driven by the CMS:
- *   - Active season comes from the Seasons tab
- *   - Number of players to feature comes from Site_Config
- *     (homepage_season_leaders_count, default 2)
- *   - The challenge to rank by is the highest-priority challenge in the
- *     active season — typically the XP challenge for Season 1.
+ * Driven by the CMS (Seasons + Challenges + Site_Config).
  *
- * Layout philosophy:
- *   The section is content-driven on desktop, not container-driven.
- *   That is, the cards are sized to the content density they need
- *   rather than each card stretching to fill 1/2 or 2/3 of the row.
- *   Otherwise short content (player name + 3 stat rows) ends up rattling
- *   around inside vast empty cards, with everything hugging edges.
+ * Layout strategy: separate mobile and desktop layouts because the two
+ * viewports have fundamentally different design priorities:
  *
- *   - Outer wrapper: capped at max-w-5xl on desktop so the whole leaders
- *     block reads as a focused section, not a full-bleed banner.
- *   - Leader card: capped at a reasonable content width, content sits
- *     naturally with sensible gaps. NOT flex-1 of the parent row.
- *   - Supporting cards: stack BELOW the leader on desktop (full width
- *     of the wrapper) so their internal layout doesn't have to compete
- *     with a sibling card's width. Two side-by-side small cards beneath
- *     the leader works for desktop. On mobile everything stacks
- *     vertically as before.
+ *   - Mobile: cards stack vertically, each card uses a horizontal
+ *     INNER layout (photo on left, stats on right). Works because
+ *     narrow viewports naturally constrain horizontal space — no voids.
+ *
+ *   - Desktop (lg+): cards sit SIDE-BY-SIDE in a single row, leader
+ *     wider than supporting (~60/40 split). Each card uses a vertical
+ *     INNER layout (photo on top, stats below). This sidesteps the
+ *     "wide card with sparse horizontal content" problem — content
+ *     stacks naturally without trying to fill arbitrary horizontal
+ *     space.
+ *
+ * Implementation: each card component renders its mobile layout by
+ * default and switches to a vertical layout at lg+. Tailwind's
+ * responsive utilities handle the swap without duplicating components.
  */
 
 export async function SeasonLeadersSection() {
-  // Site config gates the section entirely. Quick exits if disabled.
+  // Site config gates the section entirely.
   const config = await fetchSiteConfig();
   if (!configBool(config, "homepage_show_season_leaders", true)) {
     return null;
@@ -50,10 +46,6 @@ export async function SeasonLeadersSection() {
   const challenges = await fetchChallenges(activeSeason.number);
   if (challenges.length === 0) return null;
 
-  // Highest-priority challenge (challenges are already sorted by priority
-  // ascending in fetchChallenges). For homepage we feature exactly one
-  // challenge — the season's headline. Players who care about other
-  // challenges can dig into /player-portal/leaderboards/challenges.
   const featuredChallenge = challenges[0];
 
   const challengeData = await fetchSeasonChallenges(activeSeason, [featuredChallenge]);
@@ -65,14 +57,12 @@ export async function SeasonLeadersSection() {
 
   return (
     <section className="border-t border-border bg-bg">
-      <Container className="py-16 sm:py-24">
-        {/* Section header.
-            Note: we deliberately don't render the challenge's CMS
-            `description` here. That field describes the prize-winning
-            criteria ("by the end of the season...") which is the right
-            framing for the Challenges page. The homepage is a "current
-            standings" snapshot, so the copy is forward-looking instead
-            — describing the ranking the user is looking at right now. */}
+      {/* Asymmetric padding: more space at top (separates from Weapons
+          section above), less at bottom (Gallery is conceptually a
+          continuation, so keep the gap to the next section tight). */}
+      <Container className="pb-10 pt-16 sm:pb-14 sm:pt-24">
+        {/* Section header. CMS description is intentionally NOT used —
+            see homepageSubtitleFor() for the rationale. */}
         <div className="text-center">
           <p className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-accent">
             {activeSeason.name} · Leaders
@@ -85,28 +75,31 @@ export async function SeasonLeadersSection() {
           </p>
         </div>
 
-        {/* Cards layout.
-            Outer wrapper: max-w-3xl centers the whole card stack on
-            wide screens — without this, cards stretch to the full
-            Container width and content rattles inside vast empty space.
-            mx-auto centers within the parent. */}
-        <div className="mx-auto mt-10 flex max-w-3xl flex-col gap-3 sm:gap-4">
-          {/* Leader card — full width of the constrained wrapper. */}
+        {/* Cards row.
+            Mobile (default): single column, leader stacked above supporting cards.
+            Desktop (lg+): grid with leader getting more space than supporting.
+            With 2 entries: 60/40 split (3fr 2fr).
+            With 3+ entries: leader takes left half, supporting cards stack
+            in a right column at smaller scale. */}
+        <div
+          className={cn(
+            "mx-auto mt-10 grid gap-4 lg:gap-5",
+            // Mobile: always single column
+            "max-w-md sm:max-w-2xl lg:max-w-5xl",
+            // Desktop: leader on left, supporting on right
+            supporting.length === 0
+              ? "lg:grid-cols-1"
+              : "lg:grid-cols-[3fr_2fr]",
+          )}
+        >
           <LeaderCard entry={leader} metricLabel={metricLabel} />
 
-          {/* Supporting cards.
-              On mobile: stack vertically (one per row).
-              Desktop: 2-column grid so two #2 cards (or #2 and #3) sit
-              side-by-side beneath the leader. If only one supporting
-              card, it takes the left column and a faint placeholder
-              wouldn't help — single card just spans the row width. */}
           {supporting.length > 0 && (
-            <div
-              className={cn(
-                "grid gap-3 sm:gap-4",
-                supporting.length === 1 ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2",
-              )}
-            >
+            // Supporting cards container — single column on mobile (already
+            // stacked from parent grid), still single column on desktop
+            // because they sit BESIDE the leader card and stack vertically
+            // within their own narrower column.
+            <div className="flex flex-col gap-4 lg:gap-5">
               {supporting.map((entry) => (
                 <SupportingCard
                   key={`${entry.rank}-${entry.nickname}`}
@@ -118,7 +111,6 @@ export async function SeasonLeadersSection() {
           )}
         </div>
 
-        {/* Link out to the full Challenges page */}
         <div className="mt-8 text-center">
           <Link
             href="/player-portal/leaderboards/challenges"
@@ -135,52 +127,57 @@ export async function SeasonLeadersSection() {
   );
 }
 
-/* ---------- Leader card (rank 1) ---------- */
+/* ============================================================
+   Leader card (rank 1)
+   ============================================================ */
 
 type CardProps = {
   entry: ChallengeEntry;
   metricLabel: string;
 };
 
+/**
+ * LeaderCard — the rank-1 player.
+ *
+ * Mobile: horizontal inner layout (photo on left, stats on right).
+ * Desktop (lg+): vertical inner layout (photo on top, stats below,
+ *   centered). The photo grows to a larger size since it's the
+ *   centerpiece. Yellow corner brackets accent the whole card.
+ */
 function LeaderCard({ entry, metricLabel }: CardProps) {
   return (
-    <div className="relative border border-accent bg-bg-elevated p-5 sm:p-6">
-      {/* Yellow corner accent — corner brackets like the BracketFrame
-          treatment elsewhere on the site. Pure decoration, hides on
-          very small viewports to reduce visual noise. */}
+    <div className="relative h-full border border-accent bg-bg-elevated p-5 sm:p-6 lg:p-7">
+      {/* Yellow corner accent — sm+ only (too noisy on phones). */}
       <span aria-hidden className="absolute left-0 top-0 hidden h-6 w-6 border-l-[3px] border-t-[3px] border-accent sm:block" />
       <span aria-hidden className="absolute right-0 top-0 hidden h-6 w-6 border-r-[3px] border-t-[3px] border-accent sm:block" />
       <span aria-hidden className="absolute bottom-0 left-0 hidden h-6 w-6 border-b-[3px] border-l-[3px] border-accent sm:block" />
       <span aria-hidden className="absolute bottom-0 right-0 hidden h-6 w-6 border-b-[3px] border-r-[3px] border-accent sm:block" />
 
-      {/* Layout: photo on left, stats on right.
-          Mobile: stack vertically, photo + everything centered.
-          Desktop: row layout, photo + stats sit close together with
-          a sensible gap. NO flex-1 absorbing extra space — the row
-          stays compact, content sits to the left of the card with
-          calm breathing room to the right. */}
-      <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-center sm:gap-7">
+      {/* Inner layout.
+          Mobile/tablet: flex-row, photo on left, stats on right.
+          Desktop (lg+): flex-col, everything centered vertically. */}
+      <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-center sm:gap-7 lg:flex-col lg:gap-6">
+        {/* Photo — fixed sizes per breakpoint. On desktop it gets bigger
+            since it's now the visual centerpiece of a vertical layout. */}
         <img
           src={entry.profilePicUrl}
           alt={`${entry.nickname} profile photo`}
           loading="lazy"
           decoding="async"
-          className="block aspect-square w-32 shrink-0 object-cover sm:w-36"
+          className="block aspect-square w-32 shrink-0 object-cover sm:w-36 lg:w-48"
         />
 
         {/* Stats column.
-            Mobile: centered alignment. Desktop: left-aligned but the
-            column is content-width (no flex-1) so "left-aligned" reads
-            naturally adjacent to the photo. */}
-        <div className="flex flex-col items-center gap-3 sm:items-start">
+            Mobile-tablet (sm): items-start (text reads left-aligned next to photo).
+            Desktop (lg+): items-center (text reads centered below the photo). */}
+        <div className="flex flex-col items-center gap-3 sm:items-start lg:items-center">
           <p className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-accent">
             #1 · Season Leader
           </p>
-          <h3 className="text-2xl font-extrabold leading-tight text-text [overflow-wrap:anywhere] sm:text-3xl">
+          <h3 className="text-2xl font-extrabold leading-tight text-text [overflow-wrap:anywhere] sm:text-3xl lg:text-center">
             {entry.nickname}
           </h3>
 
-          {/* Rank badge + level row */}
           <div className="flex items-center gap-3">
             {entry.rankBadgeUrl !== "" && (
               <img
@@ -199,10 +196,10 @@ function LeaderCard({ entry, metricLabel }: CardProps) {
             )}
           </div>
 
-          {/* Metric value */}
-          <div className="flex flex-col gap-0.5">
+          {/* Metric. Center-aligned on desktop to match the vertical layout. */}
+          <div className="flex flex-col gap-0.5 sm:items-start lg:items-center">
             <span className="text-[0.6rem] font-semibold uppercase tracking-[0.16em] text-text-subtle">{metricLabel}</span>
-            <span className="font-mono text-2xl font-bold tabular-nums text-accent sm:text-3xl">
+            <span className="font-mono text-2xl font-bold tabular-nums text-accent sm:text-3xl lg:text-4xl">
               {entry.metricValue.toLocaleString("en-US")}
             </span>
           </div>
@@ -212,63 +209,118 @@ function LeaderCard({ entry, metricLabel }: CardProps) {
   );
 }
 
-/* ---------- Supporting card (rank 2+) ---------- */
+/* ============================================================
+   Supporting card (rank 2+)
+   ============================================================ */
 
+/**
+ * SupportingCard — rank-2-and-beyond players.
+ *
+ * Mobile: horizontal inner layout — photo on left, name+stats in middle,
+ *   badge on the right. Compact, single-line summary feel.
+ * Desktop (lg+): vertical inner layout — photo on top, then name + rank,
+ *   stats, badge below. Same vertical motif as the leader card so they
+ *   visually rhyme, just at smaller scale.
+ */
 function SupportingCard({ entry, metricLabel }: CardProps) {
   return (
-    // Layout: photo + stats + badge sit together with consistent gaps.
-    // The middle stats column has min-w-0 so it can shrink with long
-    // nicknames; no flex-1 anywhere so the elements don't get pushed
-    // to opposite edges of a wide card.
-    <div className="flex items-center gap-3 border border-border bg-bg-elevated p-3 sm:p-4">
-      <img
-        src={entry.profilePicUrl}
-        alt={`${entry.nickname} profile photo`}
-        loading="lazy"
-        decoding="async"
-        className="block aspect-square w-14 shrink-0 object-cover sm:w-16"
-      />
-
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <p className="text-[0.6rem] font-semibold uppercase tracking-[0.2em] text-text-subtle">
-          #{entry.rank}
-        </p>
-        <p className="truncate text-base font-extrabold text-text sm:text-lg [overflow-wrap:anywhere]">
-          {entry.nickname}
-        </p>
-        <p className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-text-subtle">
-          {metricLabel}
-          <span className="ml-2 font-mono font-bold text-accent">
-            {entry.metricValue.toLocaleString("en-US")}
-          </span>
-        </p>
-      </div>
-
-      {entry.rankBadgeUrl !== "" && (
+    // h-full lets this card stretch to match the leader card's height
+    // on desktop. The two layouts (mobile row, desktop column) are
+    // rendered as separate sub-trees rather than reflowed via flex
+    // direction switches — clearer, less fragile.
+    <div className="border border-border bg-bg-elevated p-3 sm:p-4 lg:h-full lg:p-5">
+      {/* === Mobile / tablet layout: horizontal row ============== */}
+      <div className="flex items-center gap-3 lg:hidden">
         <img
-          src={entry.rankBadgeUrl}
-          alt=""
+          src={entry.profilePicUrl}
+          alt={`${entry.nickname} profile photo`}
           loading="lazy"
           decoding="async"
-          className="block h-10 w-auto shrink-0 sm:h-12"
+          className="block aspect-square w-14 shrink-0 object-cover sm:w-16"
         />
-      )}
+
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <p className="text-[0.6rem] font-semibold uppercase tracking-[0.2em] text-text-subtle">
+            #{entry.rank}
+          </p>
+          <p className="truncate text-base font-extrabold text-text [overflow-wrap:anywhere] sm:text-lg">
+            {entry.nickname}
+          </p>
+          <p className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-text-subtle">
+            {metricLabel}
+            <span className="ml-2 font-mono font-bold text-accent">
+              {entry.metricValue.toLocaleString("en-US")}
+            </span>
+          </p>
+        </div>
+
+        {entry.rankBadgeUrl !== "" && (
+          <img
+            src={entry.rankBadgeUrl}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            className="block h-10 w-auto shrink-0 sm:h-12"
+          />
+        )}
+      </div>
+
+      {/* === Desktop layout: vertical column with content centered.
+            justify-center keeps the content cluster in the middle of
+            the card with empty space distributed equally above and below.
+            Earlier iteration used justify-between which produced large
+            voids between groups when content was sparse — center
+            distribution looks calmer for a card that's intentionally
+            shorter on content than the leader. */}
+      <div className="hidden h-full flex-col items-center justify-center gap-6 lg:flex">
+        <div className="flex flex-col items-center gap-3">
+          <img
+            src={entry.profilePicUrl}
+            alt={`${entry.nickname} profile photo`}
+            loading="lazy"
+            decoding="async"
+            className="block aspect-square w-28 object-cover"
+          />
+          <div className="flex flex-col items-center text-center">
+            <p className="text-[0.6rem] font-semibold uppercase tracking-[0.2em] text-text-subtle">
+              #{entry.rank}
+            </p>
+            <p className="text-xl font-extrabold text-text [overflow-wrap:anywhere]">
+              {entry.nickname}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-col items-center gap-3">
+          {entry.rankBadgeUrl !== "" && (
+            <img
+              src={entry.rankBadgeUrl}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              className="block h-14 w-auto"
+            />
+          )}
+          <div className="flex flex-col items-center">
+            <span className="text-[0.6rem] font-semibold uppercase tracking-[0.16em] text-text-subtle">
+              {metricLabel}
+            </span>
+            <span className="font-mono text-2xl font-bold tabular-nums text-accent">
+              {entry.metricValue.toLocaleString("en-US")}
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
-/* ---------- Helpers ---------- */
+/* ============================================================
+   Helpers
+   ============================================================ */
 
 /**
  * Forward-looking subtitle copy for the homepage Season Leaders section.
- * Describes the ranking as it stands right now ("currently this season")
- * rather than the prize criteria (which lives in the CMS description and
- * surfaces on the Challenges page).
- *
- * Per-metric variants so the language reads naturally regardless of
- * which challenge is featured. The count is parameterised so the copy
- * matches whatever homepage_season_leaders_count is set to in
- * Site_Config — change "2" to "3" there and the copy follows.
  */
 function homepageSubtitleFor(metric: string, count: number): string {
   switch (metric) {
