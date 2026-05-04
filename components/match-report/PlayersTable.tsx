@@ -38,6 +38,13 @@ type Props = {
  * For Deaths, lower is better. For everything else, higher.
  *
  * Pre-compute once per render rather than recomputing per cell.
+ *
+ * `scoreByGun` is a separate per-gun-best Score map so the table
+ * can highlight EVERY gun's specialist (the highest scorer with that
+ * particular weapon), not just the absolute top scorer. This adds
+ * extra "yellow" cells for the Score column without affecting other
+ * columns. Empty/blank gun strings are excluded (no point grouping
+ * unknowns).
  */
 type BestValues = {
   score: number;
@@ -47,12 +54,25 @@ type BestValues = {
   accuracy: number;
   damage: number;
   totalXp: number;
+  scoreByGun: Map<string, number>;
 };
 
 function computeBestValues(players: MatchPlayer[]): BestValues {
   if (players.length === 0) {
-    return { score: 0, kills: 0, deaths: 0, kd: 0, accuracy: 0, damage: 0, totalXp: 0 };
+    return {
+      score: 0, kills: 0, deaths: 0, kd: 0, accuracy: 0, damage: 0, totalXp: 0,
+      scoreByGun: new Map(),
+    };
   }
+
+  const scoreByGun = new Map<string, number>();
+  for (const p of players) {
+    const gun = p.gunUsed.trim();
+    if (gun === "") continue;
+    const prev = scoreByGun.get(gun) ?? -Infinity;
+    if (p.score > prev) scoreByGun.set(gun, p.score);
+  }
+
   return {
     score: Math.max(...players.map((p) => p.score)),
     kills: Math.max(...players.map((p) => p.kills)),
@@ -61,6 +81,7 @@ function computeBestValues(players: MatchPlayer[]): BestValues {
     accuracy: Math.max(...players.map((p) => p.accuracy)),
     damage: Math.max(...players.map((p) => p.damage)),
     totalXp: Math.max(...players.map((p) => p.totalXp)),
+    scoreByGun,
   };
 }
 
@@ -270,7 +291,19 @@ function PlayerRow({
         </RowLink>
       </Td>
 
-      <BestTd value={player.score} best={best.score} format="number">
+      <BestTd
+        value={player.score}
+        best={best.score}
+        format="number"
+        // Score column is special: ALSO highlight if this player is
+        // the top scorer with their specific gun. Each "gun specialist"
+        // (top scorer with a given weapon) gets their Score cell tinted
+        // yellow, on top of the absolute-best highlight.
+        extraHighlight={
+          player.gunUsed !== "" &&
+          best.scoreByGun.get(player.gunUsed) === player.score
+        }
+      >
         <RowLink href={href}>{player.score.toLocaleString("en-US")}</RowLink>
       </BestTd>
 
@@ -328,30 +361,32 @@ function Td({
  * Td with "best value" highlighting. If this cell's value matches the
  * computed best for the column, the cell tints yellow.
  *
- * Edge case: ties — multiple players could have the same best value
- * (e.g. two players both at 0.50 KD when they're both bottom of the
- * pile). Both rows get highlighted. Acceptable UX — they share the
- * "best" status.
+ * `extraHighlight` is an OR — if true, the cell highlights even if the
+ * value doesn't match `best`. Used by the Score column to also flag
+ * each "gun specialist" (top scorer per gun).
  *
- * Edge case: best is 0 (no one had any kills, etc.). We still
- * "highlight" rows with 0 in that case but it visually doesn't matter
- * since the value is 0 anyway.
+ * Edge case: ties — multiple players could have the same best value.
+ * Both rows get highlighted. Acceptable UX.
+ *
+ * Edge case: best is 0 (no one had any kills, etc.). We DON'T
+ * highlight rows with 0 in that case (best > 0 guard); avoids visual
+ * clutter when no one has a non-zero value.
  */
 function BestTd({
   children,
   value,
   best,
   format,
+  extraHighlight = false,
 }: {
   children: React.ReactNode;
   value: number;
   best: number;
   format: "number" | "kd" | "percent";
+  extraHighlight?: boolean;
 }) {
-  // For floating-point comparisons (KD, accuracy), use a small epsilon
-  // to avoid float noise causing a false negative. For integer columns
-  // this is harmless.
-  const isBest = Math.abs(value - best) < 1e-9 && best > 0;
+  const isMatchBest = Math.abs(value - best) < 1e-9 && best > 0;
+  const isBest = isMatchBest || extraHighlight;
   void format;
   return (
     <td

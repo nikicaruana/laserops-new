@@ -150,7 +150,14 @@ export function MobileNav() {
               fontWeight: 700,
               textTransform: "uppercase",
               letterSpacing: "-0.02em",
-              color: link.highlight ? "#ffde00" : "#f5f5f5",
+              // Three tone variants — yellow highlight, red highlight,
+              // or default muted. redHighlight uses #b91c1c (Tailwind
+              // red-700) for visual parity with the desktop nav's red.
+              color: link.highlight
+                ? "#ffde00"
+                : link.redHighlight
+                  ? "#b91c1c"
+                  : "#f5f5f5",
               textDecoration: "none",
             }}
           >
@@ -165,6 +172,18 @@ export function MobileNav() {
                     height: "6px",
                     borderRadius: "9999px",
                     backgroundColor: "#ffde00",
+                  }}
+                />
+              )}
+              {link.redHighlight && (
+                <span
+                  aria-hidden
+                  style={{
+                    display: "inline-block",
+                    width: "6px",
+                    height: "6px",
+                    borderRadius: "9999px",
+                    backgroundColor: "#b91c1c",
                   }}
                 />
               )}

@@ -5,7 +5,6 @@ import type { MatchPlayer } from "@/lib/match-report/engine";
 import type { RankLevel } from "@/lib/cms/ranking-system";
 import { getRankByLevel } from "@/lib/cms/ranking-system";
 import { AnimatedNumber } from "./AnimatedNumber";
-import { cn } from "@/lib/cn";
 
 /**
  * XpCard
@@ -277,19 +276,29 @@ export function XpCard({ player, ranks }: Props) {
   return (
     <div className="rounded-sm bg-accent px-5 py-5 text-bg sm:px-6 sm:py-6">
       <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-6">
-        {/* Badge area — single badge (no level-up) or
-            before→after pair (level-up) */}
-        <div className="flex items-center gap-3 self-center sm:self-auto">
-          <BadgeBox imageUrl={beforeBadgeUrl} altLevel={player.xpCurrentLevelBeforeMatch} />
-          {leveledUp && (
-            <>
-              <ArrowIcon />
-              <BadgeBox
-                imageUrl={afterBadgeUrl}
-                altLevel={player.xpCurrentLevelAfterMatch}
-                emphasised
-              />
-            </>
+        {/* Badge area:
+            - No level-up: single dark inset box with the player's
+              current badge.
+            - Level-up: ONE bigger dark inset box containing BOTH the
+              before and after badges with a red ▶ between them.
+            Same dark inset treatment as everywhere else (yellow-themed
+            badge images need a dark backdrop to read on the yellow card).
+            The combined box reads as a single "level transition unit"
+            rather than two separate badges. */}
+        <div className="self-center sm:self-auto">
+          {leveledUp ? (
+            <div className="flex items-center gap-3 rounded-sm bg-bg p-3 sm:gap-4 sm:p-4">
+              <BadgeImage imageUrl={beforeBadgeUrl} altLevel={player.xpCurrentLevelBeforeMatch} />
+              <span
+                aria-hidden
+                className="select-none text-2xl leading-none text-red-800 sm:text-3xl"
+              >
+                ▶
+              </span>
+              <BadgeImage imageUrl={afterBadgeUrl} altLevel={player.xpCurrentLevelAfterMatch} />
+            </div>
+          ) : (
+            <BadgeBox imageUrl={beforeBadgeUrl} altLevel={player.xpCurrentLevelBeforeMatch} />
           )}
         </div>
 
@@ -297,10 +306,15 @@ export function XpCard({ player, ranks }: Props) {
         <div className="flex flex-1 flex-col gap-2 min-w-0">
           <div className="flex flex-wrap items-baseline gap-x-3">
             {leveledUp ? (
+              // "Level 1 ▶ 2" — only the "▶ 2" portion in the muted red,
+              // leading "Level 1" stays dark (matches the rest of the
+              // card text). The 2nd "Level" word is dropped per spec —
+              // the arrow + new number alone reads cleanly.
               <span className="text-2xl font-extrabold sm:text-3xl">
                 Level {player.xpCurrentLevelBeforeMatch}{" "}
-                <span aria-hidden className="text-text-subtle/70">→</span>{" "}
-                Level {player.xpCurrentLevelAfterMatch}
+                <span className="text-red-800">
+                  ▶ {player.xpCurrentLevelAfterMatch}
+                </span>
               </span>
             ) : (
               <span className="text-2xl font-extrabold sm:text-3xl">
@@ -323,12 +337,14 @@ export function XpCard({ player, ranks }: Props) {
               1. Track (very subtle dark) — the empty portion
               2. Baseline (BLACK) — the XP the player entered the match
                  with, within this level. Sits at the left, fixed width.
-              3. Earned (RED) — the XP gained IN this match. Sits IMMEDIATELY
-                 to the right of the baseline (left = baselineFill, width =
-                 earnedFill - baselineFill). Both colours are visible: black
-                 shows what they had, red shows what they gained.
-              When level-up occurs, the new slice's baseline = 0 so red
-              extends from 0 across the full earned segment. */}
+              3. Earned (muted RED) — the XP gained IN this match. Sits
+                 IMMEDIATELY to the right of the baseline. Both colours
+                 are visible: black shows what they had, red shows what
+                 they gained.
+              The red is `red-800` (deep / muted red, oklch(0.444 0.177)) —
+              chosen over the more saturated red-600 to reduce eye strain
+              on the bright yellow card background. Same red used for the
+              ▶ marker in the badges row and the Level X ▶ Y text. */}
           <div
             className="relative h-3 w-full overflow-hidden rounded-full bg-bg/15"
             role="progressbar"
@@ -337,15 +353,12 @@ export function XpCard({ player, ranks }: Props) {
             aria-valuemax={100}
             aria-label="Level progress"
           >
-            {/* Baseline (solid black) — what they had going in */}
             <div
               className="absolute inset-y-0 left-0 bg-bg"
               style={{ width: `${baselineFillCurrent * 100}%` }}
             />
-            {/* Earned (red) — what they gained, picking up where the
-                baseline left off. Width updates every rAF tick. */}
             <div
-              className="absolute inset-y-0 bg-red-600"
+              className="absolute inset-y-0 bg-red-800"
               style={{
                 left: `${baselineFillCurrent * 100}%`,
                 width: `${Math.max(0, earnedFillCurrent - baselineFillCurrent) * 100}%`,
@@ -400,36 +413,26 @@ export function XpCard({ player, ranks }: Props) {
 
 /**
  * BadgeBox
- * Wraps a rank badge image in a dark inset box so the (yellow-themed)
- * badge doesn't disappear on the yellow XP card.
+ * Single badge wrapped in a dark inset box. Used for the no-level-up
+ * case where there's just one badge.
  */
 function BadgeBox({
   imageUrl,
   altLevel,
-  emphasised = false,
 }: {
   imageUrl: string;
   altLevel: number;
-  emphasised?: boolean;
 }) {
   if (imageUrl === "") {
     return (
       <div
-        className={cn(
-          "flex h-16 w-16 items-center justify-center rounded-sm bg-bg sm:h-20 sm:w-20",
-          emphasised && "ring-2 ring-bg/30",
-        )}
+        className="h-16 w-16 rounded-sm bg-bg sm:h-20 sm:w-20"
         aria-hidden
       />
     );
   }
   return (
-    <div
-      className={cn(
-        "flex h-16 w-16 items-center justify-center rounded-sm bg-bg p-2 sm:h-20 sm:w-20",
-        emphasised && "ring-2 ring-bg/30",
-      )}
-    >
+    <div className="flex h-16 w-16 items-center justify-center rounded-sm bg-bg p-2 sm:h-20 sm:w-20">
       <img
         src={imageUrl}
         alt={`Level ${altLevel} badge`}
@@ -440,19 +443,34 @@ function BadgeBox({
   );
 }
 
-function ArrowIcon() {
+/**
+ * BadgeImage
+ * Raw badge image WITHOUT its own box. Used inside the combined
+ * level-up box so the two badges sit in a single dark container with
+ * the ▶ marker between them.
+ */
+function BadgeImage({
+  imageUrl,
+  altLevel,
+}: {
+  imageUrl: string;
+  altLevel: number;
+}) {
+  if (imageUrl === "") {
+    return (
+      <span
+        className="block h-12 w-12 sm:h-16 sm:w-16"
+        aria-hidden
+      />
+    );
+  }
   return (
-    <svg
-      aria-hidden
-      viewBox="0 0 24 16"
-      className="h-5 w-7 shrink-0 text-bg sm:h-6 sm:w-9"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="square"
-    >
-      <path d="M2 8h18M14 2l6 6-6 6" />
-    </svg>
+    <img
+      src={imageUrl}
+      alt={`Level ${altLevel} badge`}
+      loading="lazy"
+      className="block h-12 w-12 object-contain sm:h-16 sm:w-16"
+    />
   );
 }
 

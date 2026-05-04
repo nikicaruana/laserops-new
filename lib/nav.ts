@@ -10,6 +10,10 @@ export type NavLink = {
   hidden?: boolean;
   /** Render in brand yellow to draw attention. Use sparingly — at most one. */
   highlight?: boolean;
+  /** Render in muted red (red-800). Mirrors the "Level X ▶ Y" red used
+   *  on the Match Report XP card so the nav and the feature share a
+   *  visual tie. Mutually exclusive with `highlight` — don't set both. */
+  redHighlight?: boolean;
 };
 
 export const primaryNav: NavLink[] = [
@@ -18,7 +22,7 @@ export const primaryNav: NavLink[] = [
   { label: "Locations", href: "/locations" },
   { label: "Events", href: "/events" },
   { label: "Player Portal", href: "/player-portal", highlight: true },
-  { label: "Match Report", href: "/match-report" },
+  { label: "Match Report", href: "/match-report", redHighlight: true },
   { label: "About", href: "/about" },
 ];
 

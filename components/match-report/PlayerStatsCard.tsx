@@ -5,6 +5,8 @@ import type { MatchPlayer } from "@/lib/match-report/engine";
 import type { RankLevel } from "@/lib/cms/ranking-system";
 import { XpCard } from "./XpCard";
 import { AnimatedNumber } from "./AnimatedNumber";
+import { AccoladeTile } from "./AccoladeTile";
+import { BracketFrame } from "@/components/portal/BracketFrame";
 import { cn } from "@/lib/cn";
 
 /**
@@ -65,12 +67,14 @@ export function PlayerStatsCard({ player, ranks }: Props) {
     >
       {/* Header: profile + nickname + team treatment */}
       <header className="mb-5 flex flex-col items-center gap-3 sm:mb-6 sm:flex-row sm:gap-5">
-        <img
-          src={player.profilePicUrl}
-          alt={`${player.nickname} profile photo`}
-          loading="lazy"
-          className="block aspect-square w-20 object-cover sm:w-24"
-        />
+        <BracketFrame cornerSize="0.875rem" thickness="2px" inset="-0.25rem">
+          <img
+            src={player.profilePicUrl}
+            alt={`${player.nickname} profile photo`}
+            loading="lazy"
+            className="block aspect-square w-20 object-cover sm:w-24"
+          />
+        </BracketFrame>
         <div className="flex flex-1 flex-col items-center gap-1 sm:items-start">
           <p className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-accent">
             Match Performance · #{player.scoreRank} on Score
@@ -90,17 +94,22 @@ export function PlayerStatsCard({ player, ranks }: Props) {
             >
               {player.isWinner ? "Winner" : "Loser"}
             </span>
-            {player.gunUsed !== "" && (
-              <span className="text-text-subtle">
-                Gun: <span className="text-text-muted">{player.gunUsed}</span>
-              </span>
-            )}
           </div>
         </div>
       </header>
 
       {/* XP card with animations */}
       <XpCard player={player} ranks={ranks} />
+
+      {/* Gun used card — same visual treatment as the FavouriteWeapon
+          card on the player summary page (yellow tile housing the gun
+          art, label below). The gun used is per-match here vs lifetime
+          there, but the visual treatment is identical so the user
+          recognises the card type instantly. */}
+      <GunUsedCard
+        weaponName={player.gunUsed}
+        imageUrl={player.gunUsedImage}
+      />
 
       {/* Stat grid — match-scoped values + per-match ranks. AnimatedNumber
           counts up from 0 to final value on player change. The `key` on
@@ -152,57 +161,79 @@ export function PlayerStatsCard({ player, ranks }: Props) {
         />
       </div>
 
-      {/* Accolades earned (only those with value 1 in the data — the
-          engine handles filtering and CMS metadata join, with a
-          fallback so accolades render even when CMS is incomplete). */}
+      {/* Accolades earned (only those with value 1 in the data). Each
+          tile is interactive — tap to reveal the accolade's description
+          in a popover. The tile itself shows just the badge + XP label
+          since the badge image already includes the accolade name. */}
       {player.earnedAccolades.length > 0 && (
         <div className="mt-6 rounded-sm bg-accent px-5 py-5 text-bg sm:mt-8 sm:px-6 sm:py-6">
           <h3 className="text-center text-base font-extrabold uppercase tracking-[0.16em] sm:text-lg">
             Accolades Earned
           </h3>
-          <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-5">
+          <div className="mt-4 grid grid-cols-3 gap-4 sm:grid-cols-4 sm:gap-5 lg:grid-cols-5">
             {player.earnedAccolades.map(({ accolade }) => (
-              <div
-                key={accolade.key}
-                className="flex flex-col items-center gap-2 text-center"
-              >
-                {/* Dark inset box for the badge — accolade icons are
-                    yellow-themed and would disappear directly on the
-                    yellow accolades section background. */}
-                <div className="flex h-16 w-16 items-center justify-center rounded-sm bg-bg p-2 sm:h-20 sm:w-20">
-                  {accolade.badgeUrl !== "" ? (
-                    <img
-                      src={accolade.badgeUrl}
-                      alt={accolade.name}
-                      loading="lazy"
-                      className="block h-full w-full object-contain"
-                    />
-                  ) : (
-                    // Empty placeholder when CMS hasn't provided an
-                    // image URL yet — shows the accolade still exists,
-                    // just without artwork.
-                    <span aria-hidden className="block h-full w-full" />
-                  )}
-                </div>
-                <p className="text-xs font-extrabold uppercase tracking-tight sm:text-sm">
-                  {accolade.name}
-                </p>
-                {accolade.description !== "" && (
-                  <p className="text-[0.65rem] leading-snug">
-                    {accolade.description}
-                  </p>
-                )}
-                {accolade.xp > 0 && (
-                  <p className="text-[0.65rem] font-bold uppercase tracking-[0.14em]">
-                    +{accolade.xp} XP
-                  </p>
-                )}
-              </div>
+              <AccoladeTile key={accolade.key} accolade={accolade} />
             ))}
           </div>
+          <p className="mt-4 text-center text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-bg/70">
+            Tap an accolade to see what it means
+          </p>
         </div>
       )}
     </section>
+  );
+}
+
+/* ---------- Gun used card ---------- */
+
+/**
+ * GunUsedCard — mirrors the FavouriteWeaponCard's visual treatment from
+ * the player summary page so the visual language stays consistent. Per-
+ * match here (vs lifetime there) but the design intent is identical:
+ * a yellow tile that gives the dark gun silhouette artwork enough
+ * contrast to read clearly.
+ *
+ * Sits below the XP card in the player stats section. Spans the full
+ * width of the card on mobile; on desktop, sized as a single column
+ * but inside the existing flow.
+ */
+function GunUsedCard({
+  weaponName,
+  imageUrl,
+}: {
+  weaponName: string;
+  imageUrl: string;
+}) {
+  // No gun data at all → don't render the card. We don't want an empty
+  // "GUN USED" tile cluttering the layout.
+  if (weaponName === "" && imageUrl === "") return null;
+
+  return (
+    <div className="mt-6 flex flex-col gap-3 border border-border bg-bg-elevated p-4 sm:p-6">
+      <div className="text-center text-[0.65rem] font-bold uppercase tracking-[0.14em] text-text-muted">
+        Gun Used
+      </div>
+
+      <div className="flex items-center justify-center bg-accent px-4 py-6 sm:px-6 sm:py-8 min-h-[140px] sm:min-h-[180px]">
+        {imageUrl !== "" ? (
+          <img
+            src={imageUrl}
+            alt={weaponName}
+            loading="lazy"
+            decoding="async"
+            className="h-full max-h-full w-full object-contain"
+          />
+        ) : (
+          <span className="text-xs font-bold uppercase tracking-[0.14em] text-bg/70">
+            No image
+          </span>
+        )}
+      </div>
+
+      <div className="text-center text-base font-bold tracking-tight text-text sm:text-lg">
+        {weaponName || "Unknown gun"}
+      </div>
+    </div>
   );
 }
 

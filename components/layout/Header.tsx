@@ -35,9 +35,13 @@ export function Header() {
                 href={link.href}
                 className={cn(
                   "relative text-xs font-semibold uppercase tracking-[0.14em] transition-colors",
-                  link.highlight
-                    ? "text-accent hover:text-accent-soft"
-                    : "text-text-muted hover:text-accent",
+                  // Three tone variants. redHighlight uses red-800 — same
+                  // muted red as the Match Report XP card's progress bar
+                  // and ▶ marker, so the nav and the feature read as
+                  // visually related.
+                  link.highlight && "text-accent hover:text-accent-soft",
+                  link.redHighlight && "text-red-700 hover:text-red-600",
+                  !link.highlight && !link.redHighlight && "text-text-muted hover:text-accent",
                 )}
               >
                 {link.label}
@@ -45,6 +49,12 @@ export function Header() {
                   <span
                     aria-hidden
                     className="ml-1.5 inline-block h-1 w-1 -translate-y-[2px] rounded-full bg-accent align-middle"
+                  />
+                )}
+                {link.redHighlight && (
+                  <span
+                    aria-hidden
+                    className="ml-1.5 inline-block h-1 w-1 -translate-y-[2px] rounded-full bg-red-700 align-middle"
                   />
                 )}
               </Link>
