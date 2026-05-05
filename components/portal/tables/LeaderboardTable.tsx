@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
+import { HeaderInfoIcon } from "./HeaderInfoIcon";
 
 /**
  * LeaderboardTable
@@ -30,6 +31,14 @@ import { cn } from "@/lib/cn";
  *   - Subtle yellow left edge bar on rank-1 row
  *   - Hover state on rows (sets up future row-click navigation)
  *   - Tabular numerics on numeric cells via the `numeric: true` column flag
+ *
+ * Optional column-level info tooltip:
+ *   - Set `tooltip: "..."` on any column. A small (i) icon will appear
+ *     next to the header label. Click/hover reveals an explanation
+ *     popover (HeaderInfoIcon). Useful for terse stat names like
+ *     "Acc%", "K/D", "ELO ±", "Rating" where new players need context.
+ *   - Tooltips are independent of the sort affordance — clicking the
+ *     icon doesn't trigger a sort, clicking the label still does.
  */
 
 /* ---------- Public types ---------- */
@@ -57,6 +66,13 @@ export type ColumnAlign = "left" | "center" | "right";
  *      content wraps inside the cell instead.
  *   - `widthSm`: optional override at sm breakpoint. Defaults to width.
  *   - `cell`: render function for the cell content given a row.
+ *   - `tooltip`: optional explanation text. When provided, an (i) info
+ *      icon renders next to the header label; click/hover reveals a
+ *      small popover with this text. Independent of sort behaviour.
+ *   - `tooltipAriaLabel`: optional aria-label for the info icon. Defaults
+ *      to "More info" — pass something more descriptive like
+ *      "About match rating" when the column context isn't obvious from
+ *      the surrounding label alone.
  */
 export type LeaderboardColumn<T> = {
   key: string;
@@ -69,6 +85,8 @@ export type LeaderboardColumn<T> = {
   width: string;
   widthSm?: string;
   cell: (row: T) => ReactNode;
+  tooltip?: string;
+  tooltipAriaLabel?: string;
 };
 
 type LeaderboardTableProps<T> = {
@@ -339,6 +357,20 @@ function HeaderCell<T>({
     </span>
   );
 
+  // Optional info icon — renders only when the column declares a
+  // tooltip. CRITICAL: cannot live inside the sort <button> because
+  // HeaderInfoIcon renders its own <button>, and nested buttons are
+  // invalid HTML (browsers handle this inconsistently — Safari and
+  // Firefox break click event propagation in subtle ways). Instead
+  // we render it as a sibling of the sort button, both inside the
+  // columnheader flex container.
+  const infoIconEl = column.tooltip ? (
+    <HeaderInfoIcon
+      tooltip={column.tooltip}
+      ariaLabel={column.tooltipAriaLabel}
+    />
+  ) : null;
+
   // Justify content within the cell based on alignment so the wrap-group
   // stays anchored to the correct edge as it grows tall.
   const justifyClass =
@@ -348,8 +380,10 @@ function HeaderCell<T>({
         ? "justify-center text-center"
         : "justify-start text-left";
 
-  // Inner: label + indicator in alignment-appropriate order.
-  const inner = (
+  // Sort-button inner content: just label + indicator. The info icon
+  // is OUTSIDE this button (rendered as a sibling below) so the two
+  // affordances stay independent and we don't nest <button>s.
+  const sortButtonInner = (
     <>
       {column.align === "right" && indicator}
       {labelEl}
@@ -357,46 +391,70 @@ function HeaderCell<T>({
     </>
   );
 
-  if (!column.sortable) {
-    return (
-      <div
-        role="columnheader"
-        className={cn("flex items-start", justifyClass)}
-      >
-        {inner}
-      </div>
-    );
-  }
+  // Build the inner content for the columnheader. Order rules:
+  //   - Right-aligned: [info icon][sort button]   — icon on the LEFT
+  //     of the label so the digits below stay flush against the right
+  //     edge of the column.
+  //   - Left/center:   [sort button][info icon]   — icon on the right,
+  //     follows the label naturally in reading order.
+  //
+  // The sort button is wrapped/unwrapped depending on whether the
+  // column is sortable (so non-sortable columns don't render an
+  // empty button shell).
+  const sortContent = column.sortable ? (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        // flex (not inline-flex) so the label span can wrap inside.
+        // items-start keeps the indicator vertically aligned to the first
+        // line of text when the label wraps to two lines.
+        "flex items-start",
+        justifyClass,
+        "transition-colors",
+        isActive ? "text-accent hover:text-accent-soft" : "hover:text-text",
+        // Slightly bigger tap target without growing the row vertically too much
+        "py-1",
+      )}
+    >
+      {sortButtonInner}
+    </button>
+  ) : (
+    // Non-sortable column: just render the inner directly, no button.
+    <span className={cn("flex items-start", justifyClass)}>
+      {sortButtonInner}
+    </span>
+  );
 
   return (
     <div
       role="columnheader"
       aria-sort={
-        direction === "asc"
-          ? "ascending"
-          : direction === "desc"
-            ? "descending"
-            : "none"
+        column.sortable
+          ? direction === "asc"
+            ? "ascending"
+            : direction === "desc"
+              ? "descending"
+              : "none"
+          : undefined
       }
-      className={cn("flex items-start", justifyClass)}
+      // gap-1 puts a small consistent space between the sort button
+      // and the info icon. items-start matches the sort-button
+      // alignment so a multi-line wrapped header keeps the icon
+      // pinned to the first line.
+      className={cn("flex items-start gap-1", justifyClass)}
     >
-      <button
-        type="button"
-        onClick={onClick}
-        className={cn(
-          // flex (not inline-flex) so the label span can wrap inside.
-          // items-start keeps the indicator vertically aligned to the first
-          // line of text when the label wraps to two lines.
-          "flex items-start",
-          justifyClass,
-          "transition-colors",
-          isActive ? "text-accent hover:text-accent-soft" : "hover:text-text",
-          // Slightly bigger tap target without growing the row vertically too much
-          "py-1",
-        )}
-      >
-        {inner}
-      </button>
+      {column.align === "right" ? (
+        <>
+          {infoIconEl}
+          {sortContent}
+        </>
+      ) : (
+        <>
+          {sortContent}
+          {infoIconEl}
+        </>
+      )}
     </div>
   );
 }
