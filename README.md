@@ -1,87 +1,105 @@
-# Pass 12 — hotfix: wrap useSearchParams in a Suspense boundary
+# Pass 16 — drop "Unknown" gun + tap-to-popup description
 
-One file. Fixes the Vercel build error introduced by pass 6 that
-didn't surface until production-build time:
-
-```
-useSearchParams() should be wrapped in a suspense boundary at page
-"/player-portal/leaderboards"
-```
-
-## Why this happened
-
-When pass 6 added `useSearchParams()` to `SubTabs` so that the player
-selection (`?ops=`) could be carried across subtab clicks, it
-inadvertently opted every page that renders `SubTabs` into client-
-side rendering. Next.js explicitly requires `useSearchParams()`
-calls to be wrapped in `<Suspense>` for prerendering to work — a
-rule that's enforced at `next build` time but doesn't fire in
-`next dev`. That's why this never surfaced locally during testing
-and only blew up on the Vercel build.
-
-The error specifically calls out `/player-portal/leaderboards`,
-but in reality every route that renders `SubTabs` is affected
-(player-stats, leaderboards, future portal subtab pages).
-
-## The fix
-
-In `components/portal/SubTabs.tsx`, the structure goes from one
-component into three layers:
-
-1. **`SubTabs` (public)** — wraps the inner component in
-   `<Suspense>`. The fallback renders the same UI but with an empty
-   search-params object (so tab hrefs don't include forwarded
-   params during the initial prerender).
-2. **`SubTabsInner` (private)** — calls `useSearchParams()` and
-   passes the result down. This is the only component that
-   triggers the CSR-bailout requirement, and it's now safely
-   behind the Suspense boundary.
-3. **`SubTabsShell` (private)** — pure render given the props plus
-   a search params object. No CSR-triggering hooks.
-
-Visually identical to before for the user. The only difference:
-during the initial server-rendered HTML, tab hrefs are the original
-hrefs (without `?ops=` forwarded). Within milliseconds of hydration
-the real client-side render kicks in and updates them. Users can't
-click anything before hydration completes anyway.
+Two changes plus one new file.
 
 ## Files in this zip
 
 ```
 patch/
-├── README.md                                          ← this file
+└── lib/
+│   └── cms/
+│       └── weapons.ts                                  ← REPLACE
 └── components/
-    └── portal/
-        └── SubTabs.tsx                                ← REPLACE
+    └── weapons/
+        ├── WeaponGallery.tsx                           ← REPLACE
+        └── WeaponDetailDialog.tsx                      ← NEW
 ```
 
-Single file, drop-in replacement. Same public API (`SubTabs` still
-takes `tabs` and optional `forwardParams`).
+## What each change does
 
-## Apply
+### 1. "Unknown" gun filtered out
 
-Extract over local. The change is purely additive at the boundary
-— no other files care about SubTabs internals.
+`lib/cms/weapons.ts` now drops any row where the trimmed lowercased
+gun name is `"unknown"`. The data sheet keeps an "Unknown" entry as a
+fallback for matches where no gun was logged (so Match Report joins
+don't break) — but it's not a real weapon and shouldn't appear in
+the gallery.
 
-```
-1. Extract pass 12 over your project
-2. (Locally, optional) npm run build to confirm it builds clean
-3. git push
-4. Vercel rebuilds — should now succeed
-```
+Filter is at the fetcher layer, so every consumer (current gallery,
+future Armory subtab, anywhere else that reads `fetchWeapons()`) gets
+the cleaned list automatically.
 
-## Why this is the canonical fix
+### 2. New `Gun_Description` column → tap-to-popup
 
-Next.js docs spell out this exact pattern in the
-"Missing Suspense boundary with useSearchParams" error page:
+The `Weapon` type gained a `description: string` field, parsed from
+the new `Gun_Description` column. The parser trims whitespace and
+defaults to empty string if the column is missing.
 
-> "To keep the route statically generated, wrap the smallest subtree
->  that calls useSearchParams() in Suspense, for example you may
->  move its usage into a child Client Component and render that
->  component wrapped with Suspense."
+### 3. Tap-on-centred-card opens detail popup
 
-That's what this does — minimum subtree, isolated client component,
-Suspense at the boundary.
+The gallery's tap behaviour is now two-stage:
+  - First tap on a NON-centred gun → scroll-snap it into the centre
+    (focus). Same as before.
+  - Tap on the gun that's ALREADY centred → open the description
+    popup. This is the "commit" action.
 
-I tsc'd this against your codebase before shipping. Clean except
-for the unrelated globals.css pre-existing warning.
+This pattern matches the iOS App Store and iOS Photos: first tap is
+exploration ("show me this one"), second tap is commitment ("tell me
+more"). It avoids the conflict between the carousel's primary
+interaction (panning/focusing) and the new popup interaction.
+
+Keyboard: arrow keys still cycle through guns (always focus, never
+open). Enter on the centred card opens the dialog. Same UX through
+all input modes.
+
+### 4. WeaponDetailDialog component
+
+Native HTML `<dialog>` element, opened via `showModal()` for proper
+top-layer modal behaviour:
+  - Backdrop with subtle blur
+  - ESC dismisses
+  - Focus trap (browser handles it)
+  - Click outside to close (wired explicitly — native dialog doesn't
+    do this for free)
+  - Close button in the corner
+
+Pattern mirrors the existing `AccoladeTile` modal in the Match
+Report — same visual chrome, same dismissal behaviours.
+
+Dialog content:
+  - Eyebrow "Weapon" + gun name
+  - Yellow band with the gun image (matches gallery strip styling)
+  - Description body — falls back to "No description available yet."
+    when the cell is empty, so users get confirmed feedback even
+    before you've populated the column
+  - Compact 4-up stat recap below the description (Mag / Dmg /
+    Reload / Rate) so the user has the numbers handy while reading
+
+## Apply + test
+
+1. Extract over local
+2. Restart `npm run dev`
+3. Reload `/weapons`
+
+### Test checklist
+
+- "Unknown" no longer appears in any gallery, regardless of filter.
+- Add `Gun_Description` to your CSV with text for one gun. Reload.
+  Tap that gun (twice if it's not already centred). Popup appears
+  with the description.
+- Tap a gun without a description — popup still appears, body says
+  "No description available yet."
+- Press ESC, click outside the popup, or click the X — all close it.
+- In compare mode, tapping a centred gun in either gallery opens
+  its dialog. Each gallery has its own dialog state — opening one
+  doesn't affect the other (though they're modal so only one shows
+  at a time anyway).
+- Keyboard: tab into a gallery, arrow keys cycle without opening
+  popups. Enter on the centred card opens the popup.
+
+I tsc'd this. Clean except for the unrelated globals.css pre-existing
+warning.
+
+## Pending
+
+Bubble chart still queued — pass 17.

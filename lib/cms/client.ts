@@ -52,4 +52,11 @@ export const CMS_URLS = {
   // ratings, winning/losing team designations, badge images.
   gameIdMap:
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTLlM4fIfh52DiovbJT2b9A6UyqoiQtoG0c2HoVRCG_OCtLPZvz-uBSC6y1voM8d4jBVCNcpCGctco/pub?gid=489613415&single=true&output=csv",
+  // Weapons — one row per gun with display name, image, stats
+  // (mag size / damage / reload / fire rate / etc.), unlock metadata,
+  // and tree-branch grouping. Lives on the DATA spreadsheet (same as
+  // accolades, ranking, gameIdMap) — important when editing this URL.
+  // Consumed by /weapons (the gallery page).
+  weapons:
+    "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTLlM4fIfh52DiovbJT2b9A6UyqoiQtoG0c2HoVRCG_OCtLPZvz-uBSC6y1voM8d4jBVCNcpCGctco/pub?gid=924946993&single=true&output=csv",
 } as const;
