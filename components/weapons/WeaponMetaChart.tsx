@@ -20,8 +20,8 @@ import { ChartCard } from "@/components/portal/player-history/ChartCard";
  * WeaponMetaChart
  * --------------------------------------------------------------------
  * Bubble chart positioning every gun in the (accuracy, K/D) plane,
- * with bubble size proportional to the gun's total kill count across
- * all recorded matches.
+ * with bubble size proportional to the gun's AVERAGE kills per match
+ * across all recorded matches.
  *
  * Reads as a "weapon meta map":
  *   - Top right: high accuracy AND high K/D — strong, precise picks
@@ -31,8 +31,11 @@ import { ChartCard } from "@/components/portal/player-history/ChartCard";
  *     still die a lot
  *   - Bottom left: low accuracy + low K/D — niche or troll picks
  *
- * Bubble size: the more total kills a gun has produced, the bigger
- * its bubble.
+ * Bubble size: the more kills per match a gun produces on average,
+ * the bigger its bubble. We use the AVERAGE rather than the TOTAL so
+ * a great-but-rarely-played gun shows up larger than a mediocre-but-
+ * heavily-played one. Total kills would be a popularity metric; kills
+ * per match is an effectiveness metric.
  *
  * --------------------------------------------------------------------
  * NEW IN PASS 18
@@ -89,6 +92,7 @@ type BubblePoint = {
   treeBranch: string;
   imageUrl: string;
   totalKills: number;
+  avgKillsPerMatch: number;
   matchCount: number;
 };
 
@@ -107,11 +111,18 @@ export function WeaponMetaChart({ stats, treeBranches }: Props) {
       .map((s) => ({
         x: s.globalAccuracy * 100,
         y: s.globalKD,
-        z: s.totalKills,
+        // Bubble size now tracks AVERAGE kills per match rather than
+        // total kills. Total kills was misleading — it favoured
+        // heavily-used guns regardless of effectiveness (a mediocre
+        // gun played 100 times beat a great gun played 5 times).
+        // Average kills/match is the more honest "how lethal is
+        // this gun in a typical game" metric.
+        z: s.avgKillsPerMatch,
         gunName: s.gunName,
         treeBranch: s.treeBranch,
         imageUrl: s.imageUrl,
         totalKills: s.totalKills,
+        avgKillsPerMatch: s.avgKillsPerMatch,
         matchCount: s.matchCount,
       }));
   }, [stats, selectedTree]);
@@ -120,7 +131,7 @@ export function WeaponMetaChart({ stats, treeBranches }: Props) {
     return (
       <ChartCard
         title="Weapon Meta Map"
-        subtitle="Where each gun sits in the accuracy vs K/D space, bubble size proportional to total kills."
+        subtitle="Where each gun sits in the accuracy vs K/D space, bubble size proportional to average kills per match."
       >
         <TreeFilter
           value={selectedTree}
@@ -148,7 +159,7 @@ export function WeaponMetaChart({ stats, treeBranches }: Props) {
   return (
     <ChartCard
       title="Weapon Meta Map"
-      subtitle="Where each gun sits in the accuracy vs K/D space — bigger bubbles mean more total kills."
+      subtitle="Where each gun sits in the accuracy vs K/D space — bigger bubbles mean more kills per match on average."
     >
       <TreeFilter
         value={selectedTree}
@@ -211,7 +222,7 @@ export function WeaponMetaChart({ stats, treeBranches }: Props) {
               type="number"
               dataKey="z"
               range={[BUBBLE_MIN_R * BUBBLE_MIN_R, BUBBLE_MAX_R * BUBBLE_MAX_R]}
-              name="Total Kills"
+              name="Kills/Match"
             />
             <Tooltip
               cursor={{ stroke: "#3a3a3a", strokeDasharray: "3 3" }}
@@ -302,8 +313,18 @@ function BubbleTooltip({
       <p className="font-mono tabular-nums text-text-muted">
         K/D: <span className="text-accent">{p.y.toFixed(2)}</span>
       </p>
+      {/* Kills/Match is the bubble-size driver — show it prominently
+          here. Total kills follows as context (so players still know
+          the absolute scale). */}
       <p className="font-mono tabular-nums text-text-muted">
-        Kills: <span className="text-accent">{p.totalKills.toLocaleString("en-US")}</span>
+        Kills/Match:{" "}
+        <span className="text-accent">{p.avgKillsPerMatch.toFixed(2)}</span>
+      </p>
+      <p className="font-mono tabular-nums text-text-muted">
+        Total Kills:{" "}
+        <span className="text-accent">
+          {p.totalKills.toLocaleString("en-US")}
+        </span>
       </p>
       <p className="mt-1 text-[0.7rem] uppercase tracking-[0.1em] text-text-subtle">
         {p.matchCount} matches

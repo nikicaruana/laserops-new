@@ -1,47 +1,53 @@
-# Pass 19 — hotfix: "Unknown Gun" leaking through filter
+# Pass 20 — bubble size = avg kills per match (not total kills)
 
-One file. Sorry, missed this in the last pass.
+Two files, one metric swap.
 
-## What I broke / didn't catch
+## What changed
 
-The data row's gun name is literally **"Unknown Gun"** (with the word
-"Gun" appended). My pass-18 filter was an exact-match against
-`"unknown"`, `"none"`, `"n/a"`, `"na"`, `"no gun"` — so `"unknown gun"`
-slipped through both the gallery and the meta chart.
+Bubble size on the meta chart now tracks **average kills per match**
+instead of **total kills**. The old metric was a popularity signal —
+a heavily-played mediocre gun outsized a great-but-rarely-played
+one. Average kills/match is an effectiveness signal — it answers
+"how lethal is this gun in a typical game?" regardless of how often
+players pick it.
 
-## What this pass does
-
-Replaces the exact-match list in `isFallbackGunName` with a
-word-boundary regex match for `\bunknown\b`. That catches:
-
-- "unknown"
-- "Unknown Gun"
-- "UNKNOWN WEAPON"
-- " unknown " (with surrounding whitespace)
-- any future variant
-
-Doesn't catch:
-
-- "unknownified" (word boundary respected)
-- real gun names like "MP9LT Phoenix", "AK-25 Predator", etc.
-
-The other fallbacks (none / n/a / na / no gun / empty string) stay
-as exact-match. Those are unlikely to grow new variants, and a
-regex would risk false positives on any real gun with "n" or "a"
-characters.
-
-The shared helper is used by both `fetchWeapons` (gallery) and the
-meta-chart aggregator, so the fix lands in both views from this
-single change.
-
-## Files
+## Files in this zip
 
 ```
 patch/
-└── lib/
-    └── cms/
-        └── weapons.ts                                 ← REPLACE
+├── README.md                                          ← this file
+├── lib/
+│   └── weapons/
+│       └── usage-stats.ts                             ← REPLACE
+└── components/
+    └── weapons/
+        └── WeaponMetaChart.tsx                        ← REPLACE
 ```
+
+## What each change does
+
+### Aggregator — `lib/weapons/usage-stats.ts`
+
+Adds `avgKillsPerMatch: number` to the `WeaponUsageStats` type.
+Computed once in the aggregator as `totalKills / matchCount`. Always
+finite because the aggregator only emits entries with `matchCount >= 1`.
+
+`totalKills` stays in the type — useful for tooltip context, future
+features, and not worth removing.
+
+### Chart — `components/weapons/WeaponMetaChart.tsx`
+
+- ZAxis dataKey switches from `totalKills` to `avgKillsPerMatch`.
+  Bubble area scaling is unchanged — `[BUBBLE_MIN_R², BUBBLE_MAX_R²]`
+  area-proportional. Recharts handles the linear interpolation
+  between min and max z values, so the swap just remaps which gun
+  gets which size.
+- ZAxis name updated to "Kills/Match" (used by recharts as the
+  default tooltip label and accessible metadata).
+- Subtitle copy: "bigger bubbles mean more kills per match on
+  average."
+- Tooltip now shows BOTH metrics: Kills/Match (the bubble-size
+  driver, prominent) and Total Kills (context, secondary).
 
 ## Apply + test
 
@@ -51,11 +57,16 @@ patch/
 
 ### Test checklist
 
-- "Unknown Gun" no longer appears in the gallery scroller.
-- "Unknown Gun" no longer appears in the meta chart bubble.
-- M512 Sniper, Gastat, etc. still appear (they're not affected by
-  this change — already shipped in pass 18 by lowering MIN_MATCHES).
+- Bubble sizes shift: guns with high avg kills/match (regardless of
+  popularity) get bigger bubbles. Guns with lots of total kills but
+  middling per-match kills shrink.
+- Tooltip on hover/tap shows Kills/Match prominently, then Total
+  Kills below.
+- Subtitle reads "...bigger bubbles mean more kills per match on
+  average."
 
-I tsc'd this and verified the regex behaviour with a quick node
-sanity check. Real gun names pass; "Unknown Gun" / "Unknown Weapon"
-/ etc. get filtered.
+## Pre-existing warnings to ignore
+
+The unrelated globals.css side-effect import warning is still there
+— that's a TypeScript config quirk for CSS modules in your project,
+not a code issue.

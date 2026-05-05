@@ -10,6 +10,8 @@
  *   - totalShots        — sum of PlayerShotsCount
  *   - totalHits         — sum of (accuracy * shots) per row, rounded
  *   - matchCount        — number of player-match rows using the gun
+ *   - avgKillsPerMatch  — totalKills / matchCount (drives bubble
+ *                         size in the meta chart)
  *   - globalKD          — totalKills / totalDeaths (capped, see below)
  *   - globalAccuracy    — totalHits / totalShots, as a 0..1 fraction
  *
@@ -50,6 +52,14 @@ export type WeaponUsageStats = {
   totalShots: number;
   totalHits: number;
   matchCount: number;
+  /** Average kills per match using this gun. Drives the bubble size
+   *  in the meta chart — a more honest "how lethal in a typical
+   *  game" metric than raw total kills (which favours heavily-used
+   *  guns regardless of their actual effectiveness).
+   *
+   *  Always finite because the aggregator only emits entries for
+   *  guns with matchCount >= 1. */
+  avgKillsPerMatch: number;
   globalKD: number;
   globalAccuracy: number;
 };
@@ -111,6 +121,10 @@ export async function fetchWeaponUsageStats(
       totalShots: v.shots,
       totalHits: v.hits,
       matchCount: v.matches,
+      // matchCount guaranteed >= 1 here because we only insert into
+      // `acc` when accumulating a real row (and every accumulated
+      // row increments matches by 1).
+      avgKillsPerMatch: v.kills / v.matches,
       globalKD: v.kills / Math.max(v.deaths, 1),
       globalAccuracy: v.hits / Math.max(v.shots, 1),
     });
