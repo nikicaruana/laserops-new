@@ -124,39 +124,55 @@ export function AccoladesLeaderboardTable({
       },
       {
         key: "tier1",
-        // Short header — "T1" reads cleanly in a narrow column. The
-        // tier-by-XP mapping (T1 = 100 XP, the most prestigious) is
-        // implicit; if it ever needs spelling out we can add a header
-        // info-icon tooltip via the LeaderboardColumn `tooltip` prop.
-        header: "T1",
+        // Header text swaps at the sm breakpoint: "T1" on mobile
+        // (the column is only ~32px wide there, no room for the
+        // full word) and "Tier 1" on desktop where the column has
+        // breathing room. Same pattern for T2/T3 below. Total
+        // stays "Total" on both since it already fits.
+        header: (
+          <>
+            <span className="sm:hidden">T1</span>
+            <span className="hidden sm:inline">Tier 1</span>
+          </>
+        ),
         align: "right",
         sortable: true,
         numeric: true,
         accessor: (row) => row.tier1,
         width: "32px",
-        widthSm: "55px",
+        widthSm: "70px",
         cell: (row) => row.tier1.toLocaleString("en-US"),
       },
       {
         key: "tier2",
-        header: "T2",
+        header: (
+          <>
+            <span className="sm:hidden">T2</span>
+            <span className="hidden sm:inline">Tier 2</span>
+          </>
+        ),
         align: "right",
         sortable: true,
         numeric: true,
         accessor: (row) => row.tier2,
         width: "32px",
-        widthSm: "55px",
+        widthSm: "70px",
         cell: (row) => row.tier2.toLocaleString("en-US"),
       },
       {
         key: "tier3",
-        header: "T3",
+        header: (
+          <>
+            <span className="sm:hidden">T3</span>
+            <span className="hidden sm:inline">Tier 3</span>
+          </>
+        ),
         align: "right",
         sortable: true,
         numeric: true,
         accessor: (row) => row.tier3,
         width: "32px",
-        widthSm: "55px",
+        widthSm: "70px",
         cell: (row) => row.tier3.toLocaleString("en-US"),
       },
       {
