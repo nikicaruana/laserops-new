@@ -11,10 +11,16 @@ import { BracketFrame } from "@/components/portal/BracketFrame";
  * match. As the player levels up over time this badge and label
  * update to reflect their latest level.
  *
- * Note: previously this card showed the rank NAME under the badge
- * (e.g. "OPERATIVE"). Niki's feedback after pass 1: show the level
- * NUMBER instead, since the rank icon already implies the rank name
- * visually and the number is the more useful data point.
+ * --------------------------------------------------------------------
+ * SIZING (post pass-10)
+ *
+ * Badge & photo were originally h-32 sm:h-40 (128 / 160px). On mobile
+ * the badge looks oversized — it dominates the card and pushes the
+ * Personal Records below the fold. Reduced to h-24 sm:h-32 (96 /
+ * 128px) on mobile, keeping the larger sm: size for desktop where
+ * the badge has more breathing room. Photo follows in lockstep so
+ * the visual pair stays balanced.
+ * --------------------------------------------------------------------
  */
 
 type Props = {
@@ -45,7 +51,9 @@ export function HistoryProfileCard({
               src={profilePicUrl}
               alt={`${nickname} profile photo`}
               loading="lazy"
-              className="block aspect-square w-32 object-cover sm:w-40"
+              // 96px / 128px (mobile / desktop). Photo is square so
+              // w-24 = h-24 effectively.
+              className="block aspect-square w-24 object-cover sm:w-32"
             />
           )}
           {rankBadgeUrl !== "" && (
@@ -57,7 +65,9 @@ export function HistoryProfileCard({
                 // the level number below.
                 alt={rankName}
                 loading="lazy"
-                className="block h-32 w-auto sm:h-40"
+                // 96 / 128px to match the photo. width-auto preserves
+                // the badge aspect ratio (it's wider than tall).
+                className="block h-24 w-auto sm:h-32"
               />
               {currentLevel > 0 && (
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-text-muted sm:text-sm">

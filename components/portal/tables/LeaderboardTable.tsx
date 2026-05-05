@@ -226,32 +226,50 @@ export function LeaderboardTable<T>({
         } as React.CSSProperties
       }
     >
-      <div aria-hidden className="h-1 w-full bg-accent" />
-
       <div className="overflow-y-auto" style={{ maxHeight }}>
-        {/* Sticky header */}
-        <div
-          role="rowgroup"
-          className="sticky top-0 z-10 border-b border-border-strong bg-bg-overlay/95 backdrop-blur-sm"
-        >
+        {/* Sticky region — yellow strip + header row, bundled into a
+            single sticky element with min-w-max so they extend the
+            full grid content width (not just the visible viewport).
+            This fixes two issues at once on tables wider than the
+            viewport (Match Summaries on mobile especially):
+              1. Yellow accent strip used to cut off mid-row when
+                 scrolled horizontally because it was outside the
+                 scroll container with w-full.
+              2. Header background used to lose its colour past the
+                 viewport edge for the same reason.
+            min-w-max grows the wrapper to fit its grid children. For
+            tables that already fit within the viewport, min-w-max
+            resolves to container width — no visual change. */}
+        <div className="sticky top-0 z-10 min-w-max">
+          <div aria-hidden className="h-1 bg-accent" />
+          {/* Header row group. Solid bg (no /95 transparency, no
+              backdrop-blur) — both produced subtle grey-banding
+              artifacts during horizontal scroll on iOS Safari and
+              Chrome on Android. A flat colour is more honest about
+              "this is the header" anyway. */}
           <div
-            role="row"
-            className={cn(
-              "lb-row items-center gap-1 px-2 py-3 sm:gap-4 sm:px-5",
-              // Mobile font tightened to 0.55rem (~8.8px) so headers like "Total XP"
-              // and "XP / Match" can fit/wrap within the narrow numeric columns
-              // without overlapping their neighbours. Desktop keeps the larger size.
-              "text-[0.55rem] font-bold uppercase tracking-[0.12em] text-text-muted sm:text-[0.65rem] sm:tracking-[0.16em]",
-            )}
+            role="rowgroup"
+            className="border-b border-border-strong bg-bg-overlay"
           >
-            {columns.map((col) => (
-              <HeaderCell
-                key={col.key}
-                column={col}
-                sort={sort}
-                onClick={() => handleHeaderClick(col)}
-              />
-            ))}
+            <div
+              role="row"
+              className={cn(
+                "lb-row items-center gap-1 px-2 py-3 sm:gap-4 sm:px-5",
+                // Mobile font tightened to 0.55rem (~8.8px) so headers like "Total XP"
+                // and "XP / Match" can fit/wrap within the narrow numeric columns
+                // without overlapping their neighbours. Desktop keeps the larger size.
+                "text-[0.55rem] font-bold uppercase tracking-[0.12em] text-text-muted sm:text-[0.65rem] sm:tracking-[0.16em]",
+              )}
+            >
+              {columns.map((col) => (
+                <HeaderCell
+                  key={col.key}
+                  column={col}
+                  sort={sort}
+                  onClick={() => handleHeaderClick(col)}
+                />
+              ))}
+            </div>
           </div>
         </div>
 

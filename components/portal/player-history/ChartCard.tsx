@@ -12,16 +12,25 @@ import type { ReactNode } from "react";
  * chart sitting on dark below.
  *
  * --------------------------------------------------------------------
- * CHANGE in this pass: dropped the inner body padding on mobile so
- * the chart can use the full viewport width. Combined with the page-
- * level container's existing horizontal padding, the chart was sitting
- * inside ~28px of dead space on each side on phones — a meaningful
- * chunk of a 380px viewport. On desktop the inner padding stays
- * because the chart already has plenty of width and the inner gutter
- * helps separate the chart from the card border visually.
+ * MOBILE PADDING (post pass-10)
  *
- * The subtitle and header keep their padding so the text doesn't
- * touch the card edges. Only the chart body goes full-bleed on mobile.
+ * Pass 4 set body padding to px-0 on mobile to claw back as much
+ * chart width as possible. Side effect: the Y-axis tick labels
+ * ("1095", "1.5k", etc.) ended up flush against the card border,
+ * and the rightmost data labels on the ELO chart clipped against
+ * the right edge.
+ *
+ * The fix is a thin horizontal pad on mobile — 8px left, 4px right.
+ * Asymmetric because:
+ *   - Y-axis ticks live on the LEFT (need a hairline of breathing
+ *     room from the card border to be readable).
+ *   - The recharts plot area runs to the RIGHT edge of the chart;
+ *     a tiny right pad just keeps text labels from clipping the
+ *     border without giving back chart width.
+ *
+ * Total mobile padding given back: 12px (1.2% of a 380px viewport).
+ * Charts still use ~96% of available width. Big improvement on the
+ * pre-pass-4 ~28px each side.
  * --------------------------------------------------------------------
  */
 
@@ -44,10 +53,12 @@ export function ChartCard({ title, subtitle, children }: Props) {
           {subtitle}
         </p>
       )}
-      {/* Chart body. Mobile: edge-to-edge (px-0) so recharts gets the
-          full card width. Desktop: restore px-5 so the chart sits
-          inside a comfortable gutter. */}
-      <div className="px-0 pb-3 pt-3 sm:px-5 sm:pb-5 sm:pt-4">{children}</div>
+      {/* Chart body. Mobile: pl-2 pr-1 (8 / 4px) — minimal inset so
+          axis labels don't kiss the card border but charts get most
+          of the width. Desktop: px-5 unchanged. */}
+      <div className="pb-3 pl-2 pr-1 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
+        {children}
+      </div>
     </section>
   );
 }

@@ -78,7 +78,7 @@ export function ScoreVsAvgChart({ matches }: Props) {
               tick={{ fontSize: 11, fill: "#a3a3a3" }}
               tickLine={false}
               axisLine={{ stroke: "#3a3a3a" }}
-              width={48}
+              width={40}
               domain={[0, leftMax]}
               allowDecimals={false}
               tickFormatter={(v: number) =>
@@ -92,7 +92,7 @@ export function ScoreVsAvgChart({ matches }: Props) {
               tick={{ fontSize: 11, fill: "#a3a3a3" }}
               tickLine={false}
               axisLine={{ stroke: "#3a3a3a" }}
-              width={36}
+              width={32}
               domain={[rMin, rMax]}
               tickFormatter={(v: number) => v.toFixed(1)}
             />

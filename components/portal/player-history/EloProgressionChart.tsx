@@ -81,12 +81,14 @@ export function EloProgressionChart({ matches }: Props) {
     >
       <div className="h-[280px] w-full sm:h-[340px]">
         <ResponsiveContainer width="100%" height="100%">
-          {/* Margins kept tight (left:0, right:8) so the chart fills
-              the card. left:0 lets the YAxis manage its own width
-              via the `width` prop below. right:8 leaves just enough
-              breathing room for the rightmost value label not to
-              clip against the card border. */}
-          <LineChart data={data} margin={{ top: 28, right: 8, left: 0, bottom: 8 }}>
+          {/* right:24 — needs more room than the other charts because
+              the rightmost data point's LabelList ("1,084" etc.)
+              extends to the right of the actual point and was clipping
+              against the card edge. The other composed charts don't
+              have this problem because their line labels were removed
+              in pass 4.
+              left:0 — YAxis manages its own width via the `width` prop. */}
+          <LineChart data={data} margin={{ top: 28, right: 24, left: 0, bottom: 8 }}>
             <CartesianGrid stroke="#262626" vertical={false} />
             <XAxis
               dataKey="matchId"
@@ -100,7 +102,9 @@ export function EloProgressionChart({ matches }: Props) {
               tick={{ fontSize: 11, fill: "#a3a3a3" }}
               tickLine={false}
               axisLine={{ stroke: "#3a3a3a" }}
-              width={48}
+              // 40px is enough for "1,095" / "1,050" etc at 11px font.
+              // Down from 48px — gives 8px back to the plot area.
+              width={40}
               domain={[yMin, yMax]}
               allowDecimals={false}
             />

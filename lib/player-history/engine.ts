@@ -73,6 +73,9 @@ export type PlayerHistory = {
   currentRankBadgeUrl: string;
   /** Most recent rank name. */
   currentRankName: string;
+  /** Most recent level number (XP-based). Used to render "Level N"
+   *  underneath the rank badge in the profile card. */
+  currentLevel: number;
   /** Most recent profile picture URL. */
   profilePicUrl: string;
 };
@@ -132,6 +135,7 @@ export async function fetchPlayerHistory(
       records,
       currentRankBadgeUrl: currentRank?.badgeUrl ?? "",
       currentRankName: currentRank?.rankName ?? "",
+      currentLevel: mostRecent.level,
       profilePicUrl: mostRecent.profilePicUrl,
     },
   };
