@@ -226,17 +226,19 @@ export function LeaderboardTable<T>({
         } as React.CSSProperties
       }
     >
-      <div className="overflow-y-auto" style={{ maxHeight }}>
+      {/* Inner scroll container — handles BOTH axes:
+            - Vertical: rows beyond maxHeight scroll within the table
+              (sticky header stays pinned, see below).
+            - Horizontal: tables wider than the viewport (Match
+              Summaries on mobile, with 10 columns) scroll left/right.
+          Both header (in the sticky wrapper below) and body rowgroup
+          use min-w-max, so they share the same width context — column
+          tracks resolve to identical sizes in both, keeping headers
+          aligned over their values. */}
+      <div className="overflow-auto" style={{ maxHeight }}>
         {/* Sticky region — yellow strip + header row, bundled into a
             single sticky element with min-w-max so they extend the
             full grid content width (not just the visible viewport).
-            This fixes two issues at once on tables wider than the
-            viewport (Match Summaries on mobile especially):
-              1. Yellow accent strip used to cut off mid-row when
-                 scrolled horizontally because it was outside the
-                 scroll container with w-full.
-              2. Header background used to lose its colour past the
-                 viewport edge for the same reason.
             min-w-max grows the wrapper to fit its grid children. For
             tables that already fit within the viewport, min-w-max
             resolves to container width — no visual change. */}
@@ -273,8 +275,14 @@ export function LeaderboardTable<T>({
           </div>
         </div>
 
-        {/* Body rows */}
-        <div role="rowgroup">
+        {/* Body rows. min-w-max here matches the sticky header above
+            so flex grid tracks resolve to the same widths in both
+            row groups — header labels stay aligned with their column
+            values when the table is wider than the viewport. Without
+            this, the header (in min-w-max) and body (without it)
+            would lay out in different width contexts and headers
+            would shift off their columns. */}
+        <div role="rowgroup" className="min-w-max">
           {displayedRows.map((row, idx) => {
             const highlight = isTopRank ? isTopRank(row, idx, isDefaultSort) : false;
             const href = rowHref ? rowHref(row) : null;

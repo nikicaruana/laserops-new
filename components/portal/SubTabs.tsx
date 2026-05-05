@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/cn";
@@ -33,6 +34,32 @@ import { cn } from "@/lib/cn";
  * still hard-code a destination param (e.g. `?ops=__SOME_DEFAULT__`)
  * and the forward logic won't clobber it.
  * --------------------------------------------------------------------
+ *
+ * --------------------------------------------------------------------
+ * Suspense boundary (post pass-12)
+ *
+ * `useSearchParams()` is a CSR-bailout hook: any component that uses
+ * it must be wrapped in a Suspense boundary, or Next.js refuses to
+ * statically prerender the page (build error during `next build`).
+ *
+ * We isolate the search-params read into an inner client component
+ * (`SubTabsInner`), wrap that in <Suspense>, and let the fallback
+ * render with an empty search params object. The fallback's tab
+ * hrefs end up as the original hrefs (no forwarded params) — which
+ * is the only correct thing to render during static prerender
+ * anyway, since the URL's query string isn't known at build time.
+ *
+ * On the client, hydration replaces the fallback with SubTabsInner
+ * which reads the actual search params and updates the hrefs. This
+ * happens before the user can click anything, so the "real" tab
+ * hrefs are always correct at the moment of interaction.
+ *
+ * Affects every page that renders SubTabs — so this layer fixes
+ * leaderboards, player-stats, and any future portal subtab nav at
+ * once. Without this, the build error is:
+ *   "useSearchParams() should be wrapped in a suspense boundary at
+ *    page '/player-portal/leaderboards'."
+ * --------------------------------------------------------------------
  */
 
 type SubTab = {
@@ -55,9 +82,49 @@ type SubTabsProps = {
   forwardParams?: string[];
 };
 
-export function SubTabs({ tabs, forwardParams }: SubTabsProps) {
-  const pathname = usePathname();
+export function SubTabs(props: SubTabsProps) {
+  // Wrap the inner component (which calls useSearchParams) in a
+  // Suspense boundary. The fallback renders the same chrome with
+  // an empty search params object — visually identical except tab
+  // hrefs don't include forwarded params (which is correct for the
+  // static-prerender HTML anyway, since the URL isn't known at
+  // build time).
+  return (
+    <Suspense fallback={<SubTabsShell {...props} searchParams={EMPTY_PARAMS} />}>
+      <SubTabsInner {...props} />
+    </Suspense>
+  );
+}
+
+/** Module-scope empty URLSearchParams instance — reused across renders
+ *  for the Suspense fallback, no allocation per render. */
+const EMPTY_PARAMS = new URLSearchParams();
+
+/**
+ * Inner component — does the search-params read. Isolated here so
+ * the CSR-bailout-triggering hook lives behind the Suspense boundary
+ * declared by the public SubTabs component.
+ */
+function SubTabsInner(props: SubTabsProps) {
   const searchParams = useSearchParams();
+  // useSearchParams returns a ReadonlyURLSearchParams which has the
+  // same .get() / .has() API as URLSearchParams, so the shell
+  // doesn't care which it gets.
+  return <SubTabsShell {...props} searchParams={searchParams} />;
+}
+
+/**
+ * Visual shell — pure render given the props plus a search params
+ * object. Doesn't call any hook that would trigger CSR bailout.
+ * usePathname() is fine here (it's allowed during prerender — Next
+ * knows the pathname at build time for each route).
+ */
+function SubTabsShell({
+  tabs,
+  forwardParams,
+  searchParams,
+}: SubTabsProps & { searchParams: URLSearchParams | ReadonlyURLSearchParams }) {
+  const pathname = usePathname();
 
   return (
     <div className="border-b border-border bg-bg-elevated/40">
@@ -100,6 +167,13 @@ export function SubTabs({ tabs, forwardParams }: SubTabsProps) {
   );
 }
 
+// Minimal type alias for the read-only flavour returned by
+// useSearchParams — same shape we need (just `.get()` and `.has()`).
+type ReadonlyURLSearchParams = {
+  get: (key: string) => string | null;
+  has: (key: string) => boolean;
+};
+
 /**
  * Append a subset of the current URL's query params to a target href.
  *
@@ -116,7 +190,7 @@ export function SubTabs({ tabs, forwardParams }: SubTabsProps) {
  */
 function appendForwardedParams(
   href: string,
-  current: URLSearchParams,
+  current: URLSearchParams | ReadonlyURLSearchParams,
   keys: string[] | undefined,
 ): string {
   if (!keys || keys.length === 0) return href;
