@@ -207,8 +207,8 @@ function computePeriodAggregatedEntries(
     const roundsLost = parseNumericOr(row.raw.Rounds_Lost, 0);
     const matchesWon = parseNumericOr(row.raw.Matches_Won, 0);
     const matchesPlayed = parseNumericOr(row.raw.Matches_Played, 0);
-    const kills = parseNumericOr(row.raw.Kills_Total, 0);
-    const deaths = parseNumericOr(row.raw.Deaths_Total, 0);
+    const kills = parseNumericOr(row.raw.Total_Kills, 0);
+    const deaths = parseNumericOr(row.raw.Total_Deaths, 0);
     const score = parseNumericOr(row.raw.Total_Points, 0);
 
     if (!existing) {

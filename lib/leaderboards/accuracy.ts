@@ -60,8 +60,8 @@ export function aggregateAccuracy(rows: PeriodRow[]): AccuracyRow[] {
   const buckets = new Map<string, Bucket>();
 
   for (const r of rows) {
-    const hits = parseNumericOr(r.raw.Hits_Total, 0);
-    const shots = parseNumericOr(r.raw.Shots_Total, 0);
+    const hits = parseNumericOr(r.raw.Total_Hits, 0);
+    const shots = parseNumericOr(r.raw.Total_Shots, 0);
 
     const existing = buckets.get(r.nickname);
     if (existing) {

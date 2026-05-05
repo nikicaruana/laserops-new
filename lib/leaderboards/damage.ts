@@ -35,8 +35,9 @@ export function aggregateDamage(rows: PeriodRow[]): DamageRow[] {
   const buckets = new Map<string, Bucket>();
 
   for (const r of rows) {
-    // Damage_Total is the canonical column name on the period sheet.
-    const damage = parseNumericOr(r.raw.Damage_Total, 0);
+    // Total_Damage is the canonical column name on the period sheet
+    // (verified against the live header row).
+    const damage = parseNumericOr(r.raw.Total_Damage, 0);
     const matchesPlayed = parseNumericOr(r.raw.Matches_Played, 0);
 
     const existing = buckets.get(r.nickname);

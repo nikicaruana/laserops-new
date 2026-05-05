@@ -1,79 +1,71 @@
-# Pass 26 — Accolades headers fix (small)
+# Pass 27 — column-name hotfix for Kills/Damage/Accuracy
 
-One file. Accolades column headers now read "Tier 1" / "Tier 2" /
-"Tier 3" on desktop, kept as "T1" / "T2" / "T3" on mobile (where
-the columns are only ~32px wide and don't have room for the full
-word).
+The pattern was the opposite of what I guessed: your sheet uses
+`Total_<thing>` not `<thing>_Total`. Five string swaps.
 
-Done with sibling `<span>`s gated by Tailwind's `sm:` breakpoint
-(640px). Same pattern any time we want responsive label text.
-
-Bumped the desktop column width from 55px → 70px to fit "Tier 1"
-without crowding the numbers.
-
-## Files
+## Files in this zip
 
 ```
 patch/
-├── README.md                                          ← this file
-└── components/
-    └── portal/
-        └── tables/
-            └── AccoladesLeaderboardTable.tsx          ← REPLACE
+└── lib/
+    └── leaderboards/
+        ├── kills.ts                ← REPLACE  (Kills_Total → Total_Kills, Deaths_Total → Total_Deaths)
+        ├── damage.ts               ← REPLACE  (Damage_Total → Total_Damage)
+        ├── accuracy.ts             ← REPLACE  (Hits_Total → Total_Hits, Shots_Total → Total_Shots)
+        └── season-challenges.ts    ← REPLACE  (same Kills_Total/Deaths_Total fixes)
 ```
 
-## What's still broken (need your help)
+## What was broken & is now fixed
 
-The screenshots show Kills, Damage, and Accuracy tables all rendering
-zeros (or empty for Accuracy). Pattern matches a single root cause:
-**the period-sheet column names I assumed in pass 24 don't match
-your actual sheet headers.**
-
-When `parseNumericOr(r.raw.Kills_Total, 0)` doesn't find a column,
-it defaults to 0 — so every player gets 0, every cell renders 0.
-Accuracy shows the empty state because the aggregator filters out
-players with `shots <= 0` and they all resolve to 0.
-
-I flagged this risk in pass 24's README:
-
-> If any are named differently in the actual sheet (e.g.
-> `Total_Damage` instead of `Damage_Total`), the leaderboard will
-> silently render with zeros.
-
-Confirmed: that's what's happening. Sandbox can't reach
-docs.google.com to peek at the headers directly.
-
-**To fix, I need the actual column names from your
-Leaderboard_Period_Stats sheet.** Either:
-
-1. Open the sheet, paste the header row text into chat, OR
-2. Send a screenshot of just the header row, OR
-3. Tell me the column names individually:
-   - kills total →
-   - deaths total →
-   - damage total →
-   - hits total →
-   - shots total →
-   - matches played → (you confirmed `Matches_Played` already)
-
-Once I have the real names, the fix is a 5-line patch — one column
-name string in each of `lib/leaderboards/kills.ts`,
-`damage.ts`, `accuracy.ts`. Plus a similar fix in
-`lib/leaderboards/season-challenges.ts` which I just noticed also
-references `Kills_Total` / `Deaths_Total` and is presumably also
-silently broken on those tiebreakers.
+- **Kills leaderboard**: was reading `Kills_Total` and `Deaths_Total`,
+  both undefined in the actual sheet, defaulted to 0 → every row 0/0/0.
+- **Damage leaderboard**: was reading `Damage_Total`, undefined →
+  every row 0/0.
+- **Accuracy leaderboard**: was reading `Hits_Total` and `Shots_Total`,
+  both undefined → every player resolved to 0 shots → aggregator
+  filtered them all out → empty state.
+- **season-challenges aggregator** (bonus fix): was using `Kills_Total`
+  and `Deaths_Total` as tiebreakers in some season configs.
+  Silently broken there too, but only visible if a season was
+  configured to tiebreak on kills/deaths. Patched in the same go.
 
 ## Apply + test
 
 1. Extract over local
 2. Restart `npm run dev`
-3. Reload `/player-portal/leaderboards/all-time` and expand Accolades
+3. Reload `/player-portal/leaderboards/all-time`
 
 ### Test checklist
 
-- Mobile: Accolades headers still read "T1 / T2 / T3" (narrow columns).
-- Desktop: Accolades headers read "Tier 1 / Tier 2 / Tier 3" with
-  comfortable spacing.
+- Kills table: real numbers across all four columns. Top row has
+  highest total kills, K/M and K/D scale with the data.
+- Damage table: real numbers in Total Damage and Damage/Match.
+- Accuracy table: real percentages in Accuracy column (e.g. 23.4%),
+  real shot counts in Total Shots. No more "No matches found"
+  empty state (assuming there's data in the period).
+- Accolades table: still works, plus the desktop "Tier 1 / 2 / 3"
+  headers from pass 26.
+
+## Side observations from your header dump
+
+A couple of things I noticed that aren't fixes for this pass but
+worth flagging for later:
+
+1. **`Total_Accolades` exists in the period sheet.** That's a
+   pre-aggregated total, much cheaper than walking Game_Data_Lookup.
+   We could migrate the Accolades leaderboard's "Total" column to
+   read from the period sheet instead, while the T1/T2/T3 breakdowns
+   would still need the per-match accolade columns. Not urgent —
+   current implementation works — but a perf win if/when you want it.
+
+2. **Period sheet has individual `Accolade_<Name>` columns too.** The
+   per-match accolade flags exist in BOTH Game_Data_Lookup AND the
+   period sheet (presumably summed per period in the period version).
+   The Accolades leaderboard could be entirely period-sheet-based,
+   matching the other three. Same status: works now, can refactor
+   later for consistency.
+
+Leaving these alone unless you want the refactor explicitly.
 
 I tsc'd this. Clean except for the unrelated globals.css pre-existing
 warning.

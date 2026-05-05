@@ -45,8 +45,8 @@ export function aggregateKills(rows: PeriodRow[]): KillsRow[] {
   const buckets = new Map<string, Bucket>();
 
   for (const r of rows) {
-    const kills = parseNumericOr(r.raw.Kills_Total, 0);
-    const deaths = parseNumericOr(r.raw.Deaths_Total, 0);
+    const kills = parseNumericOr(r.raw.Total_Kills, 0);
+    const deaths = parseNumericOr(r.raw.Total_Deaths, 0);
     const matchesPlayed = parseNumericOr(r.raw.Matches_Played, 0);
 
     const existing = buckets.get(r.nickname);
