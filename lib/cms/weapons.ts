@@ -90,6 +90,41 @@ export type Weapon = {
   unlockReqLevel: number;
 };
 
+/**
+ * Match a gun name string against the set of synthetic / fallback
+ * values used in the data when no real gun was recorded. Returns
+ * true for empty strings, "none", "n/a", and anything containing
+ * the word "unknown" (case-insensitive, word-boundary match).
+ *
+ * The "unknown" rule covers literal "Unknown", "Unknown Gun",
+ * "Unknown Weapon", etc. without needing an ever-growing literal
+ * allowlist. Real LaserOps weapons all have specific brand names
+ * (MP9LT Phoenix, AK-25 Predator, MR-512 Sniper, etc.) so a
+ * word-boundary "unknown" match has no realistic false positives
+ * in this data set.
+ *
+ * Exported so the usage-stats aggregator can apply the same filter
+ * — both consumers must agree on what counts as a "non-gun" entry,
+ * otherwise the gallery and the meta chart would drift.
+ */
+export function isFallbackGunName(value: string | undefined | null): boolean {
+  if (!value) return true;
+  const trimmed = value.trim().toLowerCase();
+  if (trimmed === "") return true;
+  // Whole-word "unknown" match. \b word boundaries handle "unknown",
+  // "unknown gun", "unknown weapon", " unknown " (with surrounding
+  // whitespace), etc. Doesn't match "unknownified" or other weird
+  // hypothetical concatenations.
+  if (/\bunknown\b/.test(trimmed)) return true;
+  // Other common fallback values we've seen or might see.
+  return (
+    trimmed === "none" ||
+    trimmed === "n/a" ||
+    trimmed === "na" ||
+    trimmed === "no gun"
+  );
+}
+
 export async function fetchWeapons(): Promise<Weapon[]> {
   const result = await fetchSheetAsObjects<WeaponRaw>(
     CMS_URLS.weapons,
@@ -101,11 +136,14 @@ export async function fetchWeapons(): Promise<Weapon[]> {
   for (const row of result.rows) {
     const name = (row["Gun Name"] ?? "").trim();
     if (name === "") continue;
-    // Drop the synthetic "Unknown" row. The data sheet keeps an
-    // "Unknown" entry as a fallback for matches where no gun was
-    // logged (so Match Report joins don't break), but it's not a
-    // real weapon and shouldn't appear in the gallery.
-    if (name.toLowerCase() === "unknown") continue;
+    // Drop the synthetic "Unknown" / "None" / "N/A" rows. The data
+    // sheet keeps these entries as fallbacks for matches where no
+    // gun was logged (so Match Report joins don't break), but they
+    // aren't real weapons and shouldn't appear in the gallery.
+    // Shared `isFallbackGunName` helper handles common variants and
+    // is also used by the usage-stats aggregator for the meta chart,
+    // keeping the two views in sync.
+    if (isFallbackGunName(name)) continue;
 
     out.push({
       name,
@@ -140,7 +178,10 @@ export async function fetchWeapons(): Promise<Weapon[]> {
 export function listGunTreeBranches(weapons: Weapon[]): string[] {
   const seen = new Set<string>();
   for (const w of weapons) {
-    if (w.treeBranch !== "") seen.add(w.treeBranch);
+    // Same fallback filter as gun names — a stray "Unknown" tree
+    // in the source data shouldn't pollute the dropdown.
+    if (w.treeBranch === "" || isFallbackGunName(w.treeBranch)) continue;
+    seen.add(w.treeBranch);
   }
   return Array.from(seen).sort((a, b) =>
     a.localeCompare(b, undefined, { sensitivity: "base" }),
