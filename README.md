@@ -1,53 +1,32 @@
-# Pass 20 — bubble size = avg kills per match (not total kills)
+# Pass 22 — remove mobile bubble labels
 
-Two files, one metric swap.
+One file. Quick reversal of the pass 21 mobile-label addition now
+that the underlying mobile tap problem is fixed.
 
 ## What changed
 
-Bubble size on the meta chart now tracks **average kills per match**
-instead of **total kills**. The old metric was a popularity signal —
-a heavily-played mediocre gun outsized a great-but-rarely-played
-one. Average kills/match is an effectiveness signal — it answers
-"how lethal is this gun in a typical game?" regardless of how often
-players pick it.
+`components/weapons/WeaponMetaChart.tsx`:
 
-## Files in this zip
+- `<LabelList>` is once again gated on `isDesktop`. Mobile gets a
+  clean chart with no overlapping labels; desktop keeps the
+  at-a-glance label readability.
+- Top margin reverts to conditional: 36px on desktop (labels need
+  clearance above topmost bubbles), 24px on mobile.
+
+What stays from pass 21: the larger `BUBBLE_MIN_R` / `BUBBLE_MAX_R`
+(12 / 36 px). That's what actually fixed the mobile tap reliability,
+and removing it would put us back where we started. Bigger tap
+targets are a win on mobile and a no-op on desktop.
+
+## Files
 
 ```
 patch/
 ├── README.md                                          ← this file
-├── lib/
-│   └── weapons/
-│       └── usage-stats.ts                             ← REPLACE
 └── components/
     └── weapons/
         └── WeaponMetaChart.tsx                        ← REPLACE
 ```
-
-## What each change does
-
-### Aggregator — `lib/weapons/usage-stats.ts`
-
-Adds `avgKillsPerMatch: number` to the `WeaponUsageStats` type.
-Computed once in the aggregator as `totalKills / matchCount`. Always
-finite because the aggregator only emits entries with `matchCount >= 1`.
-
-`totalKills` stays in the type — useful for tooltip context, future
-features, and not worth removing.
-
-### Chart — `components/weapons/WeaponMetaChart.tsx`
-
-- ZAxis dataKey switches from `totalKills` to `avgKillsPerMatch`.
-  Bubble area scaling is unchanged — `[BUBBLE_MIN_R², BUBBLE_MAX_R²]`
-  area-proportional. Recharts handles the linear interpolation
-  between min and max z values, so the swap just remaps which gun
-  gets which size.
-- ZAxis name updated to "Kills/Match" (used by recharts as the
-  default tooltip label and accessible metadata).
-- Subtitle copy: "bigger bubbles mean more kills per match on
-  average."
-- Tooltip now shows BOTH metrics: Kills/Match (the bubble-size
-  driver, prominent) and Total Kills (context, secondary).
 
 ## Apply + test
 
@@ -57,16 +36,10 @@ features, and not worth removing.
 
 ### Test checklist
 
-- Bubble sizes shift: guns with high avg kills/match (regardless of
-  popularity) get bigger bubbles. Guns with lots of total kills but
-  middling per-match kills shrink.
-- Tooltip on hover/tap shows Kills/Match prominently, then Total
-  Kills below.
-- Subtitle reads "...bigger bubbles mean more kills per match on
-  average."
+- Mobile: bubbles only, no text labels. Tap a bubble → tooltip
+  shows accuracy / K/D / kills/match / total kills / match count.
+- Desktop: labels still appear above each bubble.
+- Resize a desktop browser narrow past 1024px: labels disappear.
 
-## Pre-existing warnings to ignore
-
-The unrelated globals.css side-effect import warning is still there
-— that's a TypeScript config quirk for CSS modules in your project,
-not a code issue.
+I tsc'd this. Clean except for the unrelated globals.css pre-existing
+warning.

@@ -38,25 +38,21 @@ import { ChartCard } from "@/components/portal/player-history/ChartCard";
  * per match is an effectiveness metric.
  *
  * --------------------------------------------------------------------
- * NEW IN PASS 18
+ * NEW IN PASS 22
  *
- * 1. Gun Tree filter dropdown above the chart, mirroring the gallery's
- *    filter. Defaults to "All Trees". Filters the bubble set without
- *    re-fetching.
+ * Mobile labels removed (reverting the pass 21 mobile-label
+ * workaround). Pass 21 added them as a fix for unreliable mobile
+ * tooltip taps — the bubbles were too small to hit, and even when
+ * hit the tooltip flickered and died. Pass 21 also bumped
+ * BUBBLE_MIN_R from 8 → 12 (24px diameter floor), which turns out
+ * to be the actual fix: with the larger tap targets, mobile
+ * tooltips now work well enough that labels become visual clutter
+ * rather than a useful workaround.
  *
- * 2. Desktop-only data labels next to each bubble showing the gun
- *    name. Hidden on mobile because the tooltip already covers it
- *    on tap, and 15+ overlapping labels on a phone-width chart are
- *    illegible. Detection is via window.matchMedia at 1024px.
- *
- * 3. MIN_MATCHES lowered from 5 to 1. Sample-size threshold is the
- *    right idea long-term but until the data set is denser, a
- *    threshold of 5 leaves too many guns invisible (Niki noted M512
- *    and Gastat were missing — likely caught by this threshold).
- *    Easy to bump back up later as data grows.
- *
- * 4. Each entry in `stats` now carries a `treeBranch` so we can
- *    filter by it. See lib/weapons/usage-stats.ts for the join.
+ * Desktop keeps labels — at >=1024px viewport width there's plenty
+ * of room and at-a-glance gun identification is faster than
+ * hovering each bubble. Mobile users tap a bubble and read the
+ * tooltip.
  * --------------------------------------------------------------------
  */
 
@@ -75,8 +71,18 @@ const FILTER_ALL = "all";
  */
 const MIN_MATCHES = 1;
 
-const BUBBLE_MIN_R = 8;
-const BUBBLE_MAX_R = 32;
+/**
+ * Bubble radius range (pixels). MIN_R bumped from 8 to 12 in pass 21
+ * so the smallest bubbles are 24px diameter — still under iOS' 44px
+ * touch target recommendation but a meaningful tap-accuracy
+ * improvement. MAX_R also bumped to keep the visual hierarchy
+ * (large bubbles dominate small ones) intact.
+ *
+ * The ZAxis range below uses these squared so bubble AREA (not
+ * radius) scales linearly with kills/match — visually honest.
+ */
+const BUBBLE_MIN_R = 12;
+const BUBBLE_MAX_R = 36;
 
 /**
  * Viewport breakpoint above which we render data labels alongside
@@ -168,9 +174,10 @@ export function WeaponMetaChart({ stats, treeBranches }: Props) {
       />
       <div className="h-[340px] w-full sm:h-[420px] lg:h-[480px]">
         <ResponsiveContainer width="100%" height="100%">
-          {/* On desktop with labels rendered we bump top margin so
-              labels above the topmost bubbles don't clip against the
-              chart edge. */}
+          {/* Top margin: 36 on desktop where labels render above the
+              topmost bubbles (need clearance to avoid clipping
+              against the card edge), 24 on mobile where labels
+              aren't drawn. */}
           <ScatterChart
             margin={{
               top: isDesktop ? 36 : 24,
@@ -235,12 +242,13 @@ export function WeaponMetaChart({ stats, treeBranches }: Props) {
               stroke="#1a1a1a"
               strokeWidth={1}
             >
-              {/* Desktop-only data labels next to each bubble. The
-                  LabelList renders the gun name above each point.
-                  Mobile is excluded because 15+ overlapping labels
-                  on a 380px chart are unreadable; the tooltip on
-                  tap covers labelling there. position="top" puts
-                  the label just above the bubble's edge. */}
+              {/* Bubble labels — desktop only. Pass 21 enabled mobile
+                  labels as a workaround for unreliable tooltip taps,
+                  but with the larger BUBBLE_MIN_R bumping tap targets
+                  up to 24px diameter, mobile tap-for-tooltip now
+                  works well enough to identify guns. Mobile users
+                  get a cleaner chart without label overlap; desktop
+                  users keep the at-a-glance label readability. */}
               {isDesktop && (
                 <LabelList
                   dataKey="gunName"
