@@ -50,7 +50,31 @@ export function HomeHero() {
   return (
     <section
       ref={sectionRef}
-      className="relative isolate overflow-hidden"
+      // Section is content-driven on mobile/tablet (default) and on
+      // large monitors (2xl). On xl (laptops, 1280-1535px wide) we
+      // pin the aspect ratio to 16:9 — same as the hero image — so
+      // the image renders at its natural framing instead of being
+      // zoomed-in by object-cover when the section happens to be
+      // shorter than 16:9 due to compact content.
+      //
+      // Without this constraint, on a typical laptop (~1500×800)
+      // the section becomes content-height (~600-700px from the
+      // pass-23 dialed-down content), giving the section a ~15:6
+      // aspect against the image's 16:9. Object-cover compensates
+      // by zooming the image vertically to fill — which scales the
+      // figure up enormously and pushes their head out of frame.
+      //
+      // max-h prevents the 16:9 ratio from making the section
+      // TALLER than the viewport on roomy xl widths (e.g. a 1500px
+      // viewport at 16:9 → 844px section, slightly over an 800px
+      // viewport). When the cap kicks in, aspect mismatch returns
+      // but at most by ~5-10% — far less aggressive than the
+      // unconstrained case and barely visible.
+      //
+      // 2xl restores `aspect-auto` so the original full-svh
+      // behaviour kicks back in for big monitors where the
+      // unconstrained section happens to be close to 16:9 anyway.
+      className="relative isolate overflow-hidden xl:aspect-[16/9] xl:max-h-[calc(100svh-72px)] 2xl:aspect-auto 2xl:max-h-none"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -125,7 +149,14 @@ export function HomeHero() {
           height={1080}
           priority
           sizes="100vw"
-          objectPosition="80% center"
+          // Anchor the figure as far right as possible. With xl's
+          // aspect-locked section (16:9), the image fits with minimal
+          // cropping, so this object-position controls horizontal
+          // framing: 100% center = right-edge of image aligns with
+          // right-edge of section, leaving the maximum yellow-bg
+          // zone on the left for the headline + CTAs to overlay
+          // without competing with the figure for visual attention.
+          objectPosition="100% center"
           forceState={isHovered ? "color" : "branded"}
           className="h-full w-full"
         />
@@ -144,7 +175,7 @@ export function HomeHero() {
           CONTENT
           =================================================================== */}
 
-      <Container size="wide" className="relative z-10">
+      <Container size="wide" className="relative z-10 xl:h-full">
         {/*
           MOBILE: text vertically centered within the yellow zone above the figure.
           The bottom-padding reserves space equal to the figure's visible height
@@ -154,7 +185,7 @@ export function HomeHero() {
           DESKTOP: vertically centered single content block, no figure-area
           reservation needed.
         */}
-        <div className="hero-content flex min-h-[calc(100svh-72px)] flex-col items-stretch justify-center pt-6 sm:pt-10 xl:min-h-0 xl:justify-start xl:py-16 2xl:min-h-[calc(100svh-72px)] 2xl:py-28">
+        <div className="hero-content flex min-h-[calc(100svh-72px)] flex-col items-stretch justify-center pt-6 sm:pt-10 xl:h-full xl:min-h-0 xl:py-10 2xl:min-h-[calc(100svh-72px)] 2xl:py-28">
           {/* DESKTOP CONTENT BLOCK — vertically centered with my-auto.
               Two desktop tiers:
                 xl  (1280-1535px, typical laptop): content sized to fit

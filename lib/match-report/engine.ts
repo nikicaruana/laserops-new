@@ -151,6 +151,14 @@ const ACCOLADE_COLUMN_SUFFIXES = [
 ];
 
 /**
+ * Public re-export of ACCOLADE_COLUMN_SUFFIXES so other modules
+ * (e.g. the all-time Accolades leaderboard aggregator) can iterate
+ * the same set without duplicating it. New accolades only need to
+ * be added here.
+ */
+export { ACCOLADE_COLUMN_SUFFIXES };
+
+/**
  * Build the full MatchReport for a given match ID.
  *
  * Returns a result variant rather than throwing, so the page can

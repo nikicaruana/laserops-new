@@ -5,6 +5,10 @@ import { CollapsibleSection } from "@/components/portal/CollapsibleSection";
 import { XPLevelsLeaderboard } from "@/components/portal/tables/XPLevelsLeaderboard";
 import { MatchRoundWinsLeaderboard } from "@/components/portal/tables/MatchRoundWinsLeaderboard";
 import { ScoreLeaderboard } from "@/components/portal/tables/ScoreLeaderboard";
+import { KillsLeaderboard } from "@/components/portal/tables/KillsLeaderboard";
+import { DamageLeaderboard } from "@/components/portal/tables/DamageLeaderboard";
+import { AccuracyLeaderboard } from "@/components/portal/tables/AccuracyLeaderboard";
+import { AccoladesLeaderboard } from "@/components/portal/tables/AccoladesLeaderboard";
 
 export const metadata: Metadata = {
   title: "All Time",
@@ -31,9 +35,8 @@ export const metadata: Metadata = {
  * Suspense boundary: any leaderboard whose client component reads URL search
  * params (useSearchParams) needs to be inside a Suspense boundary, otherwise
  * the entire page opts out of static rendering with a build-time warning.
- * MatchRoundWinsLeaderboard and ScoreLeaderboard read ?year and ?month, so
- * each gets a Suspense wrapper. XPLevelsLeaderboard doesn't read params and
- * doesn't need one.
+ * Every leaderboard except XPLevelsLeaderboard reads ?year and ?month, so
+ * they each get a Suspense wrapper.
  */
 export default async function AllTimeLeaderboardPage() {
   return (
@@ -62,6 +65,30 @@ export default async function AllTimeLeaderboardPage() {
       <CollapsibleSection title="Score">
         <Suspense fallback={null}>
           <ScoreLeaderboard />
+        </Suspense>
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Kills">
+        <Suspense fallback={null}>
+          <KillsLeaderboard />
+        </Suspense>
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Damage">
+        <Suspense fallback={null}>
+          <DamageLeaderboard />
+        </Suspense>
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Accuracy">
+        <Suspense fallback={null}>
+          <AccuracyLeaderboard />
+        </Suspense>
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Accolades">
+        <Suspense fallback={null}>
+          <AccoladesLeaderboard />
         </Suspense>
       </CollapsibleSection>
     </div>

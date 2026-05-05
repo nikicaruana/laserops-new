@@ -1,63 +1,80 @@
-# Pass 23 — hero fits laptops without breaking large monitors
+# Pass 25 — hero photo no longer dominates on laptop
 
-One file. The hero was designed against a big monitor (1536px+
-viewport) so it fit perfectly there but felt oversized on a typical
-laptop. This pass introduces a 2-tier desktop ramp: dialed-down sizing
-on `xl` (laptops, 1280-1535px), original generous sizing on `2xl`
-(monitors, 1536px+).
+The pass-23 fix dialed down content sizing on xl viewports — that
+worked. But the screenshot you sent showed the underlying photo was
+ALSO problematic: the figure's head was enormous, gun extended off
+the right edge, and the right portion of the section was a wall of
+saturated yellow.
 
-## What was wrong
+This pass fixes the photo framing.
 
-On a 13-15" laptop with viewport ~1440x900:
-- Heading `text-7xl` (72px) ate too much vertical space
-- Stats grid plus 64px top margin pushed content below the fold
-- Forced full-svh-minus-header height meant the section had to be
-  ~828px tall regardless of what content fit
-- `py-28` (112px top + bottom) added 224px of pure padding
+## Why it was broken
 
-Total: content didn't comfortably fit on a single laptop screen.
+`<DuotoneImage>` uses `object-fit: cover` to fill the section. Cover
+keeps the image's aspect ratio and crops whichever dimension
+overflows the container.
 
-On a 27" monitor with viewport ~2560x1440 these same values felt
-right — that's how it was designed.
+The section was content-height (~720px) on xl after pass 23. The
+image is 1920×1080 (16:9). Section aspect was ~25:12, image aspect
+~16:9 — wider section than image. Cover scaled the image to fit
+width, leaving ~120px of vertical overflow that got clipped equally
+top and bottom.
+
+End result: the figure's head (top of original frame) clipped at
+the top of the section, the figure's lower body clipped at the
+bottom, and we saw "head to gun" filling the entire section height
+— making the figure feel zoomed-in and dominating.
 
 ## The fix
 
-Three-tier responsive ramp via `xl:` and `2xl:` modifiers:
+Two changes in `HomeHero.tsx`:
 
-| Property        | Below xl (mobile/tablet) | xl (laptops)   | 2xl (monitors) |
-| --------------- | ------------------------ | -------------- | -------------- |
-| min-height      | `100svh - 72px`          | natural height | `100svh - 72px` |
-| Section padding | n/a (uses pt-6/sm:pt-10) | `py-16` (64px) | `py-28` (112px) |
-| Heading         | `4xl/5xl`                | `5xl` (48px)   | `7xl` (72px)   |
-| Paragraph       | `base/lg`                | `base`         | `lg`           |
-| Buttons         | `md`                     | `md`           | `lg`           |
-| Stats heading   | n/a (hidden)             | `2xl`          | `3xl`          |
-| Stats padding   | n/a (hidden)             | `p-4`          | `p-5`          |
-| Stats top mgn   | n/a (hidden)             | `mt-10`        | `mt-16`        |
-| Heading→para gap| n/a                      | `mt-4`         | `mt-5`         |
-| Para→CTAs gap   | n/a                      | `mt-6`         | `mt-10`        |
-| CTA gap         | n/a                      | `gap-3`        | `gap-4`        |
+### 1. Section aspect-locked to 16:9 on xl
 
-Mobile layout untouched. The full-svh constraint is preserved on
-mobile because the layered figure design depends on it.
+```
+xl:aspect-[16/9] xl:max-h-[calc(100svh-72px)] 2xl:aspect-auto 2xl:max-h-none
+```
 
-## Why width-based breakpoints (not height-based)
+On xl viewports (1280-1535px wide), the section now matches the
+image's native 16:9 aspect ratio. The image fits without aggressive
+cropping — figure renders at natural framing.
 
-The complaint is fundamentally about height, but Tailwind's standard
-breakpoints are width-based. In practice they work well as a proxy:
-- 13" laptop @ 1440x900 → matches xl ✓
-- 15" laptop @ 1920x1080 → matches xl (just) ✓
-- 24" monitor @ 1920x1080 → matches xl (debatable, but close)
-- 27" iMac @ 2560x1440 → matches 2xl ✓
-- 32" 4K @ 3840x2160 → matches 2xl ✓
+`max-h` caps the section at viewport height so the 16:9 ratio
+doesn't push the section taller than the laptop screen on roomy xl
+widths. When the cap kicks in (e.g. 1500×800 viewport), aspect
+mismatch returns but at most 5-10% — way less aggressive than
+before, barely noticeable.
 
-A 24" monitor at 1920x1200 sitting on someone's desk falls in the
-xl tier and gets the laptop sizing, even though the screen is bigger
-than a laptop. That's a small downgrade for that user. If it matters
-later, we can shift the threshold from 2xl (1536px) to a custom
-1700px breakpoint.
+`2xl` reverts to `aspect-auto` so the original full-svh behaviour
+kicks back in for big monitors where the unconstrained section is
+already close to 16:9.
 
-## Files
+### 2. Object-position pushed to right edge
+
+```diff
+- objectPosition="80% center"
++ objectPosition="100% center"
+```
+
+With the section now properly aspect-locked, object-position controls
+horizontal framing. Anchoring the figure 100% right (right-edge of
+image to right-edge of section) maximises the left-side empty
+yellow-background zone where the headline + CTAs sit. The figure
+becomes "the right half of the image" instead of "filling the
+section."
+
+### Plumbing for aspect-locked layout
+
+For the desktop content block's existing `xl:my-auto` to actually
+center vertically, all ancestors need to share the section's height:
+
+- `Container` gets `xl:h-full`
+- Content div gets `xl:h-full`, drops `xl:justify-start` (was
+  fighting `my-auto`), and reduces vertical padding from `py-16`
+  to `py-10` since the now-taller section already provides
+  breathing room.
+
+## Files in this zip
 
 ```
 patch/
@@ -75,17 +92,25 @@ patch/
 
 ### Test checklist
 
-- 13-15" laptop (1280-1535px viewport width): hero content fits
-  without vertical scrolling. Heading reads as a hero (not tiny)
-  but doesn't dominate. Stats grid sits comfortably below CTAs.
-- 27"+ monitor (1536px+ viewport width): hero looks identical to
-  before — same big heading, generous spacing, full-viewport-tall
-  section.
-- Mobile and tablet (below 1280px): unchanged.
-- Resize a desktop browser window from 1500px down to 1280px while
-  the hero is visible: layout reflows to the laptop variant. No
-  jarring jumps because every property has a single breakpoint
-  threshold (1536px); they all transition together.
+- 13-15" laptop (1280-1535px): hero section is 16:9 aspect, capped
+  at viewport height. Figure is in the right half of the section,
+  not dominating the whole thing. Headline + CTAs comfortably overlay
+  the left yellow zone.
+- 27"+ monitor (1536px+): unchanged — original full-viewport 16:9-ish
+  hero behaviour. (`2xl:aspect-auto` reverts to content-driven height
+  which was already the design.)
+- Mobile/tablet (below 1280px): unchanged. Mobile uses different
+  layered figure design that doesn't go through this code path.
 
 I tsc'd this. Clean except for the unrelated globals.css pre-existing
 warning.
+
+## If it's still not right
+
+The fix above assumes the design intent is "figure on the right,
+text on the left, full image visible." If your actual design intent
+on laptop is something different — e.g. "show only the gun and arm,
+hide the face entirely," or "letterbox the image with proper padding
+above and below" — let me know and I'll adjust. The right escalation
+would probably be a separate xl-cropped image asset rather than
+trying to coax the desktop image into a different framing via CSS.
