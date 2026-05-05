@@ -149,14 +149,16 @@ export function HomeHero() {
           height={1080}
           priority
           sizes="100vw"
-          // Anchor the figure as far right as possible. With xl's
-          // aspect-locked section (16:9), the image fits with minimal
-          // cropping, so this object-position controls horizontal
-          // framing: 100% center = right-edge of image aligns with
-          // right-edge of section, leaving the maximum yellow-bg
-          // zone on the left for the headline + CTAs to overlay
-          // without competing with the figure for visual attention.
-          objectPosition="100% center"
+          // 80% center is the original framing — figure right of
+          // centre, leaving the left ~30% as the yellow background
+          // zone for the overlay text. Pass 25 changed this to "100%
+          // center" to maximise the left zone, but that introduced
+          // a visible black band on the right side of the section
+          // on some laptop viewports (issue persisted across 2xl
+          // monitors too). Reverted to 80% — it was working before
+          // and the slight reduction in left-side empty space is
+          // not worth the right-side artefact.
+          objectPosition="80% center"
           forceState={isHovered ? "color" : "branded"}
           className="h-full w-full"
         />
