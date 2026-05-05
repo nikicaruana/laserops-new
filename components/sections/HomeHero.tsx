@@ -154,36 +154,46 @@ export function HomeHero() {
           DESKTOP: vertically centered single content block, no figure-area
           reservation needed.
         */}
-        <div className="hero-content flex min-h-[calc(100svh-72px)] flex-col items-stretch justify-center pt-6 sm:pt-10 xl:justify-start xl:py-28">
-          {/* DESKTOP CONTENT BLOCK — vertically centered with my-auto */}
+        <div className="hero-content flex min-h-[calc(100svh-72px)] flex-col items-stretch justify-center pt-6 sm:pt-10 xl:min-h-0 xl:justify-start xl:py-16 2xl:min-h-[calc(100svh-72px)] 2xl:py-28">
+          {/* DESKTOP CONTENT BLOCK — vertically centered with my-auto.
+              Two desktop tiers:
+                xl  (1280-1535px, typical laptop): content sized to fit
+                                                    on a 13-15" screen
+                                                    without scrolling.
+                2xl (1536px+, monitors / big screens): the original
+                                                       generous sizing
+                                                       Niki designed against.
+              The xl tier dials down: 5xl heading (was 7xl), md buttons
+              (was lg), text-base paragraph (was lg), tighter stats. The
+              2xl tier restores everything to the original sizing. */}
           <div className="hidden xl:block xl:my-auto max-w-[640px]">
-            <h1 className="text-balance text-7xl font-extrabold leading-[1.02]">
+            <h1 className="text-balance text-5xl font-extrabold leading-[1.02] 2xl:text-7xl">
               Outdoor Laser Tag in Malta.{" "}
               <span className="text-accent">Built for Competition.</span>
             </h1>
-            <p className="mt-5 max-w-xl text-lg text-text-muted">
+            <p className="mt-4 max-w-xl text-base text-text-muted 2xl:mt-5 2xl:text-lg">
               Tactical missions, team battles, and competitive player stats — LaserOps is a new
               kind of laser tag experience.
             </p>
-            <div className="mt-10 flex gap-4">
-              <Button href={ctaLinks.primary.href} variant="primary" size="lg">
+            <div className="mt-6 flex gap-3 2xl:mt-10 2xl:gap-4">
+              <Button href={ctaLinks.primary.href} variant="primary" size="md">
                 {ctaLinks.primary.label}
               </Button>
-              <Button href={ctaLinks.secondary.href} variant="secondary" size="lg">
+              <Button href={ctaLinks.secondary.href} variant="secondary" size="md">
                 {ctaLinks.secondary.label}
               </Button>
             </div>
-            <dl className="mt-16 grid max-w-xl grid-cols-3 gap-px border-y border-border bg-border">
+            <dl className="mt-10 grid max-w-xl grid-cols-3 gap-px border-y border-border bg-border 2xl:mt-16">
               {[
                 { value: "12+", label: "Game Modes" },
                 { value: "1000+", label: "Matches Played" },
                 { value: "Outdoor", label: "Real Terrain" },
               ].map((stat) => (
-                <div key={stat.label} className="bg-bg p-5">
+                <div key={stat.label} className="bg-bg p-4 2xl:p-5">
                   <dt className="text-[10px] font-semibold uppercase tracking-[0.16em] text-text-subtle">
                     {stat.label}
                   </dt>
-                  <dd className="mt-2 text-3xl font-bold text-text">{stat.value}</dd>
+                  <dd className="mt-2 text-2xl font-bold text-text 2xl:text-3xl">{stat.value}</dd>
                 </div>
               ))}
             </dl>
