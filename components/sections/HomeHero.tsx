@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
-import { DuotoneImage } from "@/components/ui/DuotoneImage";
 import { ctaLinks } from "@/lib/nav";
 
 /**
@@ -140,18 +139,42 @@ export function HomeHero() {
           DESKTOP LAYERS (hidden xl:block)
           =================================================================== */}
 
+      {/* Layer 1: BACKGROUND — yellow textured fill, always full-bleed */}
       <div className="absolute inset-0 hidden xl:block" aria-hidden>
-        <DuotoneImage
-          brandedSrc="/images/hero/hero-01-branded.jpg"
-          colorSrc="/images/hero/hero-01-color.jpg"
+        <Image
+          src="/images/hero/desktop-hero-01-bg.png"
           alt=""
-          width={1920}
-          height={1080}
+          width={2400}
+          height={1350}
           priority
           sizes="100vw"
-          objectPosition="80% center"
-          forceState={isHovered ? "color" : "branded"}
-          className="h-full w-full"
+          className="h-full w-full object-cover"
+        />
+      </div>
+
+      {/* Layer 2 + 3: FIGURE — transparent PNG pair, anchored right */}
+      <div className="absolute inset-0 hidden xl:block pointer-events-none" aria-hidden>
+        <Image
+          src="/images/hero/desktop-hero-01-figure-color.png"
+          alt=""
+          width={2400}
+          height={1350}
+          priority
+          sizes="100vw"
+          className="h-full w-full object-contain object-right-bottom"
+        />
+        <Image
+          src="/images/hero/desktop-hero-01-figure-branded.png"
+          alt=""
+          width={2400}
+          height={1350}
+          priority
+          sizes="100vw"
+          className="absolute inset-0 h-full w-full object-contain object-right-bottom"
+          style={{
+            opacity: isHovered ? 0 : 1,
+            transition: "opacity 400ms ease",
+          }}
         />
       </div>
 
