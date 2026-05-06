@@ -140,29 +140,19 @@ export function HomeHero() {
           DESKTOP LAYERS (hidden xl:block)
           =================================================================== */}
 
-      {/* Desktop hero image. The inner wrapper is sized 120% of the
-          section's width, anchored to the left, so the rightmost 20%
-          of the image extends past the section's right edge and gets
-          clipped by the section's overflow-hidden. This crops the
-          source photo's dark right portion (the duotoned environment
-          beyond the yellow paper backdrop) without an overlay/glow.
-          The figure sits well within the kept 0-80% slice so it
-          stays fully in frame. */}
       <div className="absolute inset-0 hidden xl:block" aria-hidden>
-        <div className="absolute inset-y-0 left-0 h-full w-[120%]">
-          <DuotoneImage
-            brandedSrc="/images/hero/hero-01-branded.jpg"
-            colorSrc="/images/hero/hero-01-color.jpg"
-            alt=""
-            width={1920}
-            height={1080}
-            priority
-            sizes="120vw"
-            objectPosition="left center"
-            forceState={isHovered ? "color" : "branded"}
-            className="h-full w-full"
-          />
-        </div>
+        <DuotoneImage
+          brandedSrc="/images/hero/hero-01-branded.jpg"
+          colorSrc="/images/hero/hero-01-color.jpg"
+          alt=""
+          width={1920}
+          height={1080}
+          priority
+          sizes="100vw"
+          objectPosition="80% center"
+          forceState={isHovered ? "color" : "branded"}
+          className="h-full w-full"
+        />
       </div>
 
       <div
