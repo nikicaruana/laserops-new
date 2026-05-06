@@ -56,7 +56,17 @@ export function buildPlayerArmory(
     branches.push({ branch, entries });
   }
 
+  // Preferred branch order: AR before AK, then everything else by sortOrder.
+  const BRANCH_PRIORITY: Record<string, number> = {
+    AR: 0,
+    AK: 1,
+  };
+
   branches.sort((a, b) => {
+    const prioA = BRANCH_PRIORITY[a.branch] ?? 999;
+    const prioB = BRANCH_PRIORITY[b.branch] ?? 999;
+    if (prioA !== prioB) return prioA - prioB;
+    // Fall back to the first entry's sortOrder for unlisted branches.
     const minA = a.entries.length > 0 ? a.entries[0].sortOrder : 0;
     const minB = b.entries.length > 0 ? b.entries[0].sortOrder : 0;
     return minA - minB;

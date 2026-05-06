@@ -4,6 +4,7 @@ import { DashboardPageHeader } from "@/components/portal/DashboardPageHeader";
 import { fetchGameDataRows } from "@/lib/game-data/lookup";
 import { fetchMatchReport, findPlayerInReport } from "@/lib/match-report/engine";
 import { MatchOverview } from "@/components/match-report/MatchOverview";
+import { PlayersTable } from "@/components/match-report/PlayersTable";
 import { PlayerStatsCard } from "@/components/match-report/PlayerStatsCard";
 
 export const metadata: Metadata = {
@@ -135,6 +136,11 @@ async function LastMatchContent({ ops }: { ops: string }) {
   return (
     <div className="flex flex-col gap-6 sm:gap-8">
       <MatchOverview game={report.game} matchDate={report.matchDate} />
+      <PlayersTable
+        players={report.players}
+        matchId={lastMatchId}
+        selectedPlayer={ops}
+      />
       {player ? (
         <PlayerStatsCard player={player} ranks={report.ranks} />
       ) : (

@@ -6,6 +6,10 @@
 export type NavChild = {
   label: string;
   href: string;
+  /** Render in brand yellow — same semantics as NavLink.highlight. */
+  highlight?: boolean;
+  /** Render in muted red — same semantics as NavLink.redHighlight. */
+  redHighlight?: boolean;
 };
 
 export type NavLink = {
@@ -48,9 +52,9 @@ export const primaryNav: NavLink[] = [
     highlight: true,
     mobileExpand: true,
     children: [
-      { label: "Leaderboards", href: "/player-portal/leaderboards" },
-      { label: "Player Stats", href: "/player-portal/player-stats" },
-      { label: "Match Report", href: "/match-report" },
+      { label: "Leaderboards", href: "/player-portal/leaderboards", highlight: true },
+      { label: "Player Stats", href: "/player-portal/player-stats", highlight: true },
+      { label: "Match Report", href: "/match-report", redHighlight: true },
     ],
   },
   {
