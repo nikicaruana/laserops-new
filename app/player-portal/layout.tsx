@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { PortalTabs } from "@/components/portal/PortalTabs";
 
 /**
  * Player Portal layout.
@@ -7,13 +6,12 @@ import { PortalTabs } from "@/components/portal/PortalTabs";
  * Wraps every page under /player-portal. The site-wide Header is rendered
  * by the root layout above us, so users always have a way out of the portal.
  *
- * Within the portal we add:
- *   - PortalTabs: top-level tabs (Leaderboards | Player Stats)
- *   - A nested layout under each section adds its own SubTabs row
+ * Navigation between Leaderboards / Player Stats / Match Report is handled
+ * by the main site nav (desktop dropdown + mobile nav items) — no separate
+ * in-page tab strip needed.
  *
- * Spacing is intentionally tighter than the marketing site — denser layout
- * for data-heavy pages. The "Pin to Home" button is rendered by each page's
- * DashboardPageHeader so it sits beside the title naturally.
+ * Each sub-section layout (leaderboards, player-stats) adds its own
+ * second-level SubTabs row as needed.
  */
 
 export const metadata: Metadata = {
@@ -26,10 +24,5 @@ export const metadata: Metadata = {
 };
 
 export default function PlayerPortalLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="bg-bg">
-      <PortalTabs />
-      {children}
-    </div>
-  );
+  return <div className="bg-bg">{children}</div>;
 }

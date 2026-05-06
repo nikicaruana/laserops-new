@@ -134,7 +134,7 @@ export function ArmoryCard({ entry }: Props) {
           )}
 
           {/* Title — gun name when unlocked, unlock criteria when not. */}
-          <h3 className="text-xl font-extrabold leading-tight tracking-tight text-text sm:text-3xl">
+          <h3 className="text-center text-xl font-extrabold leading-tight tracking-tight text-text sm:text-3xl">
             {isLocked
               ? entry.unlockDisplayText || "Locked"
               : entry.gunDisplayTitle || entry.gunName}
@@ -147,7 +147,7 @@ export function ArmoryCard({ entry }: Props) {
                 pct={entry.unlockProgressPct}
                 play={inView}
               />
-              <p className="mt-2 text-sm text-text-muted">
+              <p className="mt-2 text-center text-sm text-text-muted">
                 {showCountUp ? (
                   <>
                     <AnimatedNumber
@@ -175,7 +175,7 @@ export function ArmoryCard({ entry }: Props) {
               />
             </div>
           ) : (
-            <p className="mt-1 text-sm italic text-text-muted">
+            <p className="mt-1 text-center text-sm italic text-text-muted">
               Unlocked but never used. Tap for stats and details.
             </p>
           )}

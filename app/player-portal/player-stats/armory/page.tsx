@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { DashboardPageHeader } from "@/components/portal/DashboardPageHeader";
-import { PlayerSearch } from "@/components/portal/player-summary/PlayerSearch";
 import { ArmoryEmptyState } from "@/components/portal/player-armory/ArmoryEmptyState";
 import { PlayerArmoryView } from "@/components/portal/player-armory/PlayerArmoryView";
 import {
@@ -10,10 +9,6 @@ import {
 } from "@/lib/cms/player-armory";
 import { fetchWeapons } from "@/lib/cms/weapons";
 import { buildPlayerArmory } from "@/lib/weapons/armory";
-import {
-  fetchAllPlayerStats,
-  listAllNicknames,
-} from "@/lib/player-stats/shared";
 
 export const metadata: Metadata = {
   title: "Armory",
@@ -27,10 +22,9 @@ export const metadata: Metadata = {
  * Gun_Damage catalogue for spec extras, groups by Gun_Tree_Branch, and
  * renders one collapsible section per branch with ArmoryCard items.
  *
- * Mirrors the History page's pattern: nickname autocomplete is fetched
- * in the outer page so the search bar is always available; the heavier
- * per-player data is loaded inside a Suspense boundary keyed on `ops`
- * so switching players triggers a fresh fetch + suspense fallback.
+ * The PlayerSearch bar lives in the player-stats layout (PlayerStatsShell),
+ * so it appears above the sub-tabs for all player-stats pages — no separate
+ * search bar here.
  */
 
 type SearchParams = Promise<{ ops?: string }>;
@@ -43,18 +37,9 @@ export default async function PlayerArmoryPage({
   const params = await searchParams;
   const ops = (params.ops ?? "").trim();
 
-  const knownPlayersResult = await fetchAllPlayerStats();
-  const knownNicknames = knownPlayersResult.ok
-    ? listAllNicknames(knownPlayersResult.rows)
-    : [];
-
   return (
     <div className="mx-auto w-full max-w-5xl">
       <DashboardPageHeader title="Armory" hideAddToHome />
-
-      <Suspense fallback={null}>
-        <PlayerSearch knownNicknames={knownNicknames} currentOpsTag={ops} />
-      </Suspense>
 
       {ops === "" ? (
         <ArmoryEmptyState />
@@ -92,7 +77,7 @@ async function ArmoryContent({ ops }: { ops: string }) {
         </p>
         <p className="mx-auto mt-3 max-w-md text-sm text-text-muted sm:text-base">
           No armory data for &ldquo;{ops}&rdquo; yet. Double-check the
-          Ops Tag — recent players appear in the search dropdown above.
+          Ops Tag — recent players appear in the search bar above.
         </p>
       </div>
     );

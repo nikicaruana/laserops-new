@@ -1,22 +1,32 @@
-import { SubTabs } from "@/components/portal/SubTabs";
+import {
+  fetchAllPlayerStats,
+  listAllNicknames,
+} from "@/lib/player-stats/shared";
+import { PlayerStatsShell } from "@/components/portal/PlayerStatsShell";
 
-const playerStatsSubTabs = [
-  { label: "Summary", href: "/player-portal/player-stats/summary" },
-  { label: "History", href: "/player-portal/player-stats/history" },
-  { label: "Armory", href: "/player-portal/player-stats/armory" },
-];
+/**
+ * Player Stats layout.
+ *
+ * Fetches the list of known player nicknames (cached 5min) so the search
+ * bar rendered by PlayerStatsShell has autocomplete suggestions available
+ * immediately — no client-side fetch needed.
+ *
+ * The shell is a client component that:
+ *   - Always shows the PlayerSearch bar (search first, then browse tabs)
+ *   - Shows the SubTabs row (Summary / History / Armory / Last Match)
+ *     only once a valid player is selected via ?ops=
+ */
+export default async function PlayerStatsLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const result = await fetchAllPlayerStats();
+  const knownNicknames = result.ok ? listAllNicknames(result.rows) : [];
 
-export default function PlayerStatsLayout({ children }: { children: React.ReactNode }) {
   return (
-    <>
-      {/* forwardParams={["ops"]} — keep the selected player (?ops=)
-          when the user clicks between Summary / History / Armory.
-          Without this, jumping from Summary to History drops the
-          query string and the user lands on an empty search state. */}
-      <SubTabs tabs={playerStatsSubTabs} forwardParams={["ops"]} />
-      <div className="mx-auto w-full max-w-[90rem] px-4 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-10">
-        {children}
-      </div>
-    </>
+    <PlayerStatsShell knownNicknames={knownNicknames}>
+      {children}
+    </PlayerStatsShell>
   );
 }

@@ -6,6 +6,10 @@
 export type NavChild = {
   label: string;
   href: string;
+  /** Render in brand yellow — same semantics as NavLink.highlight. */
+  highlight?: boolean;
+  /** Render in muted red — same semantics as NavLink.redHighlight. */
+  redHighlight?: boolean;
 };
 
 export type NavLink = {
@@ -21,6 +25,12 @@ export type NavLink = {
   redHighlight?: boolean;
   /** Optional dropdown children shown on desktop hover and mobile accordion. */
   children?: NavChild[];
+  /**
+   * Mobile-only: instead of rendering this item as an accordion group,
+   * explode its children as individual top-level items in the mobile nav.
+   * The parent itself is hidden. Children inherit the parent's color.
+   */
+  mobileExpand?: boolean;
 };
 
 export const primaryNav: NavLink[] = [
@@ -40,10 +50,11 @@ export const primaryNav: NavLink[] = [
     label: "Player Portal",
     href: "/player-portal",
     highlight: true,
+    mobileExpand: true,
     children: [
-      { label: "Leaderboards", href: "/player-portal/leaderboards" },
-      { label: "Player Stats", href: "/player-portal/player-stats" },
-      { label: "Match Report", href: "/match-report" },
+      { label: "Leaderboards", href: "/player-portal/leaderboards", highlight: true },
+      { label: "Player Stats", href: "/player-portal/player-stats", highlight: true },
+      { label: "Match Report", href: "/match-report", redHighlight: true },
     ],
   },
   {

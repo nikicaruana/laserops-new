@@ -47,18 +47,6 @@ export function Header() {
                       )}
                     >
                       {link.label}
-                      {link.highlight && (
-                        <span
-                          aria-hidden
-                          className="inline-block h-1 w-1 rounded-full bg-accent"
-                        />
-                      )}
-                      {link.redHighlight && (
-                        <span
-                          aria-hidden
-                          className="inline-block h-1 w-1 rounded-full bg-red-700"
-                        />
-                      )}
                       {/* Down chevron */}
                       <svg
                         aria-hidden
@@ -88,7 +76,14 @@ export function Header() {
                           <Link
                             key={child.href}
                             href={child.href}
-                            className="block px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-text-muted transition-colors hover:text-accent"
+                            className={cn(
+                              "block px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition-colors",
+                              child.highlight
+                                ? "text-accent hover:text-accent-soft"
+                                : child.redHighlight
+                                  ? "text-red-700 hover:text-red-600"
+                                  : "text-text-muted hover:text-accent",
+                            )}
                           >
                             {child.label}
                           </Link>
