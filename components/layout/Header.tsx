@@ -29,36 +29,97 @@ export function Header() {
             aria-label="Primary"
             className="hidden items-center gap-6 2xl:gap-8 xl:flex"
           >
-            {primaryNav.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={cn(
-                  "relative text-xs font-semibold uppercase tracking-[0.14em] transition-colors",
-                  // Three tone variants. redHighlight uses red-800 — same
-                  // muted red as the Match Report XP card's progress bar
-                  // and ▶ marker, so the nav and the feature read as
-                  // visually related.
-                  link.highlight && "text-accent hover:text-accent-soft",
-                  link.redHighlight && "text-red-700 hover:text-red-600",
-                  !link.highlight && !link.redHighlight && "text-text-muted hover:text-accent",
-                )}
-              >
-                {link.label}
-                {link.highlight && (
-                  <span
-                    aria-hidden
-                    className="ml-1.5 inline-block h-1 w-1 -translate-y-[2px] rounded-full bg-accent align-middle"
-                  />
-                )}
-                {link.redHighlight && (
-                  <span
-                    aria-hidden
-                    className="ml-1.5 inline-block h-1 w-1 -translate-y-[2px] rounded-full bg-red-700 align-middle"
-                  />
-                )}
-              </Link>
-            ))}
+            {primaryNav
+              .filter((link) => !link.hidden)
+              .map((link) =>
+                link.children ? (
+                  /* Items with dropdown children */
+                  <div key={link.href} className="group relative">
+                    <Link
+                      href={link.href}
+                      className={cn(
+                        "inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-[0.14em] transition-colors",
+                        link.highlight && "text-accent hover:text-accent-soft",
+                        link.redHighlight && "text-red-700 hover:text-red-600",
+                        !link.highlight &&
+                          !link.redHighlight &&
+                          "text-text-muted hover:text-accent",
+                      )}
+                    >
+                      {link.label}
+                      {link.highlight && (
+                        <span
+                          aria-hidden
+                          className="inline-block h-1 w-1 rounded-full bg-accent"
+                        />
+                      )}
+                      {link.redHighlight && (
+                        <span
+                          aria-hidden
+                          className="inline-block h-1 w-1 rounded-full bg-red-700"
+                        />
+                      )}
+                      {/* Down chevron */}
+                      <svg
+                        aria-hidden
+                        viewBox="0 0 10 6"
+                        className="h-2 w-2 shrink-0 translate-y-px opacity-60"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="square"
+                        strokeLinejoin="miter"
+                      >
+                        <path d="M1 1l4 4 4-4" />
+                      </svg>
+                    </Link>
+
+                    {/* Dropdown panel — CSS-only via group-hover + group-focus-within */}
+                    <div
+                      className={cn(
+                        "absolute left-0 top-full z-50 pt-2",
+                        "pointer-events-none opacity-0 transition-opacity duration-150",
+                        "group-hover:pointer-events-auto group-hover:opacity-100",
+                        "group-focus-within:pointer-events-auto group-focus-within:opacity-100",
+                      )}
+                    >
+                      <div className="min-w-[168px] rounded-sm border border-border bg-bg py-1 shadow-lg">
+                        {link.children.map((child) => (
+                          <Link
+                            key={child.href}
+                            href={child.href}
+                            className="block px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-text-muted transition-colors hover:text-accent"
+                          >
+                            {child.label}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* Plain links — no dropdown */
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={cn(
+                      "relative text-xs font-semibold uppercase tracking-[0.14em] transition-colors",
+                      link.highlight && "text-accent hover:text-accent-soft",
+                      link.redHighlight && "text-red-700 hover:text-red-600",
+                      !link.highlight &&
+                        !link.redHighlight &&
+                        "text-text-muted hover:text-accent",
+                    )}
+                  >
+                    {link.label}
+                    {link.redHighlight && (
+                      <span
+                        aria-hidden
+                        className="ml-1.5 inline-block h-1 w-1 -translate-y-[2px] rounded-full bg-red-700 align-middle"
+                      />
+                    )}
+                  </Link>
+                ),
+              )}
           </nav>
 
           {/* Desktop CTA — only shown xl+ */}
