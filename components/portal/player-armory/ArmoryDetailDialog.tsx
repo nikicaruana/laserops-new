@@ -3,6 +3,8 @@
 import { useEffect, useRef } from "react";
 import { formatFireRate } from "@/lib/cms/weapons";
 import type { ArmoryEntry } from "@/lib/weapons/armory";
+import { AnimatedNumber } from "@/components/match-report/AnimatedNumber";
+import { AnimatedProgressBar } from "./AnimatedProgressBar";
 
 /**
  * ArmoryDetailDialog
@@ -130,11 +132,6 @@ function ArmoryDialogBody({
             <h3 className="text-xl font-extrabold leading-tight tracking-tight text-text sm:text-2xl">
               {title}
             </h3>
-            {entry.gunClass !== "" && (
-              <p className="mt-1 text-xs uppercase tracking-[0.14em] text-text-muted">
-                {entry.gunClass}
-              </p>
-            )}
           </div>
           <button
             type="button"
@@ -169,7 +166,7 @@ function ArmoryDialogBody({
               aria-hidden={isLocked || undefined}
               className={
                 isLocked
-                  ? "block h-24 w-auto select-none object-contain opacity-60 blur-md sm:h-32"
+                  ? "block h-24 w-auto select-none object-contain opacity-60 blur-[6px] sm:h-32"
                   : "block h-24 w-auto select-none object-contain sm:h-32"
               }
               draggable={false}
@@ -186,11 +183,29 @@ function ArmoryDialogBody({
             <p className="text-[0.6rem] font-bold uppercase tracking-[0.18em] text-text-muted">
               Unlock progress
             </p>
-            <ProgressBar pct={entry.unlockProgressPct} />
-            {entry.unlockProgressText !== "" && (
+            <div className="mt-2">
+              <AnimatedProgressBar
+                pct={entry.unlockProgressPct}
+                play={true}
+                className="h-2"
+              />
+            </div>
+            {entry.unlockReqPoints > 0 ? (
               <p className="mt-2 text-sm text-text-muted">
-                {entry.unlockProgressText}
+                <AnimatedNumber
+                  value={entry.pointsTowardUnlock}
+                  format="comma"
+                  duration={2000}
+                />
+                {" / "}
+                {entry.unlockReqPoints.toLocaleString("en-US")}
               </p>
+            ) : (
+              entry.unlockProgressText !== "" && (
+                <p className="mt-2 text-sm text-text-muted">
+                  {entry.unlockProgressText}
+                </p>
+              )
             )}
             {(entry.unlockPrereqClass !== "" ||
               entry.unlockPrereqGun !== "") && (
@@ -243,12 +258,12 @@ function ArmoryDialogBody({
         </div>
 
         {/* Spec extras only available from Gun_Damage join. Skip the
-            whole row if the spec didn't match. */}
+            whole row if the spec didn't match. Range was removed at the
+            user's request — laser tag range numbers from the catalogue
+            sheet aren't meaningful enough to display alongside hard
+            stats like length/weight/difficulty. */}
         {entry.spec && (
-          <div className="mt-3 grid grid-cols-3 gap-1.5 sm:grid-cols-5">
-            {entry.spec.range > 0 && (
-              <DialogStat label="Range" value={fmtNum(entry.spec.range)} />
-            )}
+          <div className="mt-3 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
             {entry.spec.length > 0 && (
               <DialogStat label="Length" value={fmtNum(entry.spec.length)} />
             )}
@@ -266,35 +281,50 @@ function ArmoryDialogBody({
 
         {/* Player stats — only when unlocked AND the player has used the
             gun. Hidden for locked guns and for unlocked-but-unused
-            guns (showing all zeros adds noise). */}
+            guns (showing all zeros adds noise).
+            Layout: five paired stat groups (each pair on a bordered
+            card) + three standalone tiles below. Section heading +
+            grid both centred. */}
         {!isLocked && entry.hasUsedGun && (
-          <div className="mt-5 border-t border-border pt-4">
+          <div className="mt-5 border-t border-border pt-4 text-center">
             <p className="text-[0.6rem] font-bold uppercase tracking-[0.18em] text-accent">
               Your stats with this gun
             </p>
-            <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
-              <DialogStat label="Matches" value={fmtNum(entry.matchesUsed)} />
-              <DialogStat label="Kills" value={fmtNum(entry.killsTotal)} />
-              <DialogStat label="Avg K" value={fmtFloat(entry.avgKills)} />
-              <DialogStat label="Deaths" value={fmtNum(entry.deathsTotal)} />
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <StatGroup>
+                <DialogStat label="Matches" value={fmtNum(entry.matchesUsed)} />
+                <DialogStat
+                  label="Match Win %"
+                  value={fmtRate(entry.winsUsingGun, entry.matchesUsed)}
+                />
+              </StatGroup>
+              <StatGroup>
+                <DialogStat label="Kills" value={fmtNum(entry.killsTotal)} />
+                <DialogStat label="Avg Kills" value={fmtFloat(entry.avgKills)} />
+              </StatGroup>
+              <StatGroup>
+                <DialogStat label="Damage" value={fmtNum(entry.damageTotal)} />
+                <DialogStat
+                  label="Avg Damage"
+                  value={fmtFloat(entry.avgDamage)}
+                />
+              </StatGroup>
+              <StatGroup>
+                <DialogStat label="Score" value={fmtNum(entry.scoreTotal)} />
+                <DialogStat
+                  label="Avg Score"
+                  value={fmtFloat(entry.avgScore)}
+                />
+              </StatGroup>
+            </div>
+            <div className="mx-auto mt-3 grid max-w-md grid-cols-2 gap-2 sm:grid-cols-4">
               <DialogStat label="K/D" value={fmtFloat(entry.kdRatio)} />
-              <DialogStat label="Acc." value={fmtPct(entry.avgAccuracy)} />
-              <DialogStat label="Hits" value={fmtNum(entry.hitsTotal)} />
-              <DialogStat label="Shots" value={fmtNum(entry.shotsTotal)} />
-              <DialogStat label="Damage" value={fmtNum(entry.damageTotal)} />
-              <DialogStat label="Avg Dmg" value={fmtFloat(entry.avgDamage)} />
-              <DialogStat label="Score" value={fmtNum(entry.scoreTotal)} />
-              <DialogStat label="Avg Score" value={fmtFloat(entry.avgScore)} />
-              <DialogStat label="Wins" value={fmtNum(entry.winsUsingGun)} />
-              <DialogStat
-                label="Rds Won"
-                value={fmtNum(entry.roundsWonUsingGun)}
-              />
+              <DialogStat label="Acc %" value={fmtPct(entry.avgAccuracy)} />
+              <DialogStat label="Rounds Won" value={fmtNum(entry.roundsWonUsingGun)} />
               <DialogStat
                 label="Avg Rating"
                 value={fmtFloat(entry.avgMatchRating)}
               />
-              <DialogStat label="Level" value={fmtNum(entry.playerLevel)} />
             </div>
           </div>
         )}
@@ -314,20 +344,16 @@ function ArmoryDialogBody({
   );
 }
 
-function ProgressBar({ pct }: { pct: number }) {
-  const clamped = Math.max(0, Math.min(100, pct));
+/**
+ * StatGroup
+ * Visual container for a pair of related DialogStats. Subtle border +
+ * tinted fill makes the grouping visible at a glance without being
+ * heavy. Children render side-by-side.
+ */
+function StatGroup({ children }: { children: React.ReactNode }) {
   return (
-    <div
-      role="progressbar"
-      aria-valuenow={Math.round(clamped)}
-      aria-valuemin={0}
-      aria-valuemax={100}
-      className="mt-2 h-2 w-full overflow-hidden rounded-sm bg-bg"
-    >
-      <div
-        className="h-full bg-accent"
-        style={{ width: `${clamped}%` }}
-      />
+    <div className="grid grid-cols-2 gap-1 rounded-sm border border-border bg-bg-overlay/40 p-2">
+      {children}
     </div>
   );
 }
@@ -352,7 +378,13 @@ function fmtNum(value: number): string {
 
 function fmtFloat(value: number): string {
   if (!Number.isFinite(value) || value === 0) return "—";
-  return value.toFixed(2).replace(/\.?0+$/, "");
+  // Strip trailing zeros after the decimal, then reapply locale
+  // formatting so the integer portion gets thousands separators
+  // ("15060" → "15,060", "97.67" stays "97.67").
+  const trimmed = value.toFixed(2).replace(/\.?0+$/, "");
+  const [intPart, fracPart] = trimmed.split(".");
+  const intWithCommas = Number(intPart).toLocaleString("en-US");
+  return fracPart ? `${intWithCommas}.${fracPart}` : intWithCommas;
 }
 
 function fmtPct(value: number): string {
@@ -363,8 +395,19 @@ function fmtPct(value: number): string {
   return `${asPct.toFixed(1).replace(/\.0$/, "")}%`;
 }
 
+/**
+ * Format a "X out of Y" ratio as a percentage. Returns "—" if the
+ * denominator is zero or non-finite.
+ */
+function fmtRate(numerator: number, denominator: number): string {
+  if (!Number.isFinite(denominator) || denominator <= 0) return "—";
+  if (!Number.isFinite(numerator)) return "—";
+  const pct = (numerator / denominator) * 100;
+  return `${pct.toFixed(1).replace(/\.0$/, "")}%`;
+}
+
 function formatNumberShort(value: number): string {
   if (!Number.isFinite(value)) return "—";
-  if (Number.isInteger(value)) return value.toString();
+  if (Number.isInteger(value)) return value.toLocaleString("en-US");
   return value.toFixed(1).replace(/\.0$/, "");
 }
