@@ -7,10 +7,8 @@ import {
   type PlayerStatsRaw,
 } from "@/lib/player-stats/shared";
 import { projectSummaryTop } from "@/lib/player-stats/summary-top";
-import {
-  PlayerSearch,
-  PlayerSearchAutoload,
-} from "@/components/portal/player-summary/PlayerSearch";
+// PlayerSearch and PlayerSearchAutoload live in PlayerStatsShell (layout level)
+// so the search bar appears above the sub-tabs for all player-stats pages.
 import { ProfileCard } from "@/components/portal/player-summary/ProfileCard";
 import { LevelCard } from "@/components/portal/player-summary/LevelCard";
 import { FavouriteWeaponCard } from "@/components/portal/player-summary/FavouriteWeaponCard";
@@ -44,13 +42,9 @@ const LOCALSTORAGE_KEY = "laserops:last-ops-tag";
 
 type PlayerSummaryViewProps = {
   allRows: PlayerStatsRaw[];
-  knownNicknames: string[];
 };
 
-export function PlayerSummaryView({
-  allRows,
-  knownNicknames,
-}: PlayerSummaryViewProps) {
+export function PlayerSummaryView({ allRows }: PlayerSummaryViewProps) {
   const searchParams = useSearchParams();
   const opsParam = searchParams.get("ops") ?? "";
 
@@ -88,17 +82,6 @@ export function PlayerSummaryView({
 
   return (
     <>
-      {/* Localstorage autoload — runs once on mount if URL has no ?ops=.
-          Renders nothing visually. */}
-      <PlayerSearchAutoload hasOpsParam={opsParam !== ""} />
-
-      <div className="mb-6">
-        <PlayerSearch
-          knownNicknames={knownNicknames}
-          currentOpsTag={opsParam}
-        />
-      </div>
-
       {/* States:
           1. URL has no ?ops= and no autoload happened → show empty hint
           2. URL has ?ops= but no match in data → show "not found" hint

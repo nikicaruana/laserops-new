@@ -60,7 +60,27 @@ export function MobileNav() {
     setOpenIndex(null);
   }
 
-  const visibleNav = primaryNav.filter((link) => !link.hidden);
+  // Build the flat mobile nav list: mobileExpand items are replaced by
+  // their children (with the parent's color inherited).
+  type MobileItem =
+    | { kind: "link"; label: string; href: string; color: string }
+    | { kind: "accordion"; link: (typeof primaryNav)[number]; index: number };
+
+  const mobileItems: MobileItem[] = [];
+  let accordionIndex = 0;
+  for (const link of primaryNav) {
+    if (link.hidden) continue;
+    if (link.mobileExpand && link.children) {
+      // Explode children as individual yellow links
+      const color = link.highlight ? "#ffde00" : link.redHighlight ? "#b91c1c" : "#f5f5f5";
+      for (const child of link.children) {
+        mobileItems.push({ kind: "link", label: child.label, href: child.href, color });
+      }
+    } else {
+      mobileItems.push({ kind: "accordion", link, index: accordionIndex });
+      accordionIndex++;
+    }
+  }
 
   const panel = (
     <div
@@ -147,172 +167,144 @@ export function MobileNav() {
 
       {/* Primary nav */}
       <nav aria-label="Primary" style={{ padding: "1rem 1.25rem 0", flexShrink: 0 }}>
-        {visibleNav.map((link, i) => (
-          <div
-            key={link.href}
-            style={{ borderBottom: "1px solid rgba(38, 38, 38, 0.6)" }}
-          >
-            {link.children ? (
-              /* Accordion trigger for items with children */
-              <>
-                <button
-                  type="button"
-                  onClick={() => setOpenIndex(openIndex === i ? null : i)}
+        {mobileItems.map((item, idx) => {
+          if (item.kind === "link") {
+            /* Flat link — used for mobileExpand children (e.g. Leaderboards,
+               Player Stats, Match Report) — yellow color inherited from parent */
+            return (
+              <div
+                key={item.href}
+                style={{ borderBottom: "1px solid rgba(38, 38, 38, 0.6)" }}
+              >
+                <Link
+                  href={item.href}
+                  onClick={close}
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "space-between",
-                    width: "100%",
                     padding: "0.625rem 0",
-                    background: "transparent",
-                    border: "none",
-                    cursor: "pointer",
                     fontSize: "1rem",
                     fontWeight: 700,
                     textTransform: "uppercase",
                     letterSpacing: "-0.02em",
-                    color: link.highlight
-                      ? "#ffde00"
-                      : link.redHighlight
-                        ? "#b91c1c"
-                        : "#f5f5f5",
+                    color: item.color,
                     textDecoration: "none",
                   }}
-                  aria-expanded={openIndex === i}
                 >
-                  <span
-                    style={{ display: "inline-flex", alignItems: "center", gap: "0.625rem" }}
-                  >
-                    {link.label}
-                    {link.highlight && (
-                      <span
-                        aria-hidden
-                        style={{
-                          display: "inline-block",
-                          width: "5px",
-                          height: "5px",
-                          borderRadius: "9999px",
-                          backgroundColor: "#ffde00",
-                        }}
-                      />
-                    )}
-                    {link.redHighlight && (
-                      <span
-                        aria-hidden
-                        style={{
-                          display: "inline-block",
-                          width: "5px",
-                          height: "5px",
-                          borderRadius: "9999px",
-                          backgroundColor: "#b91c1c",
-                        }}
-                      />
-                    )}
-                  </span>
-                  {/* Down chevron — rotates when open */}
-                  <svg
-                    aria-hidden
-                    viewBox="0 0 10 6"
-                    style={{
-                      width: "10px",
-                      height: "10px",
-                      flexShrink: 0,
-                      color: "#737373",
-                      transform: openIndex === i ? "rotate(180deg)" : "none",
-                      transition: "transform 200ms ease",
-                    }}
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="square"
-                    strokeLinejoin="miter"
-                  >
-                    <path d="M1 1l4 4 4-4" />
-                  </svg>
-                </button>
+                  {item.label}
+                </Link>
+              </div>
+            );
+          }
 
-                {/* Sub-links — shown when this item is open */}
-                {openIndex === i && (
-                  <div style={{ paddingBottom: "0.5rem" }}>
-                    {link.children.map((child) => (
-                      <Link
-                        key={child.href}
-                        href={child.href}
-                        onClick={close}
-                        style={{
-                          display: "block",
-                          paddingTop: "0.5rem",
-                          paddingBottom: "0.5rem",
-                          paddingLeft: "1rem",
-                          fontSize: "0.75rem",
-                          fontWeight: 600,
-                          textTransform: "uppercase",
-                          letterSpacing: "0.14em",
-                          color: "#a3a3a3",
-                          textDecoration: "none",
-                        }}
-                      >
-                        {child.label}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </>
-            ) : (
-              /* Plain link — navigates directly */
-              <Link
-                href={link.href}
-                onClick={close}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "0.625rem 0",
-                  fontSize: "1rem",
-                  fontWeight: 700,
-                  textTransform: "uppercase",
-                  letterSpacing: "-0.02em",
-                  color: link.highlight
-                    ? "#ffde00"
-                    : link.redHighlight
-                      ? "#b91c1c"
-                      : "#f5f5f5",
-                  textDecoration: "none",
-                }}
-              >
-                <span
-                  style={{ display: "inline-flex", alignItems: "center", gap: "0.625rem" }}
+          /* Accordion item — parent link or plain link */
+          const link = item.link;
+          const i = item.index;
+          const linkColor = link.highlight
+            ? "#ffde00"
+            : link.redHighlight
+              ? "#b91c1c"
+              : "#f5f5f5";
+
+          return (
+            <div
+              key={link.href}
+              style={{ borderBottom: "1px solid rgba(38, 38, 38, 0.6)" }}
+            >
+              {link.children ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setOpenIndex(openIndex === i ? null : i)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      width: "100%",
+                      padding: "0.625rem 0",
+                      background: "transparent",
+                      border: "none",
+                      cursor: "pointer",
+                      fontSize: "1rem",
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                      letterSpacing: "-0.02em",
+                      color: linkColor,
+                      textDecoration: "none",
+                    }}
+                    aria-expanded={openIndex === i}
+                  >
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: "0.625rem" }}>
+                      {link.label}
+                    </span>
+                    <svg
+                      aria-hidden
+                      viewBox="0 0 10 6"
+                      style={{
+                        width: "10px",
+                        height: "10px",
+                        flexShrink: 0,
+                        color: "#737373",
+                        transform: openIndex === i ? "rotate(180deg)" : "none",
+                        transition: "transform 200ms ease",
+                      }}
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="square"
+                      strokeLinejoin="miter"
+                    >
+                      <path d="M1 1l4 4 4-4" />
+                    </svg>
+                  </button>
+                  {openIndex === i && (
+                    <div style={{ paddingBottom: "0.5rem" }}>
+                      {link.children.map((child) => (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          onClick={close}
+                          style={{
+                            display: "block",
+                            paddingTop: "0.5rem",
+                            paddingBottom: "0.5rem",
+                            paddingLeft: "1rem",
+                            fontSize: "0.75rem",
+                            fontWeight: 600,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.14em",
+                            color: "#a3a3a3",
+                            textDecoration: "none",
+                          }}
+                        >
+                          {child.label}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <Link
+                  href={link.href}
+                  onClick={close}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    padding: "0.625rem 0",
+                    fontSize: "1rem",
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "-0.02em",
+                    color: linkColor,
+                    textDecoration: "none",
+                  }}
                 >
                   {link.label}
-                  {link.highlight && (
-                    <span
-                      aria-hidden
-                      style={{
-                        display: "inline-block",
-                        width: "5px",
-                        height: "5px",
-                        borderRadius: "9999px",
-                        backgroundColor: "#ffde00",
-                      }}
-                    />
-                  )}
-                  {link.redHighlight && (
-                    <span
-                      aria-hidden
-                      style={{
-                        display: "inline-block",
-                        width: "5px",
-                        height: "5px",
-                        borderRadius: "9999px",
-                        backgroundColor: "#b91c1c",
-                      }}
-                    />
-                  )}
-                </span>
-              </Link>
-            )}
-          </div>
-        ))}
+                </Link>
+              )}
+            </div>
+          );
+        })}
       </nav>
 
       {/* CTAs */}

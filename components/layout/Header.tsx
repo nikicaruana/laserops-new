@@ -47,18 +47,6 @@ export function Header() {
                       )}
                     >
                       {link.label}
-                      {link.highlight && (
-                        <span
-                          aria-hidden
-                          className="inline-block h-1 w-1 rounded-full bg-accent"
-                        />
-                      )}
-                      {link.redHighlight && (
-                        <span
-                          aria-hidden
-                          className="inline-block h-1 w-1 rounded-full bg-red-700"
-                        />
-                      )}
                       {/* Down chevron */}
                       <svg
                         aria-hidden

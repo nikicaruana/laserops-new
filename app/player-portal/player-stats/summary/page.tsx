@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import {
-  fetchAllPlayerStats,
-  listAllNicknames,
-} from "@/lib/player-stats/shared";
+import { fetchAllPlayerStats } from "@/lib/player-stats/shared";
 import { TableErrorState } from "@/components/portal/tables/TableErrorState";
 import { PlayerSummaryView } from "@/components/portal/player-summary/PlayerSummaryView";
 import { InstallAppButton } from "@/components/portal/AddToHomeScreen";
@@ -32,8 +29,6 @@ export default async function PlayerSummaryPage() {
     return <TableErrorState detail={result.error} />;
   }
 
-  const knownNicknames = listAllNicknames(result.rows);
-
   return (
     <div className="mx-auto w-full max-w-4xl">
       {/* Mobile-only Install App button row. Hidden on desktop because the
@@ -47,10 +42,7 @@ export default async function PlayerSummaryPage() {
       </div>
 
       <Suspense fallback={null}>
-        <PlayerSummaryView
-          allRows={result.rows}
-          knownNicknames={knownNicknames}
-        />
+        <PlayerSummaryView allRows={result.rows} />
       </Suspense>
     </div>
   );

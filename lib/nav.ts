@@ -21,6 +21,12 @@ export type NavLink = {
   redHighlight?: boolean;
   /** Optional dropdown children shown on desktop hover and mobile accordion. */
   children?: NavChild[];
+  /**
+   * Mobile-only: instead of rendering this item as an accordion group,
+   * explode its children as individual top-level items in the mobile nav.
+   * The parent itself is hidden. Children inherit the parent's color.
+   */
+  mobileExpand?: boolean;
 };
 
 export const primaryNav: NavLink[] = [
@@ -40,6 +46,7 @@ export const primaryNav: NavLink[] = [
     label: "Player Portal",
     href: "/player-portal",
     highlight: true,
+    mobileExpand: true,
     children: [
       { label: "Leaderboards", href: "/player-portal/leaderboards" },
       { label: "Player Stats", href: "/player-portal/player-stats" },
