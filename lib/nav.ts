@@ -3,6 +3,11 @@
  * Changing a link here updates the header, mobile nav, footer, and (eventually) the sitemap.
  */
 
+export type NavChild = {
+  label: string;
+  href: string;
+};
+
 export type NavLink = {
   label: string;
   href: string;
@@ -14,16 +19,42 @@ export type NavLink = {
    *  on the Match Report XP card so the nav and the feature share a
    *  visual tie. Mutually exclusive with `highlight` — don't set both. */
   redHighlight?: boolean;
+  /** Optional dropdown children shown on desktop hover and mobile accordion. */
+  children?: NavChild[];
 };
 
 export const primaryNav: NavLink[] = [
-  { label: "Game Modes", href: "/game-modes" },
   { label: "Weapons", href: "/weapons" },
-  { label: "Locations", href: "/locations" },
-  { label: "Events", href: "/events" },
-  { label: "Player Portal", href: "/player-portal", highlight: true },
-  { label: "Match Report", href: "/match-report", redHighlight: true },
-  { label: "About", href: "/about" },
+  {
+    label: "Events",
+    href: "/events",
+    children: [
+      { label: "Corporate Events", href: "/events/corporate" },
+      { label: "Stag & Hen Dos", href: "/events/stag-hen" },
+      { label: "Birthday Parties", href: "/events/birthdays" },
+    ],
+  },
+  { label: "Community", href: "/community" },
+  { label: "Gallery", href: "/gallery" },
+  {
+    label: "Player Portal",
+    href: "/player-portal",
+    highlight: true,
+    children: [
+      { label: "Leaderboards", href: "/player-portal/leaderboards" },
+      { label: "Player Stats", href: "/player-portal/player-stats" },
+      { label: "Match Report", href: "/match-report" },
+    ],
+  },
+  {
+    label: "About",
+    href: "/about",
+    children: [
+      { label: "Who We Are", href: "/about" },
+      { label: "FAQs", href: "/faqs" },
+      { label: "Contact", href: "/contact" },
+    ],
+  },
 ];
 
 export const utilityNav: NavLink[] = [

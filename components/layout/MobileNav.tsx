@@ -19,10 +19,15 @@ import { Button } from "@/components/ui/Button";
  *
  * Panel uses semi-transparent bg + backdrop-blur for a frosted-glass look
  * over whatever content is behind it.
+ *
+ * Items with `children` are rendered as accordion buttons — tapping the
+ * parent row toggles the sub-list inline; tapping a sub-link closes the
+ * menu. Items without children navigate directly.
  */
 export function MobileNav() {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   // Portal target only exists after client mount; gate render with mounted flag
   // to avoid SSR/hydration mismatch.
@@ -49,6 +54,13 @@ export function MobileNav() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
+
+  function close() {
+    setOpen(false);
+    setOpenIndex(null);
+  }
+
+  const visibleNav = primaryNav.filter((link) => !link.hidden);
 
   const panel = (
     <div
@@ -93,7 +105,7 @@ export function MobileNav() {
         <button
           type="button"
           aria-label="Close menu"
-          onClick={() => setOpen(false)}
+          onClick={close}
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -134,64 +146,172 @@ export function MobileNav() {
       </div>
 
       {/* Primary nav */}
-      <nav aria-label="Primary" style={{ padding: "1.5rem 1.25rem 0", flexShrink: 0 }}>
-        {primaryNav.map((link, i) => (
-          <Link
+      <nav aria-label="Primary" style={{ padding: "1rem 1.25rem 0", flexShrink: 0 }}>
+        {visibleNav.map((link, i) => (
+          <div
             key={link.href}
-            href={link.href}
-            onClick={() => setOpen(false)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              padding: "1.25rem 0",
-              borderBottom: "1px solid rgba(38, 38, 38, 0.6)",
-              fontSize: "1.5rem",
-              fontWeight: 700,
-              textTransform: "uppercase",
-              letterSpacing: "-0.02em",
-              // Three tone variants — yellow highlight, red highlight,
-              // or default muted. redHighlight uses #b91c1c (Tailwind
-              // red-700) for visual parity with the desktop nav's red.
-              color: link.highlight
-                ? "#ffde00"
-                : link.redHighlight
-                  ? "#b91c1c"
-                  : "#f5f5f5",
-              textDecoration: "none",
-            }}
+            style={{ borderBottom: "1px solid rgba(38, 38, 38, 0.6)" }}
           >
-            <span style={{ display: "inline-flex", alignItems: "center", gap: "0.75rem" }}>
-              {link.label}
-              {link.highlight && (
-                <span
-                  aria-hidden
+            {link.children ? (
+              /* Accordion trigger for items with children */
+              <>
+                <button
+                  type="button"
+                  onClick={() => setOpenIndex(openIndex === i ? null : i)}
                   style={{
-                    display: "inline-block",
-                    width: "6px",
-                    height: "6px",
-                    borderRadius: "9999px",
-                    backgroundColor: "#ffde00",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    width: "100%",
+                    padding: "0.625rem 0",
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: "1rem",
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "-0.02em",
+                    color: link.highlight
+                      ? "#ffde00"
+                      : link.redHighlight
+                        ? "#b91c1c"
+                        : "#f5f5f5",
+                    textDecoration: "none",
                   }}
-                />
-              )}
-              {link.redHighlight && (
+                  aria-expanded={openIndex === i}
+                >
+                  <span
+                    style={{ display: "inline-flex", alignItems: "center", gap: "0.625rem" }}
+                  >
+                    {link.label}
+                    {link.highlight && (
+                      <span
+                        aria-hidden
+                        style={{
+                          display: "inline-block",
+                          width: "5px",
+                          height: "5px",
+                          borderRadius: "9999px",
+                          backgroundColor: "#ffde00",
+                        }}
+                      />
+                    )}
+                    {link.redHighlight && (
+                      <span
+                        aria-hidden
+                        style={{
+                          display: "inline-block",
+                          width: "5px",
+                          height: "5px",
+                          borderRadius: "9999px",
+                          backgroundColor: "#b91c1c",
+                        }}
+                      />
+                    )}
+                  </span>
+                  {/* Down chevron — rotates when open */}
+                  <svg
+                    aria-hidden
+                    viewBox="0 0 10 6"
+                    style={{
+                      width: "10px",
+                      height: "10px",
+                      flexShrink: 0,
+                      color: "#737373",
+                      transform: openIndex === i ? "rotate(180deg)" : "none",
+                      transition: "transform 200ms ease",
+                    }}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="square"
+                    strokeLinejoin="miter"
+                  >
+                    <path d="M1 1l4 4 4-4" />
+                  </svg>
+                </button>
+
+                {/* Sub-links — shown when this item is open */}
+                {openIndex === i && (
+                  <div style={{ paddingBottom: "0.5rem" }}>
+                    {link.children.map((child) => (
+                      <Link
+                        key={child.href}
+                        href={child.href}
+                        onClick={close}
+                        style={{
+                          display: "block",
+                          paddingTop: "0.5rem",
+                          paddingBottom: "0.5rem",
+                          paddingLeft: "1rem",
+                          fontSize: "0.75rem",
+                          fontWeight: 600,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.14em",
+                          color: "#a3a3a3",
+                          textDecoration: "none",
+                        }}
+                      >
+                        {child.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              /* Plain link — navigates directly */
+              <Link
+                href={link.href}
+                onClick={close}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "0.625rem 0",
+                  fontSize: "1rem",
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  letterSpacing: "-0.02em",
+                  color: link.highlight
+                    ? "#ffde00"
+                    : link.redHighlight
+                      ? "#b91c1c"
+                      : "#f5f5f5",
+                  textDecoration: "none",
+                }}
+              >
                 <span
-                  aria-hidden
-                  style={{
-                    display: "inline-block",
-                    width: "6px",
-                    height: "6px",
-                    borderRadius: "9999px",
-                    backgroundColor: "#b91c1c",
-                  }}
-                />
-              )}
-            </span>
-            <span style={{ fontSize: "0.75rem", color: "#737373" }}>
-              /{String(i + 1).padStart(2, "0")}
-            </span>
-          </Link>
+                  style={{ display: "inline-flex", alignItems: "center", gap: "0.625rem" }}
+                >
+                  {link.label}
+                  {link.highlight && (
+                    <span
+                      aria-hidden
+                      style={{
+                        display: "inline-block",
+                        width: "5px",
+                        height: "5px",
+                        borderRadius: "9999px",
+                        backgroundColor: "#ffde00",
+                      }}
+                    />
+                  )}
+                  {link.redHighlight && (
+                    <span
+                      aria-hidden
+                      style={{
+                        display: "inline-block",
+                        width: "5px",
+                        height: "5px",
+                        borderRadius: "9999px",
+                        backgroundColor: "#b91c1c",
+                      }}
+                    />
+                  )}
+                </span>
+              </Link>
+            )}
+          </div>
         ))}
       </nav>
 
@@ -202,7 +322,7 @@ export function MobileNav() {
             href={ctaLinks.primary.href}
             variant="primary"
             size="lg"
-            onClick={() => setOpen(false)}
+            onClick={close}
           >
             {ctaLinks.primary.label}
           </Button>
@@ -210,7 +330,7 @@ export function MobileNav() {
             href={ctaLinks.secondary.href}
             variant="secondary"
             size="lg"
-            onClick={() => setOpen(false)}
+            onClick={close}
           >
             {ctaLinks.secondary.label}
           </Button>
@@ -241,7 +361,7 @@ export function MobileNav() {
             <li key={link.href}>
               <Link
                 href={link.href}
-                onClick={() => setOpen(false)}
+                onClick={close}
                 style={{
                   fontSize: "0.75rem",
                   textTransform: "uppercase",
