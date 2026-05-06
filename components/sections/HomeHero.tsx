@@ -152,30 +152,36 @@ export function HomeHero() {
         />
       </div>
 
-      {/* Layer 2 + 3: FIGURE — transparent PNG pair, anchored right */}
-      <div className="absolute inset-0 hidden xl:block pointer-events-none" aria-hidden>
-        <Image
-          src="/images/hero/desktop-hero-01-figure-color.png"
-          alt=""
-          width={2400}
-          height={1350}
-          priority
-          sizes="100vw"
-          className="h-full w-full object-contain object-right-bottom"
-        />
-        <Image
-          src="/images/hero/desktop-hero-01-figure-branded.png"
-          alt=""
-          width={2400}
-          height={1350}
-          priority
-          sizes="100vw"
-          className="absolute inset-0 h-full w-full object-contain object-right-bottom"
-          style={{
-            opacity: isHovered ? 0 : 1,
-            transition: "opacity 400ms ease",
-          }}
-        />
+      {/* Layer 2 + 3: FIGURE — transparent PNG pair, right-anchored.
+          Container spans full height and sticks to the right edge.
+          h-full w-auto on the images scales them to the section height
+          while letting width be proportional — figure is never cropped.
+          Any left-side overflow sits behind the text/scrim area. */}
+      <div className="absolute inset-y-0 right-0 hidden xl:flex items-end pointer-events-none" aria-hidden>
+        <div className="relative h-full">
+          <Image
+            src="/images/hero/desktop-hero-01-figure-color.png"
+            alt=""
+            width={2400}
+            height={1350}
+            priority
+            sizes="(min-width: 1280px) 100vw"
+            className="block h-full w-auto max-w-none"
+          />
+          <Image
+            src="/images/hero/desktop-hero-01-figure-branded.png"
+            alt=""
+            width={2400}
+            height={1350}
+            priority
+            sizes="(min-width: 1280px) 100vw"
+            className="absolute inset-0 block h-full w-auto max-w-none"
+            style={{
+              opacity: isHovered ? 0 : 1,
+              transition: "opacity 400ms ease",
+            }}
+          />
+        </div>
       </div>
 
       <div
