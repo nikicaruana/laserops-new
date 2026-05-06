@@ -300,7 +300,10 @@ function ArmoryDialogBody({
               </StatGroup>
               <StatGroup>
                 <DialogStat label="Kills" value={fmtNum(entry.killsTotal)} />
-                <DialogStat label="Avg Kills" value={fmtFloat(entry.avgKills)} />
+                <DialogStat
+                  label="Avg Kills"
+                  value={fmtRoundedInt(entry.avgKills)}
+                />
               </StatGroup>
               <StatGroup>
                 <DialogStat label="Damage" value={fmtNum(entry.damageTotal)} />
@@ -374,6 +377,16 @@ function DialogStat({ label, value }: { label: string; value: string }) {
 function fmtNum(value: number): string {
   if (!Number.isFinite(value) || value === 0) return "—";
   return formatNumberShort(value);
+}
+
+/**
+ * Round to whole number then locale-format with thousand separators.
+ * Use for averages we want shown as integers (e.g. "Avg Kills 98"
+ * rather than "97.67").
+ */
+function fmtRoundedInt(value: number): string {
+  if (!Number.isFinite(value) || value === 0) return "—";
+  return Math.round(value).toLocaleString("en-US");
 }
 
 function fmtFloat(value: number): string {
