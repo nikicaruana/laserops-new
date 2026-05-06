@@ -53,7 +53,7 @@ export function PlayerArmoryView({ branches }: Props) {
             title={branch.branch}
             defaultOpen={false}
           >
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
               {branch.entries.map((entry) => (
                 <ArmoryCard
                   key={`${entry.gunName}-${entry.playerNickname}`}
