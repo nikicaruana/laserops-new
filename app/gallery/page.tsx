@@ -22,11 +22,12 @@ export const metadata: Metadata = {
 export default async function GalleryPage() {
   const images = await fetchGalleryImages();
 
-  // Derive unique top-level folder names for the filter pills.
-  // Preserve insertion order (first seen = first pill), then sort alpha.
+  // Derive unique folder names for the filter pills. Sort descending
+  // so newest matches (YYYY-MM-DD suffix) appear first — reverse
+  // lexicographic order works because ISO dates sort correctly.
   const folders = Array.from(new Set(images.map((img) => img.folder)))
     .filter(Boolean)
-    .sort();
+    .sort((a, b) => b.localeCompare(a));
 
   return (
     <main className="min-h-screen bg-bg pb-16 pt-10 sm:pb-24 sm:pt-14 lg:pb-32 lg:pt-20">

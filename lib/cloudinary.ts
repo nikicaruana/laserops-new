@@ -58,6 +58,8 @@ export async function fetchGalleryImages(): Promise<CloudinaryImage[]> {
   url.searchParams.set("max_results", "500");
   url.searchParams.set("context", "true");
   url.searchParams.set("tags", "true");
+  // Newest uploads first so the most recent match photos appear at the top.
+  url.searchParams.set("direction", "desc");
 
   try {
     const res = await fetch(url.toString(), {

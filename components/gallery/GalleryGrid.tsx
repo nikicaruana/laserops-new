@@ -196,10 +196,34 @@ function FilterPill({
 // ---------------------------------------------------------------------------
 
 /**
- * Convert a Cloudinary folder path like "gallery/events" into a readable
- * pill label. Capitalises the last segment.
+ * Convert a Cloudinary folder path into a readable pill label.
+ *
+ * Handles the project's naming convention: "open_match_2026-04-23"
+ * → "Open Match · 23 Apr 2026". Any trailing YYYY-MM-DD is detected
+ * and formatted as a locale date; the prefix is title-cased.
+ * Falls back to simple capitalisation for non-date folder names.
  */
 function folderLabel(folder: string): string {
   const last = folder.split("/").at(-1) ?? folder;
+
+  // Detect a trailing ISO date: some-prefix_YYYY-MM-DD
+  const dateMatch = last.match(/^(.*?)[-_]?(\d{4}-\d{2}-\d{2})$/);
+  if (dateMatch) {
+    const prefix = (dateMatch[1] ?? "")
+      .replace(/[-_]/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase())
+      .trim();
+    // Parse as UTC midnight to avoid timezone shifts flipping the day.
+    const [y, m, d] = (dateMatch[2] ?? "").split("-").map(Number);
+    const date = new Date(Date.UTC(y ?? 0, (m ?? 1) - 1, d ?? 1));
+    const formatted = date.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      timeZone: "UTC",
+    });
+    return prefix ? `${prefix} · ${formatted}` : formatted;
+  }
+
   return last.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
