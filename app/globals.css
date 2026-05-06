@@ -259,6 +259,21 @@
 }
 
 /* ============================================================
+   GALLERY FADE-IN
+   GalleryGrid uses Tailwind transition classes (opacity/transform)
+   with an IntersectionObserver. Honour reduced-motion by forcing
+   visible state immediately — the JS still fires but the animation
+   is invisible.
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  .gallery-item {
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* ============================================================
    ARMORY — unlock progress bar fill animation
    Same pattern as .xp-fill but with a 2s duration to match the
    count-up animation on the numerator below the bar. Bar starts at
