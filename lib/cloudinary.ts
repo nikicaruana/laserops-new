@@ -29,6 +29,8 @@ export type CloudinaryImage = {
   folder: string;
   /** Optional: populated from the image's context metadata (alt / caption). */
   caption?: string;
+  /** Tags applied to this image in Cloudinary (e.g. ["featured"]). */
+  tags: string[];
 };
 
 /** Revalidate every 30 minutes — same as CMS_REVALIDATE_SECONDS. */
@@ -107,5 +109,6 @@ function parseResource(r: any): CloudinaryImage {
     height: r.height ?? 0,
     folder,
     caption,
+    tags: Array.isArray(r.tags) ? (r.tags as string[]) : [],
   };
 }

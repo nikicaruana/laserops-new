@@ -29,34 +29,46 @@ type Props = {
 };
 
 export function GalleryGrid({ images, folders }: Props) {
-  const [activeFolder, setActiveFolder] = useState<string>("all");
+  // If any images are tagged "featured", make that the default view.
+  const hasFeatured = images.some((img) => img.tags.includes("featured"));
+  const [activeFilter, setActiveFilter] = useState<string>(
+    hasFeatured ? "featured" : "all",
+  );
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
-  const showPills = folders.length > 1;
+  const showPills = hasFeatured || folders.length > 1;
 
-  // Build the subset used for the lightbox — only the currently-visible
-  // images, so the counter reflects "3 of 14 visible" not "3 of 50 total".
+  // Build the visible subset for the grid and lightbox.
   const visibleImages =
-    activeFolder === "all"
+    activeFilter === "all"
       ? images
-      : images.filter((img) => img.folder === activeFolder);
+      : activeFilter === "featured"
+        ? images.filter((img) => img.tags.includes("featured"))
+        : images.filter((img) => img.folder === activeFilter);
 
   return (
     <>
       {/* Filter pills */}
       {showPills && (
         <div className="mb-6 flex flex-wrap gap-2 sm:mb-8">
+          {hasFeatured && (
+            <FilterPill
+              label="Featured"
+              active={activeFilter === "featured"}
+              onClick={() => setActiveFilter("featured")}
+            />
+          )}
           <FilterPill
             label="All"
-            active={activeFolder === "all"}
-            onClick={() => setActiveFolder("all")}
+            active={activeFilter === "all"}
+            onClick={() => setActiveFilter("all")}
           />
           {folders.map((f) => (
             <FilterPill
               key={f}
               label={folderLabel(f)}
-              active={activeFolder === f}
-              onClick={() => setActiveFolder(f)}
+              active={activeFilter === f}
+              onClick={() => setActiveFilter(f)}
             />
           ))}
         </div>
