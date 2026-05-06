@@ -74,7 +74,11 @@ function PlayerStatsShellInner({ knownNicknames, children }: Props) {
           user understands they pick a player first. */}
       <div className="border-b border-border bg-bg">
         <div className="mx-auto w-full max-w-[90rem] px-4 py-3 sm:px-8 lg:px-12">
-          <PlayerSearch knownNicknames={knownNicknames} currentOpsTag={opsParam} />
+          {/* On desktop the full-width search bar looks disproportionately
+              large — cap it so it reads as a compact input, not a hero form. */}
+          <div className="sm:max-w-xs">
+            <PlayerSearch knownNicknames={knownNicknames} currentOpsTag={opsParam} />
+          </div>
         </div>
       </div>
 
