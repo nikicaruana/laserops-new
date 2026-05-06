@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { DashboardPageHeader } from "@/components/portal/DashboardPageHeader";
 import { fetchPlayerHistory } from "@/lib/player-history/engine";
 import { TableErrorState } from "@/components/portal/tables/TableErrorState";
 import { PlayerHistoryView } from "@/components/portal/player-history/PlayerHistoryView";
@@ -33,7 +32,6 @@ export default async function PlayerHistoryPage({
 
   return (
     <div className="mx-auto w-full max-w-5xl">
-      <DashboardPageHeader title="History" hideAddToHome />
 
       {ops === "" ? (
         <HistoryEmptyState />

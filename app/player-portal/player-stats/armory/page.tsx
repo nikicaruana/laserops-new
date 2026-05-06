@@ -39,7 +39,7 @@ export default async function PlayerArmoryPage({
 
   return (
     <div className="mx-auto w-full max-w-5xl">
-      <DashboardPageHeader title="Armory" hideAddToHome />
+      <DashboardPageHeader title="Personal Armory" hideAddToHome />
 
       {ops === "" ? (
         <ArmoryEmptyState />
