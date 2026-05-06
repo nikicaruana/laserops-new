@@ -173,6 +173,30 @@ export function HomeHero() {
         }}
       />
 
+      {/* DESKTOP RIGHT-EDGE YELLOW MASK
+          The source hero photo has a dark environment on its rightmost
+          ~15-20% (beyond the yellow paper backdrop the figure is shot
+          against). The DuotoneImage processing maps that area to black,
+          creating a visible "black bar" on the right side at xl/2xl
+          widths regardless of object-position (the overflow available
+          for cropping is too small to hide it).
+
+          Solution: a hard-edged yellow gradient overlay on the right
+          portion of the hero, fading from solid yellow on the right
+          (covering the dark area entirely) to transparent on its left
+          (preserving the figure underneath). The gradient terminates
+          before the figure's typical horizontal centre, so the figure
+          stays clean and recognisable. */}
+      <div
+        className="pointer-events-none absolute inset-y-0 right-0 hidden xl:block"
+        aria-hidden
+        style={{
+          width: "30%",
+          background:
+            "linear-gradient(270deg, #ffde00 0%, rgba(255,222,0,0.85) 25%, rgba(255,222,0,0) 100%)",
+        }}
+      />
+
       {/* ===================================================================
           CONTENT
           =================================================================== */}
