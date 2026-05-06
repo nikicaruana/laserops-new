@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
-import { DuotoneImage } from "@/components/ui/DuotoneImage";
 import { ctaLinks } from "@/lib/nav";
 
 /**
@@ -74,7 +73,7 @@ export function HomeHero() {
       // 2xl restores `aspect-auto` so the original full-svh
       // behaviour kicks back in for big monitors where the
       // unconstrained section happens to be close to 16:9 anyway.
-      className="relative isolate overflow-hidden xl:aspect-[16/9] xl:max-h-[calc(100svh-72px)] 2xl:aspect-auto 2xl:max-h-none"
+      className="relative isolate overflow-hidden xl:bg-[#ffde00] xl:min-h-[calc(100svh-72px)]"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -140,28 +139,49 @@ export function HomeHero() {
           DESKTOP LAYERS (hidden xl:block)
           =================================================================== */}
 
+      {/* Layer 1: BACKGROUND — yellow textured fill, always full-bleed */}
       <div className="absolute inset-0 hidden xl:block" aria-hidden>
-        <DuotoneImage
-          brandedSrc="/images/hero/hero-01-branded.jpg"
-          colorSrc="/images/hero/hero-01-color.jpg"
+        <Image
+          src="/images/hero/desktop-hero-01-bg.png"
           alt=""
-          width={1920}
-          height={1080}
+          width={2400}
+          height={1350}
           priority
           sizes="100vw"
-          // 80% center is the original framing — figure right of
-          // centre, leaving the left ~30% as the yellow background
-          // zone for the overlay text. Pass 25 changed this to "100%
-          // center" to maximise the left zone, but that introduced
-          // a visible black band on the right side of the section
-          // on some laptop viewports (issue persisted across 2xl
-          // monitors too). Reverted to 80% — it was working before
-          // and the slight reduction in left-side empty space is
-          // not worth the right-side artefact.
-          objectPosition="80% center"
-          forceState={isHovered ? "color" : "branded"}
-          className="h-full w-full"
+          className="h-full w-full object-cover"
         />
+      </div>
+
+      {/* Layer 2 + 3: FIGURE — transparent PNG pair, right-anchored.
+          Container spans full height and sticks to the right edge.
+          h-full w-auto on the images scales them to the section height
+          while letting width be proportional — figure is never cropped.
+          Any left-side overflow sits behind the text/scrim area. */}
+      <div className="absolute inset-y-0 right-0 hidden xl:flex items-end pointer-events-none" aria-hidden>
+        <div className="relative h-full">
+          <Image
+            src="/images/hero/desktop-hero-01-figure-color.png"
+            alt=""
+            width={2400}
+            height={1350}
+            priority
+            sizes="(min-width: 1280px) 100vw"
+            className="block h-full w-auto max-w-none"
+          />
+          <Image
+            src="/images/hero/desktop-hero-01-figure-branded.png"
+            alt=""
+            width={2400}
+            height={1350}
+            priority
+            sizes="(min-width: 1280px) 100vw"
+            className="absolute inset-0 block h-full w-auto max-w-none"
+            style={{
+              opacity: isHovered ? 0 : 1,
+              transition: "opacity 400ms ease",
+            }}
+          />
+        </div>
       </div>
 
       <div
@@ -201,14 +221,24 @@ export function HomeHero() {
               2xl tier restores everything to the original sizing. */}
           <div className="hidden xl:block xl:my-auto max-w-[640px]">
             <h1 className="text-balance text-5xl font-extrabold leading-[1.02] 2xl:text-7xl">
-              Outdoor Laser Tag in Malta.{" "}
+              Malta's Ultimate Outdoor Laser Tag Experience.{" "}
               <span className="text-accent">Built for Competition.</span>
             </h1>
             <p className="mt-4 max-w-xl text-base text-text-muted 2xl:mt-5 2xl:text-lg">
-              Tactical missions, team battles, and competitive player stats — LaserOps is a new
-              kind of laser tag experience.
+              Tactical missions, different scenarios, and Malta's only persistent stat and
+              progressive unlock system — LaserOps is changing the game.
             </p>
-            <div className="mt-6 flex gap-3 2xl:mt-10 2xl:gap-4">
+            <a
+              href="https://www.google.com/search?q=LaserOps+Malta+reviews"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 inline-flex items-center gap-2 text-sm text-text-muted transition-colors hover:text-text 2xl:mt-5"
+            >
+              <span className="text-base leading-none text-yellow-400">★★★★★</span>
+              <span className="font-semibold text-text">5.0</span>
+              <span>on Google Reviews</span>
+            </a>
+            <div className="mt-6 flex gap-3 2xl:mt-8 2xl:gap-4">
               <Button href={ctaLinks.primary.href} variant="primary" size="md">
                 {ctaLinks.primary.label}
               </Button>
@@ -218,8 +248,8 @@ export function HomeHero() {
             </div>
             <dl className="mt-10 grid max-w-xl grid-cols-3 gap-px border-y border-border bg-border 2xl:mt-16">
               {[
-                { value: "12+", label: "Game Modes" },
-                { value: "1000+", label: "Matches Played" },
+                { value: "15+", label: "Weapons" },
+                { value: "6+", label: "Game Modes" },
                 { value: "Outdoor", label: "Real Terrain" },
               ].map((stat) => (
                 <div key={stat.label} className="bg-bg p-4 2xl:p-5">
@@ -235,13 +265,23 @@ export function HomeHero() {
           {/* MOBILE TEXT BLOCK — centered in the yellow zone above the figure */}
           <div className="max-w-2xl xl:hidden">
             <h1 className="text-balance text-4xl font-extrabold leading-[1.02] sm:text-5xl">
-              Outdoor Laser Tag in Malta.{" "}
+              Malta's Ultimate Outdoor Laser Tag Experience.{" "}
               <span className="text-accent">Built for Competition.</span>
             </h1>
             <p className="mt-5 max-w-xl text-base text-white/80 sm:text-lg">
-              Tactical missions, team battles, and competitive player stats — LaserOps is a new
-              kind of laser tag experience.
+              Tactical missions, different scenarios, and Malta's only persistent stat and
+              progressive unlock system — LaserOps is changing the game.
             </p>
+            <a
+              href="https://www.google.com/search?q=LaserOps+Malta+reviews"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 inline-flex items-center gap-2 text-sm text-white/70 transition-colors hover:text-white"
+            >
+              <span className="text-base leading-none text-yellow-400">★★★★★</span>
+              <span className="font-semibold text-white">5.0</span>
+              <span>on Google Reviews</span>
+            </a>
           </div>
         </div>
       </Container>
