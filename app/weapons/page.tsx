@@ -74,9 +74,15 @@ export default async function WeaponsPage() {
             Weapons.
           </h1>
           <p className="mt-4 max-w-2xl text-sm text-text-muted sm:text-base">
-            Browse the full LaserOps loadout. Filter by gun tree, swipe
-            to scrub through the gallery, or toggle compare to put two
-            weapons side by side.
+            LaserOps offers a wide selection of weapons catering for every
+            playstyle. From versatile assault rifles to agile SMGs and
+            stealthy sniper rifles, each with distinct stats and feel.
+          </p>
+          <p className="mt-3 max-w-2xl text-sm text-text-muted sm:text-base">
+            We&rsquo;re the only laser tag company in Malta with a progressive
+            unlock system. Earn XP through matches, climb each weapon&rsquo;s
+            tree, and unlock new variants as you go &mdash; keeping every
+            session a step toward something new.
           </p>
         </header>
 
