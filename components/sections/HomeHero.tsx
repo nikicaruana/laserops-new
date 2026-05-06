@@ -229,7 +229,7 @@ export function HomeHero() {
               progressive unlock system — LaserOps is changing the game.
             </p>
             <a
-              href="https://www.google.com/search?q=LaserOps+Malta+reviews"
+              href="https://www.google.com/search?sa=X&sca_esv=2139bdf85252c619&sxsrf=ANbL-n7BBFIoyEmF9EGMnPohOASsuflb1g:1778084247753&q=LaserOps+Reviews&rflfq=1&num=20&stick=H4sIAAAAAAAAAONgkxIxNDU3MjI2NjA1tjAwNDExsADiDYyMrxgFfBKLU4v8C4oVglLLMlPLixexYggBAKXHTuxBAAAA&rldimm=15722330538014408440&tbm=lcl&hl=en-MT&ved=2ahUKEwib997_h6WUAxVLR_4FHcGCPEQQ9fQKegQIVRAG&biw=1718&bih=1318&dpr=1#lkt=LocalPoiReviews"
               target="_blank"
               rel="noopener noreferrer"
               className="mt-4 inline-flex items-center gap-2 text-sm text-text-muted transition-colors hover:text-text 2xl:mt-5"
@@ -273,7 +273,7 @@ export function HomeHero() {
               progressive unlock system — LaserOps is changing the game.
             </p>
             <a
-              href="https://www.google.com/search?q=LaserOps+Malta+reviews"
+              href="https://www.google.com/search?sa=X&sca_esv=2139bdf85252c619&sxsrf=ANbL-n7BBFIoyEmF9EGMnPohOASsuflb1g:1778084247753&q=LaserOps+Reviews&rflfq=1&num=20&stick=H4sIAAAAAAAAAONgkxIxNDU3MjI2NjA1tjAwNDExsADiDYyMrxgFfBKLU4v8C4oVglLLMlPLixexYggBAKXHTuxBAAAA&rldimm=15722330538014408440&tbm=lcl&hl=en-MT&ved=2ahUKEwib997_h6WUAxVLR_4FHcGCPEQQ9fQKegQIVRAG&biw=1718&bih=1318&dpr=1#lkt=LocalPoiReviews"
               target="_blank"
               rel="noopener noreferrer"
               className="mt-4 inline-flex items-center gap-2 text-sm text-white/70 transition-colors hover:text-white"
