@@ -78,8 +78,7 @@ export async function fetchGalleryImages(): Promise<CloudinaryImage[]> {
       return [];
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const data = (await res.json()) as { resources?: any[] };
+    const data = (await res.json()) as { resources?: any[] }; // any: Cloudinary REST response is untyped
     if (!Array.isArray(data.resources)) return [];
 
     return data.resources.map(parseResource);
@@ -89,8 +88,7 @@ export async function fetchGalleryImages(): Promise<CloudinaryImage[]> {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function parseResource(r: any): CloudinaryImage {
+function parseResource(r: any): CloudinaryImage { // any: Cloudinary REST response is untyped
   const publicId: string = r.public_id ?? "";
   // Derive folder: everything up to (not including) the last slash.
   const slashIdx = publicId.lastIndexOf("/");
