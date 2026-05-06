@@ -59,4 +59,12 @@ export const CMS_URLS = {
   // Consumed by /weapons (the gallery page).
   weapons:
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTLlM4fIfh52DiovbJT2b9A6UyqoiQtoG0c2HoVRCG_OCtLPZvz-uBSC6y1voM8d4jBVCNcpCGctco/pub?gid=924946993&single=true&output=csv",
+  // Player Armory — one row per (player, gun). Carries per-player stats
+  // with each gun PLUS precomputed unlock state (Gun_Is_Unlocked,
+  // Unlock_Progress_Pct, Unlock_Progress_Text, Has_Used_Gun,
+  // Gun_Player_Image). Lives on the same DATA spreadsheet as `weapons`,
+  // `accolades`, `rankingSystem`, `gameIdMap`. Consumed by the player-
+  // portal Armory tab to render gun cards grouped by Gun_Tree_Branch.
+  playerArmory:
+    "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTLlM4fIfh52DiovbJT2b9A6UyqoiQtoG0c2HoVRCG_OCtLPZvz-uBSC6y1voM8d4jBVCNcpCGctco/pub?gid=583760029&single=true&output=csv",
 } as const;
