@@ -259,6 +259,27 @@
 }
 
 /* ============================================================
+   ARMORY — unlock progress bar fill animation
+   Same pattern as .xp-fill but with a 2s duration to match the
+   count-up animation on the numerator below the bar. Bar starts at
+   width 0; React adds .is-filled (when the card scrolls into view)
+   to transition to the target percentage carried by --armory-target-pct.
+   ============================================================ */
+
+.armory-progress-fill {
+  width: 0;
+  transition: width 2000ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.armory-progress-fill.is-filled {
+  width: var(--armory-target-pct, 0%);
+}
+@media (prefers-reduced-motion: reduce) {
+  .armory-progress-fill {
+    transition: none;
+  }
+}
+
+/* ============================================================
    ANIMATIONS — Weapons section row scroll
    Two copies of the strip in a flex row; translateX from 0 to -50%
    moves one copy fully off-screen and brings the second copy to where

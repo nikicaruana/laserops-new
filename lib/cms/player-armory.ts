@@ -193,7 +193,7 @@ export async function fetchPlayerArmory(): Promise<PlayerArmoryRow[]> {
       pointsWithPrereqClass: parseNumericOr(row.Points_With_Prerequisite_Class, 0),
       pointsWithPrereqGun: parseNumericOr(row.Points_With_Prerequisite_Gun, 0),
       pointsTowardUnlock: parseNumericOr(row.Points_Toward_Unlock, 0),
-      unlockProgressPct: clampPct(parseNumericOr(row.Unlock_Progress_Pct, 0)),
+      unlockProgressPct: normalisePct(parseNumericOr(row.Unlock_Progress_Pct, 0)),
       unlockProgressRemaining: parseNumericOr(row.Unlock_Progress_Remaining, 0),
       unlockProgressText: (row.Unlock_Progress_Text ?? "").trim(),
 
@@ -248,4 +248,17 @@ function clampPct(n: number): number {
   if (n < 0) return 0;
   if (n > 100) return 100;
   return n;
+}
+
+/**
+ * The sheet stores Unlock_Progress_Pct as a 0–1 fraction (e.g. 0.984
+ * for 98.4%). Some published sheets evolve to 0–100; accept both by
+ * treating values ≤ 1.0 as fractions and multiplying by 100. Same
+ * heuristic the Armory dialog uses for accuracy. Always clamps to
+ * [0, 100] after.
+ */
+function normalisePct(n: number): number {
+  if (!Number.isFinite(n)) return 0;
+  const asPct = n <= 1 ? n * 100 : n;
+  return clampPct(asPct);
 }

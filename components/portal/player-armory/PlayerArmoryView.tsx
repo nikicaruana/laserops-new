@@ -1,16 +1,22 @@
-import type { ArmoryBranch } from "@/lib/weapons/armory";
+import type { ArmoryBranch, ArmoryEntry } from "@/lib/weapons/armory";
 import { CollapsibleSection } from "@/components/portal/CollapsibleSection";
 import { ArmoryCard } from "./ArmoryCard";
+import { PlayerWeaponMetaChart } from "./PlayerWeaponMetaChart";
+import { PlayerKillDistributionChart } from "./PlayerKillDistributionChart";
 
 /**
  * PlayerArmoryView
  * --------------------------------------------------------------------
  * Top-level layout for the Armory page once a player is selected.
- * Renders one CollapsibleSection per Gun_Tree_Branch, each containing
- * a responsive grid of ArmoryCard items.
+ * Above-the-fold:
+ *   1. Per-player weapon-meta bubble chart
+ *   2. Kill-distribution pie chart
+ * Below-the-fold:
+ *   - One CollapsibleSection per Gun_Tree_Branch (closed by default)
+ *     with a responsive grid of ArmoryCard items.
  *
- * Server-renderable shell — only the cards (and their detail modals)
- * need client-side state.
+ * Server-renderable shell — only the cards, detail modals, and chart
+ * client components need client-side state.
  */
 
 type Props = {
@@ -33,20 +39,34 @@ export function PlayerArmoryView({ branches }: Props) {
     );
   }
 
+  // Flatten entries across all branches once for the charts. Both
+  // chart components do their own filtering (used / unlocked /
+  // kills > 0) so we hand them the full list and let them slice.
+  const allEntries: ArmoryEntry[] = branches.flatMap((b) => b.entries);
+
   return (
-    <div className="mt-8 flex flex-col gap-6">
-      {branches.map((branch) => (
-        <CollapsibleSection key={branch.branch} title={branch.branch}>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
-            {branch.entries.map((entry) => (
-              <ArmoryCard
-                key={`${entry.gunName}-${entry.playerNickname}`}
-                entry={entry}
-              />
-            ))}
-          </div>
-        </CollapsibleSection>
-      ))}
+    <div className="mt-8 flex flex-col gap-6 sm:gap-8">
+      <div className="flex flex-col gap-6">
+        {branches.map((branch) => (
+          <CollapsibleSection
+            key={branch.branch}
+            title={branch.branch}
+            defaultOpen={false}
+          >
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+              {branch.entries.map((entry) => (
+                <ArmoryCard
+                  key={`${entry.gunName}-${entry.playerNickname}`}
+                  entry={entry}
+                />
+              ))}
+            </div>
+          </CollapsibleSection>
+        ))}
+      </div>
+
+      <PlayerWeaponMetaChart entries={allEntries} />
+      <PlayerKillDistributionChart entries={allEntries} />
     </div>
   );
 }
