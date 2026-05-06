@@ -74,7 +74,7 @@ export function HomeHero() {
       // 2xl restores `aspect-auto` so the original full-svh
       // behaviour kicks back in for big monitors where the
       // unconstrained section happens to be close to 16:9 anyway.
-      className="relative isolate overflow-hidden xl:aspect-[16/9] xl:max-h-[calc(100svh-72px)] 2xl:aspect-auto 2xl:max-h-none"
+      className="relative isolate overflow-hidden xl:aspect-[16/9] xl:max-h-[calc(100svh-72px)] xl:min-h-[calc(100svh-72px)] 2xl:aspect-auto 2xl:max-h-none"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -170,30 +170,6 @@ export function HomeHero() {
         style={{
           background:
             "linear-gradient(90deg, rgba(10,10,10,0.92) 0%, rgba(10,10,10,0.78) 30%, rgba(10,10,10,0.25) 55%, rgba(10,10,10,0) 75%)",
-        }}
-      />
-
-      {/* DESKTOP RIGHT-EDGE YELLOW MASK
-          The source hero photo has a dark environment on its rightmost
-          ~15-20% (beyond the yellow paper backdrop the figure is shot
-          against). The DuotoneImage processing maps that area to black,
-          creating a visible "black bar" on the right side at xl/2xl
-          widths regardless of object-position (the overflow available
-          for cropping is too small to hide it).
-
-          Solution: a hard-edged yellow gradient overlay on the right
-          portion of the hero, fading from solid yellow on the right
-          (covering the dark area entirely) to transparent on its left
-          (preserving the figure underneath). The gradient terminates
-          before the figure's typical horizontal centre, so the figure
-          stays clean and recognisable. */}
-      <div
-        className="pointer-events-none absolute inset-y-0 right-0 hidden xl:block"
-        aria-hidden
-        style={{
-          width: "30%",
-          background:
-            "linear-gradient(270deg, #ffde00 0%, rgba(255,222,0,0.85) 25%, rgba(255,222,0,0) 100%)",
         }}
       />
 
