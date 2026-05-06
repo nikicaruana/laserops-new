@@ -221,11 +221,11 @@ export function HomeHero() {
               2xl tier restores everything to the original sizing. */}
           <div className="hidden xl:block xl:my-auto max-w-[640px]">
             <h1 className="text-balance text-5xl font-extrabold leading-[1.02] 2xl:text-7xl">
-              Malta's Ultimate Outdoor Laser Tag Experience.{" "}
+              Malta&rsquo;s Ultimate Outdoor Laser Tag Experience.{" "}
               <span className="text-accent">Built for Competition.</span>
             </h1>
             <p className="mt-4 max-w-xl text-base text-text-muted 2xl:mt-5 2xl:text-lg">
-              Tactical missions, different scenarios, and Malta's only persistent stat and
+              Tactical missions, different scenarios, and Malta&rsquo;s only persistent stat and
               progressive unlock system — LaserOps is changing the game.
             </p>
             <a
@@ -265,11 +265,11 @@ export function HomeHero() {
           {/* MOBILE TEXT BLOCK — centered in the yellow zone above the figure */}
           <div className="max-w-2xl xl:hidden">
             <h1 className="text-balance text-4xl font-extrabold leading-[1.02] sm:text-5xl">
-              Malta's Ultimate Outdoor Laser Tag Experience.{" "}
+              Malta&rsquo;s Ultimate Outdoor Laser Tag Experience.{" "}
               <span className="text-accent">Built for Competition.</span>
             </h1>
             <p className="mt-5 max-w-xl text-base text-white/80 sm:text-lg">
-              Tactical missions, different scenarios, and Malta's only persistent stat and
+              Tactical missions, different scenarios, and Malta&rsquo;s only persistent stat and
               progressive unlock system — LaserOps is changing the game.
             </p>
             <a
