@@ -221,14 +221,24 @@ export function HomeHero() {
               2xl tier restores everything to the original sizing. */}
           <div className="hidden xl:block xl:my-auto max-w-[640px]">
             <h1 className="text-balance text-5xl font-extrabold leading-[1.02] 2xl:text-7xl">
-              Outdoor Laser Tag in Malta.{" "}
+              Malta's Ultimate Outdoor Laser Tag Experience.{" "}
               <span className="text-accent">Built for Competition.</span>
             </h1>
             <p className="mt-4 max-w-xl text-base text-text-muted 2xl:mt-5 2xl:text-lg">
-              Tactical missions, team battles, and competitive player stats — LaserOps is a new
-              kind of laser tag experience.
+              Tactical missions, different scenarios, and Malta's only persistent stat and
+              progressive unlock system — LaserOps is changing the game.
             </p>
-            <div className="mt-6 flex gap-3 2xl:mt-10 2xl:gap-4">
+            <a
+              href="https://www.google.com/search?q=LaserOps+Malta+reviews"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 inline-flex items-center gap-2 text-sm text-text-muted transition-colors hover:text-text 2xl:mt-5"
+            >
+              <span className="text-base leading-none text-yellow-400">★★★★★</span>
+              <span className="font-semibold text-text">5.0</span>
+              <span>on Google Reviews</span>
+            </a>
+            <div className="mt-6 flex gap-3 2xl:mt-8 2xl:gap-4">
               <Button href={ctaLinks.primary.href} variant="primary" size="md">
                 {ctaLinks.primary.label}
               </Button>
@@ -238,8 +248,8 @@ export function HomeHero() {
             </div>
             <dl className="mt-10 grid max-w-xl grid-cols-3 gap-px border-y border-border bg-border 2xl:mt-16">
               {[
-                { value: "12+", label: "Game Modes" },
-                { value: "1000+", label: "Matches Played" },
+                { value: "15+", label: "Weapons" },
+                { value: "6+", label: "Game Modes" },
                 { value: "Outdoor", label: "Real Terrain" },
               ].map((stat) => (
                 <div key={stat.label} className="bg-bg p-4 2xl:p-5">
@@ -255,13 +265,23 @@ export function HomeHero() {
           {/* MOBILE TEXT BLOCK — centered in the yellow zone above the figure */}
           <div className="max-w-2xl xl:hidden">
             <h1 className="text-balance text-4xl font-extrabold leading-[1.02] sm:text-5xl">
-              Outdoor Laser Tag in Malta.{" "}
+              Malta's Ultimate Outdoor Laser Tag Experience.{" "}
               <span className="text-accent">Built for Competition.</span>
             </h1>
             <p className="mt-5 max-w-xl text-base text-white/80 sm:text-lg">
-              Tactical missions, team battles, and competitive player stats — LaserOps is a new
-              kind of laser tag experience.
+              Tactical missions, different scenarios, and Malta's only persistent stat and
+              progressive unlock system — LaserOps is changing the game.
             </p>
+            <a
+              href="https://www.google.com/search?q=LaserOps+Malta+reviews"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 inline-flex items-center gap-2 text-sm text-white/70 transition-colors hover:text-white"
+            >
+              <span className="text-base leading-none text-yellow-400">★★★★★</span>
+              <span className="font-semibold text-white">5.0</span>
+              <span>on Google Reviews</span>
+            </a>
           </div>
         </div>
       </Container>
