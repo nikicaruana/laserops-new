@@ -73,7 +73,7 @@ export function HomeHero() {
       // 2xl restores `aspect-auto` so the original full-svh
       // behaviour kicks back in for big monitors where the
       // unconstrained section happens to be close to 16:9 anyway.
-      className="relative isolate overflow-hidden xl:bg-[#ffde00] xl:aspect-[16/9] xl:max-h-[calc(100svh-72px)] xl:min-h-[calc(100svh-72px)] 2xl:aspect-auto 2xl:max-h-none"
+      className="relative isolate overflow-hidden xl:bg-[#ffde00] xl:min-h-[calc(100svh-72px)]"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
