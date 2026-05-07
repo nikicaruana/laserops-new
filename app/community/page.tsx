@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
+import { BracketFrame } from "@/components/portal/BracketFrame";
+import { fetchImagesByTag } from "@/lib/cloudinary";
+import type { CloudinaryImage } from "@/lib/cloudinary";
 
 export const metadata: Metadata = {
   title: "Laser Tag Community Malta — Open Games & Player Portal",
@@ -17,7 +19,6 @@ export const metadata: Metadata = {
 /**
  * WhatsApp community invite link.
  * Replace the placeholder with the real invite URL when available.
- * Format: https://chat.whatsapp.com/<invite_code>
  */
 const WHATSAPP_URL = "https://chat.whatsapp.com/Duox9CiCmasKsv8tcuQScZ";
 
@@ -62,7 +63,20 @@ const faqs: { q: string; a: string }[] = [
 // ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
-export default function CommunityPage() {
+export default async function CommunityPage() {
+  // Fetch Cloudinary images tagged 'community'. Falls back to [] if
+  // credentials are missing or the request fails — page degrades cleanly.
+  const communityPhotos = await fetchImagesByTag("community");
+
+  // Photo strip below the hero: up to 3 photos, shown only when ≥2 available.
+  const stripPhotos = communityPhotos.slice(0, 3);
+  const showStrip = stripPhotos.length >= 2;
+
+  // Featured inline photo for the "The People" section: use the 4th photo
+  // when a full strip is shown (avoids repetition), otherwise the first.
+  const featuredPhoto: CloudinaryImage | null =
+    communityPhotos[showStrip && stripPhotos.length >= 3 ? 3 : 0] ?? null;
+
   return (
     <>
       {/* ── Hero ─────────────────────────────────────────────── */}
@@ -87,6 +101,29 @@ export default function CommunityPage() {
             <CommunityStat value="ELO" label="Skill-balanced teams" />
             <CommunityStat value="Every" label="Match tracked" />
           </div>
+
+          {/* Photo strip — shown when ≥2 community-tagged photos are available */}
+          {showStrip && (
+            <div
+              className={`mt-10 grid gap-3 ${stripPhotos.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}
+            >
+              {stripPhotos.map((photo) => (
+                <BracketFrame
+                  key={photo.publicId}
+                  cornerSize="1.25rem"
+                  thickness="2px"
+                  inset="-5px"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={photo.secureUrl}
+                    alt={photo.caption ?? "LaserOps Malta community"}
+                    className="block aspect-[4/3] w-full object-cover"
+                  />
+                </BracketFrame>
+              ))}
+            </div>
+          )}
         </Container>
       </section>
 
@@ -212,21 +249,28 @@ export default function CommunityPage() {
           <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
             A Community That Pushes Each Other to Improve
           </h2>
-          <div className="mt-5 space-y-4 text-text-muted">
-            <p className="leading-relaxed">
-              What ties all of this together is the people. The regulars at Laser
-              Ops want to win, but they also want the players around them to get
-              better, because better opponents mean better games. After matches
-              you&apos;ll hear postmortems on what worked, advice traded between
-              teams, and the kind of light ribbing that comes with any group that
-              takes its sport half seriously and itself not seriously at all.
-            </p>
-            <p className="leading-relaxed">
-              Whether you&apos;re chasing the top of the leaderboard or just looking
-              for a weekly thing to do that isn&apos;t another night at the same bar,
-              there&apos;s a spot for you.
-            </p>
-          </div>
+
+          {featuredPhoto ? (
+            /* Desktop: photo left, text right. Mobile: stacked. */
+            <div className="mt-6 flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-12">
+              <BracketFrame
+                cornerSize="1.75rem"
+                thickness="2px"
+                inset="-6px"
+                className="w-full shrink-0 lg:w-[44%]"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={featuredPhoto.secureUrl}
+                  alt={featuredPhoto.caption ?? "LaserOps Malta players"}
+                  className="block aspect-[4/3] w-full object-cover"
+                />
+              </BracketFrame>
+              <PeopleText />
+            </div>
+          ) : (
+            <PeopleText className="mt-5" />
+          )}
         </Container>
       </section>
 
@@ -312,6 +356,27 @@ function CommunityStat({ value, label }: { value: string; label: string }) {
   );
 }
 
+/** Body copy for the "The People" section — shared between photo and no-photo layouts. */
+function PeopleText({ className }: { className?: string }) {
+  return (
+    <div className={`space-y-4 text-text-muted ${className ?? ""}`}>
+      <p className="leading-relaxed">
+        What ties all of this together is the people. The regulars at Laser Ops
+        want to win, but they also want the players around them to get better,
+        because better opponents mean better games. After matches you&apos;ll hear
+        postmortems on what worked, advice traded between teams, and the kind of
+        light ribbing that comes with any group that takes its sport half
+        seriously and itself not seriously at all.
+      </p>
+      <p className="leading-relaxed">
+        Whether you&apos;re chasing the top of the leaderboard or just looking for a
+        weekly thing to do that isn&apos;t another night at the same bar, there&apos;s a
+        spot for you.
+      </p>
+    </div>
+  );
+}
+
 type WhatsAppButtonProps = {
   children: React.ReactNode;
   size?: "md" | "lg";
@@ -325,11 +390,11 @@ function WhatsAppButton({ children, size = "md" }: WhatsAppButtonProps) {
       rel="noopener noreferrer"
       className={
         size === "lg"
-          ? "inline-flex items-center gap-2.5 rounded-none bg-[#25D366] px-8 py-4 text-sm font-semibold uppercase tracking-[0.12em] text-white transition-opacity hover:opacity-90 active:scale-[0.98]"
-          : "inline-flex items-center gap-2.5 rounded-none bg-[#25D366] px-6 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-white transition-opacity hover:opacity-90 active:scale-[0.98]"
+          ? "inline-flex items-center gap-2.5 bg-[#25D366] px-8 py-4 text-sm font-semibold uppercase tracking-[0.12em] text-white transition-opacity hover:opacity-90 active:scale-[0.98]"
+          : "inline-flex items-center gap-2.5 bg-[#25D366] px-6 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-white transition-opacity hover:opacity-90 active:scale-[0.98]"
       }
     >
-      {/* WhatsApp logo mark */}
+      {/* WhatsApp logomark */}
       <svg
         aria-hidden
         viewBox="0 0 24 24"
@@ -348,7 +413,6 @@ function FaqItem({ q, a }: { q: string; a: string }) {
     <details className="group py-5">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-bold uppercase tracking-[0.06em] text-text sm:text-base">
         {q}
-        {/* Chevron — rotates open */}
         <svg
           aria-hidden
           viewBox="0 0 10 6"

@@ -114,6 +114,46 @@ export async function fetchGalleryImages(): Promise<CloudinaryImage[]> {
   }
 }
 
+/**
+ * Fetch images by tag from Cloudinary. Uses the dedicated tags endpoint
+ * so only images carrying that tag are returned — much more efficient
+ * than fetching everything and filtering client-side.
+ *
+ * Returns [] on any error or missing credentials.
+ */
+export async function fetchImagesByTag(tag: string): Promise<CloudinaryImage[]> {
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+  const apiKey = process.env.CLOUDINARY_API_KEY;
+  const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
+  if (!cloudName || !apiKey || !apiSecret) return [];
+
+  const credentials = Buffer.from(`${apiKey}:${apiSecret}`).toString("base64");
+  const url = new URL(
+    `https://api.cloudinary.com/v1_1/${cloudName}/resources/image/tags/${encodeURIComponent(tag)}`,
+  );
+  url.searchParams.set("max_results", "20");
+  url.searchParams.set("context", "true");
+  url.searchParams.set("direction", "desc");
+
+  try {
+    const res = await fetch(url.toString(), {
+      headers: { Authorization: `Basic ${credentials}` },
+      next: { revalidate: GALLERY_REVALIDATE_SECONDS },
+    });
+    if (!res.ok) {
+      console.error(`[cloudinary] tags API error: ${res.status} ${res.statusText}`);
+      return [];
+    }
+    const data = (await res.json()) as { resources?: any[] }; // any: Cloudinary REST response is untyped
+    if (!Array.isArray(data.resources)) return [];
+    return data.resources.map(parseResource);
+  } catch (err) {
+    console.error("[cloudinary] fetchImagesByTag failed:", err);
+    return [];
+  }
+}
+
 function parseResource(r: any): CloudinaryImage { // any: Cloudinary REST response is untyped
   const publicId: string = r.public_id ?? "";
 
