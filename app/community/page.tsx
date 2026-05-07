@@ -19,7 +19,7 @@ export const metadata: Metadata = {
  * Replace the placeholder with the real invite URL when available.
  * Format: https://chat.whatsapp.com/<invite_code>
  */
-const WHATSAPP_URL = "https://chat.whatsapp.com/PLACEHOLDER";
+const WHATSAPP_URL = "https://chat.whatsapp.com/Duox9CiCmasKsv8tcuQScZ";
 
 // ---------------------------------------------------------------------------
 // FAQ data
