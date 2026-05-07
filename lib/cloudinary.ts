@@ -62,6 +62,12 @@ export async function fetchGalleryImages(): Promise<CloudinaryImage[]> {
   url.searchParams.set("tags", "true");
   // Newest uploads first so the most recent match photos appear at the top.
   url.searchParams.set("direction", "desc");
+  // Restrict to a specific folder prefix when configured — keeps accolades,
+  // gun images, and other account assets out of the public gallery.
+  const galleryFolder = process.env.CLOUDINARY_GALLERY_FOLDER;
+  if (galleryFolder) {
+    url.searchParams.set("prefix", galleryFolder);
+  }
 
   try {
     const res = await fetch(url.toString(), {
