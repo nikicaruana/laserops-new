@@ -97,7 +97,7 @@ export function ArmoryCard({ entry }: Props) {
       >
         {/* Image area — yellow band. On desktop: fixed width, full card height. */}
         <div
-          className="flex h-28 shrink-0 items-center justify-center px-3 sm:h-32 lg:h-auto lg:w-36 lg:self-stretch"
+          className="flex h-28 shrink-0 items-center justify-center px-3 sm:h-32 lg:h-auto lg:w-72 lg:self-stretch"
           style={{ backgroundColor: "#ffde00" }}
         >
           {imageSrc !== "" && (
@@ -106,7 +106,7 @@ export function ArmoryCard({ entry }: Props) {
               alt={isLocked ? "" : entry.gunName}
               aria-hidden={isLocked || undefined}
               className={cn(
-                "block h-20 w-auto select-none object-contain sm:h-24",
+                "block h-20 w-auto select-none object-contain sm:h-24 lg:h-40",
                 isLocked && "opacity-60 blur-[6px]",
               )}
               draggable={false}
@@ -115,11 +115,11 @@ export function ArmoryCard({ entry }: Props) {
         </div>
 
         {/* Body */}
-        <div className="flex flex-1 flex-col gap-2 p-4 sm:p-5 lg:justify-center">
+        <div className="flex flex-1 flex-col gap-1.5 p-4 sm:p-5 lg:justify-center">
           {/* Top row: tree branch label (left) + status pill (right) */}
           <div className="flex items-center justify-between gap-2">
             {entry.treeBranch !== "" && (
-              <span className="text-[0.55rem] font-semibold uppercase tracking-[0.14em] text-text-subtle">
+              <span className="text-[0.55rem] font-semibold uppercase tracking-[0.14em] text-accent">
                 {entry.treeBranch}
               </span>
             )}

@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/cn";
 import type { ArmoryBranch, ArmoryEntry } from "@/lib/weapons/armory";
-import { CollapsibleSection } from "@/components/portal/CollapsibleSection";
 import { ArmoryCard } from "./ArmoryCard";
 
 /**
@@ -16,9 +15,9 @@ import { ArmoryCard } from "./ArmoryCard";
  *   2. Tree filter — checkbox dropdown, all branches selected by default
  *   3. Sort by — select, defaults to "Gun Tree" (branch + sortOrder)
  *
- * When sorted by Gun Tree the cards are grouped inside CollapsibleSections
- * (one per branch). Any other sort renders a flat list, since grouping
- * by branch while sorted by a stat is meaningless.
+ * Always renders a flat list. Gun Tree sort preserves the original
+ * branch + sortOrder ordering; other sorts order by the chosen stat
+ * descending.
  *
  * Desktop layout: single-column (grid-cols-1), each ArmoryCard switches
  * to a horizontal orientation (image left, stats right) via lg: variants
@@ -237,41 +236,16 @@ export function ArmoryControls({ branches }: Props) {
         </div>
       </div>
 
-      {/* ── Card list ────────────────────────────────────────── */}
-      {sortBy === "tree" ? (
-        /* Grouped by branch */
-        <div className="flex flex-col gap-6">
-          {filteredBranches.map((branch) => (
-            <CollapsibleSection
-              key={branch.branch}
-              title={branch.branch}
-              defaultOpen={false}
-            >
-              {/* Mobile/tablet: 2-col grid. Desktop: 1-col horizontal cards. */}
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-1 lg:gap-3">
-                {branch.entries.map((entry) => (
-                  <ArmoryCard
-                    key={`${entry.gunName}-${entry.playerNickname}`}
-                    entry={entry}
-                  />
-                ))}
-              </div>
-            </CollapsibleSection>
-          ))}
-          {filteredBranches.length === 0 && <EmptyFilter />}
-        </div>
-      ) : (
-        /* Flat sorted list — always 1 column */
-        <div className="flex flex-col gap-3">
-          {sortedEntries.map((entry) => (
-            <ArmoryCard
-              key={`${entry.gunName}-${entry.playerNickname}`}
-              entry={entry}
-            />
-          ))}
-          {sortedEntries.length === 0 && <EmptyFilter />}
-        </div>
-      )}
+      {/* ── Card list — always a flat list ───────────────────── */}
+      <div className="flex flex-col gap-3">
+        {sortedEntries.map((entry) => (
+          <ArmoryCard
+            key={`${entry.gunName}-${entry.playerNickname}`}
+            entry={entry}
+          />
+        ))}
+        {sortedEntries.length === 0 && <EmptyFilter />}
+      </div>
     </div>
   );
 }

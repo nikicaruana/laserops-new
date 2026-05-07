@@ -71,10 +71,16 @@ export function MobileNav() {
   for (const link of primaryNav) {
     if (link.hidden) continue;
     if (link.mobileExpand && link.children) {
-      // Explode children as individual yellow links
-      const color = link.highlight ? "#ffde00" : link.redHighlight ? "#b91c1c" : "#f5f5f5";
+      // Explode children as individual links — each child uses its own
+      // highlight/redHighlight colour, falling back to the parent's colour.
+      const parentColor = link.highlight ? "#ffde00" : link.redHighlight ? "#b91c1c" : "#f5f5f5";
       for (const child of link.children) {
-        mobileItems.push({ kind: "link", label: child.label, href: child.href, color });
+        const childColor = child.highlight
+          ? "#ffde00"
+          : child.redHighlight
+            ? "#b91c1c"
+            : parentColor;
+        mobileItems.push({ kind: "link", label: child.label, href: child.href, color: childColor });
       }
     } else {
       mobileItems.push({ kind: "accordion", link, index: accordionIndex });
@@ -309,24 +315,14 @@ export function MobileNav() {
 
       {/* CTAs */}
       <div style={{ padding: "2rem 1.25rem 0", flexShrink: 0 }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-          <Button
-            href={ctaLinks.primary.href}
-            variant="primary"
-            size="lg"
-            onClick={close}
-          >
-            {ctaLinks.primary.label}
-          </Button>
-          <Button
-            href={ctaLinks.secondary.href}
-            variant="secondary"
-            size="lg"
-            onClick={close}
-          >
-            {ctaLinks.secondary.label}
-          </Button>
-        </div>
+        <Button
+          href={ctaLinks.primary.href}
+          variant="primary"
+          size="lg"
+          onClick={close}
+        >
+          {ctaLinks.primary.label}
+        </Button>
       </div>
 
       {/* Utility links */}
