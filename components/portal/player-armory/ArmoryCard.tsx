@@ -86,6 +86,8 @@ export function ArmoryCard({ entry }: Props) {
         className={cn(
           "group flex w-full flex-col rounded-sm border border-border bg-bg-overlay text-left transition-colors",
           "hover:border-border-strong focus:border-border-strong focus:outline-none",
+          /* Desktop: horizontal layout — image left, stats right */
+          "lg:flex-row",
         )}
         aria-label={
           isLocked
@@ -93,10 +95,9 @@ export function ArmoryCard({ entry }: Props) {
             : `${entry.gunDisplayTitle || entry.gunName}: view details`
         }
       >
-        {/* Image area — yellow band that matches the /weapons gallery
-            visual language. Locked guns get a heavy CSS blur. */}
+        {/* Image area — yellow band. On desktop: fixed width, full card height. */}
         <div
-          className="flex h-28 items-center justify-center px-3 sm:h-32"
+          className="flex h-28 shrink-0 items-center justify-center px-3 sm:h-32 lg:h-auto lg:w-36 lg:self-stretch"
           style={{ backgroundColor: "#ffde00" }}
         >
           {imageSrc !== "" && (
@@ -114,27 +115,27 @@ export function ArmoryCard({ entry }: Props) {
         </div>
 
         {/* Body */}
-        <div className="flex flex-1 flex-col gap-2 p-4 sm:p-5">
-          {/* Status pill row — eyebrow text intentionally removed (the
-              tree branch is implied by the surrounding CollapsibleSection
-              title, and the gun class is shown inside the dialog). The
-              row stays so we can right-align the LOCKED / UNUSED pill. */}
-          {(isLocked || !entry.hasUsedGun) && (
-            <div className="flex items-center justify-end gap-2">
-              {isLocked ? (
-                <span className="rounded-sm border border-border-strong px-1.5 py-0.5 text-[0.55rem] font-bold uppercase tracking-[0.14em] text-text-muted">
-                  Locked
-                </span>
-              ) : (
-                <span className="rounded-sm border border-border px-1.5 py-0.5 text-[0.55rem] font-bold uppercase tracking-[0.14em] text-text-muted">
-                  Unused
-                </span>
-              )}
-            </div>
-          )}
+        <div className="flex flex-1 flex-col gap-2 p-4 sm:p-5 lg:justify-center">
+          {/* Top row: tree branch label (left) + status pill (right) */}
+          <div className="flex items-center justify-between gap-2">
+            {entry.treeBranch !== "" && (
+              <span className="text-[0.55rem] font-semibold uppercase tracking-[0.14em] text-text-subtle">
+                {entry.treeBranch}
+              </span>
+            )}
+            {isLocked ? (
+              <span className="rounded-sm border border-border-strong px-1.5 py-0.5 text-[0.55rem] font-bold uppercase tracking-[0.14em] text-text-muted">
+                Locked
+              </span>
+            ) : !entry.hasUsedGun ? (
+              <span className="rounded-sm border border-border px-1.5 py-0.5 text-[0.55rem] font-bold uppercase tracking-[0.14em] text-text-muted">
+                Unused
+              </span>
+            ) : null}
+          </div>
 
           {/* Title — gun name when unlocked, unlock criteria when not. */}
-          <h3 className="text-center text-xl font-extrabold leading-tight tracking-tight text-text sm:text-3xl">
+          <h3 className="text-center text-xl font-extrabold leading-tight tracking-tight text-text sm:text-3xl lg:text-left lg:text-2xl">
             {isLocked
               ? entry.unlockDisplayText || "Locked"
               : entry.gunDisplayTitle || entry.gunName}
@@ -147,7 +148,7 @@ export function ArmoryCard({ entry }: Props) {
                 pct={entry.unlockProgressPct}
                 play={inView}
               />
-              <p className="mt-2 text-center text-sm text-text-muted">
+              <p className="mt-2 text-center text-sm text-text-muted lg:text-left">
                 {showCountUp ? (
                   <>
                     <AnimatedNumber
@@ -175,7 +176,7 @@ export function ArmoryCard({ entry }: Props) {
               />
             </div>
           ) : (
-            <p className="mt-1 text-center text-sm italic text-text-muted">
+            <p className="mt-1 text-center text-sm italic text-text-muted lg:text-left">
               Unlocked but never used. Tap for stats and details.
             </p>
           )}
