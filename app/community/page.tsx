@@ -5,6 +5,10 @@ import { BracketFrame } from "@/components/portal/BracketFrame";
 import { fetchImagesByTag } from "@/lib/cloudinary";
 import type { CloudinaryImage } from "@/lib/cloudinary";
 
+// Force dynamic rendering so Cloudinary images are fetched fresh on every
+// request rather than being cached at build time with an empty result.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Laser Tag Community Malta — Open Games & Player Portal",
   description:
