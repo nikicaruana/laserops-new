@@ -1,9 +1,14 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
 import { BracketFrame } from "@/components/portal/BracketFrame";
 import { fetchImagesByTag, cloudinaryTransform } from "@/lib/cloudinary";
 import type { CloudinaryImage } from "@/lib/cloudinary";
+import {
+  fetchAllPlayerStats,
+  FALLBACK_PROFILE_PIC,
+} from "@/lib/player-stats/shared";
 
 // Force dynamic rendering so Cloudinary images are fetched fresh on every
 // request rather than being cached at build time with an empty result.
@@ -69,7 +74,18 @@ const faqs: { q: string; a: string }[] = [
 // Page
 // ---------------------------------------------------------------------------
 export default async function CommunityPage() {
-  const communityPhotos = await fetchImagesByTag("community");
+  const [communityPhotos, playerStatsResult] = await Promise.all([
+    fetchImagesByTag("community"),
+    fetchAllPlayerStats(),
+  ]);
+
+  // Resolve JRilez's profile pic from the live player stats sheet.
+  const jrilezRow = playerStatsResult.ok
+    ? playerStatsResult.rows.find(
+        (r) => r.Player_Stats_Nickname.toLowerCase() === "jrilez",
+      )
+    : undefined;
+  const jrilezPic = jrilezRow?.Player_Stats_Profile_Pic || FALLBACK_PROFILE_PIC;
 
   const stripPhotos = communityPhotos.slice(0, 3);
   const showStrip = stripPhotos.length >= 2;
@@ -158,6 +174,45 @@ export default async function CommunityPage() {
               Join the LaserOps Malta WhatsApp Community
             </WhatsAppButton>
           </div>
+        </Container>
+      </section>
+
+      {/* ── Player Testimonial ───────────────────────────────── */}
+      <section className="border-b border-border">
+        <Container size="narrow" className="py-14 sm:py-16">
+          <blockquote className="relative">
+            {/* Large decorative quote mark */}
+            <span
+              aria-hidden
+              className="absolute -top-4 left-0 font-serif text-7xl leading-none text-accent select-none sm:text-8xl"
+            >
+              &ldquo;
+            </span>
+            <p className="pt-8 text-lg font-medium leading-relaxed text-text sm:text-xl lg:text-2xl">
+              The open games have become a genuine highlight of my weekends and
+              something I really look forward to, and the people are great!
+            </p>
+            <footer className="mt-6 flex items-center gap-4">
+              <Link
+                href="/player-portal/player-stats/summary?ops=JRilez"
+                className="group flex items-center gap-4"
+              >
+                <BracketFrame cornerSize="0.75rem" thickness="2px" inset="-4px">
+                  <img
+                    src={jrilezPic}
+                    alt="JRilez"
+                    className="h-12 w-12 object-cover"
+                  />
+                </BracketFrame>
+                <div className="flex flex-col">
+                  <span className="text-sm font-bold uppercase tracking-[0.1em] text-accent group-hover:underline">
+                    JRilez
+                  </span>
+                  <span className="text-xs text-text-muted">LaserOps Malta Player</span>
+                </div>
+              </Link>
+            </footer>
+          </blockquote>
         </Container>
       </section>
 
