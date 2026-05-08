@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
 import { BracketFrame } from "@/components/portal/BracketFrame";
-import { fetchImagesByTag, cloudinaryTransform } from "@/lib/cloudinary";
+import { fetchImagesByTag } from "@/lib/cloudinary";
 import type { CloudinaryImage } from "@/lib/cloudinary";
 
 export const metadata: Metadata = {
@@ -17,11 +17,6 @@ export const metadata: Metadata = {
 };
 
 const WHATSAPP_URL = "https://chat.whatsapp.com/Duox9CiCmasKsv8tcuQScZ";
-
-// Cloudinary transformation presets for the two image contexts on this page.
-// q_auto → Cloudinary picks quality; f_auto → serves WebP/AVIF when supported.
-const STRIP_TRANSFORM = "w_800,q_auto,f_auto";
-const FEATURED_TRANSFORM = "w_1200,q_auto,f_auto";
 
 // ---------------------------------------------------------------------------
 // FAQ data
@@ -99,9 +94,7 @@ export default async function CommunityPage() {
             <CommunityStat value="Every" label="Match tracked" />
           </div>
 
-          {/* Photo strip — shown when ≥2 community-tagged photos are available.
-              Images are resized by Cloudinary to 800px wide at 4:3 — no full-res
-              downloads for thumbnails. */}
+          {/* Photo strip — shown when ≥2 community-tagged photos are available. */}
           {showStrip && (
             <div
               className={`mt-10 grid gap-3 ${stripPhotos.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}
@@ -115,7 +108,7 @@ export default async function CommunityPage() {
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={cloudinaryTransform(photo.secureUrl, STRIP_TRANSFORM)}
+                    src={photo.secureUrl}
                     alt={photo.caption ?? "LaserOps Malta community"}
                     className="block aspect-[4/3] w-full object-cover"
                   />
@@ -265,7 +258,7 @@ export default async function CommunityPage() {
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={cloudinaryTransform(featuredPhoto.secureUrl, FEATURED_TRANSFORM)}
+                  src={featuredPhoto.secureUrl}
                   alt={featuredPhoto.caption ?? "LaserOps Malta players"}
                   className="block aspect-[4/3] w-full object-cover"
                 />
