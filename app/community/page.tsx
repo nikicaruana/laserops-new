@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
 import { BracketFrame } from "@/components/portal/BracketFrame";
-import { fetchImagesByTag } from "@/lib/cloudinary";
+import { fetchImagesByTag, cloudinaryTransform } from "@/lib/cloudinary";
 import type { CloudinaryImage } from "@/lib/cloudinary";
 
 // Force dynamic rendering so Cloudinary images are fetched fresh on every
@@ -21,6 +21,11 @@ export const metadata: Metadata = {
 };
 
 const WHATSAPP_URL = "https://chat.whatsapp.com/Duox9CiCmasKsv8tcuQScZ";
+
+// Cloudinary transformation presets. Cloudinary resizes and crops server-side
+// so the browser only downloads a small thumbnail, not the full-res original.
+const STRIP_TRANSFORM = "w_800,c_fill,ar_4:3,q_auto,f_auto";
+const FEATURED_TRANSFORM = "w_1200,c_fill,ar_4:3,q_auto,f_auto";
 
 // ---------------------------------------------------------------------------
 // FAQ data
@@ -65,16 +70,6 @@ const faqs: { q: string; a: string }[] = [
 // ---------------------------------------------------------------------------
 export default async function CommunityPage() {
   const communityPhotos = await fetchImagesByTag("community");
-
-  // DEBUG — remove after confirming images load
-  console.log(
-    "[community] photos fetched:",
-    communityPhotos.length,
-    "| cloud name set:",
-    !!process.env.CLOUDINARY_CLOUD_NAME,
-    "| api key set:",
-    !!process.env.CLOUDINARY_API_KEY,
-  );
 
   const stripPhotos = communityPhotos.slice(0, 3);
   const showStrip = stripPhotos.length >= 2;
@@ -121,7 +116,7 @@ export default async function CommunityPage() {
                   inset="-5px"
                 >
                     <img
-                    src={photo.secureUrl}
+                    src={cloudinaryTransform(photo.secureUrl, STRIP_TRANSFORM)}
                     alt={photo.caption ?? "LaserOps Malta community"}
                     className="block aspect-[4/3] w-full object-cover"
                   />
@@ -270,7 +265,7 @@ export default async function CommunityPage() {
                 className="w-full shrink-0 lg:w-[44%]"
               >
                 <img
-                  src={featuredPhoto.secureUrl}
+                  src={cloudinaryTransform(featuredPhoto.secureUrl, FEATURED_TRANSFORM)}
                   alt={featuredPhoto.caption ?? "LaserOps Malta players"}
                   className="block aspect-[4/3] w-full object-cover"
                 />
