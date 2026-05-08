@@ -20,8 +20,8 @@ const WHATSAPP_URL = "https://chat.whatsapp.com/Duox9CiCmasKsv8tcuQScZ";
 
 // Cloudinary transformation presets for the two image contexts on this page.
 // q_auto → Cloudinary picks quality; f_auto → serves WebP/AVIF when supported.
-const STRIP_TRANSFORM = "w_800,ar_4:3,c_fill,q_auto,f_auto";
-const FEATURED_TRANSFORM = "w_1200,ar_4:3,c_fill,q_auto,f_auto";
+const STRIP_TRANSFORM = "w_800,q_auto,f_auto";
+const FEATURED_TRANSFORM = "w_1200,q_auto,f_auto";
 
 // ---------------------------------------------------------------------------
 // FAQ data
