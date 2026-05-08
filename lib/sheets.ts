@@ -44,6 +44,8 @@ export async function fetchSheetAsObjects<T extends Record<string, string>>(
       next: { revalidate: revalidateSeconds },
       // Help Google's CDN serve us a cached version.
       headers: { Accept: "text/csv" },
+      // Prevent the build from hanging if Google Sheets is slow/unreachable.
+      signal: AbortSignal.timeout(15_000),
     });
 
     if (!res.ok) {

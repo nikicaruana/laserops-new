@@ -76,7 +76,6 @@ export async function generateOgImage(title: string): Promise<ImageResponse> {
         }}
       >
         {/* ── Layer 1: yellow graffiti texture (hero bg) ─────── */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={`${base}/images/hero/desktop-hero-01-bg.png`}
           alt=""
@@ -106,7 +105,6 @@ export async function generateOgImage(title: string): Promise<ImageResponse> {
         />
 
         {/* ── Layer 3: B&W branded figure — bottom-right ──────── */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={`${base}/images/hero/desktop-hero-01-figure-branded.png`}
           alt=""
@@ -132,7 +130,6 @@ export async function generateOgImage(title: string): Promise<ImageResponse> {
           }}
         >
           {/* Black wordmark logo */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={`${base}/brand/laserops-logo-black.png`}
             alt="LaserOps Malta"

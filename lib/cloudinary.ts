@@ -78,6 +78,7 @@ export async function fetchGalleryImages(): Promise<CloudinaryImage[]> {
         Authorization: `Basic ${credentials}`,
       },
       next: { revalidate: GALLERY_REVALIDATE_SECONDS },
+      signal: AbortSignal.timeout(15_000),
     });
 
     if (!res.ok) {
@@ -165,6 +166,7 @@ export async function fetchImagesByTag(tag: string): Promise<CloudinaryImage[]> 
     const res = await fetch(url.toString(), {
       headers: { Authorization: `Basic ${credentials}` },
       next: { revalidate: GALLERY_REVALIDATE_SECONDS },
+      signal: AbortSignal.timeout(15_000),
     });
     if (!res.ok) {
       console.error(`[cloudinary] tags API error: ${res.status} ${res.statusText}`);

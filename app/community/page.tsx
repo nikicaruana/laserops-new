@@ -110,8 +110,7 @@ export default async function CommunityPage() {
                   thickness="2px"
                   inset="-5px"
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                    <img
                     src={photo.secureUrl}
                     alt={photo.caption ?? "LaserOps Malta community"}
                     className="block aspect-[4/3] w-full object-cover"
@@ -260,7 +259,6 @@ export default async function CommunityPage() {
                 inset="-6px"
                 className="w-full shrink-0 lg:w-[44%]"
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={featuredPhoto.secureUrl}
                   alt={featuredPhoto.caption ?? "LaserOps Malta players"}
