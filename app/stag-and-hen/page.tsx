@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
+import { BracketFrame } from "@/components/portal/BracketFrame";
+import { fetchImagesByTag, cloudinaryTransform } from "@/lib/cloudinary";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Stag & Hen Do Activities Malta | Laser Tag | LaserOps",
@@ -16,7 +20,13 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function StagAndHenPage() {
+const PHOTO_TRANSFORM = "w_900,c_fill,ar_4:3,q_auto,f_auto";
+
+export default async function StagAndHenPage() {
+  const photos = await fetchImagesByTag("stag");
+  const topPhotos = photos.slice(0, 2);
+  const bottomPhotos = photos.slice(2, 4);
+
   return (
     <>
       {/* ── Hero ─────────────────────────────────────────────── */}
@@ -43,6 +53,30 @@ export default function StagAndHenPage() {
           </div>
         </Container>
       </section>
+
+      {/* ── Top photo pair ───────────────────────────────────── */}
+      {topPhotos.length >= 2 && (
+        <section className="border-b border-border">
+          <Container size="narrow" className="py-10">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              {topPhotos.map((photo) => (
+                <BracketFrame
+                  key={photo.publicId}
+                  cornerSize="1.25rem"
+                  thickness="2px"
+                  inset="-5px"
+                >
+                  <img
+                    src={cloudinaryTransform(photo.secureUrl, PHOTO_TRANSFORM)}
+                    alt={photo.caption ?? "LaserOps Malta stag & hen"}
+                    className="block aspect-[4/3] w-full object-cover"
+                  />
+                </BracketFrame>
+              ))}
+            </div>
+          </Container>
+        </section>
+      )}
 
       {/* ── A Proper Activity ────────────────────────────────── */}
       <section className="border-b border-border bg-bg-elevated">
@@ -203,6 +237,30 @@ export default function StagAndHenPage() {
           </div>
         </Container>
       </section>
+
+      {/* ── Bottom photo pair ────────────────────────────────── */}
+      {bottomPhotos.length >= 2 && (
+        <section className="border-b border-border bg-bg-elevated">
+          <Container size="narrow" className="py-10">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              {bottomPhotos.map((photo) => (
+                <BracketFrame
+                  key={photo.publicId}
+                  cornerSize="1.25rem"
+                  thickness="2px"
+                  inset="-5px"
+                >
+                  <img
+                    src={cloudinaryTransform(photo.secureUrl, PHOTO_TRANSFORM)}
+                    alt={photo.caption ?? "LaserOps Malta stag & hen"}
+                    className="block aspect-[4/3] w-full object-cover"
+                  />
+                </BracketFrame>
+              ))}
+            </div>
+          </Container>
+        </section>
+      )}
 
       {/* ── Group Sizes & Booking CTA ────────────────────────── */}
       <section className="border-b border-border bg-bg-elevated">
