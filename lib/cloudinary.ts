@@ -115,6 +115,31 @@ export async function fetchGalleryImages(): Promise<CloudinaryImage[]> {
 }
 
 /**
+ * Insert a Cloudinary transformation string into a delivery URL.
+ *
+ * Cloudinary URLs take the form:
+ *   https://res.cloudinary.com/{cloud}/image/upload/{optional-version}/{public_id}
+ *
+ * Transformations are injected after /upload/:
+ *   .../upload/w_800,c_fill,q_auto,f_auto/v123/my-image.jpg
+ *
+ * Common transform building blocks:
+ *   w_{n}        — resize to width n px
+ *   ar_{w}:{h}   — enforce aspect ratio (used with c_fill)
+ *   c_fill       — crop to fill the requested dimensions
+ *   q_auto       — Cloudinary picks the best quality for the content
+ *   f_auto       — serve WebP/AVIF to browsers that support it
+ *
+ * @param secureUrl  The original https://res.cloudinary.com/… URL
+ * @param transform  Transformation string, e.g. "w_800,ar_4:3,c_fill,q_auto,f_auto"
+ */
+export function cloudinaryTransform(secureUrl: string, transform: string): string {
+  // Guard: if already contains a transformation (or URL is unexpected), return as-is
+  if (!secureUrl.includes("/upload/")) return secureUrl;
+  return secureUrl.replace("/upload/", `/upload/${transform}/`);
+}
+
+/**
  * Fetch images by tag from Cloudinary. Uses the dedicated tags endpoint
  * so only images carrying that tag are returned — much more efficient
  * than fetching everything and filtering client-side.

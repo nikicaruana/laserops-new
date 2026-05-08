@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
 import { BracketFrame } from "@/components/portal/BracketFrame";
-import { fetchImagesByTag } from "@/lib/cloudinary";
+import { fetchImagesByTag, cloudinaryTransform } from "@/lib/cloudinary";
 import type { CloudinaryImage } from "@/lib/cloudinary";
 
 export const metadata: Metadata = {
@@ -16,11 +16,12 @@ export const metadata: Metadata = {
   },
 };
 
-/**
- * WhatsApp community invite link.
- * Replace the placeholder with the real invite URL when available.
- */
 const WHATSAPP_URL = "https://chat.whatsapp.com/Duox9CiCmasKsv8tcuQScZ";
+
+// Cloudinary transformation presets for the two image contexts on this page.
+// q_auto → Cloudinary picks quality; f_auto → serves WebP/AVIF when supported.
+const STRIP_TRANSFORM = "w_800,ar_4:3,c_fill,q_auto,f_auto";
+const FEATURED_TRANSFORM = "w_1200,ar_4:3,c_fill,q_auto,f_auto";
 
 // ---------------------------------------------------------------------------
 // FAQ data
@@ -64,16 +65,11 @@ const faqs: { q: string; a: string }[] = [
 // Page
 // ---------------------------------------------------------------------------
 export default async function CommunityPage() {
-  // Fetch Cloudinary images tagged 'community'. Falls back to [] if
-  // credentials are missing or the request fails — page degrades cleanly.
   const communityPhotos = await fetchImagesByTag("community");
 
-  // Photo strip below the hero: up to 3 photos, shown only when ≥2 available.
   const stripPhotos = communityPhotos.slice(0, 3);
   const showStrip = stripPhotos.length >= 2;
 
-  // Featured inline photo for the "The People" section: use the 4th photo
-  // when a full strip is shown (avoids repetition), otherwise the first.
   const featuredPhoto: CloudinaryImage | null =
     communityPhotos[showStrip && stripPhotos.length >= 3 ? 3 : 0] ?? null;
 
@@ -85,13 +81,14 @@ export default async function CommunityPage() {
           <span className="eyebrow">Community</span>
           <h1 className="mt-4 text-3xl font-extrabold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
             A Laser Tag Community Built Around Playing, Improving, and Having a
-            Laugh
+            Good Time
           </h1>
           <p className="mt-5 text-base leading-relaxed text-text-muted sm:text-lg">
-            Laser Ops is more than a venue you book once for a birthday. We&apos;ve
-            built a proper laser tag community in Malta, with over 100 players who
-            turn up week after week because they genuinely enjoy the game and the
-            people they play it with.
+            Run by people who truly love outdoor laser tag, LaserOps is more than
+            something you book once for a birthday party. We&apos;ve built a proper
+            laser tag community in Malta, with over 100 players who turn up week
+            after week because they genuinely enjoy the game and the people they
+            play it with.
           </p>
 
           {/* Quick stats strip */}
@@ -102,7 +99,9 @@ export default async function CommunityPage() {
             <CommunityStat value="Every" label="Match tracked" />
           </div>
 
-          {/* Photo strip — shown when ≥2 community-tagged photos are available */}
+          {/* Photo strip — shown when ≥2 community-tagged photos are available.
+              Images are resized by Cloudinary to 800px wide at 4:3 — no full-res
+              downloads for thumbnails. */}
           {showStrip && (
             <div
               className={`mt-10 grid gap-3 ${stripPhotos.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}
@@ -116,7 +115,7 @@ export default async function CommunityPage() {
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={photo.secureUrl}
+                    src={cloudinaryTransform(photo.secureUrl, STRIP_TRANSFORM)}
                     alt={photo.caption ?? "LaserOps Malta community"}
                     className="block aspect-[4/3] w-full object-cover"
                   />
@@ -137,18 +136,20 @@ export default async function CommunityPage() {
           <div className="mt-5 space-y-4 text-text-muted">
             <p className="leading-relaxed">
               Our open games run every week, and they&apos;re the heartbeat of what
-              we do. Anyone in the community can show up, get slotted into balanced
+              we do. Anyone in the community can show up, get assigned to balanced
               teams, and play competitive matches against familiar faces and new
-              ones. No need to bring a full group of friends or organise anything
-              yourself. You rock up, you get matched, you play.
+              ones alike. No need to bring a full group of friends or organise
+              anything yourself every time you want to play. You sign up, show up
+              on the day, and play.
             </p>
             <p className="leading-relaxed">
-              Open games are where casual players turn into regulars, where
-              regulars sharpen up, and where new people figure out pretty quickly
-              that laser tag is a real sport once you take it seriously. Days and
-              times shift around to suit the community, so the easiest way to stay
-              in the loop is our WhatsApp group, where every session gets posted in
-              advance.
+              Open games are where casual players turn into regulars, learn the
+              ropes, and sharpen up their skills to become formidable laser tag
+              players. You will quickly realise that laser tag can be a truly
+              demanding, intense, and strategic sport if you want it to, after
+              playing a few matches. Days and times shift around to suit the
+              community, so the easiest way to stay in the loop is our WhatsApp
+              group, where every session gets posted in advance.
             </p>
           </div>
           <div className="mt-8">
@@ -164,22 +165,22 @@ export default async function CommunityPage() {
         <Container size="narrow" className="py-14 sm:py-16">
           <SectionLabel>All Levels</SectionLabel>
           <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
-            Ages 10 and Up, Beginners Genuinely Welcome
+            Ages 10 and Up, and Beginners Are Genuinely Welcome
           </h2>
           <div className="mt-5 space-y-4 text-text-muted">
             <p className="leading-relaxed">
-              The community runs from kids aged 10 right through to adults, and we
-              mean it when we say beginners are welcome. Plenty of people who now
-              play every week walked in for their first open game knowing nothing
-              about positioning, comms, or objective play. The regulars are quick
-              to share tips, the format gets explained on the spot, and the
-              matchmaking system makes sure nobody gets thrown to the wolves on day
-              one.
+              The community runs from kids aged 10 up to adults, and we mean it
+              when we say beginners are welcome. Plenty of people who now play most
+              weeks walked in for their first open game knowing nothing about
+              positioning, comms, or objective play, having come through a private
+              corporate or friends&apos; booking. The regulars are quick to share tips
+              and build team strategy, and the matchmaking system makes sure teams
+              are as balanced as possible for every match.
             </p>
             <p className="leading-relaxed">
-              If you&apos;ve only ever played laser tag at a birthday party, an open
-              game will show you what the sport actually looks like when people care
-              about it.
+              If you&apos;ve only ever played laser tag at a birthday party, one of our
+              open games will show you what the sport can actually look like when
+              you level up your game.
             </p>
           </div>
         </Container>
@@ -194,18 +195,20 @@ export default async function CommunityPage() {
           </h2>
           <div className="mt-5 space-y-4 text-text-muted">
             <p className="leading-relaxed">
-              One of the biggest problems with pickup laser tag games is lopsided
-              teams. Nobody enjoys a 20 to 2 stomping, on either side of it. We use
-              an ELO rating system — the same kind of skill rating used in chess and
-              competitive video games — to keep matches close.
+              One of the biggest problems with pickup laser tag games is the
+              potential for lopsided teams. Nobody enjoys a 5-0 squashing, on
+              either side of it. For our open games, we use an ELO rating system —
+              the same kind of skill rating used in chess and competitive video
+              games — to keep matches as close as possible.
             </p>
             <p className="leading-relaxed">
               Every player has a rating that goes up when they win and down when
-              they lose, with bigger swings when an upset happens. Before each open
-              game, the system uses those ratings to split the room into teams that
-              should, on paper, play an even match. The result is games that come
-              down to the wire far more often than they don&apos;t, which is exactly
-              what makes people want to come back next week.
+              they lose, also adjusted by their personal score, with bigger swings
+              when an upset happens. Before each open game, the system uses those
+              ratings to split players into teams that should, on paper, play an
+              even match. The result is games that more often than not come down to
+              the wire, which is exactly what makes people want to come back next
+              week.
             </p>
           </div>
         </Container>
@@ -220,18 +223,20 @@ export default async function CommunityPage() {
           </h2>
           <div className="mt-5 space-y-4 text-text-muted">
             <p className="leading-relaxed">
-              Every shot you take, tag you score, objective you complete, and match
-              you play gets tracked. Your stats follow you from session to session,
-              building a real record of how you&apos;re developing as a player.
+              Every shot you take, gun you use, player you send back to spawn,
+              time you go back to spawn yourself, and match you play gets tracked.
+              Your stats follow you from session to session, building a real record
+              of how you&apos;re developing as a player.
             </p>
             <p className="leading-relaxed">
-              It sounds small, but it changes the experience. You can see your
-              accuracy creeping up over a month. You can watch your win rate climb
-              as you start reading the game better. You get personal bests to chase,
-              milestones to hit, and a clear answer to the question &ldquo;am I
-              actually getting better at this.&rdquo; For a community built around
-              progression and friendly competition, persistent stats turn every
-              match into something that counts.
+              It sounds small, but it totally changes the experience. You can see
+              your accuracy creeping up over a month. You can watch your win rate
+              climb as you start reading the game better. You get personal bests to
+              chase, milestones to hit, guns to unlock, challenges to compete in,
+              and a clear answer to the question &ldquo;am I actually getting better at
+              this.&rdquo; For a community built around progression and friendly
+              competition, persistent stats turn every round into something that
+              counts beyond bragging rights at the end of the match.
             </p>
           </div>
           <div className="mt-8">
@@ -251,7 +256,6 @@ export default async function CommunityPage() {
           </h2>
 
           {featuredPhoto ? (
-            /* Desktop: photo left, text right. Mobile: stacked. */
             <div className="mt-6 flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-12">
               <BracketFrame
                 cornerSize="1.75rem"
@@ -261,7 +265,7 @@ export default async function CommunityPage() {
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={featuredPhoto.secureUrl}
+                  src={cloudinaryTransform(featuredPhoto.secureUrl, FEATURED_TRANSFORM)}
                   alt={featuredPhoto.caption ?? "LaserOps Malta players"}
                   className="block aspect-[4/3] w-full object-cover"
                 />
@@ -356,22 +360,22 @@ function CommunityStat({ value, label }: { value: string; label: string }) {
   );
 }
 
-/** Body copy for the "The People" section — shared between photo and no-photo layouts. */
 function PeopleText({ className }: { className?: string }) {
   return (
     <div className={`space-y-4 text-text-muted ${className ?? ""}`}>
       <p className="leading-relaxed">
-        What ties all of this together is the people. The regulars at Laser Ops
-        want to win, but they also want the players around them to get better,
-        because better opponents mean better games. After matches you&apos;ll hear
-        postmortems on what worked, advice traded between teams, and the kind of
-        light ribbing that comes with any group that takes its sport half
-        seriously and itself not seriously at all.
+        What ties all of this together is ultimately the people. The regulars at
+        LaserOps want to win, but they also want the players around them to get
+        better, because better opponents mean better games. Between rounds and
+        after matches you&apos;ll hear postmortems on what worked, what didn&apos;t,
+        advice traded between teams, and the kind of banter that comes with any
+        group that takes its sport half seriously and itself not seriously at all.
       </p>
       <p className="leading-relaxed">
-        Whether you&apos;re chasing the top of the leaderboard or just looking for a
-        weekly thing to do that isn&apos;t another night at the same bar, there&apos;s a
-        spot for you.
+        Whether you&apos;re chasing the top of the leaderboard, striving to win our
+        seasonal challenges, or just looking for a weekly thing to do that&apos;s
+        healthy, competitive, and above all else — serious fun, there&apos;s a spot
+        for you.
       </p>
     </div>
   );
@@ -394,7 +398,6 @@ function WhatsAppButton({ children, size = "md" }: WhatsAppButtonProps) {
           : "inline-flex items-center gap-2.5 bg-[#25D366] px-6 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-white transition-opacity hover:opacity-90 active:scale-[0.98]"
       }
     >
-      {/* WhatsApp logomark */}
       <svg
         aria-hidden
         viewBox="0 0 24 24"
