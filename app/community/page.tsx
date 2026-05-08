@@ -66,6 +66,16 @@ const faqs: { q: string; a: string }[] = [
 export default async function CommunityPage() {
   const communityPhotos = await fetchImagesByTag("community");
 
+  // DEBUG — remove after confirming images load
+  console.log(
+    "[community] photos fetched:",
+    communityPhotos.length,
+    "| cloud name set:",
+    !!process.env.CLOUDINARY_CLOUD_NAME,
+    "| api key set:",
+    !!process.env.CLOUDINARY_API_KEY,
+  );
+
   const stripPhotos = communityPhotos.slice(0, 3);
   const showStrip = stripPhotos.length >= 2;
 
