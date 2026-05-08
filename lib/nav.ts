@@ -40,7 +40,7 @@ export const primaryNav: NavLink[] = [
     href: "/events",
     children: [
       { label: "Corporate Events", href: "/events/corporate" },
-      { label: "Stag & Hen Dos", href: "/events/stag-hen" },
+      { label: "Stag & Hen Dos", href: "/stag-and-hen" },
       { label: "Birthday Parties", href: "/events/birthdays" },
     ],
   },
