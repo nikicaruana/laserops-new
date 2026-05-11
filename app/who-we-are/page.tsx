@@ -4,7 +4,7 @@ import { Container } from "@/components/ui/Container";
 export const metadata: Metadata = {
   title: "Who We Are | LaserOps Malta | Outdoor Laser Tag",
   description:
-    "LaserOps was started in 2025 by two friends who've played laser tag for over two decades. Building a community of regular players in Malta who take the sport seriously.",
+    "LaserOps was started by Kyle in 2024. Two friends with over two decades of laser tag between them, building a competitive community in Malta.",
 };
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
@@ -26,9 +26,9 @@ export default function WhoWeArePage() {
             Who We Are
           </h1>
           <p className="mt-5 text-base leading-relaxed text-text-muted sm:text-lg">
-            LaserOps was started by Kyle in 2025, with his close friend Niki
+            LaserOps was started by Kyle in 2024, with his close friend Niki
             coming on board some time later. Between the two of them, they&apos;ve
-            been playing laser tag for over two decades, and they&apos;ve spent most
+            been playing laser tag for over 2 decades, and they&apos;ve spent most
             of that time wishing laser tag was more than just a one-off session
             every month or so.
           </p>
@@ -50,11 +50,20 @@ export default function WhoWeArePage() {
                 community
               </a>{" "}
               of regular players who share the same passion for laser tag as we
-              do. By building this platform — allowing players to track their
-              performance over time, unlock new loadouts, and compete in
-              seasonal challenges — we want to give our player base a reason to
-              keep coming back, aside from the fact that playing with us is
-              great fun.
+              do. We&apos;ve brought in the latest gen laser tag technology, and
+              set it up in a way where our large selection of loadouts allow for
+              anyone to find their favoured playstyle. Pair that with us
+              offering the most affordable rates on the island, and sharing our
+              game knowledge and tactics amongst our regular playerbase. The
+              result is the kind of environment a real competitive scene needs
+              to grow, and that&apos;s the long game we&apos;re playing.
+            </p>
+            <p className="leading-relaxed">
+              Finally, by building this platform &ndash; allowing players to
+              track their performance over time, unlock new loadouts, and
+              compete in seasonal challenges &ndash; we want to give our player
+              base a reason to keep coming back, aside from the fact that
+              playing with us is great fun.
             </p>
           </div>
         </Container>
