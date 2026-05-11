@@ -314,7 +314,7 @@ export function MobileNav() {
       </nav>
 
       {/* CTAs */}
-      <div style={{ padding: "2rem 1.25rem 0", flexShrink: 0 }}>
+      <div style={{ padding: "2rem 1.25rem 0", flexShrink: 0, display: "flex", justifyContent: "center" }}>
         <Button
           href={ctaLinks.primary.href}
           variant="primary"
