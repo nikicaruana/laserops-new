@@ -28,7 +28,7 @@ export default function WhoWeArePage() {
           <p className="mt-5 text-base leading-relaxed text-text-muted sm:text-lg">
             LaserOps was started by Kyle in 2024, with his close friend Niki
             coming on board some time later. Between the two of them, they&apos;ve
-            been playing laser tag for over 2 decades, and they&apos;ve spent most
+            been playing laser tag for over two decades, and they&apos;ve spent most
             of that time wishing laser tag was more than just a one-off session
             every month or so.
           </p>
