@@ -5,6 +5,7 @@ import "./globals.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { GTM, GTMNoScript } from "@/components/tracking/GTM";
+import { CookieConsent } from "@/components/tracking/CookieConsent";
 import { brand } from "@/lib/brand";
 
 // Self-hosted via next/font — no external CDN call, GDPR-friendly
@@ -142,6 +143,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
         </main>
         <Footer />
+        <CookieConsent />
       </body>
     </html>
   );

@@ -1,8 +1,24 @@
+"use client";
+
 import Link from "next/link";
 import { Container } from "@/components/ui/Container";
 import { Logo } from "@/components/ui/Logo";
 import { primaryNav, utilityNav } from "@/lib/nav";
 import { brand } from "@/lib/brand";
+
+function CookieSettingsButton() {
+  return (
+    <button
+      type="button"
+      onClick={() =>
+        document.dispatchEvent(new Event("laserops:open-cookie-settings"))
+      }
+      className="text-xs uppercase tracking-[0.14em] text-text-subtle transition-colors hover:text-accent"
+    >
+      Cookie Settings
+    </button>
+  );
+}
 
 export function Footer() {
   const year = new Date().getFullYear();
@@ -58,7 +74,7 @@ export function Footer() {
           <p className="text-xs text-text-subtle">
             © {year} {brand.fullName}. All rights reserved.
           </p>
-          <ul className="flex gap-6">
+          <ul className="flex flex-wrap gap-6">
             {utilityNav.map((link) => (
               <li key={link.href}>
                 <Link
@@ -69,6 +85,9 @@ export function Footer() {
                 </Link>
               </li>
             ))}
+            <li>
+              <CookieSettingsButton />
+            </li>
           </ul>
         </div>
       </Container>
