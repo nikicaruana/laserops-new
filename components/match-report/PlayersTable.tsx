@@ -247,27 +247,31 @@ function PlayerRow({
         </RowLink>
       </td>
 
-      {/* Ops Tag — clickable, sticky. Allows text wrap on long names
-          (e.g. "Soguk Corbac") rather than truncating with ellipsis,
-          since truncation hides part of the player's identity. The
-          column has min/max widths so it doesn't grow unbounded but
-          long names get a 2nd line if needed. */}
+      {/* Ops Tag — links to the player's profile page. Sticky so the
+          player's identity stays visible while scrolling the stats.
+          Allows text wrap on long names rather than truncating with
+          ellipsis. The column has min/max widths so it doesn't grow
+          unbounded but long names get a 2nd line if needed. */}
       <td
         className={cn(
           "sticky left-7 z-[1] py-3 px-2 text-center sm:left-12 sm:px-3",
           stickyBg,
         )}
       >
-        <RowLink href={href} ariaLabel={`View ${player.nickname}'s match stats`}>
+        <Link
+          href={`/player-portal/player-stats/summary?ops=${encodeURIComponent(player.nickname)}`}
+          aria-label={`View ${player.nickname}'s player profile`}
+          className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        >
           <span
             className={cn(
-              "mx-auto block min-w-[5.5rem] max-w-[8rem] break-words text-xs font-semibold leading-tight sm:min-w-[7rem] sm:max-w-[10rem] sm:text-sm",
-              isSelected ? "text-accent" : "text-text",
+              "mx-auto block min-w-[5.5rem] max-w-[8rem] break-words text-xs font-semibold leading-tight transition-colors sm:min-w-[7rem] sm:max-w-[10rem] sm:text-sm",
+              isSelected ? "text-accent" : "text-text hover:text-accent",
             )}
           >
             {player.nickname}
           </span>
-        </RowLink>
+        </Link>
       </td>
 
       {/* Scrollable content cells. Each is wrapped in a RowLink so the
