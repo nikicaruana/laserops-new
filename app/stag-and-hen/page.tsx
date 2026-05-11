@@ -37,14 +37,14 @@ export default async function StagAndHenPage() {
             Stag and Hen Dos in Malta That Don&apos;t End in a Kebab and Regret
           </h1>
           <p className="mt-5 text-base leading-relaxed text-text-muted sm:text-lg">
-            If you&apos;re the one organising the stag or hen do, you already know the
-            problem. Half the group wants to go all in, the other half wants to
-            get home in one piece, and somewhere in between you&apos;re meant to find
-            an activity that everyone actually enjoys. Laser tag at LaserOps fits
-            the brief better than most things on the list. It&apos;s competitive enough
-            for the people who came to win, daft enough for the people who came
-            for the photos, and it gives the whole group a shared story that
-            doesn&apos;t depend on anyone being twelve drinks deep.
+            If you&apos;re the one organising the stag or hen do, you already know
+            the problem. Half the group wants to go all in, the other half wants
+            to get home in one piece, and somewhere in between you&apos;re meant to
+            find an activity that everyone actually enjoys. Laser tag at
+            LaserOps fits the brief better than most things on the list. It&apos;s
+            competitive enough for the people who came to win, daft enough for
+            the people who came for the photos, and it gives the whole group a
+            shared story that doesn&apos;t depend on anyone being twelve drinks deep.
           </p>
           <div className="mt-8">
             <Button href="/booking" variant="primary" size="lg">
@@ -89,9 +89,10 @@ export default async function StagAndHenPage() {
             <p className="leading-relaxed">
               A lot of stag and hen activities feel like filler between the bar
               and the next bar. Laser tag actually gives the group something to
-              do. You have teams, objectives, and a real game with real stakes,
-              and within a couple of rounds people who barely know each other are
-              calling out positions and arguing about strategy.
+              do that fills up a good portion of the day. You have teams,
+              objectives, and a real game with real stakes, and within a couple
+              of rounds people who barely know each other are calling out
+              positions and arguing about strategy.
             </p>
             <p className="leading-relaxed">
               It works especially well for groups that don&apos;t all know each other
@@ -114,12 +115,13 @@ export default async function StagAndHenPage() {
           <div className="mt-5 space-y-4 text-text-muted">
             <p className="leading-relaxed">
               Let&apos;s not pretend otherwise. Half the appeal of bringing a stag or
-              hen group to laser tag is that the guest of honour spends the entire
-              session getting hunted by everyone they&apos;ve ever met. We can build
-              that into the format. Free for all rounds where the stag or hen has
-              a target on their back, team modes where they always end up on the
-              losing side by sheer coincidence, special objectives that put them
-              in the open. Whatever the group wants to inflict, we&apos;ll set it up.
+              hen group to laser tag is that the guest of honour spends the
+              entire session getting hunted by everyone they&apos;ve ever met. We can
+              build that into the format. Free for all rounds where the stag or
+              hen has a target on their back, team modes where they always end up
+              on the losing side by sheer coincidence, special objectives that
+              put them in the open. Whatever the group wants to inflict, we&apos;ll
+              set it up.
             </p>
             <p className="leading-relaxed">
               It&apos;s all in good fun, the bride or groom usually gets their own
@@ -140,9 +142,9 @@ export default async function StagAndHenPage() {
           <div className="mt-5 space-y-4 text-text-muted">
             <p className="leading-relaxed">
               Every match is tracked by our persistent stat system, so when the
-              session wraps up everyone walks out with numbers. Accuracy, tags,
-              who won, who got sent back to spawn the most times, who hid in a
-              corner the whole match. The group chat from the trip stays alive
+              session wraps up everyone walks out with numbers. Accuracy, kills,
+              round wins, who got sent back to spawn the most times, who hid in
+              a corner the whole match. The group chat from the trip stays alive
               for weeks afterwards, and the stag or hen tends to feature heavily
               in the screenshots.
             </p>
@@ -196,43 +198,15 @@ export default async function StagAndHenPage() {
               half of them are still arguing about the last round.
             </p>
             <p className="leading-relaxed">
-              Catering options range from finger food and pizzas between matches
-              to a proper sit down spread after the session. Tell us what kind of
-              group you&apos;ve got and what kind of mood you want to set, and we&apos;ll
-              put together a package that works.
+              Tell us what kind of group you&apos;ve got and what kind of food
+              you&apos;d prefer, and we&apos;ll put together a package that works.
             </p>
             <p className="leading-relaxed">
-              Drinks are sorted on site. Soft drinks, beers, and stronger options
-              for the group that&apos;s just getting started. Plenty of stag and hen
-              groups make a proper afternoon or evening of it, playing the
-              matches, hanging around for food, and using the venue as the launch
-              pad for whatever comes next.
-            </p>
-          </div>
-        </Container>
-      </section>
-
-      {/* ── Why It Beats the Usual Options ───────────────────── */}
-      <section className="border-b border-border">
-        <Container size="narrow" className="py-14 sm:py-16">
-          <SectionLabel>Why LaserOps</SectionLabel>
-          <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
-            Why It Beats the Usual Options
-          </h2>
-          <div className="mt-5 space-y-4 text-text-muted">
-            <p className="leading-relaxed">
-              A stag or hen do lives or dies on whether the group has actually
-              had a good time, and the usual activities have a way of splitting
-              the room. Some people don&apos;t drink. Some people don&apos;t want to do
-              karting in the heat. Some people quietly hate escape rooms. Laser
-              tag is one of the rare options that works across age ranges,
-              fitness levels, and personality types, because the game adjusts to
-              whoever is playing it.
-            </p>
-            <p className="leading-relaxed">
-              The competitive ones get to compete. The casual ones get to muck
-              around. Nobody gets stuck doing something they didn&apos;t sign up for,
-              and everyone walks out with the same set of stories.
+              Drinks are sorted on site. Soft drinks, beers, and stronger
+              options for the group that&apos;s just getting started. Plenty of stag
+              and hen groups make a proper afternoon or evening of it, playing
+              the matches, hanging around for food, and using the venue as the
+              launch pad for whatever comes next.
             </p>
           </div>
         </Container>
@@ -240,7 +214,7 @@ export default async function StagAndHenPage() {
 
       {/* ── Bottom photo pair ────────────────────────────────── */}
       {bottomPhotos.length >= 2 && (
-        <section className="border-b border-border bg-bg-elevated">
+        <section className="border-b border-border">
           <Container size="narrow" className="py-10">
             <div className="grid grid-cols-2 gap-3 sm:gap-4">
               {bottomPhotos.map((photo) => (
@@ -265,7 +239,7 @@ export default async function StagAndHenPage() {
       {/* ── Group Sizes & Booking CTA ────────────────────────── */}
       <section className="border-b border-border bg-bg-elevated">
         <Container size="narrow" className="py-14 sm:py-16">
-          <SectionLabel>Book Your Event</SectionLabel>
+          <SectionLabel>What&apos;s Included</SectionLabel>
           <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
             Group Sizes and What&apos;s Included
           </h2>
@@ -273,24 +247,64 @@ export default async function StagAndHenPage() {
             <p className="leading-relaxed">
               We handle stag and hen groups across a wide range of sizes, from
               intimate parties of close friends to bigger combined groups.
-              Sessions are tailored to the group, with formats matched to numbers
-              and energy levels, and our staff run the briefing, refereeing, and
-              matchmaking on the day so the person organising can finally stop
-              organising and just enjoy themselves.
+              Sessions are tailored to the group, with formats matched to
+              numbers and energy levels, and our staff run the briefing,
+              refereeing, and matchmaking on the day so the person organising
+              can finally stop organising and just enjoy themselves.
             </p>
             <p className="leading-relaxed">
-              A standard booking includes the arena, all the kit, multiple match
-              formats, post game stats, and a host running the session. Match
-              photography, catering, and drinks are available as add ons, and
-              we&apos;ll put a full package together for you if you want the whole
-              thing handled in one booking.
+              A standard booking includes the location, all the kit, multiple
+              match formats, post game stats, and a host running the session.
+              Match photography, catering, and drinks are available as add ons,
+              and we&apos;ll put a full package together for you if you want the
+              whole thing handled in one booking.
             </p>
+          </div>
+        </Container>
+      </section>
+
+      {/* ── Why It Beats the Usual Options ───────────────────── */}
+      <section className="border-b border-border">
+        <Container size="narrow" className="py-14 sm:py-16">
+          <SectionLabel>Why LaserOps</SectionLabel>
+          <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
+            Why It Beats the Usual Options
+          </h2>
+          <div className="mt-5 space-y-4 text-text-muted">
+            <p className="leading-relaxed">
+              A stag or hen do lives or dies on whether the group has actually
+              had a good time, and the usual activities have a way of splitting
+              the room. Some people don&apos;t drink. Some people don&apos;t fit in the
+              go karts. Most people don&apos;t want to get shot in the neck with a
+              paint ball. Some people quietly hate escape rooms. Laser tag is
+              one of the rare options that works across age ranges, fitness
+              levels, and personality types, because the game adjusts to whoever
+              is playing it.
+            </p>
+            <p className="leading-relaxed">
+              The competitive ones get to compete. The casual ones get to muck
+              around. Nobody gets stuck doing something they didn&apos;t sign up for,
+              and everyone walks out with the same set of stories.
+            </p>
+          </div>
+        </Container>
+      </section>
+
+      {/* ── Booking CTA ──────────────────────────────────────── */}
+      <section className="border-b border-border bg-bg-elevated">
+        <Container size="narrow" className="py-14 sm:py-16">
+          <SectionLabel>Book Your Event</SectionLabel>
+          <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
+            Book Your Stag or Hen Do
+          </h2>
+          <div className="mt-5 space-y-4 text-text-muted">
             <p className="leading-relaxed">
               If you&apos;re planning the day for someone and you&apos;ve run out of ideas
               that don&apos;t make you cringe, get in touch and we&apos;ll build a session
               that suits your group. Tell us roughly how many people, what the
               energy is meant to be, and whether the stag or hen needs to be
-              specifically targeted — they usually do — and we&apos;ll handle the rest.
+              specifically targeted — they usually do — and we&apos;ll handle the
+              rest.
             </p>
           </div>
           <div className="mt-8">
