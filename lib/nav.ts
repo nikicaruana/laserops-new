@@ -59,9 +59,9 @@ export const primaryNav: NavLink[] = [
   },
   {
     label: "About",
-    href: "/about",
+    href: "/who-we-are",
     children: [
-      { label: "Who We Are", href: "/about" },
+      { label: "Who We Are", href: "/who-we-are" },
       { label: "FAQs", href: "/faqs" },
       { label: "Contact", href: "/contact" },
     ],
