@@ -98,7 +98,7 @@ const sampleReviewItems: ReviewItem[] = [
       "Honestly the best birthday party we've thrown for our 12-year-old. The team made it feel like a real military exercise.",
     reviewer: "Maria F.",
     relativeTime: "3 weeks ago",
-    reviewsUrl: "https://maps.google.com/?cid=laserops",
+    reviewsUrl: "https://share.google/wC1lh0kSBXTfBT4bH",
   },
   {
     id: "gr2",
@@ -107,7 +107,7 @@ const sampleReviewItems: ReviewItem[] = [
       "Stag party absolutely loved it. Way more fun than expected. The outdoor terrain makes a huge difference vs indoor laser tag.",
     reviewer: "James C.",
     relativeTime: "1 month ago",
-    reviewsUrl: "https://maps.google.com/?cid=laserops",
+    reviewsUrl: "https://share.google/wC1lh0kSBXTfBT4bH",
   },
   {
     id: "gr3",
@@ -116,7 +116,7 @@ const sampleReviewItems: ReviewItem[] = [
       "Booked for our company team-building. Everyone was buzzing afterwards. Already planning the rematch.",
     reviewer: "Sandra K.",
     relativeTime: "2 months ago",
-    reviewsUrl: "https://maps.google.com/?cid=laserops",
+    reviewsUrl: "https://share.google/wC1lh0kSBXTfBT4bH",
   },
   {
     id: "gr4",
@@ -125,7 +125,7 @@ const sampleReviewItems: ReviewItem[] = [
       "Game changer. Way more thrilling than paintball — no bruises and the missions are properly tactical.",
     reviewer: "Daniel B.",
     relativeTime: "2 months ago",
-    reviewsUrl: "https://maps.google.com/?cid=laserops",
+    reviewsUrl: "https://share.google/wC1lh0kSBXTfBT4bH",
   },
 ];
 
@@ -205,7 +205,7 @@ export function GallerySection({
 
         <ScrollRow
           eyebrow="What players say"
-          viewAllHref="https://maps.google.com/?cid=laserops"
+          viewAllHref="https://share.google/wC1lh0kSBXTfBT4bH"
           viewAllLabel="All reviews"
           items={reviewItems}
           renderItem={(item, key) => <GoogleReviewCard key={key} item={item} mobileScroll />}
@@ -251,7 +251,7 @@ export function GallerySection({
               so it has contrast on the yellow background. Hover
               transitions to a filled dark style for tactile feedback. */}
           <Button
-            href="https://maps.google.com/?cid=laserops"
+            href="https://share.google/wC1lh0kSBXTfBT4bH"
             target="_blank"
             rel="noopener noreferrer"
             variant="secondary"
