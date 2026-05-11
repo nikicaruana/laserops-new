@@ -140,6 +140,7 @@ async function LastMatchContent({ ops }: { ops: string }) {
         players={report.players}
         matchId={lastMatchId}
         selectedPlayer={ops}
+        linkNamesToProfiles
       />
       {player ? (
         <PlayerStatsCard player={player} ranks={report.ranks} />

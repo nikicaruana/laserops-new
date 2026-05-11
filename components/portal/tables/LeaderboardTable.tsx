@@ -226,65 +226,48 @@ export function LeaderboardTable<T>({
         } as React.CSSProperties
       }
     >
-      {/* Inner scroll container — handles BOTH axes:
-            - Vertical: rows beyond maxHeight scroll within the table
-              (sticky header stays pinned, see below).
-            - Horizontal: tables wider than the viewport (Match
-              Summaries on mobile, with 10 columns) scroll left/right.
-
-          A single min-w-max wrapper encloses BOTH the sticky header
-          and the body rowgroup. This is critical for alignment:
-          position:sticky constrains its own width to the scroll
-          container's viewport, while a non-sticky min-w-max div uses
-          max-content width. Giving them separate min-w-max wrappers
-          causes the 1fr grid track to resolve differently between
-          header and body — headers drift off their columns on mobile.
-          Sharing one min-w-max ancestor gives both rows the same
-          available width so all grid tracks resolve identically. */}
+      {/* Scroll container — vertical only. Both the sticky header and the
+          body rows inherit their width from this element. Because they
+          share the same available width, the minmax(0,1fr) grid track
+          resolves to the same value in both, keeping headers aligned.
+          No min-w-max anywhere: these tables all fit comfortably within
+          a 320px screen so horizontal scrolling is never needed, and
+          adding min-w-max would expand the table to max-content width,
+          blowing out the 1fr column and breaking text wrap in Ops Tag. */}
       <div className="overflow-auto" style={{ maxHeight }}>
-        {/* Shared width context — must be the sole child of overflow-auto
-            so horizontal overflow is measured from this element. Both the
-            sticky header and the body rows are descendants and therefore
-            lay out in the same width context. */}
-        <div className="min-w-max">
-          {/* Sticky region — yellow strip + header row. No min-w-max
-              here; width is inherited from the shared wrapper above. */}
-          <div className="sticky top-0 z-10">
-            <div aria-hidden className="h-1 bg-accent" />
-            {/* Header row group. Solid bg (no /95 transparency, no
-                backdrop-blur) — both produced subtle grey-banding
-                artifacts during horizontal scroll on iOS Safari and
-                Chrome on Android. A flat colour is more honest about
-                "this is the header" anyway. */}
+        {/* Sticky header — no min-w-max; width = container width, same as
+            body rows below. Yellow accent strip bundled into the sticky
+            element so it scrolls away only when the table scrolls away. */}
+        <div className="sticky top-0 z-10">
+          <div aria-hidden className="h-1 bg-accent" />
+          {/* Solid bg — /95 + backdrop-blur produced grey-banding
+              artifacts during scroll on iOS Safari and Android Chrome. */}
+          <div
+            role="rowgroup"
+            className="border-b border-border-strong bg-bg-overlay"
+          >
             <div
-              role="rowgroup"
-              className="border-b border-border-strong bg-bg-overlay"
+              role="row"
+              className={cn(
+                "lb-row items-center gap-1 px-2 py-3 sm:gap-4 sm:px-5",
+                "text-[0.55rem] font-bold uppercase tracking-[0.12em] text-text-muted sm:text-[0.65rem] sm:tracking-[0.16em]",
+              )}
             >
-              <div
-                role="row"
-                className={cn(
-                  "lb-row items-center gap-1 px-2 py-3 sm:gap-4 sm:px-5",
-                  // Mobile font tightened to 0.55rem (~8.8px) so headers like "Total XP"
-                  // and "XP / Match" can fit/wrap within the narrow numeric columns
-                  // without overlapping their neighbours. Desktop keeps the larger size.
-                  "text-[0.55rem] font-bold uppercase tracking-[0.12em] text-text-muted sm:text-[0.65rem] sm:tracking-[0.16em]",
-                )}
-              >
-                {columns.map((col) => (
-                  <HeaderCell
-                    key={col.key}
-                    column={col}
-                    sort={sort}
-                    onClick={() => handleHeaderClick(col)}
-                  />
-                ))}
-              </div>
+              {columns.map((col) => (
+                <HeaderCell
+                  key={col.key}
+                  column={col}
+                  sort={sort}
+                  onClick={() => handleHeaderClick(col)}
+                />
+              ))}
             </div>
           </div>
+        </div>
 
-          {/* Body rows — sibling of the sticky header inside the shared
-              min-w-max wrapper, so grid tracks resolve at the same width. */}
-          <div role="rowgroup">
+        {/* Body rows — no min-w-max; width = container width, same as the
+            sticky header above so 1fr resolves identically. */}
+        <div role="rowgroup">
           {displayedRows.map((row, idx) => {
             const highlight = isTopRank ? isTopRank(row, idx, isDefaultSort) : false;
             const href = rowHref ? rowHref(row) : null;
@@ -334,7 +317,6 @@ export function LeaderboardTable<T>({
             );
           })}
         </div>
-        </div> {/* closes shared min-w-max wrapper */}
       </div>
     </div>
   );
