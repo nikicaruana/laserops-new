@@ -22,9 +22,7 @@ import { ImageResponse } from "next/og";
 
 /**
  * Resolve the public-asset base URL for the current environment.
- *   1. NEXT_PUBLIC_SITE_URL (production / .env.local)
- *   2. VERCEL_URL  (Vercel preview deployments — auto-injected)
- *   3. localhost:3000 (local dev fallback)
+ * Reads the same env var as brand.siteUrl so they always agree.
  */
 function assetBase(): string {
   if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
@@ -33,32 +31,48 @@ function assetBase(): string {
 }
 
 /**
- * Fetch Montserrat ExtraBold (800) from Google Fonts for use inside
- * ImageResponse. The CSS2 API returns a woff2 src URL; we extract and
- * fetch the binary. The edge runtime caches this automatically.
+ * Load Montserrat ExtraBold (800) from the locally-hosted font file at
+ * /public/fonts/montserrat-800.woff2. Serving it ourselves avoids the
+ * unreliable Google Fonts round-trip inside the edge runtime.
  */
-async function loadMontserrat(): Promise<ArrayBuffer> {
-  const css = await fetch(
-    "https://fonts.googleapis.com/css2?family=Montserrat:wght@800&display=swap",
-    {
-      headers: {
-        // A real browser UA is required — Google Fonts serves woff2 to
-        // modern browsers but falls back to woff/ttf for old UAs.
-        "User-Agent":
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-      },
-    },
-  ).then((r) => r.text());
-
-  const match = css.match(/src: url\((.+?)\) format/);
-  if (!match) throw new Error("[og-image] Could not extract font URL from Google Fonts CSS");
-
-  return fetch(match[1]).then((r) => r.arrayBuffer());
+async function loadMontserrat(base: string): Promise<ArrayBuffer> {
+  const res = await fetch(`${base}/fonts/montserrat-800.woff2`);
+  if (!res.ok) throw new Error(`[og-image] Font fetch failed: ${res.status}`);
+  return res.arrayBuffer();
 }
 
 export async function generateOgImage(title: string): Promise<ImageResponse> {
-  const fontData = await loadMontserrat();
   const base = assetBase();
+
+  try {
+    return await buildOgImage(title, base);
+  } catch (err) {
+    console.error("[og-image] Generation failed, returning fallback:", err);
+    // Plain yellow fallback so we never return a 0-byte response.
+    return new ImageResponse(
+      (
+        <div
+          style={{
+            display: "flex",
+            width: "1200px",
+            height: "630px",
+            background: "#ffde00",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div style={{ fontSize: "64px", fontWeight: 800, color: "#0a0a0a", display: "flex" }}>
+            LaserOps Malta
+          </div>
+        </div>
+      ),
+      { width: 1200, height: 630 },
+    );
+  }
+}
+
+async function buildOgImage(title: string, base: string): Promise<ImageResponse> {
+  const fontData = await loadMontserrat(base);
 
   return new ImageResponse(
     (
@@ -129,11 +143,11 @@ export async function generateOgImage(title: string): Promise<ImageResponse> {
             alignItems: "flex-start",
           }}
         >
-          {/* Black wordmark logo */}
+          {/* Black wordmark logo — explicit height required; Satori does not support height:auto */}
           <img
             src={`${base}/brand/laserops-logo-black.png`}
             alt="LaserOps Malta"
-            style={{ width: "256px", height: "auto", display: "flex" }}
+            style={{ width: "256px", height: "64px", display: "flex" }}
           />
 
           {/* Page title */}
