@@ -1,6 +1,5 @@
 import type { ArmoryBranch, ArmoryEntry } from "@/lib/weapons/armory";
-import { CollapsibleSection } from "@/components/portal/CollapsibleSection";
-import { ArmoryCard } from "./ArmoryCard";
+import { ArmoryControls } from "./ArmoryControls";
 import { PlayerWeaponMetaChart } from "./PlayerWeaponMetaChart";
 import { PlayerKillDistributionChart } from "./PlayerKillDistributionChart";
 
@@ -8,15 +7,16 @@ import { PlayerKillDistributionChart } from "./PlayerKillDistributionChart";
  * PlayerArmoryView
  * --------------------------------------------------------------------
  * Top-level layout for the Armory page once a player is selected.
- * Above-the-fold:
+ *
+ * Above-the-fold charts:
  *   1. Per-player weapon-meta bubble chart
  *   2. Kill-distribution pie chart
- * Below-the-fold:
- *   - One CollapsibleSection per Gun_Tree_Branch (closed by default)
- *     with a responsive grid of ArmoryCard items.
  *
- * Server-renderable shell — only the cards, detail modals, and chart
- * client components need client-side state.
+ * Below-the-fold card list:
+ *   - ArmoryControls handles all filter/sort state client-side:
+ *     show locked toggle, gun tree filter, sort by dropdown.
+ *   - When sorted by Gun Tree, cards are grouped inside
+ *     CollapsibleSections. Any other sort renders a flat list.
  */
 
 type Props = {
@@ -46,24 +46,7 @@ export function PlayerArmoryView({ branches }: Props) {
 
   return (
     <div className="mt-8 flex flex-col gap-6 sm:gap-8">
-      <div className="flex flex-col gap-6">
-        {branches.map((branch) => (
-          <CollapsibleSection
-            key={branch.branch}
-            title={branch.branch}
-            defaultOpen={false}
-          >
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
-              {branch.entries.map((entry) => (
-                <ArmoryCard
-                  key={`${entry.gunName}-${entry.playerNickname}`}
-                  entry={entry}
-                />
-              ))}
-            </div>
-          </CollapsibleSection>
-        ))}
-      </div>
+      <ArmoryControls branches={branches} />
 
       <PlayerWeaponMetaChart entries={allEntries} />
       <PlayerKillDistributionChart entries={allEntries} />

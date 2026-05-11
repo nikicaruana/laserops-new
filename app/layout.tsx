@@ -94,11 +94,39 @@ export const viewport: Viewport = {
   maximumScale: 5,
 };
 
+/**
+ * LocalBusiness + SportsActivityLocation JSON-LD schema.
+ * Improves rich-snippet eligibility in Google Search.
+ * Values are sourced from lib/brand.ts — update that file to keep this
+ * in sync automatically.
+ */
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": ["SportsActivityLocation", "LocalBusiness"],
+  name: brand.fullName,
+  description: brand.description,
+  url: brand.siteUrl,
+  ...(brand.contact.email ? { email: brand.contact.email } : {}),
+  ...(brand.contact.phone ? { telephone: brand.contact.phone } : {}),
+  address: {
+    "@type": "PostalAddress",
+    addressLocality: brand.contact.address.locality,
+    addressCountry: brand.contact.address.country,
+    ...(brand.contact.address.street ? { streetAddress: brand.contact.address.street } : {}),
+  },
+  sameAs: Object.values(brand.social).filter(Boolean),
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={montserrat.variable}>
       <head>
         <GTM />
+        <script
+          type="application/ld+json"
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: controlled server-side JSON-LD, no user input
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
       </head>
       <body className="flex min-h-dvh flex-col bg-bg text-text antialiased">
         <GTMNoScript />

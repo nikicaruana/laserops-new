@@ -36,7 +36,7 @@ export default async function LastMatchPage({
 
   if (ops === "") {
     return (
-      <div className="mx-auto w-full max-w-4xl">
+      <div className="mx-auto w-full max-w-5xl">
         <DashboardPageHeader title="Last Match" hideAddToHome />
         <EmptyState />
       </div>
@@ -44,7 +44,7 @@ export default async function LastMatchPage({
   }
 
   return (
-    <div className="mx-auto w-full max-w-4xl">
+    <div className="mx-auto w-full max-w-5xl">
       <DashboardPageHeader title="Last Match" hideAddToHome />
       <Suspense
         key={ops}

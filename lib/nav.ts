@@ -40,8 +40,8 @@ export const primaryNav: NavLink[] = [
     href: "/events",
     children: [
       { label: "Corporate Events", href: "/events/corporate" },
-      { label: "Stag & Hen Dos", href: "/events/stag-hen" },
-      { label: "Birthday Parties", href: "/events/birthdays" },
+      { label: "Stag & Hen Dos", href: "/stag-and-hen" },
+      { label: "Birthday Parties", href: "/birthday-parties" },
     ],
   },
   { label: "Community", href: "/community" },
@@ -59,9 +59,9 @@ export const primaryNav: NavLink[] = [
   },
   {
     label: "About",
-    href: "/about",
+    href: "/who-we-are",
     children: [
-      { label: "Who We Are", href: "/about" },
+      { label: "Who We Are", href: "/who-we-are" },
       { label: "FAQs", href: "/faqs" },
       { label: "Contact", href: "/contact" },
     ],

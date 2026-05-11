@@ -40,6 +40,10 @@ export default async function PlayerArmoryPage({
   return (
     <div className="mx-auto w-full max-w-5xl">
       <DashboardPageHeader title="Personal Armory" hideAddToHome />
+      <p className="mb-6 text-center text-sm text-text-muted sm:text-base">
+        Check which guns you have access to, how you perform with each of your
+        loadouts, and your progress towards unlocking new weapons!
+      </p>
 
       {ops === "" ? (
         <ArmoryEmptyState />

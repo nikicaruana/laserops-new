@@ -2,6 +2,7 @@ import { HomeHero } from "@/components/sections/HomeHero";
 import { WeaponsSection } from "@/components/sections/WeaponsSection";
 import { GallerySection } from "@/components/sections/GallerySection";
 import { SeasonLeadersSection } from "@/components/home/SeasonLeadersSection";
+import { GalleryPreview } from "@/components/gallery/GalleryPreview";
 import { Container } from "@/components/ui/Container";
 import { fetchInstagramPosts } from "@/lib/cms/instagram-posts";
 import { fetchGoogleReviews } from "@/lib/cms/google-reviews";
@@ -78,6 +79,10 @@ export default async function HomePage() {
           Site_Config. Sits between Weapons (marketing hooks) and Gallery
           (social proof) — a "see the action in progress" beat. */}
       <SeasonLeadersSection />
+      {/* Cloudinary photo preview — shows up to 9 images tagged "featured".
+          Returns null if Cloudinary isn't configured or no featured photos exist,
+          so the homepage stays clean during initial setup. */}
+      <GalleryPreview />
       <GallerySection
         instagramItems={instagramItems}
         reviewItems={reviewItems}
