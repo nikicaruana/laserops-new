@@ -159,14 +159,12 @@ export function CookieConsent() {
           </p>
           <div className="space-y-4">
             <ToggleRow
-              id="consent-analytics"
               label="Analytics"
               description="Helps us understand which pages are popular and how people find us."
               checked={analytics}
               onChange={setAnalytics}
             />
             <ToggleRow
-              id="consent-marketing"
               label="Marketing"
               description="Used to show relevant ads for LaserOps on other platforms (Meta, Google)."
               checked={marketing}
@@ -239,13 +237,11 @@ export function CookieConsent() {
 // ---------------------------------------------------------------------------
 
 function ToggleRow({
-  id,
   label,
   description,
   checked,
   onChange,
 }: {
-  id: string;
   label: string;
   description: string;
   checked: boolean;
@@ -253,12 +249,13 @@ function ToggleRow({
 }) {
   return (
     <div className="flex items-start gap-4">
-      {/* Toggle switch */}
+      {/* Toggle switch — standalone button, no label association so
+          clicking the text area doesn't double-fire the toggle. */}
       <button
         type="button"
         role="switch"
-        id={id}
         aria-checked={checked}
+        aria-label={label}
         onClick={() => onChange(!checked)}
         className={cn(
           "relative mt-0.5 h-5 w-9 shrink-0 rounded-full border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent",
@@ -274,15 +271,16 @@ function ToggleRow({
         <span className="sr-only">{checked ? "On" : "Off"}</span>
       </button>
 
-      {/* Label + description */}
-      <label htmlFor={id} className="cursor-pointer">
+      {/* Text area — separate onClick so clicking the description
+          also toggles, without any htmlFor double-fire issue. */}
+      <div className="cursor-pointer" onClick={() => onChange(!checked)}>
         <p className="text-xs font-bold uppercase tracking-[0.12em] text-text">
           {label}
         </p>
         <p className="mt-0.5 text-xs leading-relaxed text-text-muted">
           {description}
         </p>
-      </label>
+      </div>
     </div>
   );
 }
