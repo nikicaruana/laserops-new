@@ -1,7 +1,5 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function POST(req: Request) {
   if (!process.env.RESEND_API_KEY) {
     return Response.json(
@@ -9,6 +7,8 @@ export async function POST(req: Request) {
       { status: 500 },
     );
   }
+
+  const resend = new Resend(process.env.RESEND_API_KEY);
 
   let body: { name?: string; email?: string; message?: string };
   try {

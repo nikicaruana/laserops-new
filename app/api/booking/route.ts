@@ -1,8 +1,6 @@
 import { Resend } from "resend";
 import type { NextRequest } from "next/server";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function POST(req: NextRequest) {
   if (!process.env.RESEND_API_KEY) {
     return Response.json(
@@ -10,6 +8,8 @@ export async function POST(req: NextRequest) {
       { status: 500 },
     );
   }
+
+  const resend = new Resend(process.env.RESEND_API_KEY);
 
   let body: Record<string, string>;
   try {
