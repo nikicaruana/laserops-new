@@ -88,6 +88,11 @@ export function BookingForm() {
 
         if (data.ok) {
           setStatus("success");
+          // Fire GTM/GA4 conversion event
+          window.dataLayer?.push({
+            event: "booking_form_submitted",
+            event_type: eventType,
+          });
         } else {
           setErrorMsg(data.error ?? "Something went wrong. Please try again.");
           setStatus("error");
