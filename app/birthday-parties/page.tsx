@@ -29,12 +29,11 @@ export default function BirthdayPartiesPage() {
           <div className="mt-5 space-y-4 text-base leading-relaxed text-text-muted sm:text-lg">
             <p>
               Birthday parties have a habit of falling into the same handful of
-              formats. Bowling, soft play, the same restaurant with the same set
-              menu, a bouncy castle in the back garden if the weather holds.
-              They&apos;re fine. Nobody actively dislikes them. But &ldquo;fine&rdquo; isn&apos;t
-              really what you want for a birthday, and a laser tag party at
-              LaserOps gives you something the kid or the adult will actually
-              remember next year.
+              formats. Bowling, go carting, arcade, the same restaurant with the
+              same set menu. They&apos;re fine. Nobody actively dislikes them.
+              But &ldquo;fine&rdquo; isn&apos;t really what you want for a birthday, and a
+              laser tag party at LaserOps gives you something the kid (or the
+              adult) will actually remember.
             </p>
             <p>
               It works because the game itself does the heavy lifting. You
@@ -62,12 +61,12 @@ export default function BirthdayPartiesPage() {
           <div className="mt-5 space-y-4 text-text-muted">
             <p className="leading-relaxed">
               Our birthday format runs from age 10 upwards, which covers the
-              full stretch from school birthdays through to teenagers who&apos;ve
-              decided they&apos;re too cool for everything. The thing about laser tag
-              at this age is that it doesn&apos;t matter where the group sits on the
-              social spectrum. The quiet kid and the loud kid both end up
-              running around the arena in exactly the same way, and the standard
-              birthday awkwardness of &ldquo;what do we do now&rdquo; never really shows up.
+              full stretch from school birthdays through to teenagers. The thing
+              about laser tag for younger ages is that it doesn&apos;t matter where
+              the group sits on the social spectrum. The quiet kid and the louder
+              kid both end up running around the arena in exactly the same way,
+              and the standard birthday awkwardness of &ldquo;what do we do now&rdquo;
+              never really shows up.
             </p>
             <p className="leading-relaxed">
               Our staff run the session, balance the teams, explain the rules,
@@ -128,14 +127,14 @@ export default function BirthdayPartiesPage() {
             <p className="leading-relaxed">
               Every match is tracked by our persistent stat system, so by the
               end of the session you&apos;ve got a full breakdown of how everyone
-              played. Accuracy, tags, who won the most rounds, who spent the
+              played. Accuracy, kills, who won the most rounds, who spent the
               most time getting sent back to spawn. The birthday kid usually
               demands to know where they finished. Sometimes that&apos;s a good
               thing. Sometimes it&apos;s not.
             </p>
             <p className="leading-relaxed">
               For kids&apos; parties, the stats turn into a natural way to hand out
-              little awards at the end. Most accurate, most tags, best comeback,
+              little awards at the end. Most accurate, most damage, least deaths,
               that sort of thing. For adult parties, they turn into the basis of
               arguments that last well into the night.
             </p>
@@ -159,8 +158,8 @@ export default function BirthdayPartiesPage() {
             </p>
             <p className="leading-relaxed">
               For kids&apos; parties this is the stuff that ends up on the fridge.
-              For adult parties, it&apos;s the stuff that ends up in the speech at
-              the next big birthday. Worth the small extra cost on the day for
+              For adult parties, it&apos;s social media-worthy material that ends up
+              used long past the day itself. Worth the extra cost on the day for
               what you get back later.
             </p>
           </div>
@@ -176,17 +175,16 @@ export default function BirthdayPartiesPage() {
           </h2>
           <div className="mt-5 space-y-4 text-text-muted">
             <p className="leading-relaxed">
-              The birthday cake, the food, the drinks, the bit where everyone
-              sits down for half an hour and stops running around. We can take
-              care of all of it.
+              The food, the drinks, the bit where everyone sits down for half an
+              hour and stops running around. We can take care of all of it.
             </p>
             <p className="leading-relaxed">
               Catering options range from pizzas and finger food for kids&apos;
-              parties through to proper sit down meals for adult groups. Tell us
-              roughly what you&apos;re after and the size of the group and we&apos;ll put
-              together a package that fits. If you want to bring your own cake
-              we&apos;ll happily set it up for the moment when everyone sings, and
-              we&apos;ll deal with the candles, the plates, and the mess afterwards.
+              parties through to meals for adult groups. Tell us roughly what
+              you&apos;re after and the size of the group and we&apos;ll put together a
+              package that fits. If you want to bring your own cake we&apos;ll
+              happily set it up for the moment when everyone sings, and we&apos;ll
+              deal with the candles, the plates, and the mess afterwards.
             </p>
             <p className="leading-relaxed">
               Drinks are sorted on site as well. Soft drinks for the kids&apos;
@@ -207,7 +205,7 @@ export default function BirthdayPartiesPage() {
           </h2>
           <div className="mt-5 space-y-4 text-text-muted">
             <p className="leading-relaxed">
-              A standard birthday booking includes the arena, all the kit,
+              A standard birthday booking includes the location, all the kit,
               multiple match formats, post game stats, and a host running the
               session. Match photography, catering, and drinks are available as
               add ons, and we&apos;ll put a full package together for you if you want
