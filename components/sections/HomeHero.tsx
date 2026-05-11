@@ -229,7 +229,7 @@ export function HomeHero() {
               progressive unlock system — LaserOps is changing the game.
             </p>
             <a
-              href="https://share.google/wC1lh0kSBXTfBT4bH"
+              href="https://www.google.com/maps/place/LaserOps+Malta/@35.9351506,14.0734794,11z/data=!4m12!1m2!2m1!1slaserops+malta!3m8!1s0x130e4ddaeadfe003:0xda30f052e79ffef8!8m2!3d35.9351506!4d14.37835!9m1!1b1!15sCg5sYXNlcm9wcyBtYWx0YVoQIg5sYXNlcm9wcyBtYWx0YZIBGm91dGRvb3JfYWN0aXZpdHlfb3JnYW5pemVymgFEQ2k5RFFVbFJRVU52WkVOb2RIbGpSamx2VDJwc2EyUkZSa3haYm1SYVpVaENTbVZHYkZWV1JscHlWVWRXTlZSSVl4QULgAQD6AQQIQBA6!16s%2Fg%2F11z6lk5clw!5m2!1e4!1e1?entry=ttu&g_ep=EgoyMDI2MDUwNi4wIKXMDSoASAFQAw%3D%3D"
               target="_blank"
               rel="noopener noreferrer"
               className="mt-4 inline-flex items-center gap-2 text-sm text-text-muted transition-colors hover:text-text 2xl:mt-5"
@@ -273,7 +273,7 @@ export function HomeHero() {
               progressive unlock system — LaserOps is changing the game.
             </p>
             <a
-              href="https://share.google/wC1lh0kSBXTfBT4bH"
+              href="https://www.google.com/maps/place/LaserOps+Malta/@35.9351506,14.0734794,11z/data=!4m12!1m2!2m1!1slaserops+malta!3m8!1s0x130e4ddaeadfe003:0xda30f052e79ffef8!8m2!3d35.9351506!4d14.37835!9m1!1b1!15sCg5sYXNlcm9wcyBtYWx0YVoQIg5sYXNlcm9wcyBtYWx0YZIBGm91dGRvb3JfYWN0aXZpdHlfb3JnYW5pemVymgFEQ2k5RFFVbFJRVU52WkVOb2RIbGpSamx2VDJwc2EyUkZSa3haYm1SYVpVaENTbVZHYkZWV1JscHlWVWRXTlZSSVl4QULgAQD6AQQIQBA6!16s%2Fg%2F11z6lk5clw!5m2!1e4!1e1?entry=ttu&g_ep=EgoyMDI2MDUwNi4wIKXMDSoASAFQAw%3D%3D"
               target="_blank"
               rel="noopener noreferrer"
               className="mt-4 inline-flex items-center gap-2 text-sm text-white/70 transition-colors hover:text-white"
