@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/cn";
 import type { CloudinaryImage } from "@/lib/cloudinary";
 import { GalleryLightbox } from "./GalleryLightbox";
@@ -29,12 +30,41 @@ type Props = {
 };
 
 export function GalleryGrid({ images, folders }: Props) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   // If any images are tagged "featured", make that the default view.
   const hasFeatured = images.some((img) => img.tags.includes("featured"));
-  const [activeFilter, setActiveFilter] = useState<string>(
-    hasFeatured ? "featured" : "all",
-  );
+
+  // Initialise filter from URL (?folder=xxx or ?featured=1), falling back
+  // to "featured" if that tag exists, otherwise "all".
+  const initialFilter = (() => {
+    const param = searchParams.get("folder");
+    if (param === "featured" && hasFeatured) return "featured";
+    if (param && folders.includes(param)) return param;
+    if (searchParams.get("featured") !== null && hasFeatured) return "featured";
+    return hasFeatured ? "featured" : "all";
+  })();
+
+  const [activeFilter, setActiveFilter] = useState<string>(initialFilter);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+  // Sync filter → URL. "all" and default "featured" clear the param so
+  // the base /gallery URL stays clean.
+  const setFilter = useCallback(
+    (value: string) => {
+      setActiveFilter(value);
+      const params = new URLSearchParams(searchParams.toString());
+      if (value === "all" || (value === "featured" && hasFeatured && !searchParams.get("folder"))) {
+        params.delete("folder");
+      } else {
+        params.set("folder", value);
+      }
+      const qs = params.toString();
+      router.replace(qs ? `/gallery?${qs}` : "/gallery", { scroll: false });
+    },
+    [router, searchParams, hasFeatured],
+  );
 
   const showPills = hasFeatured || folders.length > 1;
 
@@ -55,20 +85,20 @@ export function GalleryGrid({ images, folders }: Props) {
             <FilterPill
               label="Featured"
               active={activeFilter === "featured"}
-              onClick={() => setActiveFilter("featured")}
+              onClick={() => setFilter("featured")}
             />
           )}
           <FilterPill
             label="All"
             active={activeFilter === "all"}
-            onClick={() => setActiveFilter("all")}
+            onClick={() => setFilter("all")}
           />
           {folders.map((f) => (
             <FilterPill
               key={f}
               label={folderLabel(f)}
               active={activeFilter === f}
-              onClick={() => setActiveFilter(f)}
+              onClick={() => setFilter(f)}
             />
           ))}
         </div>

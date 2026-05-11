@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Container } from "@/components/ui/Container";
 import { fetchGalleryImages } from "@/lib/cloudinary";
 import { GalleryGrid } from "@/components/gallery/GalleryGrid";
@@ -51,7 +52,9 @@ export default async function GalleryPage() {
         {images.length === 0 ? (
           <EmptyState />
         ) : (
-          <GalleryGrid images={images} folders={folders} />
+          <Suspense>
+            <GalleryGrid images={images} folders={folders} />
+          </Suspense>
         )}
       </Container>
     </main>
