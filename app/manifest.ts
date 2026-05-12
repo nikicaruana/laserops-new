@@ -37,7 +37,7 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Outdoor tactical laser tag in Malta — player portal and stats.",
     start_url: "/",
     display: "standalone",
-    background_color: "#0a0a0a",
+    background_color: "#ffde00",
     theme_color: "#0a0a0a",
     icons: [
       {
