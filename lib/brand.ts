@@ -26,6 +26,8 @@ export const brand = {
     instagram: "",
     facebook: "",
     tiktok: "",
+    /** WhatsApp community group invite link — set NEXT_PUBLIC_WHATSAPP_URL in Vercel */
+    whatsapp: process.env.NEXT_PUBLIC_WHATSAPP_URL ?? "",
   },
 
   /** Public-facing site URL — fallback if env var not set */

@@ -138,6 +138,16 @@
     color: var(--color-accent);
   }
 
+  /* Eyebrow for use on the yellow/accent background — dark text */
+  .eyebrow-dark {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--color-bg);
+    opacity: 0.6;
+  }
+
   /* Fine grid backdrop for HUD sections — kept subtle */
   .hud-grid {
     background-image:

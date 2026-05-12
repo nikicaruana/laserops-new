@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
-type Variant = "primary" | "secondary" | "ghost";
+type Variant = "primary" | "secondary" | "ghost" | "dark" | "outline-dark";
 type Size = "sm" | "md" | "lg";
 
 type BaseProps = {
@@ -55,6 +55,17 @@ const variantStyles: Record<Variant, string> = {
   ),
   // GHOST — minimal, for tertiary actions and inline links
   ghost: cn("bg-transparent text-text-muted", "hover:text-accent"),
+  // DARK — solid black, for use on the yellow/accent background band
+  dark: cn(
+    "bg-bg text-accent",
+    "hover:bg-bg/90",
+    "shadow-[0_0_0_1px_var(--color-bg)]",
+  ),
+  // OUTLINE-DARK — outlined black, secondary pairing on the yellow/accent band
+  "outline-dark": cn(
+    "border border-bg bg-transparent text-bg",
+    "hover:bg-bg hover:text-accent",
+  ),
 };
 
 export function Button({
