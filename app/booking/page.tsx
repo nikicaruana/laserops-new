@@ -48,9 +48,9 @@ export default function BookingPage() {
       </section>
 
       {/* ── Form ─────────────────────────────────────────────── */}
-      <section className="border-b border-border bg-accent">
+      <section className="border-b border-border bg-bg-elevated">
         <Container size="narrow" className="py-14 sm:py-16">
-          <BookingForm onAccent />
+          <BookingForm />
         </Container>
       </section>
     </>

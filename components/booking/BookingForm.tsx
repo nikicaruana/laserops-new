@@ -31,7 +31,7 @@ const TIME_SLOTS = generateTimeSlots();
 // ---------------------------------------------------------------------------
 
 const inputClass =
-  "w-full rounded-none border border-border bg-bg px-4 py-3 text-sm text-text placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50";
+  "w-full rounded-none border border-bg/20 bg-accent px-4 py-3 text-sm text-bg placeholder:text-bg/40 focus:border-bg focus:outline-none focus:ring-1 focus:ring-bg disabled:opacity-50";
 
 // ---------------------------------------------------------------------------
 // Component
