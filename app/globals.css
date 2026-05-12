@@ -54,6 +54,12 @@
     color: var(--color-bg);
   }
 
+  /* On yellow backgrounds the yellow selection is invisible — use dark instead */
+  .bg-accent ::selection {
+    background-color: var(--color-bg);
+    color: var(--color-accent);
+  }
+
   html {
     background-color: var(--color-bg);
     color: var(--color-text);

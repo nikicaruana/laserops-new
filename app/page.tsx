@@ -99,7 +99,7 @@ export default async function HomePage() {
           </h2>
           <p className="mx-auto mt-4 max-w-md text-text-muted text-base sm:text-lg">
             Book a session or join our WhatsApp community to stay in the loop
-            on upcoming events and game nights.
+            on upcoming events and games.
           </p>
           <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
             <Button href="/booking" variant="primary" size="lg">
