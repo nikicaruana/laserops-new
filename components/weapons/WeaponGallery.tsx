@@ -437,7 +437,7 @@ function TreeFilter({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="block min-w-[200px] cursor-pointer rounded-sm border border-border bg-bg-elevated px-3 py-2 text-center text-sm font-semibold text-text transition-colors hover:border-border-strong focus-visible:border-accent focus-visible:outline-none"
+        className="block min-w-[200px] cursor-pointer rounded-sm border border-border bg-bg-elevated px-3 py-2 text-sm font-semibold text-text transition-colors hover:border-border-strong focus-visible:border-accent focus-visible:outline-none"
       >
         <option value={FILTER_ALL}>All Weapons</option>
         {options.map((opt) => (
