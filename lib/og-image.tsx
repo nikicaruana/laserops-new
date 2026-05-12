@@ -30,48 +30,50 @@ function getFontData(): ArrayBuffer {
   return bytes.buffer;
 }
 
-/**
- * Resolve the public-asset base URL for the current environment.
- * Used only for the hero background and figure images â€” not fonts.
- */
-function assetBase(): string {
-  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-  return "http://localhost:3000";
-}
 
 export function generateOgImage(title: string): ImageResponse {
-  const base = assetBase();
   const fontData = getFontData();
 
   return new ImageResponse(
     (
+      // Dark card -- no external images, no network calls, fully self-contained.
       <div
         style={{
-          position: "relative",
-          display: "flex",
           width: "1200px",
           height: "630px",
+          background: "#0a0a0a",
+          display: "flex",
+          position: "relative",
           overflow: "hidden",
-          background: "#ffde00",
         }}
       >
-        {/* â”€â”€ Layer 1: yellow graffiti texture â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-        <img
-          src={`${base}/images/hero/desktop-hero-01-bg.png`}
-          alt=""
+        {/* Yellow left accent bar */}
+        <div
           style={{
             position: "absolute",
             top: 0,
             left: 0,
-            width: "100%",
+            width: "8px",
             height: "100%",
-            objectFit: "cover",
-            objectPosition: "center",
+            background: "#ffde00",
+            display: "flex",
           }}
         />
 
-        {/* â”€â”€ Layer 2: left-side dark scrim for text legibility â”€â”€ */}
+        {/* Yellow bottom accent bar */}
+        <div
+          style={{
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: "6px",
+            background: "#ffde00",
+            display: "flex",
+          }}
+        />
+
+        {/* Subtle diagonal texture lines (pure CSS, no fetch) */}
         <div
           style={{
             position: "absolute",
@@ -79,54 +81,52 @@ export function generateOgImage(title: string): ImageResponse {
             left: 0,
             right: 0,
             bottom: 0,
-            background:
-              "linear-gradient(to right, rgba(0,0,0,0.22) 0%, transparent 52%)",
+            opacity: 0.04,
+            backgroundImage:
+              "repeating-linear-gradient(135deg, #ffffff 0px, #ffffff 1px, transparent 1px, transparent 40px)",
             display: "flex",
           }}
         />
 
-        {/* â”€â”€ Layer 3: B&W branded figure â€” bottom-right â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-        <img
-          src={`${base}/images/hero/desktop-hero-01-figure-branded.png`}
-          alt=""
-          style={{
-            position: "absolute",
-            right: "-24px",
-            bottom: 0,
-            height: "108%",
-            objectFit: "contain",
-            objectPosition: "bottom right",
-          }}
-        />
-
-        {/* â”€â”€ Layer 4: text content â€” top-left â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* Content */}
         <div
           style={{
             position: "absolute",
-            top: "58px",
-            left: "64px",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            padding: "72px 88px 72px 96px",
             display: "flex",
             flexDirection: "column",
-            alignItems: "flex-start",
+            justifyContent: "space-between",
           }}
         >
-          {/* Logo â€” explicit dimensions required by Satori (no height:auto) */}
-          <img
-            src={`${base}/brand/laserops-logo-black.png`}
-            alt="LaserOps Malta"
-            style={{ width: "256px", height: "64px", display: "flex" }}
-          />
+          {/* Brand name */}
+          <div
+            style={{
+              fontFamily: "Montserrat",
+              fontWeight: 800,
+              fontSize: "22px",
+              color: "#ffde00",
+              letterSpacing: "0.2em",
+              textTransform: "uppercase",
+              display: "flex",
+            }}
+          >
+            LASEROPS MALTA
+          </div>
 
           {/* Page title */}
           <div
             style={{
-              marginTop: "28px",
               fontFamily: "Montserrat",
               fontWeight: 800,
-              fontSize: "80px",
-              color: "#0a0a0a",
-              letterSpacing: "-0.02em",
-              lineHeight: 1,
+              fontSize: "82px",
+              color: "#ffffff",
+              lineHeight: 1.02,
+              letterSpacing: "-0.025em",
+              maxWidth: "880px",
               display: "flex",
             }}
           >
@@ -136,17 +136,16 @@ export function generateOgImage(title: string): ImageResponse {
           {/* Tagline */}
           <div
             style={{
-              marginTop: "16px",
               fontFamily: "Montserrat",
               fontWeight: 800,
-              fontSize: "15px",
-              color: "#3a3a3a",
-              letterSpacing: "0.16em",
+              fontSize: "14px",
+              color: "rgba(255,255,255,0.35)",
+              letterSpacing: "0.22em",
               textTransform: "uppercase",
               display: "flex",
             }}
           >
-            TACTICAL LASER TAG Â· MALTA
+            TACTICAL LASER TAG - MALTA
           </div>
         </div>
       </div>
