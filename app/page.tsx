@@ -91,23 +91,23 @@ export default async function HomePage() {
       />
 
       {/* ── Final CTA band ───────────────────────────────────────── */}
-      <section className="bg-accent">
+      <section className="bg-bg">
         <Container className="py-24 text-center sm:py-32">
-          <span className="eyebrow-dark">Get Involved</span>
-          <h2 className="mt-4 text-3xl font-extrabold text-bg sm:text-4xl lg:text-5xl">
+          <span className="eyebrow">Get Involved</span>
+          <h2 className="mt-4 text-3xl font-extrabold text-text sm:text-4xl lg:text-5xl">
             Ready when you are.
           </h2>
-          <p className="mx-auto mt-4 max-w-md text-bg/70 text-base sm:text-lg">
+          <p className="mx-auto mt-4 max-w-md text-text-muted text-base sm:text-lg">
             Book a session or join our WhatsApp community to stay in the loop
             on upcoming events and game nights.
           </p>
           <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-            <Button href="/booking" variant="dark" size="lg">
+            <Button href="/booking" variant="primary" size="lg">
               Book a Game →
             </Button>
             <Button
               href={brand.social.whatsapp || "/community"}
-              variant="outline-dark"
+              variant="secondary"
               size="lg"
               {...(brand.social.whatsapp
                 ? { target: "_blank", rel: "noopener noreferrer" }
