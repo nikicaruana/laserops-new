@@ -23,7 +23,7 @@ export const brand = {
   },
 
   social: {
-    instagram: "",
+    instagram: "https://www.instagram.com/laserops.mt/",
     facebook: "",
     tiktok: "",
     /** WhatsApp community group invite link — set NEXT_PUBLIC_WHATSAPP_URL in Vercel */
