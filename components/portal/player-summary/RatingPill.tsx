@@ -137,9 +137,10 @@ export function RatingPill({
     );
   }
 
-  // For 5-star players, all icons use the red variant.
-  // During the animation the correct colour appears as each icon lights up.
-  const activeIcon = target === 5 ? ICON_ACTIVE_5STAR : ICON_ACTIVE;
+  // For 5-star players: icons are yellow while counting up (same as 1–4 star),
+  // and only switch to red once all 5 have appeared (activeCount === 5).
+  const activeIcon =
+    target === 5 && activeCount === 5 ? ICON_ACTIVE_5STAR : ICON_ACTIVE;
 
   // Render 5 icons: 0-4. Icons < activeCount are active, rest dark.
   // Active icons spin while isSpinning is true.

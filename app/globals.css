@@ -387,7 +387,7 @@
 }
 
 .rating-spinning {
-  animation: rating-spin 0.4s linear infinite;
+  animation: rating-spin 0.18s linear infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
