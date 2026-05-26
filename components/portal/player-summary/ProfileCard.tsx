@@ -93,7 +93,7 @@ export function ProfileCard({
                 "px-3 py-1",
                 "z-10",
               ].join(" ")}
-              iconImgClassName="block h-5 w-auto sm:h-6"
+              iconImgClassName="block h-4 w-auto sm:h-5"
               alt={`Overall rating for ${nickname}`}
             />
           )}

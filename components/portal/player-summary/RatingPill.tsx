@@ -11,8 +11,10 @@ import { useEffect, useRef, useState } from "react";
  * it lights up. Total animation ≤ 1.4 s. Respects prefers-reduced-motion.
  */
 
-const ICON_ACTIVE   = "/ratings/icon-active.png";
-const ICON_INACTIVE = "/ratings/icon-inactive.png";
+const ICON_ACTIVE        = "/ratings/icon-active.png";
+/** Red variant used for all 5 icons when the player has a 5-star rating. */
+const ICON_ACTIVE_5STAR  = "/ratings/icon-active-5star.png";
+const ICON_INACTIVE      = "/ratings/icon-inactive.png";
 
 /**
  * Extract star level (0–4) from a rating image URL.
@@ -59,9 +61,9 @@ export function RatingPill({
     }
   }, [ratingImageUrl]);
 
-  // Preload both icon assets once
+  // Preload all icon assets once
   useEffect(() => {
-    for (const src of [ICON_ACTIVE, ICON_INACTIVE]) {
+    for (const src of [ICON_ACTIVE, ICON_ACTIVE_5STAR, ICON_INACTIVE]) {
       const img = new window.Image();
       img.src = src;
     }
@@ -135,14 +137,18 @@ export function RatingPill({
     );
   }
 
-  // Render 5 icons: 0-4. Icons < activeCount are yellow, rest dark.
-  // Active icons get the spinning class while isSpinning is true.
+  // For 5-star players, all icons use the red variant.
+  // During the animation the correct colour appears as each icon lights up.
+  const activeIcon = target === 5 ? ICON_ACTIVE_5STAR : ICON_ACTIVE;
+
+  // Render 5 icons: 0-4. Icons < activeCount are active, rest dark.
+  // Active icons spin while isSpinning is true.
   const renderIcon = (index: number) => {
     const isActive = index < activeCount;
     return (
       <img
         key={index}
-        src={isActive ? ICON_ACTIVE : ICON_INACTIVE}
+        src={isActive ? activeIcon : ICON_INACTIVE}
         alt=""
         aria-hidden
         loading="lazy"
