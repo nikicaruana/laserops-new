@@ -87,7 +87,7 @@ export function StatCard({ card }: StatCardProps) {
             "px-3 py-1.5",
             "z-10",
           ].join(" ")}
-          imgClassName="block h-7 w-auto sm:h-8"
+          iconImgClassName="block h-4 w-auto sm:h-5"
         />
       )}
     </div>

@@ -3,41 +3,20 @@
 import { useEffect, useRef, useState } from "react";
 
 /**
- * RatingPill
- * --------------------------------------------------------------------
- * Animated rating pill used by both ProfileCard (large) and StatCard
- * (small). On first scroll-into-view the icon counts up from 0-star →
- * the player's actual star level while spinning — all within 1.4 s.
+ * RatingPill — animated rating display.
  *
- * Animation is driven entirely via CSS (.rating-spinning, defined in
- * globals.css) so there are no layout shifts and the approach degrades
- * gracefully: prefers-reduced-motion skips straight to the final image,
- * and browsers without IntersectionObserver see the static final image
- * from the first render.
- *
- * Props:
- *   ratingImageUrl  — the Cloudinary/sheet URL for the player's rating.
- *                     Filename must contain "_N_Star" or "_N-Star" (0–4).
- *   pillClassName   — positioning + bg classes (caller controls size/place).
- *   imgClassName    — height / width classes (differs between card types).
- *   alt             — img alt text; pass "" for decorative images
- *                     (aria-hidden="true" is set automatically when "").
+ * Renders 5 individual circular icons in a 3+2 grid (matching the original
+ * PNG layout). On first scroll-into-view, icons count up from 0 → the
+ * player's actual rating, with each active icon spinning individually as
+ * it lights up. Total animation ≤ 1.4 s. Respects prefers-reduced-motion.
  */
 
-/** Locally hosted rating images (public/ratings/).
- *  Index = star level (0–4). */
-const RATING_IMAGES = [
-  "/ratings/0-star.png",
-  "/ratings/1-star.png",
-  "/ratings/2-star.png",
-  "/ratings/3-star.png",
-  "/ratings/4-star.png",
-] as const;
+const ICON_ACTIVE   = "/ratings/icon-active.png";
+const ICON_INACTIVE = "/ratings/icon-inactive.png";
 
 /**
- * Extract the numeric star level from a rating image URL.
- * Matches patterns like: _0_Star_, _1_Star_, _2-Star-Final etc.
- * Returns -1 when no match (treat as unknown → show static image).
+ * Extract star level (0–4) from a rating image URL.
+ * Matches _0_Star, _1_Star, _2-Star etc.  Returns -1 on no match.
  */
 function starLevelFromUrl(url: string): number {
   if (!url) return -1;
@@ -49,81 +28,81 @@ function starLevelFromUrl(url: string): number {
 type RatingPillProps = {
   ratingImageUrl: string;
   pillClassName: string;
-  imgClassName: string;
+  /** Applied to each individual icon <img>.  Controls size (e.g. "h-4 w-auto"). */
+  iconImgClassName: string;
   alt?: string;
 };
 
 export function RatingPill({
   ratingImageUrl,
   pillClassName,
-  imgClassName,
+  iconImgClassName,
   alt = "",
 }: RatingPillProps) {
   const target = starLevelFromUrl(ratingImageUrl);
 
-  // currentStep drives which locally-hosted image is displayed.
-  const [currentStep, setCurrentStep] = useState(0);
+  // activeCount = how many icons are currently yellow
+  const [activeCount, setActiveCount] = useState(0);
   const [isSpinning, setIsSpinning] = useState(false);
 
-  const pillRef = useRef<HTMLDivElement>(null);
-  // Prevent re-animation on re-renders; reset when URL (i.e. player) changes.
-  const animatedRef = useRef(false);
+  const pillRef    = useRef<HTMLDivElement>(null);
+  const animated   = useRef(false);
   const prevUrlRef = useRef(ratingImageUrl);
 
-  // Reset when a new player is loaded (ratingImageUrl changes).
+  // Reset when a new player is loaded
   useEffect(() => {
     if (prevUrlRef.current !== ratingImageUrl) {
       prevUrlRef.current = ratingImageUrl;
-      animatedRef.current = false;
-      setCurrentStep(0);
+      animated.current   = false;
+      setActiveCount(0);
       setIsSpinning(false);
     }
   }, [ratingImageUrl]);
 
-  // Preload all 5 rating images once on mount so step transitions are instant.
+  // Preload both icon assets once
   useEffect(() => {
-    for (const src of RATING_IMAGES) {
+    for (const src of [ICON_ACTIVE, ICON_INACTIVE]) {
       const img = new window.Image();
       img.src = src;
     }
   }, []);
 
-  // IntersectionObserver: trigger the count-up animation on first view.
+  // IntersectionObserver → trigger count-up animation on first view
   useEffect(() => {
-    // Nothing to count up for 0-star or unknown URLs.
+    // 0-star: nothing to count up, just show the inactive grid
     if (target <= 0) {
-      setCurrentStep(Math.max(0, target));
+      setActiveCount(0);
       return;
     }
 
     const el = pillRef.current;
     if (!el) return;
 
-    // Honour prefers-reduced-motion — jump straight to the final image.
+    // Skip animation for reduced-motion users
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setCurrentStep(target);
+      setActiveCount(target);
       return;
     }
 
     const observer = new IntersectionObserver(
       (entries) => {
-        const entry = entries[0];
-        if (!entry.isIntersecting || animatedRef.current) return;
-        animatedRef.current = true;
+        if (!entries[0].isIntersecting || animated.current) return;
+        animated.current = true;
         observer.disconnect();
 
-        // Spread 1400 ms evenly across the number of steps.
+        // Spread 1400 ms evenly across steps
         const stepMs = Math.floor(1400 / target);
 
         setIsSpinning(true);
-        setCurrentStep(0);
+        setActiveCount(0);
 
-        let step = 0;
+        let count = 0;
         const tick = () => {
-          step++;
-          setCurrentStep(step);
-          if (step >= target) {
-            setIsSpinning(false);
+          count++;
+          setActiveCount(count);
+          if (count >= target) {
+            // Give the final icon one extra beat before stopping the spin
+            setTimeout(() => setIsSpinning(false), stepMs * 0.6);
           } else {
             setTimeout(tick, stepMs);
           }
@@ -140,22 +119,52 @@ export function RatingPill({
 
   if (!ratingImageUrl) return null;
 
-  // When target is -1 (unrecognised URL pattern), fall back to the raw URL.
-  const imageSrc =
-    target === -1
-      ? ratingImageUrl
-      : (RATING_IMAGES[currentStep] ?? RATING_IMAGES[0]);
+  // Fallback: if the URL doesn't match the expected pattern, show the raw image
+  if (target === -1) {
+    return (
+      <div ref={pillRef} className={pillClassName}>
+        <img
+          src={ratingImageUrl}
+          alt={alt}
+          aria-hidden={alt === "" ? true : undefined}
+          loading="lazy"
+          decoding="async"
+          className={iconImgClassName}
+        />
+      </div>
+    );
+  }
+
+  // Render 5 icons: 0-4. Icons < activeCount are yellow, rest dark.
+  // Active icons get the spinning class while isSpinning is true.
+  const renderIcon = (index: number) => {
+    const isActive = index < activeCount;
+    return (
+      <img
+        key={index}
+        src={isActive ? ICON_ACTIVE : ICON_INACTIVE}
+        alt=""
+        aria-hidden
+        loading="lazy"
+        decoding="async"
+        className={
+          iconImgClassName + (isActive && isSpinning ? " rating-spinning" : "")
+        }
+      />
+    );
+  };
 
   return (
     <div ref={pillRef} className={pillClassName}>
-      <img
-        src={imageSrc}
-        alt={alt}
-        aria-hidden={alt === "" ? true : undefined}
-        loading="lazy"
-        decoding="async"
-        className={imgClassName + (isSpinning ? " rating-spinning" : "")}
-      />
+      {/* 3+2 grid matching the original PNG layout */}
+      <div className="flex flex-col items-center gap-1">
+        <div className="flex gap-1">
+          {[0, 1, 2].map(renderIcon)}
+        </div>
+        <div className="flex gap-1">
+          {[3, 4].map(renderIcon)}
+        </div>
+      </div>
     </div>
   );
 }
