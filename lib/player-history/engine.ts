@@ -45,6 +45,8 @@ export type PlayerMatch = {
   gunUsedImage: string;
   teamColor: string;
   isWinner: boolean;
+  roundsWon: number;
+  roundsLost: number;
   // ELO
   eloBefore: number;
   eloAfter: number;
@@ -173,6 +175,8 @@ function buildPlayerMatch(row: GameDataRow): PlayerMatch {
     gunUsedImage: (row.raw.LaserOps_Gun_Used_Image ?? "").trim(),
     teamColor: (row.raw.TeamColor ?? "").trim(),
     isWinner: parseNumericOr(row.raw.LaserOps_Team_Is_Winner, 0) === 1,
+    roundsWon: parseNumericOr(row.raw.LaserOps_Rounds_Won, 0),
+    roundsLost: parseNumericOr(row.raw.LaserOps_Rounds_Lost, 0),
     eloBefore: parseNumericOr(row.raw.ELO_Before_Match, 0),
     eloAfter: parseNumericOr(row.raw.ELO_After_Match, 0),
     eloChange: parseNumericOr(row.raw.ELO_Change, 0),
