@@ -15,6 +15,7 @@ import {
 import type { PlayerMatch } from "@/lib/player-history/engine";
 import { ChartCard } from "./ChartCard";
 import { DarkTooltip, NoDataPanel } from "./EloProgressionChart";
+import { useInView } from "@/lib/hooks/useInView";
 
 /**
  * KillsVsKdChart
@@ -32,6 +33,8 @@ type Props = {
 };
 
 export function KillsVsKdChart({ matches }: Props) {
+  const { ref, inView } = useInView(0.3);
+
   const data = matches.map((m) => ({
     matchId: m.matchId,
     kills: m.kills,
@@ -57,9 +60,9 @@ export function KillsVsKdChart({ matches }: Props) {
       title="Kills vs KD Ratio"
       subtitle="Per-match kills (yellow) and your kill/death ratio (red). Two views of the same fight: how active you were and how lethal."
     >
-      <div className="h-[300px] w-full sm:h-[360px]">
+      <div ref={ref} className="h-[300px] w-full sm:h-[360px]">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={data} margin={{ top: 28, right: 4, left: 0, bottom: 8 }}>
+          <ComposedChart key={String(inView)} data={data} margin={{ top: 28, right: 4, left: 0, bottom: 8 }}>
             <CartesianGrid stroke="#262626" vertical={false} />
             <XAxis
               dataKey="matchId"
@@ -91,7 +94,7 @@ export function KillsVsKdChart({ matches }: Props) {
             />
             <Tooltip content={<DarkTooltip />} cursor={{ fill: "#26262640" }} />
             <Legend wrapperStyle={{ fontSize: 12, color: "#a3a3a3" }} iconType="rect" />
-            <Bar yAxisId="left" dataKey="kills" name="Kills" fill="#ffde00" radius={[2, 2, 0, 0]}>
+            <Bar yAxisId="left" dataKey="kills" name="Kills" fill="#ffde00" radius={[2, 2, 0, 0]} isAnimationActive={inView}>
               <LabelList
                 dataKey="kills"
                 position="top"
@@ -109,6 +112,7 @@ export function KillsVsKdChart({ matches }: Props) {
               strokeWidth={2.5}
               dot={{ fill: "#ef4444", r: 3, strokeWidth: 0 }}
               activeDot={{ r: 5, fill: "#fca5a5" }}
+              isAnimationActive={inView}
             />
           </ComposedChart>
         </ResponsiveContainer>

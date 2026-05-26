@@ -1,6 +1,4 @@
-"use client";
-
-import { useState, useEffect, useRef, type ReactNode } from "react";
+import type { ReactNode } from "react";
 
 /**
  * ChartCard
@@ -9,12 +7,11 @@ import { useState, useEffect, useRef, type ReactNode } from "react";
  * with the chart title, optional subtitle below, then the chart body
  * on a dark background.
  *
- * Lazy-mount: the chart children are NOT rendered until the card
- * scrolls into view (IntersectionObserver, 10% threshold). Since
- * Recharts triggers its entrance animation on first mount, this means
- * the animation always plays in-view rather than off-screen. A
- * placeholder div of matching height holds the space until then so
- * there is no layout shift for charts below the fold.
+ * Animation strategy: each chart component uses the `useInView` hook
+ * to detect when it scrolls into the viewport, then flips
+ * `isAnimationActive` and changes the Recharts root `key` to force a
+ * remount + replay of the entrance animation. ChartCard itself is a
+ * plain server component — all animation logic lives in the chart files.
  *
  * --------------------------------------------------------------------
  * MOBILE PADDING (post pass-10)
@@ -46,34 +43,8 @@ type Props = {
 };
 
 export function ChartCard({ title, subtitle, children }: Props) {
-  const [visible, setVisible] = useState(false);
-  const cardRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    const el = cardRef.current;
-    if (!el) return;
-
-    // Fire as soon as 10% of the card is visible so the chart mounts
-    // and begins its animation just as it enters the viewport.
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisible(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.1 },
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
   return (
-    <section
-      ref={cardRef}
-      className="overflow-hidden rounded-sm border border-border bg-bg-elevated"
-    >
+    <section className="overflow-hidden rounded-sm border border-border bg-bg-elevated">
       <header className="bg-accent px-5 py-3 text-center sm:px-6 sm:py-4">
         <h2 className="text-lg font-extrabold tracking-tight text-bg sm:text-xl">
           {title}
@@ -88,13 +59,7 @@ export function ChartCard({ title, subtitle, children }: Props) {
           axis labels don't kiss the card border but charts get most
           of the width. Desktop: px-5 unchanged. */}
       <div className="pb-3 pl-2 pr-1 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
-        {visible ? (
-          children
-        ) : (
-          /* Placeholder: matches the tallest chart height so off-screen
-             cards hold their space and no layout shift occurs on mount. */
-          <div className="h-[300px] sm:h-[360px]" aria-hidden="true" />
-        )}
+        {children}
       </div>
     </section>
   );

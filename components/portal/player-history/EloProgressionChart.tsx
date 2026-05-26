@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import type { PlayerMatch } from "@/lib/player-history/engine";
 import { ChartCard } from "./ChartCard";
+import { useInView } from "@/lib/hooks/useInView";
 
 /**
  * EloProgressionChart
@@ -46,6 +47,8 @@ type Props = {
 const STARTING_ELO = 1000;
 
 export function EloProgressionChart({ matches }: Props) {
+  const { ref, inView } = useInView(0.3);
+
   const realPoints = matches
     .filter((m) => m.eloAfter > 0)
     .map((m) => ({ matchId: m.matchId, elo: m.eloAfter }));
@@ -79,7 +82,9 @@ export function EloProgressionChart({ matches }: Props) {
       title="ELO Rating Progression"
       subtitle="ELO measures your competitive strength — win rounds against strong teams and perform well to climb. Every player starts at 1000."
     >
-      <div className="h-[280px] w-full sm:h-[340px]">
+      {/* ref is on the chart wrapper so the IntersectionObserver fires
+          when the chart body (not just the yellow header) is in view. */}
+      <div ref={ref} className="h-[280px] w-full sm:h-[340px]">
         <ResponsiveContainer width="100%" height="100%">
           {/* right:24 — needs more room than the other charts because
               the rightmost data point's LabelList ("1,084" etc.)
@@ -87,8 +92,10 @@ export function EloProgressionChart({ matches }: Props) {
               against the card edge. The other composed charts don't
               have this problem because their line labels were removed
               in pass 4.
-              left:0 — YAxis manages its own width via the `width` prop. */}
-          <LineChart data={data} margin={{ top: 28, right: 24, left: 0, bottom: 8 }}>
+              left:0 — YAxis manages its own width via the `width` prop.
+              key={String(inView)}: forces a Recharts remount when inView
+              flips false→true so the entrance animation plays in-view. */}
+          <LineChart key={String(inView)} data={data} margin={{ top: 28, right: 24, left: 0, bottom: 8 }}>
             <CartesianGrid stroke="#262626" vertical={false} />
             <XAxis
               dataKey="matchId"
@@ -117,6 +124,7 @@ export function EloProgressionChart({ matches }: Props) {
               strokeWidth={2.5}
               dot={{ fill: "#60a5fa", r: 4, strokeWidth: 0 }}
               activeDot={{ r: 6, fill: "#93c5fd" }}
+              isAnimationActive={inView}
             >
               <LabelList
                 dataKey="elo"

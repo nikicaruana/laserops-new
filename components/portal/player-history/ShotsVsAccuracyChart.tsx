@@ -14,6 +14,7 @@ import {
 import type { PlayerMatch } from "@/lib/player-history/engine";
 import { ChartCard } from "./ChartCard";
 import { NoDataPanel } from "./EloProgressionChart";
+import { useInView } from "@/lib/hooks/useInView";
 
 /**
  * ShotsVsAccuracyChart
@@ -50,6 +51,8 @@ type Props = {
 };
 
 export function ShotsVsAccuracyChart({ matches }: Props) {
+  const { ref, inView } = useInView(0.3);
+
   const data = matches.map((m) => ({
     matchId: m.matchId,
     shots: m.shots,
@@ -84,9 +87,9 @@ export function ShotsVsAccuracyChart({ matches }: Props) {
       title="Shots vs Accuracy"
       subtitle="Your accuracy trends over time, and how it relates to the volume of shots you fire in a match. Tap a bar to see which gun you used."
     >
-      <div className="h-[300px] w-full sm:h-[360px]">
+      <div ref={ref} className="h-[300px] w-full sm:h-[360px]">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={data} margin={{ top: 20, right: 4, left: 0, bottom: 8 }}>
+          <ComposedChart key={String(inView)} data={data} margin={{ top: 20, right: 4, left: 0, bottom: 8 }}>
             <CartesianGrid stroke="#262626" vertical={false} />
             <XAxis
               dataKey="matchId"
@@ -121,7 +124,7 @@ export function ShotsVsAccuracyChart({ matches }: Props) {
             />
             <Tooltip content={<ShotsAccuracyTooltip />} cursor={{ fill: "#26262640" }} />
             <Legend wrapperStyle={{ fontSize: 12, color: "#a3a3a3" }} iconType="rect" />
-            <Bar yAxisId="left" dataKey="shots" name="Shots Fired" fill="#ffde00" radius={[2, 2, 0, 0]} />
+            <Bar yAxisId="left" dataKey="shots" name="Shots Fired" fill="#ffde00" radius={[2, 2, 0, 0]} isAnimationActive={inView} />
             <Line
               yAxisId="right"
               type="monotone"
@@ -131,6 +134,7 @@ export function ShotsVsAccuracyChart({ matches }: Props) {
               strokeWidth={2.5}
               dot={{ fill: "#ef4444", r: 3, strokeWidth: 0 }}
               activeDot={{ r: 5, fill: "#fca5a5" }}
+              isAnimationActive={inView}
             />
           </ComposedChart>
         </ResponsiveContainer>
