@@ -22,7 +22,7 @@ function starLevelFromUrl(url: string): number {
   if (!url) return -1;
   const m = url.match(/_(\d)[_-][Ss]tar/i);
   if (!m) return -1;
-  return Math.min(4, Math.max(0, parseInt(m[1], 10)));
+  return Math.min(5, Math.max(0, parseInt(m[1], 10)));
 }
 
 type RatingPillProps = {

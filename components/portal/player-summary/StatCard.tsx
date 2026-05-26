@@ -1,4 +1,5 @@
 import type { StatCard as StatCardData } from "@/lib/player-stats/summary-stats";
+import { AnimatedValue } from "./AnimatedValue";
 import { RatingPill } from "./RatingPill";
 
 /**
@@ -40,9 +41,10 @@ export function StatCard({ card }: StatCardProps) {
       </span>
 
       {/* Primary number — accent yellow, bold, monospace + tabular-nums. */}
-      <span className="font-mono text-3xl font-extrabold leading-none tabular-nums text-accent sm:text-4xl">
-        {card.primaryValue}
-      </span>
+      <AnimatedValue
+        value={card.primaryValue}
+        className="font-mono text-3xl font-extrabold leading-none tabular-nums text-accent sm:text-4xl"
+      />
 
       {/* Secondary content — three variants depending on the card type. */}
       {sec.kind === "stat" && (
@@ -55,9 +57,10 @@ export function StatCard({ card }: StatCardProps) {
           {/* Value: full text colour and bold so the rate carries weight
               equal to or greater than the primary count — appropriate
               because the rating measures this number, not the count. */}
-          <span className="font-mono text-sm font-bold tabular-nums text-text sm:text-base">
-            {sec.value}
-          </span>
+          <AnimatedValue
+            value={sec.value}
+            className="font-mono text-sm font-bold tabular-nums text-text sm:text-base"
+          />
         </div>
       )}
 
@@ -87,7 +90,7 @@ export function StatCard({ card }: StatCardProps) {
             "px-3 py-1.5",
             "z-10",
           ].join(" ")}
-          iconImgClassName="block h-4 w-auto sm:h-5"
+          iconImgClassName="block h-3.5 w-auto sm:h-4"
         />
       )}
     </div>
