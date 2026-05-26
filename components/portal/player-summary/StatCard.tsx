@@ -1,4 +1,5 @@
 import type { StatCard as StatCardData } from "@/lib/player-stats/summary-stats";
+import { RatingPill } from "./RatingPill";
 
 /**
  * StatCard
@@ -76,26 +77,18 @@ export function StatCard({ card }: StatCardProps) {
 
       {/* Rating pill, overhanging the card's bottom edge.
           bottom-0 + translate-y-1/2 → pill midpoint sits exactly on edge.
-          Same translucent dark treatment as the profile rating overlay
-          for UI consistency. */}
+          RatingPill counts up from 0-star → actual rating on scroll-into-view. */}
       {showPill && (
-        <div
-          className={[
+        <RatingPill
+          ratingImageUrl={card.ratingImageUrl}
+          pillClassName={[
             "absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2",
             "rounded-full bg-bg/85 backdrop-blur-sm",
             "px-3 py-1.5",
             "z-10",
           ].join(" ")}
-        >
-          <img
-            src={card.ratingImageUrl}
-            alt=""
-            aria-hidden
-            loading="lazy"
-            decoding="async"
-            className="block h-7 w-auto sm:h-8"
-          />
-        </div>
+          imgClassName="block h-7 w-auto sm:h-8"
+        />
       )}
     </div>
   );
