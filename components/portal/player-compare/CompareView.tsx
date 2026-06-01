@@ -119,9 +119,9 @@ export function CompareView({ allRows, uniqueGunsMap }: Props) {
   return (
     <div className="flex flex-col gap-3 sm:gap-4">
       {/* ── Compare search bar ─────────────────────────────────
-          Always shown. Pre-fills from ?compare= param.
-          Main player search is in the shell (above sub-tabs). */}
-      <div>
+          Capped to sm:max-w-xs on desktop to match the shell's
+          PlayerSearch bar above. Centred on desktop too. */}
+      <div className="sm:mx-auto sm:max-w-xs">
         <p className="mb-1.5 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-text-muted">
           Compare against
         </p>

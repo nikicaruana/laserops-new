@@ -55,7 +55,9 @@ export default async function ComparePlayersPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl">
+    /* max-w-[680px] ≈ max-w-5xl shrunk by ~35% — keeps the two columns
+       readable without filling the whole viewport on large screens. */
+    <div className="mx-auto w-full max-w-[680px]">
       <Suspense fallback={null}>
         <CompareView
           allRows={statsResult.rows}
