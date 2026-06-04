@@ -42,6 +42,7 @@ export const primaryNav: NavLink[] = [
       { label: "Corporate Events", href: "/events/corporate" },
       { label: "Stag & Hen Dos", href: "/stag-and-hen" },
       { label: "Birthday Parties", href: "/birthday-parties" },
+      { label: "Open Games", href: "/events/open-games", highlight: true },
     ],
   },
   { label: "Community", href: "/community" },
