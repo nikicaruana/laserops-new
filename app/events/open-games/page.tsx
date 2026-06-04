@@ -108,7 +108,7 @@ export default async function OpenGamesPage() {
             Join an Upcoming Open Match
           </h1>
           <p className="mt-5 text-base leading-relaxed text-text-muted sm:text-lg">
-            Open games are public matches anyone can join — no team required, no
+            Open games are public matches anyone can join. No team required, no
             prior experience needed. Just sign up, show up, and get placed on a
             balanced team on the day. Every match is tracked in our live stats
             system, so your kills, ratings, and ELO all count toward your
@@ -116,8 +116,8 @@ export default async function OpenGamesPage() {
           </p>
           <p className="mt-4 text-base leading-relaxed text-text-muted sm:text-lg">
             Check the schedule below, grab a spot via the sign-up link, and keep
-            an eye out for <span className="font-semibold text-red-400">Double XP</span>{" "}
-            events — matches where all XP earned counts double toward your rank.
+            an eye out for <span className="font-semibold text-accent">Double XP</span>{" "}
+            events: Matches where all XP earned counts double toward your rank.
             These fill up fast.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">

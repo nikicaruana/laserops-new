@@ -10,10 +10,10 @@ import { formatGameDate } from "@/lib/cms/open-games";
  * Client component — renders the schedule table + the More Info modal.
  * All data is passed from the server page as props; no fetching here.
  *
- * Double XP rows get a red left-border accent + dark red row tint.
+ * Double XP rows get a subtle yellow left-border accent + faint yellow tint.
  * Status shown as a coloured pill chip.
- * More Info button opens a native <dialog> modal with either a poster
- * image or text, depending on which field the editor filled in the sheet.
+ * More Info button opens a native <dialog> modal (centred via m-auto)
+ * with either a poster image or text from the sheet.
  * --------------------------------------------------------------------
  */
 
@@ -69,11 +69,11 @@ function MoreInfoModal({
   const hasText = game?.moreInfoText && game.moreInfoText !== "";
 
   return (
-    // ::backdrop handled via globals.css pattern already present in project
     <dialog
       ref={dialogRef}
       onClick={handleDialogClick}
-      className="max-h-[90vh] w-full max-w-xl rounded-sm border border-border bg-bg p-0 text-text backdrop:bg-black/70 backdrop:backdrop-blur-sm"
+      // m-auto centres the dialog in the viewport (horizontal + vertical)
+      className="m-auto max-h-[90vh] w-full max-w-xl rounded-sm border border-border bg-bg p-0 text-text backdrop:bg-black/70 backdrop:backdrop-blur-sm"
     >
       <div className="flex flex-col">
         {/* Header */}
@@ -120,7 +120,7 @@ export function OpenGamesTable({ games }: Props) {
   if (games.length === 0) {
     return (
       <p className="py-8 text-center text-sm text-text-muted">
-        No open games are scheduled right now — check back soon or{" "}
+        No open games are scheduled right now. Check back soon or{" "}
         <a
           href="https://chat.whatsapp.com/"
           className="font-semibold text-accent underline underline-offset-4 hover:opacity-80"
@@ -144,7 +144,7 @@ export function OpenGamesTable({ games }: Props) {
                 (col) => (
                   <th
                     key={col}
-                    className="px-4 py-3 text-left text-[0.65rem] font-bold uppercase tracking-[0.14em] text-bg"
+                    className="whitespace-nowrap px-4 py-3 text-left text-[0.65rem] font-bold uppercase tracking-[0.14em] text-bg"
                   >
                     {col}
                   </th>
@@ -166,9 +166,9 @@ export function OpenGamesTable({ games }: Props) {
                   className={[
                     // Alternating row shade
                     idx % 2 === 0 ? "bg-bg" : "bg-bg-elevated",
-                    // Double XP: red left-border accent + dark red tint (overrides alternating)
+                    // Double XP: subtle yellow left-border + faint yellow tint
                     game.isDoubleXP
-                      ? "border-l-2 border-red-600 !bg-red-950/40"
+                      ? "border-l-2 border-accent/50 !bg-accent/[0.06]"
                       : "",
                     "border-b border-border last:border-b-0",
                   ]
@@ -176,27 +176,22 @@ export function OpenGamesTable({ games }: Props) {
                     .join(" ")}
                 >
                   {/* Date */}
-                  <td className="px-4 py-3 font-mono text-xs text-text">
+                  <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-text">
                     {formatGameDate(game.date)}
                   </td>
 
-                  {/* Time */}
-                  <td className="px-4 py-3 font-mono text-xs text-text">
+                  {/* Time — nowrap so "16:30 - 20:00" never wraps */}
+                  <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-text">
                     {game.time || "—"}
                   </td>
 
-                  {/* Type — accent-coloured for Double XP */}
+                  {/* Type — yellow for Double XP rows */}
                   <td
                     className={`px-4 py-3 text-xs font-semibold ${
-                      game.isDoubleXP ? "text-red-400" : "text-text"
+                      game.isDoubleXP ? "text-accent" : "text-text"
                     }`}
                   >
                     {game.type || "—"}
-                    {game.isDoubleXP && (
-                      <span className="ml-1 text-[0.6rem] font-bold uppercase tracking-wider text-red-500">
-                        ×2 XP
-                      </span>
-                    )}
                   </td>
 
                   {/* Status */}
@@ -215,7 +210,7 @@ export function OpenGamesTable({ games }: Props) {
                         href={game.signupLink}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-block rounded-sm bg-accent px-3 py-1 text-[0.65rem] font-bold uppercase tracking-[0.1em] text-bg transition-opacity hover:opacity-80"
+                        className="inline-block whitespace-nowrap rounded-sm bg-accent px-3 py-1 text-[0.65rem] font-bold uppercase tracking-[0.1em] text-bg transition-opacity hover:opacity-80"
                       >
                         Sign Up →
                       </a>
@@ -229,7 +224,7 @@ export function OpenGamesTable({ games }: Props) {
                     {game.matchReportLink ? (
                       <a
                         href={game.matchReportLink}
-                        className="text-xs font-semibold text-accent underline underline-offset-4 hover:opacity-80"
+                        className="whitespace-nowrap text-xs font-semibold text-accent underline underline-offset-4 hover:opacity-80"
                       >
                         View Report
                       </a>
@@ -243,7 +238,7 @@ export function OpenGamesTable({ games }: Props) {
                     {hasMoreInfo ? (
                       <button
                         onClick={() => setActiveGame(game)}
-                        className="inline-block rounded-sm border border-border px-3 py-1 text-[0.65rem] font-bold uppercase tracking-[0.1em] text-text-muted transition-colors hover:border-accent hover:text-accent"
+                        className="inline-block whitespace-nowrap rounded-sm border border-border px-3 py-1 text-[0.65rem] font-bold uppercase tracking-[0.1em] text-text-muted transition-colors hover:border-accent hover:text-accent"
                       >
                         More Info
                       </button>

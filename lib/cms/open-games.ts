@@ -66,6 +66,32 @@ function isPast(status: string): boolean {
 }
 
 /**
+ * Normalise any date format the editor might use into YYYY-MM-DD so
+ * comparisons and sorts work correctly regardless of how the sheet
+ * was formatted.
+ *
+ * Handles:
+ *   YYYY-MM-DD       → returned as-is (ISO standard)
+ *   D/M/YY           → "6/6/26"    → "2026-06-06"
+ *   DD/MM/YY         → "27/06/26"  → "2026-06-27"
+ *   D/M/YYYY         → "6/6/2026"  → "2026-06-06"
+ *   DD/MM/YYYY       → "27/06/2026" → "2026-06-27"
+ *
+ * Falls back to the raw string if none of the above match (sort by
+ * raw string as a last resort — defensive).
+ */
+function toISO(dateStr: string): string {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+  const m = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if (m) {
+    const [, d, mo, y] = m;
+    const year = y.length === 2 ? `20${y}` : y;
+    return `${year}-${mo.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  }
+  return dateStr;
+}
+
+/**
  * Fetch and parse the Open_Games sheet.
  * Returns an empty array on any error — the page renders a graceful
  * empty state rather than throwing.
@@ -100,11 +126,12 @@ export async function fetchOpenGames(): Promise<OpenGame[]> {
   const upcoming = games.filter((g) => !isPast(g.status));
   const past = games.filter((g) => isPast(g.status));
 
-  // Upcoming: nearest date first
-  upcoming.sort((a, b) => a.date.localeCompare(b.date));
+  // Upcoming: nearest date first — normalise to ISO before comparing so
+  // D/M/YY sheet dates sort correctly (e.g. "6/6/26" before "27/6/26").
+  upcoming.sort((a, b) => toISO(a.date).localeCompare(toISO(b.date)));
 
   // Past: most recently completed first
-  past.sort((a, b) => b.date.localeCompare(a.date));
+  past.sort((a, b) => toISO(b.date).localeCompare(toISO(a.date)));
 
   return [...upcoming, ...past];
 }
