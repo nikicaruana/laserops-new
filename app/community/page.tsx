@@ -169,10 +169,16 @@ export default async function CommunityPage() {
               group, where every session gets posted in advance.
             </p>
           </div>
-          <div className="mt-8">
+          <div className="mt-8 flex flex-wrap items-center gap-4">
             <WhatsAppButton>
               Join the LaserOps Malta WhatsApp Community
             </WhatsAppButton>
+            <Link
+              href="/events/open-games"
+              className="text-sm font-semibold text-accent underline underline-offset-4 hover:opacity-80"
+            >
+              See the upcoming match schedule →
+            </Link>
           </div>
         </Container>
       </section>
@@ -345,6 +351,16 @@ export default async function CommunityPage() {
                 The fastest way in is the WhatsApp community. That&apos;s where open
                 games are announced, teams get organised, banter gets thrown around,
                 and new players get welcomed.
+              </p>
+              <p className="mt-2 max-w-md text-sm text-text-muted">
+                Or check the{" "}
+                <Link
+                  href="/events/open-games"
+                  className="font-semibold text-accent underline underline-offset-4 hover:opacity-80"
+                >
+                  upcoming open games schedule
+                </Link>{" "}
+                to see when the next match is.
               </p>
             </div>
             <div className="shrink-0">

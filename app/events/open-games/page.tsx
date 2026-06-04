@@ -176,7 +176,14 @@ export default async function OpenGamesPage() {
               >
                 leaderboards
               </a>{" "}
-              to see how regulars stack up.
+              to see how regulars stack up. Or head over to the{" "}
+              <a
+                href="/community"
+                className="font-semibold text-accent underline underline-offset-4 hover:opacity-80"
+              >
+                community page
+              </a>{" "}
+              to get a feel for who plays and what to expect on your first night.
             </p>
           </div>
         </Container>
