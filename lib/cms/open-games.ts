@@ -122,18 +122,24 @@ export async function fetchOpenGames(): Promise<OpenGame[]> {
       moreInfoText: (r.More_Info_Text ?? "").trim(),
     }));
 
-  // Partition: upcoming vs past
-  const upcoming = games.filter((g) => !isPast(g.status));
-  const past = games.filter((g) => isPast(g.status));
+  // ── Sort into three display groups ──────────────────────────────────
+  //
+  // 1. Upcoming (Open / Full / any non-past status) — nearest first
+  // 2. Past WITH a match report — most recent first (the interesting ones)
+  // 3. Past WITHOUT a match report — most recent first (at the bottom)
+  //
+  // Dates are normalised to ISO before comparing so D/M/YY sheet values
+  // sort correctly (e.g. "6/6/26" before "27/6/26").
 
-  // Upcoming: nearest date first — normalise to ISO before comparing so
-  // D/M/YY sheet dates sort correctly (e.g. "6/6/26" before "27/6/26").
+  const upcoming    = games.filter((g) => !isPast(g.status));
+  const withReport  = games.filter((g) => isPast(g.status) && g.matchReportLink !== "");
+  const withoutReport = games.filter((g) => isPast(g.status) && g.matchReportLink === "");
+
   upcoming.sort((a, b) => toISO(a.date).localeCompare(toISO(b.date)));
+  withReport.sort((a, b) => toISO(b.date).localeCompare(toISO(a.date)));
+  withoutReport.sort((a, b) => toISO(b.date).localeCompare(toISO(a.date)));
 
-  // Past: most recently completed first
-  past.sort((a, b) => toISO(b.date).localeCompare(toISO(a.date)));
-
-  return [...upcoming, ...past];
+  return [...upcoming, ...withReport, ...withoutReport];
 }
 
 /**
