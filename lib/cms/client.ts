@@ -73,5 +73,5 @@ export const CMS_URLS = {
   // NOTE: Replace REPLACE_WITH_GID with the actual gid from the published
   // CSV URL once the Open_Games tab has been created and published.
   openGames:
-    "https://docs.google.com/spreadsheets/d/e/2PACX-1vQPMYVbKQkhZ9zvHdLAL4aryEV-7OggiuDpHh1-kzuVIlbn5tD7d260U3LNee9M86gYFXEkuLCPCwd0/pub?gid=REPLACE_WITH_GID&single=true&output=csv",
+    "https://docs.google.com/spreadsheets/d/e/2PACX-1vQPMYVbKQkhZ9zvHdLAL4aryEV-7OggiuDpHh1-kzuVIlbn5tD7d260U3LNee9M86gYFXEkuLCPCwd0/pub?gid=756732554&single=true&output=csv",
 } as const;
