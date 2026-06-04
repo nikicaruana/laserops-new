@@ -154,7 +154,7 @@ export default async function OpenGamesPage() {
               Open games run on the same format as private bookings. Players are
               split into balanced teams based on available numbers, briefed on
               the rules, and then let loose for a series of rounds in our
-              outdoor laser tag arena. Equipment is provided — just show up
+              outdoor laser tag arena. Equipment is provided, so just show up
               ready to play.
             </p>
             <p className="leading-relaxed">
@@ -199,8 +199,8 @@ export default async function OpenGamesPage() {
           <div className="mt-5 space-y-4 text-text-muted">
             <p className="leading-relaxed">
               Open games are great for individuals and small groups, but if you
-              want a private session — for a birthday, a corporate day, a stag
-              or hen do, or just a friends group — you can book the full arena.
+              want a private session for a birthday, a corporate day, a stag
+              or hen do, or just a friends group, you can book the full arena.
               Private bookings get their own dedicated game time, custom team
               setups, and all the same stat tracking as open games.
             </p>
