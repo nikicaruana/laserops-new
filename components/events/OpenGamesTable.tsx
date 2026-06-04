@@ -134,9 +134,11 @@ export function OpenGamesTable({ games }: Props) {
 
   return (
     <>
-      {/* Horizontal scroll wrapper — prevents table breaking on mobile */}
+      {/* On desktop: min-width forces horizontal scroll rather than
+          collapsing columns. On mobile: no min-width, columns narrow
+          naturally and text is allowed to wrap. */}
       <div className="overflow-x-auto rounded-sm border border-border">
-        <table className="w-full min-w-[640px] border-collapse text-sm">
+        <table className="w-full border-collapse text-sm sm:min-w-[640px]">
           {/* ── Header ─────────────────────────────────────────────── */}
           <thead>
             <tr className="bg-accent">
@@ -144,7 +146,7 @@ export function OpenGamesTable({ games }: Props) {
                 (col) => (
                   <th
                     key={col}
-                    className="whitespace-nowrap px-4 py-3 text-left text-[0.65rem] font-bold uppercase tracking-[0.14em] text-bg"
+                    className="px-2 py-2 text-left text-[0.6rem] font-bold uppercase tracking-[0.1em] text-bg sm:whitespace-nowrap sm:px-4 sm:py-3 sm:text-[0.65rem] sm:tracking-[0.14em]"
                   >
                     {col}
                   </th>
@@ -176,18 +178,18 @@ export function OpenGamesTable({ games }: Props) {
                     .join(" ")}
                 >
                   {/* Date */}
-                  <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-text">
+                  <td className="px-2 py-2 font-mono text-[0.65rem] text-text sm:whitespace-nowrap sm:px-4 sm:py-3 sm:text-xs">
                     {formatGameDate(game.date)}
                   </td>
 
-                  {/* Time — nowrap so "16:30 - 20:00" never wraps */}
-                  <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-text">
+                  {/* Time — nowrap on desktop; wraps fine on mobile */}
+                  <td className="px-2 py-2 font-mono text-[0.65rem] text-text sm:whitespace-nowrap sm:px-4 sm:py-3 sm:text-xs">
                     {game.time || "—"}
                   </td>
 
                   {/* Type — yellow for Double XP rows */}
                   <td
-                    className={`px-4 py-3 text-xs font-semibold ${
+                    className={`px-2 py-2 text-[0.65rem] font-semibold sm:px-4 sm:py-3 sm:text-xs ${
                       game.isDoubleXP ? "text-accent" : "text-text"
                     }`}
                   >
@@ -195,7 +197,7 @@ export function OpenGamesTable({ games }: Props) {
                   </td>
 
                   {/* Status */}
-                  <td className="px-4 py-3">
+                  <td className="px-2 py-2 sm:px-4 sm:py-3">
                     {game.status ? (
                       <StatusChip status={game.status} />
                     ) : (
@@ -204,13 +206,13 @@ export function OpenGamesTable({ games }: Props) {
                   </td>
 
                   {/* Sign Up */}
-                  <td className="px-4 py-3">
+                  <td className="px-2 py-2 sm:px-4 sm:py-3">
                     {game.signupLink ? (
                       <a
                         href={game.signupLink}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-block whitespace-nowrap rounded-sm bg-accent px-3 py-1 text-[0.65rem] font-bold uppercase tracking-[0.1em] text-bg transition-opacity hover:opacity-80"
+                        className="inline-block rounded-sm bg-accent px-2 py-1 text-[0.6rem] font-bold uppercase tracking-[0.08em] text-bg transition-opacity hover:opacity-80 sm:whitespace-nowrap sm:px-3 sm:text-[0.65rem] sm:tracking-[0.1em]"
                       >
                         Sign Up →
                       </a>
@@ -220,11 +222,11 @@ export function OpenGamesTable({ games }: Props) {
                   </td>
 
                   {/* Match Report */}
-                  <td className="px-4 py-3">
+                  <td className="px-2 py-2 sm:px-4 sm:py-3">
                     {game.matchReportLink ? (
                       <a
                         href={game.matchReportLink}
-                        className="whitespace-nowrap text-xs font-semibold text-accent underline underline-offset-4 hover:opacity-80"
+                        className="text-[0.65rem] font-semibold text-accent underline underline-offset-4 hover:opacity-80 sm:whitespace-nowrap sm:text-xs"
                       >
                         View Report
                       </a>
@@ -234,11 +236,11 @@ export function OpenGamesTable({ games }: Props) {
                   </td>
 
                   {/* More Info */}
-                  <td className="px-4 py-3">
+                  <td className="px-2 py-2 sm:px-4 sm:py-3">
                     {hasMoreInfo ? (
                       <button
                         onClick={() => setActiveGame(game)}
-                        className="inline-block whitespace-nowrap rounded-sm border border-border px-3 py-1 text-[0.65rem] font-bold uppercase tracking-[0.1em] text-text-muted transition-colors hover:border-accent hover:text-accent"
+                        className="inline-block rounded-sm border border-border px-2 py-1 text-[0.6rem] font-bold uppercase tracking-[0.08em] text-text-muted transition-colors hover:border-accent hover:text-accent sm:whitespace-nowrap sm:px-3 sm:text-[0.65rem] sm:tracking-[0.1em]"
                       >
                         More Info
                       </button>

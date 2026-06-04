@@ -132,12 +132,20 @@ export default async function OpenGamesPage() {
       </section>
 
       {/* ── Schedule table ───────────────────────────────────────────── */}
-      <section className="border-b border-border bg-bg-elevated">
-        <Container size="narrow" className="py-14 sm:py-16">
-          <SectionLabel>Match Schedule</SectionLabel>
-          <h2 className="mb-6 mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
-            Upcoming &amp; Recent Open Games
-          </h2>
+      {/* Yellow header band (accent bg) draws the eye to the schedule,
+          matching the ChartCard pattern used throughout the portal. */}
+      <section className="border-b border-border">
+        <div className="bg-accent px-5 py-6 sm:px-6 sm:py-8">
+          <Container size="narrow">
+            <p className="text-[0.7rem] font-bold uppercase tracking-[0.18em] text-bg/60">
+              Match Schedule
+            </p>
+            <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-bg sm:text-3xl">
+              Upcoming &amp; Recent Open Games
+            </h2>
+          </Container>
+        </div>
+        <Container size="narrow" className="py-8 sm:py-10">
           <OpenGamesTable games={games} />
         </Container>
       </section>
