@@ -279,7 +279,7 @@ export function MobileNav() {
                             fontWeight: 600,
                             textTransform: "uppercase",
                             letterSpacing: "0.14em",
-                            color: "#a3a3a3",
+                            color: child.highlight ? "#ffde00" : child.redHighlight ? "#b91c1c" : "#a3a3a3",
                             textDecoration: "none",
                           }}
                         >
