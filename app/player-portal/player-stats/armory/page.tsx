@@ -81,8 +81,23 @@ async function ArmoryContent({ ops }: { ops: string }) {
   // Excluded (admin/owner) players have all guns treated as unlocked so
   // they can test weapons before the DATA sheet is updated, without their
   // stats being hidden from armory charts and detail panels.
+  //
+  // For originally-locked rows we also:
+  //   - clear gunDisplayTitle (the sheet may store the unlock criteria text
+  //     there for locked guns; clearing forces the card to fall back to gunName)
+  //   - redirect gunPlayerImage to gunUsedImg (the precomputed image is the
+  //     locked silhouette; swapping to the actual gun image avoids showing
+  //     a de-blurred silhouette)
   if (filtered.length > 0 && isPrizeIneligible(ops, excludedNicknames)) {
-    filtered = filtered.map((row) => ({ ...row, gunIsUnlocked: true }));
+    filtered = filtered.map((row) => {
+      if (row.gunIsUnlocked) return row; // already unlocked — leave as-is
+      return {
+        ...row,
+        gunIsUnlocked: true,
+        gunDisplayTitle: "", // clear placeholder so card falls back to gunName
+        gunPlayerImage: row.gunUsedImg || row.gunPlayerImage,
+      };
+    });
   }
 
   if (filtered.length === 0) {
