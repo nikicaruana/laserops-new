@@ -7,6 +7,10 @@ import {
   fetchPlayerArmory,
   filterPlayerArmoryByOps,
 } from "@/lib/cms/player-armory";
+import {
+  fetchExcludedNicknames,
+  isPrizeIneligible,
+} from "@/lib/cms/excluded-players";
 import { fetchWeapons } from "@/lib/cms/weapons";
 import { buildPlayerArmory } from "@/lib/weapons/armory";
 
@@ -66,12 +70,20 @@ export default async function PlayerArmoryPage({
 }
 
 async function ArmoryContent({ ops }: { ops: string }) {
-  const [armoryRows, weapons] = await Promise.all([
+  const [armoryRows, weapons, excludedNicknames] = await Promise.all([
     fetchPlayerArmory(),
     fetchWeapons(),
+    fetchExcludedNicknames(),
   ]);
 
-  const filtered = filterPlayerArmoryByOps(armoryRows, ops);
+  let filtered = filterPlayerArmoryByOps(armoryRows, ops);
+
+  // Excluded (admin/owner) players have all guns treated as unlocked so
+  // they can test weapons before the DATA sheet is updated, without their
+  // stats being hidden from armory charts and detail panels.
+  if (filtered.length > 0 && isPrizeIneligible(ops, excludedNicknames)) {
+    filtered = filtered.map((row) => ({ ...row, gunIsUnlocked: true }));
+  }
 
   if (filtered.length === 0) {
     return (
