@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
+import { WeaponCarousel } from "@/components/weapons/WeaponCarousel";
+import { fetchWeapons } from "@/lib/cms/weapons";
 
 /* ─── SEO ──────────────────────────────────────────────────────────── */
 
@@ -67,7 +69,15 @@ const GAME_MODES = [
 
 /* ─── Page ─────────────────────────────────────────────────────────── */
 
-export default function OutdoorLaserTagPage() {
+export default async function OutdoorLaserTagPage() {
+  // Gun images for the carousel — pulled from the weapons CMS so the
+  // teaser stays in sync as guns are added/renamed. Only weapons with a
+  // real image URL are included.
+  const weapons = await fetchWeapons();
+  const gunImages = weapons
+    .filter((w) => w.imageUrl !== "")
+    .map((w) => ({ src: w.imageUrl, name: w.name }));
+
   return (
     <>
       {/* ── Hero ─────────────────────────────────────────────── */}
@@ -174,12 +184,17 @@ export default function OutdoorLaserTagPage() {
                 weapons for you to choose from and unlock, with different fire
                 rates, damage profiles, ammo counts, and reload mechanics.
               </p>
-              <p className="mt-3">
-                <InlineLink href="/weapons">
-                  See our full range of weapons →
-                </InlineLink>
-              </p>
             </div>
+          </div>
+
+          {/* Weapon carousel + range link */}
+          <div className="mt-8">
+            <WeaponCarousel guns={gunImages} />
+            <p className="mt-4">
+              <InlineLink href="/weapons">
+                See our full range of weapons →
+              </InlineLink>
+            </p>
           </div>
 
           <p className="mt-6 leading-relaxed text-text-muted">

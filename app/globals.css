@@ -381,6 +381,27 @@
    rotation; React removes the class once the final star lands.
    ============================================================ */
 
+/* ============================================================
+   WEAPON CAROUSEL — continuous marquee of individual gun images.
+   Reuses the weapons-scroll-left keyframe (0 → -50%) with the
+   two-copy seamless-loop strip in WeaponCarousel.tsx. Pauses on
+   hover; disabled entirely under reduced-motion.
+   ============================================================ */
+
+.weapon-carousel-track {
+  animation: weapons-scroll-left 45s linear infinite;
+}
+
+.weapon-carousel:hover .weapon-carousel-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .weapon-carousel-track {
+    animation: none;
+  }
+}
+
 @keyframes rating-spin {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
