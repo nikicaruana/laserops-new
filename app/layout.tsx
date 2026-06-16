@@ -41,18 +41,18 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
+  // NOTE: deliberately NO title/description/url here. A hardcoded og:title
+  // on the root layout propagates to every child page that doesn't set its
+  // own, so all shares showed the homepage's title/description. Leaving them
+  // unset lets each page's og:title/description fall back to its own <title>
+  // and meta description (and the pages that DO set openGraph keep theirs).
   openGraph: {
     type: "website",
     locale: "en_MT",
     siteName: brand.fullName,
-    title: `${brand.fullName} | Tactical Outdoor Laser Tag`,
-    description: brand.description,
-    url: brand.siteUrl,
   },
   twitter: {
     card: "summary_large_image",
-    title: `${brand.fullName} | Tactical Outdoor Laser Tag`,
-    description: brand.description,
   },
   robots: {
     index: true,
