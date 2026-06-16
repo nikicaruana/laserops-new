@@ -62,6 +62,7 @@ export const primaryNav: NavLink[] = [
     label: "About",
     href: "/who-we-are",
     children: [
+      { label: "Outdoor Laser Tag", href: "/outdoor-laser-tag-malta" },
       { label: "Who We Are", href: "/who-we-are" },
       { label: "FAQs", href: "/faqs" },
       { label: "Contact", href: "/contact" },

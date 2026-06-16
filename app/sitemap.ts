@@ -35,6 +35,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     url("/",                              1.0, "weekly"),
     url("/weapons",                       0.8, "monthly"),
+    url("/outdoor-laser-tag-malta",       0.8, "monthly"),
     url("/gallery",                       0.8, "weekly"),
     url("/community",                     0.8, "monthly"),
     url("/events",                        0.8, "monthly"),
