@@ -66,7 +66,10 @@ export default function CorporateEventsPage() {
           </h2>
           <div className="mt-5 space-y-4 text-text-muted">
             <p className="leading-relaxed">
-              Laser tag works as a corporate event because it puts a team into a
+              <Link href="/outdoor-laser-tag-malta" className="text-accent hover:underline">
+                Laser tag
+              </Link>{" "}
+              works as a corporate event because it puts a team into a
               situation that demands the exact skills companies pretend to care
               about in workshops. You have an objective, limited time, limited
               information, and a group of people who need to coordinate to win.

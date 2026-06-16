@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Container } from "@/components/ui/Container";
 
 export const metadata: Metadata = {
-  title: { absolute: "LaserOps Malta | Outdoor Laser Tag" },
+  title: { absolute: "About LaserOps | Outdoor Laser Tag Malta" },
   alternates: { canonical: "/who-we-are" },
   description:
     "LaserOps was started by Kyle in 2024. Two friends with over two decades of laser tag between them, building a competitive community in Malta.",

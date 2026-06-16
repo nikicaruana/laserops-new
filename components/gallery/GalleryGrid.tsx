@@ -184,7 +184,7 @@ function GalleryItem({ image, index, onClick }: ItemProps) {
     >
       <img
         src={image.secureUrl}
-        alt={image.caption ?? ""}
+        alt={image.caption ?? "LaserOps Malta outdoor laser tag"}
         width={image.width || undefined}
         height={image.height || undefined}
         loading="lazy"

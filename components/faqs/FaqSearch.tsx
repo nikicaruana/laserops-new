@@ -25,7 +25,10 @@ const FAQ_ITEMS: FaqItem[] = [
       "what is laser tag laserops outdoor arena kit tracks shot tag objective real time strategy teamwork stat system",
     answer: (
       <p>
-        Outdoor laser tag, played in a proper arena, with kit that tracks every
+        <Link href="/outdoor-laser-tag-malta" className="text-accent hover:underline">
+          Outdoor laser tag
+        </Link>
+        , played in a proper arena, with kit that tracks every
         shot, tag, and objective in real time. Not the kids&apos; party version
         with foam barriers and music. The game runs on real strategy, real
         teamwork, and a stat system that follows you between sessions.

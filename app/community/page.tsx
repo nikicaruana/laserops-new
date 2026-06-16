@@ -105,7 +105,11 @@ export default async function CommunityPage() {
             Good Time
           </h1>
           <p className="mt-5 text-base leading-relaxed text-text-muted sm:text-lg">
-            Run by people who truly love outdoor laser tag, LaserOps is more than
+            Run by people who truly love{" "}
+            <Link href="/outdoor-laser-tag-malta" className="text-accent hover:underline">
+              outdoor laser tag
+            </Link>
+            , LaserOps is more than
             something you book once for a birthday party. We&apos;ve built a proper
             laser tag community in Malta, with over 100 players who turn up week
             after week because they genuinely enjoy the game and the people they
