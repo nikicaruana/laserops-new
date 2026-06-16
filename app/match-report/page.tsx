@@ -11,8 +11,9 @@ import { MatchReportErrorState } from "@/components/match-report/ErrorState";
 
 export const metadata: Metadata = {
   title: "Match Report",
+  alternates: { canonical: "/match-report" },
   description:
-    "Pull up the full report for any LaserOps Malta match — team scores, player stats, accolades earned.",
+    "Pull up the full report for any LaserOps Malta match. Team scores, player stats, accolades earned.",
 };
 
 /**

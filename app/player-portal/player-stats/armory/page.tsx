@@ -15,7 +15,7 @@ import { fetchWeapons } from "@/lib/cms/weapons";
 import { buildPlayerArmory } from "@/lib/weapons/armory";
 
 export const metadata: Metadata = {
-  title: "Armory",
+  title: "Personal Armory",
 };
 
 /**

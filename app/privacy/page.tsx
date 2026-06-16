@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Container } from "@/components/ui/Container";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | LaserOps Malta",
+  title: "Privacy Policy",
+  alternates: { canonical: "/privacy" },
   description:
     "How LaserOps Malta collects, uses, and protects your personal data. Your GDPR rights explained.",
 };

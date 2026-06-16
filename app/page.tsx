@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { HomeHero } from "@/components/sections/HomeHero";
 import { WeaponsSection } from "@/components/sections/WeaponsSection";
 import { GallerySection } from "@/components/sections/GallerySection";
@@ -22,6 +23,10 @@ import { fetchSiteConfig, configString } from "@/lib/cms/site-config";
  * If the CMS returns no data (empty tabs, fetch fails), GallerySection
  * falls back to its baked-in sample data — homepage stays meaningful.
  */
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
+
 export default async function HomePage() {
   // Fetch CMS data in parallel. Each has built-in fallback so this
   // never throws.

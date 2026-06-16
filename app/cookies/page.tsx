@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Container } from "@/components/ui/Container";
 
 export const metadata: Metadata = {
-  title: "Cookie Policy | LaserOps Malta",
+  title: "Cookie Policy",
+  alternates: { canonical: "/cookies" },
   description:
     "What cookies LaserOps Malta uses, why, and how to manage your preferences at any time.",
 };

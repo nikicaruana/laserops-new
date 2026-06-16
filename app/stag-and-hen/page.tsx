@@ -7,7 +7,8 @@ import { fetchImagesByTag, cloudinaryTransform } from "@/lib/cloudinary";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Stag & Hen Do Activities Malta | Laser Tag | LaserOps",
+  title: "Stag & Hen Do Activities Malta | Laser Tag",
+  alternates: { canonical: "/stag-and-hen" },
   description:
     "Stag dos and hen parties in Malta that don't end in a kebab and regret. Laser tag, match stats, drinks, catering, and a venue that handles the lot.",
 };

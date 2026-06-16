@@ -3,7 +3,8 @@ import { Container } from "@/components/ui/Container";
 import { BookingForm } from "@/components/booking/BookingForm";
 
 export const metadata: Metadata = {
-  title: "Book a Laser Tag Session — LaserOps Malta",
+  title: "Book a Laser Tag Session",
+  alternates: { canonical: "/booking" },
   description:
     "Book your LaserOps Malta session online. €30 per person for a 3-hour outdoor laser tag session. Corporate events, birthday parties, and group bookings welcome.",
 };

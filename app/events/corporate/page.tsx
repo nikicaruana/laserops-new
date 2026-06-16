@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/Button";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Corporate Events & Team Building Malta | Laser Tag | Laser Ops",
+  title: "Corporate Events & Team Building Malta | Laser Tag",
+  alternates: { canonical: "/events/corporate" },
   description:
-    "Laser tag corporate events in Malta. Strategy, teamwork, and the rare chance to shoot your boss. Match photos, drinks, and post game stats included. Book your team.",
+    "Laser tag corporate team building events in Malta. Strategy, teamwork, and the rare chance to shoot your boss. Match photos, drinks, and post game stats included. Book your team.",
   openGraph: {
     title: "Corporate Events & Team Building Malta | LaserOps",
     description:

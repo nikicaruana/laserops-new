@@ -5,7 +5,8 @@ import { fetchGalleryImages } from "@/lib/cloudinary";
 import { GalleryGrid } from "@/components/gallery/GalleryGrid";
 
 export const metadata: Metadata = {
-  title: "Gallery — LaserOps Malta",
+  title: "Outdoor Laser Tag Gallery",
+  alternates: { canonical: "/gallery" },
   description:
     "Photos from LaserOps Malta matches, events, and behind-the-scenes action.",
 };
@@ -45,7 +46,7 @@ export default async function GalleryPage() {
             LaserOps in Action.
           </h1>
           <p className="mt-4 max-w-2xl text-sm text-text-muted sm:text-base">
-            Moments from the arena — matches, events, and everything in between.
+            Moments from the arena | Matches, events, and everything in between.
           </p>
         </header>
 

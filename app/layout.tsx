@@ -19,7 +19,7 @@ const montserrat = Montserrat({
 export const metadata: Metadata = {
   metadataBase: new URL(brand.siteUrl),
   title: {
-    default: `${brand.fullName} — ${brand.tagline}`,
+    default: `${brand.fullName} | Tactical Outdoor Laser Tag`,
     template: `%s | ${brand.fullName}`,
   },
   description: brand.description,
@@ -45,13 +45,13 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_MT",
     siteName: brand.fullName,
-    title: `${brand.fullName} — ${brand.tagline}`,
+    title: `${brand.fullName} | Tactical Outdoor Laser Tag`,
     description: brand.description,
     url: brand.siteUrl,
   },
   twitter: {
     card: "summary_large_image",
-    title: `${brand.fullName} — ${brand.tagline}`,
+    title: `${brand.fullName} | Tactical Outdoor Laser Tag`,
     description: brand.description,
   },
   robots: {

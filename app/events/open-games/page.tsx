@@ -8,7 +8,8 @@ import { brand } from "@/lib/brand";
 /* ─── SEO ──────────────────────────────────────────────────────────── */
 
 export const metadata: Metadata = {
-  title: "Upcoming Outdoor Laser Tag Matches Malta | Join an Open Match | LaserOps",
+  title: "Upcoming Outdoor Laser Tag Matches Malta | Join an Open Match",
+  alternates: { canonical: "/events/open-games" },
   description:
     "Sign up for upcoming open laser tag matches at LaserOps Malta. Live match schedule with dates, times, match types, and direct signup links. All skill levels welcome.",
   openGraph: {

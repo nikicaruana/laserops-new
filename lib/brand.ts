@@ -14,7 +14,7 @@ export const brand = {
   // Update these as real details become available
   contact: {
     email: "info@laseropsmalta.com",
-    phone: "",
+    phone: "+356 9999 1053",
     address: {
       street: "",
       locality: "Malta",
@@ -24,7 +24,7 @@ export const brand = {
 
   social: {
     instagram: "https://www.instagram.com/laserops.mt/",
-    facebook: "",
+    facebook: "https://www.facebook.com/laserops.mt",
     tiktok: "",
     /** WhatsApp community group invite link — set NEXT_PUBLIC_WHATSAPP_URL in Vercel */
     whatsapp: process.env.NEXT_PUBLIC_WHATSAPP_URL ?? "",
