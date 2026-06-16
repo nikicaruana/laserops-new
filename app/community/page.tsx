@@ -20,6 +20,9 @@ export const metadata: Metadata = {
   description:
     "Join Malta's outdoor laser tag community. Weekly open games, persistent player stats, leaderboards, and a WhatsApp group of regulars. New players welcome.",
   openGraph: {
+    type: "website",
+    locale: "en_MT",
+    siteName: "LaserOps Malta",
     title: "Malta's Outdoor Laser Tag Community",
     description:
       "A real community of regulars, weekly open games, a stats portal that tracks every match, and a WhatsApp group that's always planning the next session.",

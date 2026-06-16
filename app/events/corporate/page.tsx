@@ -9,6 +9,9 @@ export const metadata: Metadata = {
   description:
     "Laser tag corporate team building in Malta. Strategy, teamwork, and the rare chance to shoot your boss. Match photos, drinks, and post-game stats sorted.",
   openGraph: {
+    type: "website",
+    locale: "en_MT",
+    siteName: "LaserOps Malta",
     title: "Corporate Events & Team Building Malta | LaserOps",
     description:
       "Laser tag corporate events in Malta. Strategy, teamwork, and the rare chance to shoot your boss. Match photos, drinks, and post game stats included.",

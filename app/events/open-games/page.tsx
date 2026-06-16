@@ -13,7 +13,10 @@ export const metadata: Metadata = {
   description:
     "Sign up for upcoming open laser tag matches at LaserOps Malta. Live match schedule with dates, times, match types, and direct signup links. All skill levels welcome.",
   openGraph: {
-    title: "Upcoming Open Games — LaserOps Malta",
+    type: "website",
+    locale: "en_MT",
+    siteName: "LaserOps Malta",
+    title: "Upcoming Open Games | LaserOps Malta",
     description:
       "Check the latest open game schedule at LaserOps Malta. Join a match, earn stats, and climb the leaderboard. Open to all players.",
   },

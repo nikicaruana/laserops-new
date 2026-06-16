@@ -26,6 +26,9 @@ export const metadata: Metadata = {
     canonical: "/outdoor-laser-tag-malta",
   },
   openGraph: {
+    type: "website",
+    locale: "en_MT",
+    siteName: "LaserOps Malta",
     title: "Outdoor Laser Tag Malta | What to Expect",
     description:
       "The full breakdown of outdoor laser tag at LaserOps Malta. The kit, the game modes, the respawn mechanic, live match stats, and what makes it different.",
