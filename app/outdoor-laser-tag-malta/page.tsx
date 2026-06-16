@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/Button";
 /* ─── SEO ──────────────────────────────────────────────────────────── */
 
 export const metadata: Metadata = {
-  // `absolute` bypasses the root layout's "%s | LaserOps Malta" template so the
-  // title tag is exactly as specified (no redundant double brand suffix).
+  // `absolute` bypasses the root layout's "%s | LaserOps Malta" template so we
+  // get a clean "… | LaserOps Malta" suffix instead of the doubled
+  // "… | LaserOps | LaserOps Malta" the template would otherwise produce.
   title: {
-    absolute: "Outdoor Laser Tag Malta | What to Expect | LaserOps",
+    absolute: "Outdoor Laser Tag Malta | What to Expect | LaserOps Malta",
   },
   description:
     "Outdoor laser tag in Malta, played in immersive outdoor arenas with latest gen kit. Mission based game modes, real teamwork, and the full breakdown of how it works.",
