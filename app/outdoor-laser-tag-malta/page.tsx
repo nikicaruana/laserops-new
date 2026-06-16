@@ -2,7 +2,14 @@ import type { Metadata } from "next";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
 import { WeaponCarousel } from "@/components/weapons/WeaponCarousel";
+import { BracketFrame } from "@/components/portal/BracketFrame";
 import { fetchWeapons } from "@/lib/cms/weapons";
+import { fetchImagesByTag, cloudinaryTransform } from "@/lib/cloudinary";
+
+/* ─── Cloudinary delivery transforms ───────────────────────────────── */
+const HERO_TRANSFORM = "w_1280,ar_16:9,c_fill,q_auto,f_auto";
+const ARENA_TRANSFORM = "w_900,ar_4:3,c_fill,q_auto,f_auto";
+const KIT_TRANSFORM = "w_900,ar_4:3,c_fill,q_auto,f_auto";
 
 /* ─── SEO ──────────────────────────────────────────────────────────── */
 
@@ -73,10 +80,24 @@ export default async function OutdoorLaserTagPage() {
   // Gun images for the carousel — pulled from the weapons CMS so the
   // teaser stays in sync as guns are added/renamed. Only weapons with a
   // real image URL are included.
-  const weapons = await fetchWeapons();
+  // Fetch weapons (for the carousel) and the page's curated photos in
+  // parallel. Photos live in Cloudinary under
+  // laseropsmalta.com/site_pages/outdoor_laser_tag, pulled by tag.
+  // Each fetch fails soft to [] so a missing tag just hides that image.
+  const [weapons, heroImgs, arenaImgs, kitImgs] = await Promise.all([
+    fetchWeapons(),
+    fetchImagesByTag("olt-hero"),
+    fetchImagesByTag("olt-arena"),
+    fetchImagesByTag("olt-kit"),
+  ]);
+
   const gunImages = weapons
     .filter((w) => w.imageUrl !== "")
     .map((w) => ({ src: w.imageUrl, name: w.name }));
+
+  const heroImage = heroImgs[0] ?? null;
+  const arenaPair = arenaImgs.slice(0, 2);
+  const kitImage = kitImgs[0] ?? null;
 
   return (
     <>
@@ -109,6 +130,22 @@ export default async function OutdoorLaserTagPage() {
               Join an Open Game →
             </Button>
           </div>
+
+          {heroImage && (
+            <div className="mt-10">
+              <BracketFrame cornerSize="1.5rem" thickness="2px" inset="-6px">
+                <img
+                  src={cloudinaryTransform(heroImage.secureUrl, HERO_TRANSFORM)}
+                  alt="Players competing in an outdoor laser tag match at LaserOps Malta"
+                  width={1280}
+                  height={720}
+                  loading="eager"
+                  fetchPriority="high"
+                  className="block aspect-[16/9] w-full object-cover"
+                />
+              </BracketFrame>
+            </div>
+          )}
         </Container>
       </section>
 
@@ -134,6 +171,36 @@ export default async function OutdoorLaserTagPage() {
               of those sports with none of the barriers to actually playing them.
             </p>
           </div>
+
+          {arenaPair.length > 0 && (
+            <div
+              className={`mt-8 grid gap-3 sm:gap-4 ${
+                arenaPair.length >= 2 ? "grid-cols-2" : "grid-cols-1"
+              }`}
+            >
+              {arenaPair.map((photo, i) => (
+                <BracketFrame
+                  key={photo.publicId}
+                  cornerSize="1.25rem"
+                  thickness="2px"
+                  inset="-5px"
+                >
+                  <img
+                    src={cloudinaryTransform(photo.secureUrl, ARENA_TRANSFORM)}
+                    alt={
+                      i === 0
+                        ? "Outdoor laser tag arena in Malta with natural cover and open sightlines"
+                        : "Open outdoor laser tag playing field in Malta with room for tactical movement"
+                    }
+                    width={900}
+                    height={675}
+                    loading="lazy"
+                    className="block aspect-[4/3] w-full object-cover"
+                  />
+                </BracketFrame>
+              ))}
+            </div>
+          )}
         </Container>
       </section>
 
@@ -147,6 +214,21 @@ export default async function OutdoorLaserTagPage() {
           <p className="mt-5 leading-relaxed text-text-muted">
             Every player gets three pieces of equipment when they arrive.
           </p>
+
+          {kitImage && (
+            <div className="mt-6 sm:mx-auto sm:max-w-lg">
+              <BracketFrame cornerSize="1.25rem" thickness="2px" inset="-5px">
+                <img
+                  src={cloudinaryTransform(kitImage.secureUrl, KIT_TRANSFORM)}
+                  alt="LaserOps laser tag headband with hit sensors and team-colour bandana"
+                  width={900}
+                  height={675}
+                  loading="lazy"
+                  className="block aspect-[4/3] w-full object-cover"
+                />
+              </BracketFrame>
+            </div>
+          )}
 
           <div className="mt-6 space-y-5">
             <div className="border-l-2 border-accent/50 pl-5">

@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { brand } from "@/lib/brand";
+import { fetchImagesByTag } from "@/lib/cloudinary";
 
 /**
  * sitemap.ts
@@ -15,7 +16,7 @@ import { brand } from "@/lib/brand";
  *
  * Update this file whenever a new public route is added.
  */
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = brand.siteUrl.replace(/\/$/, "");
   const now = new Date();
 
@@ -23,19 +24,26 @@ export default function sitemap(): MetadataRoute.Sitemap {
     path: string,
     priority: number,
     changeFrequency: MetadataRoute.Sitemap[number]["changeFrequency"] = "monthly",
+    images?: string[],
   ): MetadataRoute.Sitemap[number] {
     return {
       url: `${base}${path}`,
       lastModified: now,
       changeFrequency,
       priority,
+      ...(images && images.length > 0 ? { images } : {}),
     };
   }
+
+  // Hero image for the Outdoor Laser Tag page — surfaced in the sitemap
+  // for image SEO. Fails soft to no image if the tag/creds are unavailable.
+  const oltHero = await fetchImagesByTag("olt-hero");
+  const oltHeroUrl = oltHero[0]?.secureUrl;
 
   return [
     url("/",                              1.0, "weekly"),
     url("/weapons",                       0.8, "monthly"),
-    url("/outdoor-laser-tag-malta",       0.8, "monthly"),
+    url("/outdoor-laser-tag-malta",       0.8, "monthly", oltHeroUrl ? [oltHeroUrl] : undefined),
     url("/gallery",                       0.8, "weekly"),
     url("/community",                     0.8, "monthly"),
     url("/events",                        0.8, "monthly"),
