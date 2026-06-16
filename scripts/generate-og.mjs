@@ -26,8 +26,9 @@ const font = readFileSync(join(ROOT, "public/fonts/montserrat-800.ttf"));
 const logo = readFileSync(join(ROOT, "public/brand/laserops-logo-yellow.png"));
 const logoUri = "data:image/png;base64," + logo.toString("base64");
 
-// route dir (under app/) -> card title
+// route dir (under app/) -> card title. "" is the homepage (app/opengraph-image.png).
 const PAGES = {
+  "": "Malta's Ultimate Outdoor Laser Tag",
   "outdoor-laser-tag-malta": "Outdoor Laser Tag in Malta",
   weapons: "15+ Tactical Laser Tag Weapons",
   community: "Malta's Laser Tag Community",
@@ -63,7 +64,16 @@ function card(title) {
             ],
           },
         },
-        { type: "div", props: { style: { display: "flex", fontSize: 26, fontWeight: 800, color: "#ffde00", textTransform: "uppercase", letterSpacing: "0.16em" }, children: "Tactical Outdoor Laser Tag · Malta" } },
+        {
+          type: "div",
+          props: {
+            style: { display: "flex", alignItems: "center", justifyContent: "space-between" },
+            children: [
+              { type: "div", props: { style: { display: "flex", fontSize: 24, fontWeight: 800, color: "#ffde00", textTransform: "uppercase", letterSpacing: "0.16em" }, children: "Tactical Outdoor Laser Tag · Malta" } },
+              { type: "div", props: { style: { display: "flex", fontSize: 24, fontWeight: 800, color: "#0a0a0a", backgroundColor: "#ffde00", padding: "14px 28px", borderRadius: "8px", textTransform: "uppercase", letterSpacing: "0.08em" }, children: "Book a Game" } },
+            ],
+          },
+        },
       ],
     },
   };
@@ -75,9 +85,11 @@ for (const [route, title] of Object.entries(PAGES)) {
     height: 630,
     fonts: [{ name: "Montserrat", data: font, weight: 800, style: "normal" }],
   });
-  const dest = join(ROOT, "app", route, "opengraph-image.png");
+  const dest = route
+    ? join(ROOT, "app", route, "opengraph-image.png")
+    : join(ROOT, "app", "opengraph-image.png");
   const png = await sharp(Buffer.from(svg)).png().toBuffer();
   writeFileSync(dest, png);
-  console.log(`✓ ${route}/opengraph-image.png  "${title}"`);
+  console.log(`✓ ${route || "(home)"}/opengraph-image.png  "${title}"`);
 }
 console.log("Done.");

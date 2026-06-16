@@ -15,7 +15,7 @@ import {
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Laser Tag Community Malta | Open Games & Player Portal",
+  title: "Laser Tag Community Malta | Open Games",
   alternates: { canonical: "/community" },
   description:
     "Join Malta's outdoor laser tag community. Weekly open games, persistent player stats, leaderboards, and a WhatsApp group of regulars. New players welcome.",

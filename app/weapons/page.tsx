@@ -28,7 +28,7 @@ import { WeaponMetaChart } from "@/components/weapons/WeaponMetaChart";
  */
 
 export const metadata: Metadata = {
-  title: "Weapons",
+  title: "Laser Tag Weapons & Loadouts",
   alternates: { canonical: "/weapons" },
   description:
     "Explore LaserOps's diverse weapons arsenal. Compare stats across 15+ guns, browse by gun tree, and see unlock paths.",
