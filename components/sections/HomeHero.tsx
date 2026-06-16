@@ -207,7 +207,7 @@ export function HomeHero() {
           DESKTOP: vertically centered single content block, no figure-area
           reservation needed.
         */}
-        <div className="hero-content flex h-[calc(100dvh-72px)] flex-col items-stretch pt-8 sm:pt-12 xl:h-full xl:min-h-0 xl:py-10 2xl:min-h-[calc(100svh-72px)] 2xl:py-28">
+        <div className="hero-content flex h-[calc(100svh-72px)] flex-col items-stretch pt-8 sm:pt-12 xl:h-full xl:min-h-0 xl:py-10 2xl:min-h-[calc(100svh-72px)] 2xl:py-28">
           {/* DESKTOP CONTENT BLOCK — vertically centered with my-auto.
               Two desktop tiers:
                 xl  (1280-1535px, typical laptop): content sized to fit

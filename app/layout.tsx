@@ -129,7 +129,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className="flex min-h-dvh flex-col bg-bg text-text antialiased">
+      <body className="flex min-h-svh flex-col bg-bg text-text antialiased">
         <GTMNoScript />
         {/* Skip link for keyboard / screen reader users */}
         <a

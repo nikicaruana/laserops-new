@@ -71,12 +71,6 @@
        so it doesn't interfere with internal scroll regions like the mobile
        nav panel's link list. */
     overflow-x: clip;
-    /* Disable pull-to-refresh + overscroll bounce. In a standalone PWA the
-       pull-to-refresh gesture transiently changes the dynamic viewport, which
-       resizes the dvh-based hero (and min-h-dvh body) and pushes content past
-       the screen edge. `contain` stops scroll chaining and the refresh gesture
-       without affecting normal scrolling or internal scroll regions. */
-    overscroll-behavior-y: contain;
     /* Allow CSS transitions to interpolate from explicit values (like 0)
        to keywords (auto). Required for animated <details>/::details-content
        collapse. Browsers that don't support this property ignore it
