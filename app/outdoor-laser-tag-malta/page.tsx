@@ -95,13 +95,7 @@ export default function OutdoorLaserTagPage() {
             <Button href="/booking" variant="primary" size="lg">
               Book a Session →
             </Button>
-            <Button
-              href={WHATSAPP_URL}
-              variant="secondary"
-              size="lg"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
+            <Button href="/events/open-games" variant="secondary" size="lg">
               Join an Open Game →
             </Button>
           </div>
