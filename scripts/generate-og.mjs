@@ -43,34 +43,37 @@ const PAGES = {
   contact: "Get in Touch",
 };
 
+// Centered layout: keeps the logo + headline in the middle so the card
+// still reads well when a consumer (e.g. WhatsApp's compact preview)
+// center-crops the 1200x630 banner to a square.
 function card(title) {
   return {
     type: "div",
     props: {
       style: {
         height: "100%", width: "100%", display: "flex", flexDirection: "column",
-        justifyContent: "space-between", backgroundColor: "#0a0a0a",
-        padding: "72px 80px", fontFamily: "Montserrat",
+        alignItems: "center", justifyContent: "space-between", textAlign: "center",
+        backgroundColor: "#0a0a0a", padding: "64px 80px", fontFamily: "Montserrat",
       },
       children: [
         { type: "img", props: { src: logoUri, width: 360, height: 65, style: { display: "flex" } } },
         {
           type: "div",
           props: {
-            style: { display: "flex", flexDirection: "column" },
+            style: { display: "flex", flexDirection: "column", alignItems: "center" },
             children: [
-              { type: "div", props: { style: { width: 96, height: 8, backgroundColor: "#ffde00", marginBottom: 30, display: "flex" } } },
-              { type: "div", props: { style: { display: "flex", fontSize: 68, fontWeight: 800, color: "#ffffff", lineHeight: 1.04, letterSpacing: "-0.02em", maxWidth: 1000 }, children: title } },
+              { type: "div", props: { style: { width: 96, height: 8, backgroundColor: "#ffde00", marginBottom: 28, display: "flex" } } },
+              { type: "div", props: { style: { display: "flex", textAlign: "center", fontSize: 66, fontWeight: 800, color: "#ffffff", lineHeight: 1.04, letterSpacing: "-0.02em", maxWidth: 980 }, children: title } },
             ],
           },
         },
         {
           type: "div",
           props: {
-            style: { display: "flex", alignItems: "center", justifyContent: "space-between" },
+            style: { display: "flex", flexDirection: "column", alignItems: "center", gap: "22px" },
             children: [
               { type: "div", props: { style: { display: "flex", fontSize: 24, fontWeight: 800, color: "#ffde00", textTransform: "uppercase", letterSpacing: "0.16em" }, children: "Tactical Outdoor Laser Tag · Malta" } },
-              { type: "div", props: { style: { display: "flex", fontSize: 24, fontWeight: 800, color: "#0a0a0a", backgroundColor: "#ffde00", padding: "14px 28px", borderRadius: "8px", textTransform: "uppercase", letterSpacing: "0.08em" }, children: "Book a Game" } },
+              { type: "div", props: { style: { display: "flex", fontSize: 24, fontWeight: 800, color: "#0a0a0a", backgroundColor: "#ffde00", padding: "14px 30px", borderRadius: "8px", textTransform: "uppercase", letterSpacing: "0.08em" }, children: "Book a Game" } },
             ],
           },
         },
