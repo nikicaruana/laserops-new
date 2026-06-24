@@ -87,6 +87,7 @@ export function ProfileCard({
           {overallRatingImageUrl !== "" && (
             <RatingPill
               ratingImageUrl={overallRatingImageUrl}
+              locked={!ratingUnlocked}
               pillClassName={[
                 "absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2",
                 "rounded-full bg-bg/85 backdrop-blur-sm",
@@ -94,6 +95,7 @@ export function ProfileCard({
                 "z-10",
               ].join(" ")}
               iconImgClassName="block h-3.5 w-auto sm:h-4"
+              lockedImgClassName="block h-12 w-auto sm:h-14"
               alt={`Overall rating for ${nickname}`}
             />
           )}

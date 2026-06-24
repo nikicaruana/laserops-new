@@ -97,7 +97,7 @@ export function PlayerSummaryView({ allRows }: PlayerSummaryViewProps) {
               plus our wrapper. */}
           <div className="mt-2">
             <CollapsibleSection title="Stats">
-              <StatsSection row={player} />
+              <StatsSection row={player} ratingUnlocked={top.ratingUnlocked} />
             </CollapsibleSection>
           </div>
           {/* Accolades section — same collapsible pattern, sits below Stats.

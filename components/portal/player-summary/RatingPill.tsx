@@ -32,6 +32,15 @@ type RatingPillProps = {
   pillClassName: string;
   /** Applied to each individual icon <img>.  Controls size (e.g. "h-4 w-auto"). */
   iconImgClassName: string;
+  /**
+   * True when the player hasn't unlocked ratings yet. The source provides a
+   * dedicated "locked" rating image, so we render that raw (no icon grid, no
+   * animation) rather than parsing it into a misleading 0-star display.
+   */
+  locked?: boolean;
+  /** Sizing for the raw locked image (the full rating PNG is larger than a
+   *  single icon). Falls back to iconImgClassName when unset. */
+  lockedImgClassName?: string;
   alt?: string;
 };
 
@@ -39,6 +48,8 @@ export function RatingPill({
   ratingImageUrl,
   pillClassName,
   iconImgClassName,
+  locked = false,
+  lockedImgClassName,
   alt = "",
 }: RatingPillProps) {
   const target = starLevelFromUrl(ratingImageUrl);
@@ -121,8 +132,10 @@ export function RatingPill({
 
   if (!ratingImageUrl) return null;
 
-  // Fallback: if the URL doesn't match the expected pattern, show the raw image
-  if (target === -1) {
+  // Locked rating (or an unrecognised URL): render the raw image. For locked
+  // players the source supplies a dedicated locked rating image — show it as-is
+  // rather than the animated icon grid (which would read as a 0-star rating).
+  if (locked || target === -1) {
     return (
       <div ref={pillRef} className={pillClassName}>
         <img
@@ -131,7 +144,7 @@ export function RatingPill({
           aria-hidden={alt === "" ? true : undefined}
           loading="lazy"
           decoding="async"
-          className={iconImgClassName}
+          className={locked && lockedImgClassName ? lockedImgClassName : iconImgClassName}
         />
       </div>
     );
