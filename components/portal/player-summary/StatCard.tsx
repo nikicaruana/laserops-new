@@ -95,7 +95,7 @@ export function StatCard({ card, ratingUnlocked }: StatCardProps) {
             "z-10",
           ].join(" ")}
           iconImgClassName="block h-3.5 w-auto sm:h-4"
-          lockedImgClassName="block h-7 w-auto sm:h-8"
+          lockedImgClassName="block h-8 w-auto sm:h-9"
         />
       )}
     </div>
