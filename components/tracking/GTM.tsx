@@ -21,6 +21,20 @@ export function GTM() {
         {`
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
+          /* Global default: GRANT for non-EEA traffic, where opt-in isn't
+             legally required. Without this, non-EEA visitors stayed denied by
+             default (no tracking unless they accept) and GA4 flagged a
+             "0% consent rate" misconfiguration. */
+          gtag('consent', 'default', {
+            ad_storage: 'granted',
+            ad_user_data: 'granted',
+            ad_personalization: 'granted',
+            analytics_storage: 'granted',
+            functionality_storage: 'granted',
+            security_storage: 'granted'
+          });
+          /* EEA + UK override: DENY until the visitor consents (GDPR). The
+             cookie banner flips these via gtag('consent','update',...). */
           gtag('consent', 'default', {
             ad_storage: 'denied',
             ad_user_data: 'denied',
@@ -28,6 +42,7 @@ export function GTM() {
             analytics_storage: 'denied',
             functionality_storage: 'granted',
             security_storage: 'granted',
+            region: ['AT','BE','BG','CY','CZ','DE','DK','EE','ES','FI','FR','GB','GR','HR','HU','IE','IS','IT','LI','LT','LU','LV','MT','NL','NO','PL','PT','RO','SE','SI','SK'],
             wait_for_update: 500
           });
           /* Re-apply a returning visitor's saved choice BEFORE GTM evaluates
