@@ -1,4 +1,6 @@
 import type { StatCard as StatCardData } from "@/lib/player-stats/summary-stats";
+import { AnimatedValue } from "./AnimatedValue";
+import { RatingPill } from "./RatingPill";
 
 /**
  * StatCard
@@ -23,9 +25,12 @@ import type { StatCard as StatCardData } from "@/lib/player-stats/summary-stats"
 
 type StatCardProps = {
   card: StatCardData;
+  /** When false, the rating isn't unlocked yet — show the locked rating
+   *  image instead of the animated icon grid. */
+  ratingUnlocked: boolean;
 };
 
-export function StatCard({ card }: StatCardProps) {
+export function StatCard({ card, ratingUnlocked }: StatCardProps) {
   const showPill = card.ratingImageUrl !== "";
   const sec = card.secondary;
 
@@ -39,9 +44,10 @@ export function StatCard({ card }: StatCardProps) {
       </span>
 
       {/* Primary number — accent yellow, bold, monospace + tabular-nums. */}
-      <span className="font-mono text-3xl font-extrabold leading-none tabular-nums text-accent sm:text-4xl">
-        {card.primaryValue}
-      </span>
+      <AnimatedValue
+        value={card.primaryValue}
+        className="font-mono text-3xl font-extrabold leading-none tabular-nums text-accent sm:text-4xl"
+      />
 
       {/* Secondary content — three variants depending on the card type. */}
       {sec.kind === "stat" && (
@@ -54,9 +60,10 @@ export function StatCard({ card }: StatCardProps) {
           {/* Value: full text colour and bold so the rate carries weight
               equal to or greater than the primary count — appropriate
               because the rating measures this number, not the count. */}
-          <span className="font-mono text-sm font-bold tabular-nums text-text sm:text-base">
-            {sec.value}
-          </span>
+          <AnimatedValue
+            value={sec.value}
+            className="font-mono text-sm font-bold tabular-nums text-text sm:text-base"
+          />
         </div>
       )}
 
@@ -76,26 +83,20 @@ export function StatCard({ card }: StatCardProps) {
 
       {/* Rating pill, overhanging the card's bottom edge.
           bottom-0 + translate-y-1/2 → pill midpoint sits exactly on edge.
-          Same translucent dark treatment as the profile rating overlay
-          for UI consistency. */}
+          RatingPill counts up from 0-star → actual rating on scroll-into-view. */}
       {showPill && (
-        <div
-          className={[
+        <RatingPill
+          ratingImageUrl={card.ratingImageUrl}
+          locked={!ratingUnlocked}
+          pillClassName={[
             "absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2",
             "rounded-full bg-bg/85 backdrop-blur-sm",
             "px-3 py-1.5",
             "z-10",
           ].join(" ")}
-        >
-          <img
-            src={card.ratingImageUrl}
-            alt=""
-            aria-hidden
-            loading="lazy"
-            decoding="async"
-            className="block h-7 w-auto sm:h-8"
-          />
-        </div>
+          iconImgClassName="block h-3.5 w-auto sm:h-4"
+          lockedImgClassName="block h-8 w-auto sm:h-9"
+        />
       )}
     </div>
   );

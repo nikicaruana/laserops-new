@@ -38,9 +38,12 @@ import type { PlayerStatsRaw } from "@/lib/player-stats/shared";
 
 type StatsSectionProps = {
   row: PlayerStatsRaw;
+  /** Whether the player has unlocked ratings — passed to each StatCard so
+   *  locked players show the locked rating image instead of a 0-star grid. */
+  ratingUnlocked: boolean;
 };
 
-export function StatsSection({ row }: StatsSectionProps) {
+export function StatsSection({ row, ratingUnlocked }: StatsSectionProps) {
   // Project once. Order here is the render order — adjust if a different
   // grouping reads better in practice.
   const cards = [
@@ -66,7 +69,7 @@ export function StatsSection({ row }: StatsSectionProps) {
     //   the visual overhang.
     <div className="grid grid-cols-2 gap-x-3 gap-y-7 pb-4 sm:grid-cols-3 sm:gap-x-4 sm:gap-y-8 sm:pb-5 xl:grid-cols-4">
       {cards.map((card) => (
-        <StatCard key={card.label} card={card} />
+        <StatCard key={card.label} card={card} ratingUnlocked={ratingUnlocked} />
       ))}
     </div>
   );

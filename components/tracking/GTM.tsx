@@ -21,6 +21,20 @@ export function GTM() {
         {`
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
+          /* Global default: GRANT for non-EEA traffic, where opt-in isn't
+             legally required. Without this, non-EEA visitors stayed denied by
+             default (no tracking unless they accept) and GA4 flagged a
+             "0% consent rate" misconfiguration. */
+          gtag('consent', 'default', {
+            ad_storage: 'granted',
+            ad_user_data: 'granted',
+            ad_personalization: 'granted',
+            analytics_storage: 'granted',
+            functionality_storage: 'granted',
+            security_storage: 'granted'
+          });
+          /* EEA + UK override: DENY until the visitor consents (GDPR). The
+             cookie banner flips these via gtag('consent','update',...). */
           gtag('consent', 'default', {
             ad_storage: 'denied',
             ad_user_data: 'denied',
@@ -28,8 +42,29 @@ export function GTM() {
             analytics_storage: 'denied',
             functionality_storage: 'granted',
             security_storage: 'granted',
+            region: ['AT','BE','BG','CY','CZ','DE','DK','EE','ES','FI','FR','GB','GR','HR','HU','IE','IS','IT','LI','LT','LU','LV','MT','NL','NO','PL','PT','RO','SE','SI','SK'],
             wait_for_update: 500
           });
+          /* Re-apply a returning visitor's saved choice BEFORE GTM evaluates
+             page-view tags. Without this, the saved consent is only re-applied
+             by the React CookieConsent banner AFTER hydration — by which time
+             the Page View has already fired and consent-gated Custom HTML tags
+             (e.g. the Meta Pixel, gated on ad_storage) have been blocked and
+             won't reliably re-fire. Reading localStorage here (same key/shape
+             as CookieConsent) grants consent synchronously, so the Pixel fires
+             at page view for visitors who have already accepted marketing. */
+          try {
+            var s = localStorage.getItem('laserops_consent_v1');
+            if (s) {
+              var c = JSON.parse(s);
+              gtag('consent', 'update', {
+                analytics_storage: c.analytics ? 'granted' : 'denied',
+                ad_storage: c.marketing ? 'granted' : 'denied',
+                ad_user_data: c.marketing ? 'granted' : 'denied',
+                ad_personalization: c.marketing ? 'granted' : 'denied'
+              });
+            }
+          } catch (e) {}
         `}
       </Script>
 

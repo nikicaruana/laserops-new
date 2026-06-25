@@ -31,9 +31,7 @@ const TIME_SLOTS = generateTimeSlots();
 // ---------------------------------------------------------------------------
 
 const inputClass =
-  "w-full rounded-none border border-border bg-bg px-4 py-3 text-sm text-text placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50";
-
-const labelClass = "mb-1.5 block text-xs font-semibold uppercase tracking-[0.1em] text-text-muted";
+  "w-full rounded-none border border-bg/20 bg-accent px-4 py-3 text-sm text-bg placeholder:text-bg/40 focus:border-bg focus:outline-none focus:ring-1 focus:ring-bg disabled:opacity-50";
 
 // ---------------------------------------------------------------------------
 // Component
@@ -41,7 +39,14 @@ const labelClass = "mb-1.5 block text-xs font-semibold uppercase tracking-[0.1em
 
 type Status = "idle" | "submitting" | "success" | "error";
 
-export function BookingForm() {
+export function BookingForm({ onAccent = false }: { onAccent?: boolean }) {
+  const labelClass = onAccent
+    ? "mb-1.5 block text-xs font-semibold uppercase tracking-[0.1em] text-bg/70"
+    : "mb-1.5 block text-xs font-semibold uppercase tracking-[0.1em] text-text-muted";
+  const asterisk = onAccent ? "text-bg" : "text-accent";
+  const noteClass = onAccent ? "text-bg/60" : "text-text-muted";
+  const dividerLineClass = onAccent ? "bg-bg/25" : "bg-border";
+  const dividerTextClass = onAccent ? "text-bg/60" : "text-text-muted";
   const [eventType, setEventType] = useState("Corporate Event");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -140,7 +145,7 @@ export function BookingForm() {
       {/* ── Event Type ──────────────────────────────── */}
       <div>
         <label htmlFor="eventType" className={labelClass}>
-          Event Type <span className="text-accent">*</span>
+          Event Type <span className={asterisk}>*</span>
         </label>
         <select
           id="eventType"
@@ -159,7 +164,7 @@ export function BookingForm() {
       <div className="grid gap-6 sm:grid-cols-2">
         <div>
           <label htmlFor="fullName" className={labelClass}>
-            Full Name <span className="text-accent">*</span>
+            Full Name <span className={asterisk}>*</span>
           </label>
           <input
             id="fullName"
@@ -173,7 +178,7 @@ export function BookingForm() {
         </div>
         <div>
           <label htmlFor="email" className={labelClass}>
-            Email Address <span className="text-accent">*</span>
+            Email Address <span className={asterisk}>*</span>
           </label>
           <input
             id="email"
@@ -217,7 +222,7 @@ export function BookingForm() {
       <div className="grid gap-6 sm:grid-cols-3">
         <div>
           <label htmlFor="date" className={labelClass}>
-            Desired Date <span className="text-accent">*</span>
+            Desired Date <span className={asterisk}>*</span>
           </label>
           <input
             id="date"
@@ -231,7 +236,7 @@ export function BookingForm() {
         </div>
         <div>
           <label htmlFor="startTime" className={labelClass}>
-            Start Time <span className="text-accent">*</span>
+            Start Time <span className={asterisk}>*</span>
           </label>
           <select
             id="startTime"
@@ -264,7 +269,7 @@ export function BookingForm() {
       {/* ── Number of Players ───────────────────────── */}
       <div>
         <label htmlFor="players" className={labelClass}>
-          Number of Players <span className="text-accent">*</span>
+          Number of Players <span className={asterisk}>*</span>
         </label>
         <input
           id="players"
@@ -277,7 +282,7 @@ export function BookingForm() {
           className={inputClass}
         />
         {showMinFeeWarning && (
-          <p className="mt-2 text-xs text-amber-400">
+          <p className={`mt-2 text-xs ${onAccent ? "font-semibold text-bg" : "text-amber-400"}`}>
             Sessions under 10 players are subject to a €300 minimum fee.
           </p>
         )}
@@ -307,15 +312,15 @@ export function BookingForm() {
         {status === "submitting" ? "Sending…" : "Send Enquiry"}
       </button>
 
-      <p className="text-center text-xs text-text-muted">
+      <p className={`text-center text-xs ${noteClass}`}>
         We&apos;ll get back to you within 24 hours.
       </p>
 
       {/* WhatsApp alternative */}
       <div className="flex items-center gap-3">
-        <span className="h-px flex-1 bg-border" />
-        <span className="text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">or</span>
-        <span className="h-px flex-1 bg-border" />
+        <span className={`h-px flex-1 ${dividerLineClass}`} />
+        <span className={`text-xs font-semibold uppercase tracking-[0.12em] ${dividerTextClass}`}>or</span>
+        <span className={`h-px flex-1 ${dividerLineClass}`} />
       </div>
 
       <a

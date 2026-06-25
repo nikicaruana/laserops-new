@@ -1,16 +1,34 @@
 import type { Metadata } from "next";
 import { Container } from "@/components/ui/Container";
 import { FaqSearch } from "@/components/faqs/FaqSearch";
+import { FAQS } from "@/lib/faqs";
 
 export const metadata: Metadata = {
-  title: "FAQs | LaserOps Malta",
+  title: "FAQs",
+  alternates: { canonical: "/faqs" },
   description:
-    "Answers to the most common questions about laser tag at LaserOps Malta — costs, group sizes, what to wear, stats, photography, catering, and how to book.",
+    "Answers to the most common questions about laser tag at LaserOps Malta. Costs, group sizes, what to wear, stats, photography, catering, and how to book.",
+};
+
+// FAQPage structured data — makes the Q&As eligible for FAQ rich results.
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: FAQS.map((f) => ({
+    "@type": "Question",
+    name: f.question,
+    acceptedAnswer: { "@type": "Answer", text: f.answer },
+  })),
 };
 
 export default function FaqsPage() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: controlled server-side JSON-LD, no user input
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
       {/* ── Hero ─────────────────────────────────────────────── */}
       <section className="border-b border-border">
         <Container size="narrow" className="py-16 sm:py-20 lg:py-24">

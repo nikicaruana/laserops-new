@@ -3,7 +3,8 @@ import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
 
 export const metadata: Metadata = {
-  title: "Birthday Parties Malta | Laser Tag for Kids & Adults | LaserOps",
+  title: "Laser Tag Birthday Parties Malta",
+  alternates: { canonical: "/birthday-parties" },
   description:
     "Laser tag birthday parties in Malta for kids, teens, and adults. Real game, balanced teams, match stats, and catering sorted. The party they'll talk about for months.",
 };

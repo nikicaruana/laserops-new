@@ -15,10 +15,14 @@ import {
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Laser Tag Community Malta — Open Games & Player Portal",
+  title: "Laser Tag Community Malta | Open Games",
+  alternates: { canonical: "/community" },
   description:
     "Join Malta's outdoor laser tag community. Weekly open games, persistent player stats, leaderboards, and a WhatsApp group of regulars. New players welcome.",
   openGraph: {
+    type: "website",
+    locale: "en_MT",
+    siteName: "LaserOps Malta",
     title: "Malta's Outdoor Laser Tag Community",
     description:
       "A real community of regulars, weekly open games, a stats portal that tracks every match, and a WhatsApp group that's always planning the next session.",
@@ -104,7 +108,11 @@ export default async function CommunityPage() {
             Good Time
           </h1>
           <p className="mt-5 text-base leading-relaxed text-text-muted sm:text-lg">
-            Run by people who truly love outdoor laser tag, LaserOps is more than
+            Run by people who truly love{" "}
+            <Link href="/outdoor-laser-tag-malta" className="text-accent hover:underline">
+              outdoor laser tag
+            </Link>
+            , LaserOps is more than
             something you book once for a birthday party. We&apos;ve built a proper
             laser tag community in Malta, with over 100 players who turn up week
             after week because they genuinely enjoy the game and the people they
@@ -169,10 +177,16 @@ export default async function CommunityPage() {
               group, where every session gets posted in advance.
             </p>
           </div>
-          <div className="mt-8">
+          <div className="mt-8 flex flex-wrap items-center gap-4">
             <WhatsAppButton>
               Join the LaserOps Malta WhatsApp Community
             </WhatsAppButton>
+            <Link
+              href="/events/open-games"
+              className="text-sm font-semibold text-accent underline underline-offset-4 hover:opacity-80"
+            >
+              See the upcoming match schedule →
+            </Link>
           </div>
         </Container>
       </section>
@@ -345,6 +359,16 @@ export default async function CommunityPage() {
                 The fastest way in is the WhatsApp community. That&apos;s where open
                 games are announced, teams get organised, banter gets thrown around,
                 and new players get welcomed.
+              </p>
+              <p className="mt-2 max-w-md text-sm text-text-muted">
+                Or check the{" "}
+                <Link
+                  href="/events/open-games"
+                  className="font-semibold text-accent underline underline-offset-4 hover:opacity-80"
+                >
+                  upcoming open games schedule
+                </Link>{" "}
+                to see when the next match is.
               </p>
             </div>
             <div className="shrink-0">

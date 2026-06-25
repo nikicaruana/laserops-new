@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { PersonalRecord } from "@/lib/player-history/engine";
+import { AnimatedValue } from "@/components/portal/player-summary/AnimatedValue";
 
 /**
  * PersonalRecordsCard
@@ -57,12 +58,19 @@ export function PersonalRecordsCard({ records, ops }: Props) {
 function RecordTile({ record, ops }: { record: PersonalRecord; ops: string }) {
   const tileContent = (
     <>
-      <p className="text-[0.65rem] font-bold uppercase tracking-[0.14em] text-accent sm:text-xs">
+      {/* Fixed min-height so all labels in the same row occupy the same
+          vertical space regardless of wrapping. "MATCH RATING" wraps to
+          2 lines on mobile; without this the adjacent Score / Kills tiles
+          have their value and match ID sitting higher, causing the row to
+          look misaligned. items-center vertically centres single-line
+          labels within that reserved space. */}
+      <p className="flex min-h-[2.2rem] items-center justify-center text-[0.65rem] font-bold uppercase tracking-[0.14em] text-accent sm:text-xs">
         {record.label}
       </p>
-      <p className="font-mono text-2xl font-bold tabular-nums text-text sm:text-3xl">
-        {record.formatted}
-      </p>
+      <AnimatedValue
+        value={record.formatted}
+        className="font-mono text-2xl font-bold tabular-nums text-text sm:text-3xl"
+      />
       {record.matchId !== "" && (
         // Match ID size bump: was text-[0.6rem]/0.65rem, now
         // text-xs/sm. Reads as a "go to this match" affordance rather

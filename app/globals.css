@@ -54,6 +54,12 @@
     color: var(--color-bg);
   }
 
+  /* On yellow backgrounds the yellow selection is invisible — use dark instead */
+  .bg-accent ::selection {
+    background-color: var(--color-bg);
+    color: var(--color-accent);
+  }
+
   html {
     background-color: var(--color-bg);
     color: var(--color-text);
@@ -365,5 +371,48 @@
 @media (min-width: 1280px) {
   .hero-content {
     padding-bottom: 0;
+  }
+}
+
+/* ============================================================
+   PLAYER RATING PILL ANIMATION
+   RatingPill adds .rating-spinning to the <img> while stepping
+   from 0-star → target-star. The spin runs at 0.4 s per full
+   rotation; React removes the class once the final star lands.
+   ============================================================ */
+
+/* ============================================================
+   WEAPON CAROUSEL — continuous marquee of individual gun images.
+   Reuses the weapons-scroll-left keyframe (0 → -50%) with the
+   two-copy seamless-loop strip in WeaponCarousel.tsx. Pauses on
+   hover; disabled entirely under reduced-motion.
+   ============================================================ */
+
+.weapon-carousel-track {
+  animation: weapons-scroll-left 45s linear infinite;
+}
+
+.weapon-carousel:hover .weapon-carousel-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .weapon-carousel-track {
+    animation: none;
+  }
+}
+
+@keyframes rating-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.rating-spinning {
+  animation: rating-spin 0.18s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rating-spinning {
+    animation: none;
   }
 }

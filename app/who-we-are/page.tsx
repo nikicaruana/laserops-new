@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Container } from "@/components/ui/Container";
 
 export const metadata: Metadata = {
-  title: "Who We Are | LaserOps Malta | Outdoor Laser Tag",
+  title: { absolute: "About LaserOps | Outdoor Laser Tag Malta" },
+  alternates: { canonical: "/who-we-are" },
   description:
     "LaserOps was started by Kyle in 2024. Two friends with over two decades of laser tag between them, building a competitive community in Malta.",
 };
@@ -59,9 +60,9 @@ export default function WhoWeArePage() {
               to grow, and that&apos;s the long game we&apos;re playing.
             </p>
             <p className="leading-relaxed">
-              Finally, by building this platform &ndash; allowing players to
+              Finally, by building this platform, allowing players to
               track their performance over time, unlock new loadouts, and
-              compete in seasonal challenges &ndash; we want to give our player
+              compete in seasonal challenges, we want to give our player
               base a reason to keep coming back, aside from the fact that
               playing with us is great fun.
             </p>

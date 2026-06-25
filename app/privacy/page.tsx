@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Container } from "@/components/ui/Container";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | LaserOps Malta",
+  title: "Privacy Policy",
+  alternates: { canonical: "/privacy" },
   description:
     "How LaserOps Malta collects, uses, and protects your personal data. Your GDPR rights explained.",
 };
@@ -92,6 +93,14 @@ export default function PrivacyPage() {
               be used to show you relevant LaserOps ads on Facebook, Instagram,
               and Google after your visit. You can withdraw this consent at any
               time via the Cookie Settings link in the footer.
+            </p>
+            <p className="leading-relaxed">
+              With your marketing consent, the Meta Pixel may also use Meta&apos;s
+              Automatic Advanced Matching. This sends Meta a hashed (irreversibly
+              scrambled) version of contact details you enter in our forms, such
+              as your email, phone number, and country, to better match you with
+              your Facebook or Instagram account. Sensitive information is never
+              sent, and this only happens after you accept marketing cookies.
             </p>
           </div>
         </Container>

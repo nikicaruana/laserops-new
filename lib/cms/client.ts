@@ -67,4 +67,11 @@ export const CMS_URLS = {
   // portal Armory tab to render gun cards grouped by Gun_Tree_Branch.
   playerArmory:
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTLlM4fIfh52DiovbJT2b9A6UyqoiQtoG0c2HoVRCG_OCtLPZvz-uBSC6y1voM8d4jBVCNcpCGctco/pub?gid=583760029&single=true&output=csv",
+  // Open Games — upcoming and past open (public) matches. Editors manage
+  // this tab in the CMS spreadsheet. Columns: Date, Time, Type,
+  // Signup_Link, Status, Match_Report, More_Info_Image, More_Info_Text.
+  // NOTE: Replace REPLACE_WITH_GID with the actual gid from the published
+  // CSV URL once the Open_Games tab has been created and published.
+  openGames:
+    "https://docs.google.com/spreadsheets/d/e/2PACX-1vQPMYVbKQkhZ9zvHdLAL4aryEV-7OggiuDpHh1-kzuVIlbn5tD7d260U3LNee9M86gYFXEkuLCPCwd0/pub?gid=756732554&single=true&output=csv",
 } as const;

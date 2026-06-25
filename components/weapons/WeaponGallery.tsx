@@ -429,23 +429,75 @@ function TreeFilter({
   onChange: (next: string) => void;
   options: string[];
 }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const allOptions = [FILTER_ALL, ...options];
+
+  // Close on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    if (open) document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  // Close on Escape
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    if (open) document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [open]);
+
   return (
-    <label className="flex flex-col items-center gap-1.5">
+    <div className="flex flex-col items-center gap-1.5">
       <span className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-text-muted">
         Gun Tree
       </span>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="block min-w-[200px] cursor-pointer rounded-sm border border-border bg-bg-elevated px-3 py-2 text-center text-sm font-semibold text-text transition-colors hover:border-border-strong focus-visible:border-accent focus-visible:outline-none"
-      >
-        <option value={FILTER_ALL}>All Weapons</option>
-        {options.map((opt) => (
-          <option key={opt} value={opt}>
-            {opt}
-          </option>
-        ))}
-      </select>
-    </label>
+      <div ref={ref} className="relative min-w-[200px]">
+        {/* Trigger */}
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          className="flex w-full items-center justify-between gap-2 rounded-sm border border-border bg-bg-elevated px-3 py-2 text-sm font-semibold text-text transition-colors hover:border-border-strong focus-visible:border-accent focus-visible:outline-none"
+        >
+          <span className="flex-1 text-center">{value}</span>
+          <svg
+            aria-hidden
+            viewBox="0 0 10 6"
+            className={`h-2.5 w-2.5 shrink-0 text-text-muted transition-transform duration-150 ${open ? "rotate-180" : ""}`}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          >
+            <path d="M1 1l4 4 4-4" />
+          </svg>
+        </button>
+
+        {/* Options list */}
+        {open && (
+          <ul className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-sm border border-border bg-bg-elevated py-1 shadow-lg">
+            {allOptions.map((opt) => (
+              <li key={opt}>
+                <button
+                  type="button"
+                  onClick={() => { onChange(opt); setOpen(false); }}
+                  className={`w-full px-3 py-2 text-center text-sm font-semibold transition-colors hover:bg-bg-overlay ${
+                    opt === value ? "bg-accent/20 text-accent" : "text-text"
+                  }`}
+                >
+                  {opt}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
   );
 }

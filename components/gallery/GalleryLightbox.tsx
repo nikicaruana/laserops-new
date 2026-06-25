@@ -165,7 +165,7 @@ export function GalleryLightbox({ images, index, onClose }: Props) {
             <img
               key={img.secureUrl}
               src={img.secureUrl}
-              alt={img.caption ?? "Gallery image"}
+              alt={img.caption ?? "LaserOps Malta outdoor laser tag"}
               width={img.width || undefined}
               height={img.height || undefined}
               className="max-h-[75vh] max-w-full object-contain"

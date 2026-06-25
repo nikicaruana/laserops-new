@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
+import { brand } from "@/lib/brand";
 
 /**
  * Gallery section — mixed-content social proof.
@@ -56,37 +57,37 @@ const sampleInstagramItems: InstagramItem[] = [
     id: "ig1",
     imageSrc: "/images/gallery/action-1.jpg",
     caption: "Squad up. Match day at the quarry.",
-    postUrl: "https://instagram.com/laseropsmalta",
+    postUrl: brand.social.instagram,
   },
   {
     id: "ig2",
     imageSrc: "/images/gallery/action-2.jpg",
     caption: "Capture the flag — final round chaos.",
-    postUrl: "https://instagram.com/laseropsmalta",
+    postUrl: brand.social.instagram,
   },
   {
     id: "ig3",
     imageSrc: "/images/gallery/action-3.jpg",
     caption: "Sunset ops. Visibility low, intensity high.",
-    postUrl: "https://instagram.com/laseropsmalta",
+    postUrl: brand.social.instagram,
   },
   {
     id: "ig4",
     imageSrc: "/images/gallery/action-4.jpg",
     caption: "When the squad rotates left flank.",
-    postUrl: "https://instagram.com/laseropsmalta",
+    postUrl: brand.social.instagram,
   },
   {
     id: "ig5",
     imageSrc: "/images/gallery/action-5.jpg",
     caption: "Search & destroy. Last man standing wins.",
-    postUrl: "https://instagram.com/laseropsmalta",
+    postUrl: brand.social.instagram,
   },
   {
     id: "ig6",
     imageSrc: "/images/gallery/action-6.jpg",
     caption: "Real weapons, real terrain, real tactics.",
-    postUrl: "https://instagram.com/laseropsmalta",
+    postUrl: brand.social.instagram,
   },
 ];
 
@@ -195,7 +196,7 @@ export function GallerySection({
       <div className="xl:hidden">
         <ScrollRow
           eyebrow="Latest from Instagram"
-          viewAllHref="https://instagram.com/laseropsmalta"
+          viewAllHref={brand.social.instagram}
           viewAllLabel="View all"
           items={instagramItems}
           renderItem={(item, key) => <InstagramCard key={key} item={item} mobileScroll />}
@@ -237,7 +238,7 @@ export function GallerySection({
               under the button on hover still works since text becomes
               accent on hover. */}
           <Button
-            href="https://instagram.com/laseropsmalta"
+            href={brand.social.instagram}
             target="_blank"
             rel="noopener noreferrer"
             variant="primary"

@@ -36,6 +36,7 @@ const PLAYER_STATS_TABS = [
   { label: "History", href: "/player-portal/player-stats/history" },
   { label: "Armory", href: "/player-portal/player-stats/armory" },
   { label: "Last Match", href: "/player-portal/player-stats/last-match" },
+  { label: "Compare", href: "/player-portal/player-stats/compare" },
 ];
 
 type Props = {
@@ -82,9 +83,11 @@ function PlayerStatsShellInner({ knownNicknames, children }: Props) {
         </div>
       </div>
 
-      {/* Sub-tabs — only once a player is selected */}
+      {/* Sub-tabs — only once a player is selected.
+          forwardParams carries ops (main player) + compare (opponent)
+          across tabs. Non-compare tabs simply ignore ?compare=. */}
       {hasPlayer && (
-        <SubTabs tabs={PLAYER_STATS_TABS} forwardParams={["ops"]} />
+        <SubTabs tabs={PLAYER_STATS_TABS} forwardParams={["ops", "compare"]} />
       )}
 
       {/* Page content */}

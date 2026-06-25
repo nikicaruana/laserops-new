@@ -28,9 +28,10 @@ import { WeaponMetaChart } from "@/components/weapons/WeaponMetaChart";
  */
 
 export const metadata: Metadata = {
-  title: "Weapons — LaserOps Malta",
+  title: "Laser Tag Weapons & Loadouts",
+  alternates: { canonical: "/weapons" },
   description:
-    "Explore LaserOps Malta's tactical weapons arsenal. Compare stats across 15+ guns, browse by gun tree, and see unlock paths.",
+    "Explore LaserOps's diverse weapons arsenal. Compare stats across 15+ guns, browse by gun tree, and see unlock paths.",
 };
 
 export default async function WeaponsPage() {
@@ -81,7 +82,7 @@ export default async function WeaponsPage() {
           <p className="mt-3 max-w-2xl text-sm text-text-muted sm:text-base">
             We&rsquo;re the only laser tag company in Malta with a progressive
             unlock system. Earn XP through matches, climb each weapon&rsquo;s
-            tree, and unlock new variants as you go &mdash; keeping every
+            tree, and unlock new variants as you go, keeping every
             session a step toward something new.
           </p>
         </header>

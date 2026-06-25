@@ -14,6 +14,7 @@ import {
 import type { PlayerMatch } from "@/lib/player-history/engine";
 import { ChartCard } from "./ChartCard";
 import { DarkTooltip, NoDataPanel } from "./EloProgressionChart";
+import { useInView } from "@/lib/hooks/useInView";
 
 /**
  * ScoreVsAvgChart
@@ -35,6 +36,8 @@ type Props = {
 };
 
 export function ScoreVsAvgChart({ matches }: Props) {
+  const { ref, inView } = useInView(0.3);
+
   const data = matches.map((m) => ({
     matchId: m.matchId,
     score: m.score,
@@ -61,9 +64,9 @@ export function ScoreVsAvgChart({ matches }: Props) {
       title="Score vs Avg Match Score"
       subtitle="Your score per match against the average score of everyone in that match. The red line is your match rating (your score ÷ the match average)."
     >
-      <div className="h-[300px] w-full sm:h-[360px]">
+      <div ref={ref} className="h-[300px] w-full sm:h-[360px]">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={data} margin={{ top: 20, right: 4, left: 0, bottom: 8 }}>
+          <ComposedChart key={String(inView)} data={data} margin={{ top: 20, right: 4, left: 0, bottom: 8 }}>
             <CartesianGrid stroke="#262626" vertical={false} />
             <XAxis
               dataKey="matchId"
@@ -98,8 +101,8 @@ export function ScoreVsAvgChart({ matches }: Props) {
             />
             <Tooltip content={<DarkTooltip />} cursor={{ fill: "#26262640" }} />
             <Legend wrapperStyle={{ fontSize: 12, color: "#a3a3a3" }} iconType="rect" />
-            <Bar yAxisId="left" dataKey="score" name="Player Score" fill="#ffde00" radius={[2, 2, 0, 0]} />
-            <Bar yAxisId="left" dataKey="avgScore" name="Avg Match Score" fill="#525252" radius={[2, 2, 0, 0]} />
+            <Bar yAxisId="left" dataKey="score" name="Player Score" fill="#ffde00" radius={[2, 2, 0, 0]} isAnimationActive={inView} />
+            <Bar yAxisId="left" dataKey="avgScore" name="Avg Match Score" fill="#525252" radius={[2, 2, 0, 0]} isAnimationActive={inView} />
             <Line
               yAxisId="right"
               type="monotone"
@@ -109,6 +112,7 @@ export function ScoreVsAvgChart({ matches }: Props) {
               strokeWidth={2.5}
               dot={{ fill: "#ef4444", r: 3, strokeWidth: 0 }}
               activeDot={{ r: 5, fill: "#fca5a5" }}
+              isAnimationActive={inView}
             />
           </ComposedChart>
         </ResponsiveContainer>

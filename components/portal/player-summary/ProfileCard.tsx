@@ -3,6 +3,7 @@ import {
   RATING_UNLOCK_MIN_MATCHES,
   RATING_UNLOCK_MIN_LEVEL,
 } from "@/lib/player-stats/summary-top";
+import { RatingPill } from "./RatingPill";
 
 /**
  * ProfileCard — top-left card of the Player Summary.
@@ -82,23 +83,21 @@ export function ProfileCard({
                   photo where it overlaps rather than blocking it entirely
                 - Tight padding so the rating image itself fills the pill
                 - Subtle backdrop blur for legibility against busy photos */}
+          {/* RatingPill counts up from 0-star → actual rating on scroll-into-view. */}
           {overallRatingImageUrl !== "" && (
-            <div
-              className={[
+            <RatingPill
+              ratingImageUrl={overallRatingImageUrl}
+              locked={!ratingUnlocked}
+              pillClassName={[
                 "absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2",
                 "rounded-full bg-bg/85 backdrop-blur-sm",
                 "px-3 py-1",
                 "z-10",
               ].join(" ")}
-            >
-              <img
-                src={overallRatingImageUrl}
-                alt={`Overall rating for ${nickname}`}
-                loading="lazy"
-                decoding="async"
-                className="block h-12 w-auto sm:h-14"
-              />
-            </div>
+              iconImgClassName="block h-3.5 w-auto sm:h-4"
+              lockedImgClassName="block h-8 w-auto sm:h-9"
+              alt={`Overall rating for ${nickname}`}
+            />
           )}
         </BracketFrame>
       </div>

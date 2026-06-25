@@ -7,9 +7,11 @@ import type { ReactNode } from "react";
  * with the chart title, optional subtitle below, then the chart body
  * on a dark background.
  *
- * Mirrors the Looker dashboard's chart card visual: rounded yellow
- * pill at the top with the chart name in big black text, then the
- * chart sitting on dark below.
+ * Animation strategy: each chart component uses the `useInView` hook
+ * to detect when it scrolls into the viewport, then flips
+ * `isAnimationActive` and changes the Recharts root `key` to force a
+ * remount + replay of the entrance animation. ChartCard itself is a
+ * plain server component — all animation logic lives in the chart files.
  *
  * --------------------------------------------------------------------
  * MOBILE PADDING (post pass-10)

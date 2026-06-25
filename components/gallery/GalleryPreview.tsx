@@ -62,7 +62,7 @@ export async function GalleryPreview() {
             >
               <img
                 src={img.secureUrl}
-                alt={img.caption ?? ""}
+                alt={img.caption ?? "LaserOps Malta outdoor laser tag"}
                 width={img.width || undefined}
                 height={img.height || undefined}
                 loading="lazy"

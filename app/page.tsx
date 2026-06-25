@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { HomeHero } from "@/components/sections/HomeHero";
 import { WeaponsSection } from "@/components/sections/WeaponsSection";
 import { GallerySection } from "@/components/sections/GallerySection";
@@ -22,6 +23,10 @@ import { fetchSiteConfig, configString } from "@/lib/cms/site-config";
  * If the CMS returns no data (empty tabs, fetch fails), GallerySection
  * falls back to its baked-in sample data — homepage stays meaningful.
  */
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
+
 export default async function HomePage() {
   // Fetch CMS data in parallel. Each has built-in fallback so this
   // never throws.
@@ -40,7 +45,7 @@ export default async function HomePage() {
   const googleReviewsUrl = configString(
     siteConfig,
     "google_reviews_url",
-    "https://www.google.com/search?q=laserops+malta+reviews",
+    "https://www.google.com/maps/place/LaserOps+Malta/@35.9351506,14.0734794,11z/data=!4m12!1m2!2m1!1slaserops+malta!3m8!1s0x130e4ddaeadfe003:0xda30f052e79ffef8!8m2!3d35.9351506!4d14.37835!9m1!1b1!15sCg5sYXNlcm9wcyBtYWx0YVoQIg5sYXNlcm9wcyBtYWx0YZIBGm91dGRvb3JfYWN0aXZpdHlfb3JnYW5pemVymgFEQ2k5RFFVbFJRVU52WkVOb2RIbGpSamx2VDJwc2EyUkZSa3haYm1SYVpVaENTbVZHYkZWV1JscHlWVWRXTlZSSVl4QULgAQD6AQQIQBA6!16s%2Fg%2F11z6lk5clw!5m2!1e4!1e1?entry=ttu&g_ep=EgoyMDI2MDUwNi4wIKXMDSoASAFQAw%3D%3D",
   );
 
   // Transform CMS shapes into the GallerySection's props shape.
@@ -91,23 +96,23 @@ export default async function HomePage() {
       />
 
       {/* ── Final CTA band ───────────────────────────────────────── */}
-      <section className="bg-accent">
+      <section className="bg-bg">
         <Container className="py-24 text-center sm:py-32">
-          <span className="eyebrow-dark">Get Involved</span>
-          <h2 className="mt-4 text-3xl font-extrabold text-bg sm:text-4xl lg:text-5xl">
+          <span className="eyebrow">Get Involved</span>
+          <h2 className="mt-4 text-3xl font-extrabold text-text sm:text-4xl lg:text-5xl">
             Ready when you are.
           </h2>
-          <p className="mx-auto mt-4 max-w-md text-bg/70 text-base sm:text-lg">
+          <p className="mx-auto mt-4 max-w-md text-text-muted text-base sm:text-lg">
             Book a session or join our WhatsApp community to stay in the loop
-            on upcoming events and game nights.
+            on upcoming events and games.
           </p>
           <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-            <Button href="/booking" variant="dark" size="lg">
+            <Button href="/booking" variant="primary" size="lg">
               Book a Game →
             </Button>
             <Button
               href={brand.social.whatsapp || "/community"}
-              variant="outline-dark"
+              variant="secondary"
               size="lg"
               {...(brand.social.whatsapp
                 ? { target: "_blank", rel: "noopener noreferrer" }

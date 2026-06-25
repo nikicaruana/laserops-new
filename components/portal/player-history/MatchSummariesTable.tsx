@@ -53,6 +53,11 @@ type Props = {
 };
 
 export function MatchSummariesTable({ matches, ops }: Props) {
+  // Reverse a copy so the most-recent match appears first (default view).
+  // The engine produces matches oldest-first for the chart components;
+  // we don't mutate that array here.
+  const reversedMatches = useMemo(() => [...matches].reverse(), [matches]);
+
   const columns = useMemo<LeaderboardColumn<PlayerMatch>[]>(
     () => [
       {
@@ -85,6 +90,26 @@ export function MatchSummariesTable({ matches, ops }: Props) {
         cell: (row) => (
           <span className="text-xs sm:text-sm">{row.gunUsed || "—"}</span>
         ),
+      },
+      {
+        key: "rounds",
+        header: "Rounds",
+        align: "center",
+        sortable: false,
+        width: "52px",
+        widthSm: "62px",
+        cell: (row) => {
+          const label = `${row.roundsWon}-${row.roundsLost}`;
+          return (
+            <span
+              className={`text-xs font-bold tabular-nums sm:text-sm ${
+                row.isWinner ? "text-green-400" : "text-red-400"
+              }`}
+            >
+              {label}
+            </span>
+          );
+        },
       },
       {
         key: "score",
@@ -205,7 +230,7 @@ export function MatchSummariesTable({ matches, ops }: Props) {
         <LeaderboardTable
           ariaLabel="Match summaries — every match this player has played"
           columns={columns}
-          rows={matches}
+          rows={reversedMatches}
           rowKey={(row) => row.matchId}
           rowHref={(row) =>
             row.matchId

@@ -3,7 +3,8 @@ import { Container } from "@/components/ui/Container";
 import { ContactForm } from "@/components/contact/ContactForm";
 
 export const metadata: Metadata = {
-  title: "Contact LaserOps Malta | Laser Tag Enquiries",
+  title: "Contact | Laser Tag Enquiries",
+  alternates: { canonical: "/contact" },
   description:
     "Get in touch with LaserOps Malta. Call, WhatsApp, or email us to book a session, ask a question, or find out more about our laser tag events.",
 };
