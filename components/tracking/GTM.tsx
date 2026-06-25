@@ -30,6 +30,26 @@ export function GTM() {
             security_storage: 'granted',
             wait_for_update: 500
           });
+          /* Re-apply a returning visitor's saved choice BEFORE GTM evaluates
+             page-view tags. Without this, the saved consent is only re-applied
+             by the React CookieConsent banner AFTER hydration — by which time
+             the Page View has already fired and consent-gated Custom HTML tags
+             (e.g. the Meta Pixel, gated on ad_storage) have been blocked and
+             won't reliably re-fire. Reading localStorage here (same key/shape
+             as CookieConsent) grants consent synchronously, so the Pixel fires
+             at page view for visitors who have already accepted marketing. */
+          try {
+            var s = localStorage.getItem('laserops_consent_v1');
+            if (s) {
+              var c = JSON.parse(s);
+              gtag('consent', 'update', {
+                analytics_storage: c.analytics ? 'granted' : 'denied',
+                ad_storage: c.marketing ? 'granted' : 'denied',
+                ad_user_data: c.marketing ? 'granted' : 'denied',
+                ad_personalization: c.marketing ? 'granted' : 'denied'
+              });
+            }
+          } catch (e) {}
         `}
       </Script>
 
