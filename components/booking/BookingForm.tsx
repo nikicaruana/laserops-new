@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 
 // ---------------------------------------------------------------------------
 // Time helpers
@@ -64,6 +64,19 @@ export function BookingForm({ onAccent = false }: { onAccent?: boolean }) {
   const showMinFeeWarning = !isNaN(playerCount) && playerCount > 0 && playerCount < 10;
 
   const today = new Date().toISOString().split("T")[0];
+
+  // Fire a single "form start" event the first time the user interacts with
+  // any field (focus bubbles up from inputs to the form). Used as a funnel
+  // step in GA4/Meta — pairs with the booking_form_submitted event on success.
+  const startedRef = useRef(false);
+  const handleFormStart = useCallback(() => {
+    if (startedRef.current) return;
+    startedRef.current = true;
+    window.dataLayer?.push({
+      event: "booking_form_start",
+      event_type: eventType,
+    });
+  }, [eventType]);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -135,7 +148,7 @@ export function BookingForm({ onAccent = false }: { onAccent?: boolean }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="space-y-6">
+    <form onSubmit={handleSubmit} onFocus={handleFormStart} noValidate className="space-y-6">
       {status === "error" && (
         <div className="border border-red-800 bg-red-950/40 px-4 py-3 text-sm text-red-400">
           {errorMsg}

@@ -126,6 +126,19 @@ export function CookieConsent() {
   const applyAndClose = useCallback((state: ConsentState) => {
     writeStorage(state);
     pushConsentUpdate(buildConsentParams(state));
+    // Signal an *active* consent choice so GTM can fire consent-gated tags
+    // (e.g. the Meta Pixel, held while ad_storage was denied) immediately on
+    // THIS page. Pushed only on a real user choice — never on the silent mount
+    // re-apply — so returning visitors, whose pixel already fires at page load
+    // via the early consent script in GTM.tsx, don't get a duplicate PageView.
+    if (typeof window !== "undefined") {
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        event: "cookie_consent_update",
+        consent_analytics: state.analytics,
+        consent_marketing: state.marketing,
+      });
+    }
     setVisible(false);
     setManaging(false);
   }, []);
