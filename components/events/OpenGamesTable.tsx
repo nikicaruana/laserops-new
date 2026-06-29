@@ -7,11 +7,18 @@ import { formatGameDate } from "@/lib/cms/open-games";
 /**
  * OpenGamesTable
  * --------------------------------------------------------------------
- * Client component — renders the schedule table + the More Info modal.
- * All data is passed from the server page as props; no fetching here.
+ * Client component — renders a status toggle, the schedule table, and
+ * the More Info modal. All data is passed from the server page as props;
+ * no fetching here.
+ *
+ * Toggle (default "Open"):
+ *   - "Open"      → upcoming games (not completed / cancelled). Shows the
+ *                   Sign Up column; hides Match Report.
+ *   - "Completed" → completed games. Shows the Match Report column; hides
+ *                   Sign Up.
+ * Cancelled games appear in neither view. The Status column is not shown.
  *
  * Double XP rows get a subtle yellow left-border accent + faint yellow tint.
- * Status shown as a coloured pill chip.
  * More Info button opens a native <dialog> modal (centred via m-auto)
  * with either a poster image or text from the sheet.
  * --------------------------------------------------------------------
@@ -21,22 +28,15 @@ type Props = {
   games: OpenGame[];
 };
 
-/* ─── Status chip colours ─────────────────────────────────────────── */
-function StatusChip({ status }: { status: string }) {
-  const s = status.toLowerCase();
-  let cls = "bg-neutral-800 text-neutral-400"; // default / unknown
-  if (s === "open") cls = "bg-green-900/60 text-green-300";
-  else if (s === "full") cls = "bg-yellow-900/60 text-yellow-300";
-  else if (s === "completed") cls = "bg-neutral-800 text-neutral-400";
-  else if (s === "cancelled") cls = "bg-red-900/60 text-red-400";
+type View = "open" | "completed";
 
-  return (
-    <span
-      className={`inline-block rounded-full px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-[0.1em] ${cls}`}
-    >
-      {status}
-    </span>
-  );
+/* ─── Status predicates ───────────────────────────────────────────── */
+function isCompleted(game: OpenGame): boolean {
+  return game.status.toLowerCase() === "completed";
+}
+function isUpcoming(game: OpenGame): boolean {
+  const s = game.status.toLowerCase();
+  return s !== "completed" && s !== "cancelled";
 }
 
 /* ─── More Info modal ─────────────────────────────────────────────── */
@@ -116,13 +116,17 @@ function MoreInfoModal({
 /* ─── Main table component ────────────────────────────────────────── */
 export function OpenGamesTable({ games }: Props) {
   const [activeGame, setActiveGame] = useState<OpenGame | null>(null);
+  const [view, setView] = useState<View>("open");
 
+  // No games at all → single empty state, no toggle.
   if (games.length === 0) {
     return (
       <p className="py-8 text-center text-sm text-text-muted">
         No open games are scheduled right now. Check back soon or{" "}
         <a
-          href="https://chat.whatsapp.com/"
+          href="https://chat.whatsapp.com/Duox9CiCmasKsv8tcuQScZ"
+          target="_blank"
+          rel="noopener noreferrer"
           className="font-semibold text-accent underline underline-offset-4 hover:opacity-80"
         >
           join the WhatsApp community
@@ -132,128 +136,154 @@ export function OpenGamesTable({ games }: Props) {
     );
   }
 
+  const rows = games.filter(view === "open" ? isUpcoming : isCompleted);
+  const actionColumn = view === "open" ? "Sign Up" : "Match Report";
+  const columns = ["Date", "Time", "Type", actionColumn, "More Info"];
+
   return (
     <>
-      {/* On desktop: min-width forces horizontal scroll rather than
-          collapsing columns. On mobile: no min-width, columns narrow
-          naturally and text is allowed to wrap. */}
-      <div className="overflow-x-auto rounded-sm border border-border">
-        <table className="w-full border-collapse text-sm sm:min-w-[640px]">
-          {/* ── Header ─────────────────────────────────────────────── */}
-          <thead>
-            <tr className="bg-accent">
-              {["Date", "Time", "Type", "Status", "Sign Up", "Match Report", "More Info"].map(
-                (col) => (
+      {/* ── Status toggle ──────────────────────────────────────────── */}
+      <div
+        role="tablist"
+        aria-label="Filter games by status"
+        className="mb-5 inline-flex rounded-sm border border-border p-1"
+      >
+        {(["open", "completed"] as View[]).map((v) => (
+          <button
+            key={v}
+            type="button"
+            role="tab"
+            aria-selected={view === v}
+            onClick={() => setView(v)}
+            className={`rounded-sm px-4 py-2 text-xs font-bold uppercase tracking-[0.1em] transition-colors ${
+              view === v
+                ? "bg-accent text-bg"
+                : "text-text-muted hover:text-text"
+            }`}
+          >
+            {v === "open" ? "Open" : "Completed"}
+          </button>
+        ))}
+      </div>
+
+      {rows.length === 0 ? (
+        <p className="py-8 text-center text-sm text-text-muted">
+          {view === "open"
+            ? "No open games are scheduled right now. Check back soon for the next match."
+            : "No completed games to show yet."}
+        </p>
+      ) : (
+        /* On desktop: min-width forces horizontal scroll rather than
+           collapsing columns. On mobile: no min-width, columns narrow
+           naturally and text is allowed to wrap. */
+        <div className="overflow-x-auto rounded-sm border border-border">
+          <table className="w-full border-collapse text-sm sm:min-w-[540px]">
+            {/* ── Header ─────────────────────────────────────────────── */}
+            <thead>
+              <tr className="bg-accent">
+                {columns.map((col) => (
                   <th
                     key={col}
                     className="px-2 py-2 text-left text-[0.6rem] font-bold uppercase tracking-[0.1em] text-bg sm:whitespace-nowrap sm:px-4 sm:py-3 sm:text-[0.65rem] sm:tracking-[0.14em]"
                   >
                     {col}
                   </th>
-                ),
-              )}
-            </tr>
-          </thead>
+                ))}
+              </tr>
+            </thead>
 
-          {/* ── Rows ───────────────────────────────────────────────── */}
-          <tbody>
-            {games.map((game, idx) => {
-              const hasMoreInfo =
-                (game.moreInfoImage && game.moreInfoImage !== "") ||
-                (game.moreInfoText && game.moreInfoText !== "");
+            {/* ── Rows ───────────────────────────────────────────────── */}
+            <tbody>
+              {rows.map((game, idx) => {
+                const hasMoreInfo =
+                  (game.moreInfoImage && game.moreInfoImage !== "") ||
+                  (game.moreInfoText && game.moreInfoText !== "");
 
-              return (
-                <tr
-                  key={`${game.date}-${game.time}-${idx}`}
-                  className={[
-                    // Alternating row shade
-                    idx % 2 === 0 ? "bg-bg" : "bg-bg-elevated",
-                    // Double XP: subtle yellow left-border + faint yellow tint
-                    game.isDoubleXP
-                      ? "border-l-2 border-accent/50 !bg-accent/[0.06]"
-                      : "",
-                    "border-b border-border last:border-b-0",
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
-                >
-                  {/* Date */}
-                  <td className="px-2 py-2 font-mono text-[0.65rem] text-text sm:whitespace-nowrap sm:px-4 sm:py-3 sm:text-xs">
-                    {formatGameDate(game.date)}
-                  </td>
-
-                  {/* Time — nowrap on desktop; wraps fine on mobile */}
-                  <td className="px-2 py-2 font-mono text-[0.65rem] text-text sm:whitespace-nowrap sm:px-4 sm:py-3 sm:text-xs">
-                    {game.time || "—"}
-                  </td>
-
-                  {/* Type — yellow for Double XP rows */}
-                  <td
-                    className={`px-2 py-2 text-[0.65rem] font-semibold sm:px-4 sm:py-3 sm:text-xs ${
-                      game.isDoubleXP ? "text-accent" : "text-text"
-                    }`}
+                return (
+                  <tr
+                    key={`${game.date}-${game.time}-${idx}`}
+                    className={[
+                      // Alternating row shade
+                      idx % 2 === 0 ? "bg-bg" : "bg-bg-elevated",
+                      // Double XP: subtle yellow left-border + faint yellow tint
+                      game.isDoubleXP
+                        ? "border-l-2 border-accent/50 !bg-accent/[0.06]"
+                        : "",
+                      "border-b border-border last:border-b-0",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
                   >
-                    {game.type || "—"}
-                  </td>
+                    {/* Date */}
+                    <td className="px-2 py-2 font-mono text-[0.65rem] text-text sm:whitespace-nowrap sm:px-4 sm:py-3 sm:text-xs">
+                      {formatGameDate(game.date)}
+                    </td>
 
-                  {/* Status */}
-                  <td className="px-2 py-2 sm:px-4 sm:py-3">
-                    {game.status ? (
-                      <StatusChip status={game.status} />
-                    ) : (
-                      <span className="text-xs text-text-muted">—</span>
-                    )}
-                  </td>
+                    {/* Time — nowrap on desktop; wraps fine on mobile */}
+                    <td className="px-2 py-2 font-mono text-[0.65rem] text-text sm:whitespace-nowrap sm:px-4 sm:py-3 sm:text-xs">
+                      {game.time || "—"}
+                    </td>
 
-                  {/* Sign Up */}
-                  <td className="px-2 py-2 sm:px-4 sm:py-3">
-                    {game.signupLink ? (
-                      <a
-                        href={game.signupLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-block rounded-sm bg-accent px-2 py-1 text-[0.6rem] font-bold uppercase tracking-[0.08em] text-bg transition-opacity hover:opacity-80 sm:whitespace-nowrap sm:px-3 sm:text-[0.65rem] sm:tracking-[0.1em]"
-                      >
-                        Sign Up →
-                      </a>
-                    ) : (
-                      <span className="text-xs text-text-muted">—</span>
-                    )}
-                  </td>
+                    {/* Type — yellow for Double XP rows */}
+                    <td
+                      className={`px-2 py-2 text-[0.65rem] font-semibold sm:px-4 sm:py-3 sm:text-xs ${
+                        game.isDoubleXP ? "text-accent" : "text-text"
+                      }`}
+                    >
+                      {game.type || "—"}
+                    </td>
 
-                  {/* Match Report */}
-                  <td className="px-2 py-2 sm:px-4 sm:py-3">
-                    {game.matchReportLink ? (
-                      <a
-                        href={game.matchReportLink}
-                        className="text-[0.65rem] font-semibold text-accent underline underline-offset-4 hover:opacity-80 sm:whitespace-nowrap sm:text-xs"
-                      >
-                        View Report
-                      </a>
+                    {/* Action — Sign Up (open view) or Match Report (completed view) */}
+                    {view === "open" ? (
+                      <td className="px-2 py-2 sm:px-4 sm:py-3">
+                        {game.signupLink ? (
+                          <a
+                            href={game.signupLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-block rounded-sm bg-accent px-2 py-1 text-[0.6rem] font-bold uppercase tracking-[0.08em] text-bg transition-opacity hover:opacity-80 sm:whitespace-nowrap sm:px-3 sm:text-[0.65rem] sm:tracking-[0.1em]"
+                          >
+                            Sign Up →
+                          </a>
+                        ) : (
+                          <span className="text-xs text-text-muted">—</span>
+                        )}
+                      </td>
                     ) : (
-                      <span className="text-xs text-text-muted">—</span>
+                      <td className="px-2 py-2 sm:px-4 sm:py-3">
+                        {game.matchReportLink ? (
+                          <a
+                            href={game.matchReportLink}
+                            className="text-[0.65rem] font-semibold text-accent underline underline-offset-4 hover:opacity-80 sm:whitespace-nowrap sm:text-xs"
+                          >
+                            View Report
+                          </a>
+                        ) : (
+                          <span className="text-xs text-text-muted">—</span>
+                        )}
+                      </td>
                     )}
-                  </td>
 
-                  {/* More Info */}
-                  <td className="px-2 py-2 sm:px-4 sm:py-3">
-                    {hasMoreInfo ? (
-                      <button
-                        onClick={() => setActiveGame(game)}
-                        className="inline-block rounded-sm border border-border px-2 py-1 text-[0.6rem] font-bold uppercase tracking-[0.08em] text-text-muted transition-colors hover:border-accent hover:text-accent sm:whitespace-nowrap sm:px-3 sm:text-[0.65rem] sm:tracking-[0.1em]"
-                      >
-                        More Info
-                      </button>
-                    ) : (
-                      <span className="text-xs text-text-muted">—</span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+                    {/* More Info */}
+                    <td className="px-2 py-2 sm:px-4 sm:py-3">
+                      {hasMoreInfo ? (
+                        <button
+                          onClick={() => setActiveGame(game)}
+                          className="inline-block rounded-sm border border-border px-2 py-1 text-[0.6rem] font-bold uppercase tracking-[0.08em] text-text-muted transition-colors hover:border-accent hover:text-accent sm:whitespace-nowrap sm:px-3 sm:text-[0.65rem] sm:tracking-[0.1em]"
+                        >
+                          More Info
+                        </button>
+                      ) : (
+                        <span className="text-xs text-text-muted">—</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Modal — always mounted, shown/hidden via native <dialog> API */}
       <MoreInfoModal game={activeGame} onClose={() => setActiveGame(null)} />
