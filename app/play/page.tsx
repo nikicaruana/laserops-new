@@ -18,13 +18,15 @@ const WHATSAPP_URL = "https://chat.whatsapp.com/Duox9CiCmasKsv8tcuQScZ";
 const VIDEO_URLS = [
   "https://res.cloudinary.com/dqud5b7pa/video/upload/v1782764970/LaserOps_Ad_1_v2_ykknax.mp4",
   "https://res.cloudinary.com/dqud5b7pa/video/upload/v1782764992/Double_XP_Clip_v1_gbwdo1.mp4",
+  "https://res.cloudinary.com/dqud5b7pa/video/upload/v1782765023/PSA_-_Reload_Clip_v1_yrz4p2.mp4",
 ];
 
 function videoSrc(url: string): string {
   return url.replace("/upload/", "/upload/q_auto/");
 }
+// Thumbnail = a frame 2s in (past any black intro/fade), served as a JPG.
 function videoPoster(url: string): string {
-  return url.replace("/upload/", "/upload/so_0/").replace(/\.mp4$/, ".jpg");
+  return url.replace("/upload/", "/upload/so_2/").replace(/\.mp4$/, ".jpg");
 }
 
 /* ─── SEO ──────────────────────────────────────────────────────────────
@@ -218,9 +220,10 @@ export default async function PlayPage() {
           }}
         />
 
-        {/* Content — top-aligned on mobile (above the figure), centred on desktop. */}
+        {/* Content — vertically centred so it stays balanced on tall phones;
+            the figure sits behind it, anchored to the bottom. */}
         <Container size="wide" className="relative z-10 flex flex-1 flex-col">
-          <div className="w-full pt-6 pb-10 xl:my-auto xl:py-10">
+          <div className="w-full my-auto py-10">
             <h1 className="max-w-3xl text-balance text-4xl font-extrabold leading-[1.05] sm:text-5xl xl:text-6xl">
               Malta&rsquo;s Ultimate{" "}
               <span className="text-accent">Outdoor Laser Tag</span> Experience
@@ -275,38 +278,39 @@ export default async function PlayPage() {
 
       {/* ── Videos ───────────────────────────────────────────── */}
       <section className="border-b border-border bg-bg-elevated">
-        <Container size="default" className="py-14 sm:py-16">
+        <Container size="default" className="pt-14 sm:pt-16">
           <div className="text-center">
             <SectionLabel>Watch</SectionLabel>
             <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
               Live the Action
             </h2>
           </div>
-          {/* Horizontal scroll on mobile; centred row on desktop. */}
-          <div className="mt-8 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 sm:justify-center sm:gap-6">
-            {VIDEO_URLS.map((url) => (
-              <div key={url} className="w-[260px] shrink-0 snap-center sm:w-[300px]">
-                <BracketFrame
-                  cornerSize="1.5rem"
-                  thickness="2px"
-                  inset="-6px"
-                  className="block w-full"
-                >
-                  <video
-                    className="block aspect-[9/16] w-full bg-black object-cover"
-                    controls
-                    playsInline
-                    preload="metadata"
-                    poster={videoPoster(url)}
-                  >
-                    <source src={videoSrc(url)} type="video/mp4" />
-                    Your browser does not support the video tag.
-                  </video>
-                </BracketFrame>
-              </div>
-            ))}
-          </div>
         </Container>
+        {/* Full-bleed scroll row. The side padding lets the active clip centre
+            on screen on mobile (snap-centre); centred as a group on desktop. */}
+        <div className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-[calc(50%-140px)] pb-14 pt-8 sm:justify-center sm:gap-6 sm:px-6 sm:pb-16">
+          {VIDEO_URLS.map((url) => (
+            <div key={url} className="w-[280px] shrink-0 snap-center sm:w-[300px]">
+              <BracketFrame
+                cornerSize="1.5rem"
+                thickness="2px"
+                inset="-6px"
+                className="block w-full"
+              >
+                <video
+                  className="block aspect-[9/16] w-full bg-black object-cover"
+                  controls
+                  playsInline
+                  preload="metadata"
+                  poster={videoPoster(url)}
+                >
+                  <source src={videoSrc(url)} type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
+              </BracketFrame>
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* ── Proof strip ──────────────────────────────────────── */}
