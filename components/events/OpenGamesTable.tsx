@@ -161,7 +161,7 @@ export function OpenGamesTable({ games }: Props) {
                 : "text-text-muted hover:text-text"
             }`}
           >
-            {v === "open" ? "Open" : "Completed"}
+            {v === "open" ? "Upcoming" : "Completed"}
           </button>
         ))}
       </div>
