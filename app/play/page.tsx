@@ -298,7 +298,7 @@ export default async function PlayPage() {
                 className="block w-full"
               >
                 <video
-                  className="block aspect-[9/16] w-full bg-black object-cover"
+                  className="block aspect-[9/16] w-full bg-black object-contain"
                   controls
                   playsInline
                   preload="metadata"
