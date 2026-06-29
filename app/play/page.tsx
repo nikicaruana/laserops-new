@@ -7,6 +7,8 @@ import { fetchGoogleReviews } from "@/lib/cms/google-reviews";
 /* ─── Destinations ─────────────────────────────────────────────────── */
 const OPEN_GAMES_HREF = "/events/open-games";
 const BOOKING_HREF = "/booking";
+/* WhatsApp community invite — same link used on /community + /outdoor-laser-tag-malta */
+const WHATSAPP_URL = "https://chat.whatsapp.com/Duox9CiCmasKsv8tcuQScZ";
 
 /* ─── Campaign video (Cloudinary) ──────────────────────────────────────
    Single known asset, so we reference the delivery URL directly rather
@@ -46,6 +48,19 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
     <span className="text-[0.7rem] font-bold uppercase tracking-[0.18em] text-accent">
       {children}
     </span>
+  );
+}
+
+function WhatsAppIcon() {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 24 24"
+      className="h-4 w-4 shrink-0 fill-current"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+    </svg>
   );
 }
 
@@ -153,13 +168,27 @@ export default async function PlayPage() {
           />
         </div>
 
-        {/* Scrim for text legibility over the bright background */}
+        {/* Figure — bottom-anchored on mobile (sits behind the content). */}
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center xl:hidden"
+          aria-hidden
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/hero/hero-mobile-figure-color.png"
+            alt=""
+            className="block h-auto w-[125%] max-w-none"
+          />
+        </div>
+
+        {/* Scrim for text legibility — dark behind the top text, lighter over
+            the figure's midsection so he reads, then grounded at the bottom. */}
         <div
           className="pointer-events-none absolute inset-0 xl:hidden"
           aria-hidden
           style={{
             background:
-              "linear-gradient(180deg, rgba(10,10,10,0.82) 0%, rgba(10,10,10,0.62) 45%, rgba(10,10,10,0.82) 100%)",
+              "linear-gradient(180deg, rgba(10,10,10,0.9) 0%, rgba(10,10,10,0.8) 22%, rgba(10,10,10,0.55) 44%, rgba(10,10,10,0.34) 62%, rgba(10,10,10,0.46) 82%, rgba(10,10,10,0.82) 100%)",
           }}
         />
         <div
@@ -171,39 +200,54 @@ export default async function PlayPage() {
           }}
         />
 
-        {/* Content */}
-        <Container size="wide" className="relative z-10 flex flex-1 items-center">
-          <div className="w-full py-10">
+        {/* Content — top-aligned on mobile (above the figure), centred on desktop. */}
+        <Container size="wide" className="relative z-10 flex flex-1 flex-col">
+          <div className="w-full pt-6 pb-10 xl:my-auto xl:py-10">
             <span className="eyebrow">Outdoor Laser Tag · Malta</span>
             <h1 className="mt-4 max-w-3xl text-balance text-4xl font-extrabold leading-[1.05] sm:text-5xl xl:text-6xl">
               Malta&rsquo;s Ultimate{" "}
               <span className="text-accent">Outdoor Laser Tag</span> Experience
             </h1>
 
-            <div className="mt-8 grid max-w-2xl gap-5 sm:grid-cols-2">
-              <div>
+            <div className="mt-8 grid max-w-2xl gap-x-6 gap-y-6 sm:grid-cols-2">
+              {/* CTA 1 — Open game (primary) + WhatsApp underneath */}
+              <div className="flex flex-col gap-4">
+                <div>
+                  <Button
+                    href={OPEN_GAMES_HREF}
+                    variant="primary"
+                    size="lg"
+                    className="w-full text-sm sm:text-base"
+                  >
+                    Join an Open Game →
+                  </Button>
+                  <p className="mt-2.5 text-base font-medium leading-snug text-white [text-shadow:0_1px_10px_rgba(0,0,0,0.9)]">
+                    Open to everyone ages 10+. €30 for 3-hour session.
+                  </p>
+                </div>
                 <Button
-                  href={OPEN_GAMES_HREF}
-                  variant="primary"
+                  href={WHATSAPP_URL}
                   size="lg"
-                  className="w-full"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full gap-2.5 bg-[#25D366] text-sm text-white shadow-[0_0_0_1px_#25D366] hover:bg-[#1fb457] hover:text-white sm:text-base"
                 >
-                  Join an Open Game →
+                  <WhatsAppIcon />
+                  Join our WhatsApp Community →
                 </Button>
-                <p className="mt-2 text-sm leading-relaxed text-white/75">
-                  Open to everyone ages 10+. €30 for 3-hour session.
-                </p>
               </div>
+
+              {/* CTA 2 — Private game (high-contrast outline) */}
               <div>
                 <Button
                   href={BOOKING_HREF}
                   variant="secondary"
                   size="lg"
-                  className="w-full bg-bg/40 backdrop-blur-sm"
+                  className="w-full border-2 border-white bg-black/45 text-sm text-white backdrop-blur-sm hover:border-accent hover:bg-black/45 hover:text-accent sm:text-base"
                 >
                   Book a Private Game →
                 </Button>
-                <p className="mt-2 text-sm leading-relaxed text-white/75">
+                <p className="mt-2.5 text-base font-medium leading-snug text-white [text-shadow:0_1px_10px_rgba(0,0,0,0.9)]">
                   Team Building, Birthdays, Stag Dos, Group Bookings.
                 </p>
               </div>
