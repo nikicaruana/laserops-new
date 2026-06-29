@@ -3,6 +3,7 @@ import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
 import { BracketFrame } from "@/components/portal/BracketFrame";
 import { fetchGoogleReviews } from "@/lib/cms/google-reviews";
+import { fetchSiteConfig, configString } from "@/lib/cms/site-config";
 
 /* ─── Destinations ─────────────────────────────────────────────────── */
 const OPEN_GAMES_HREF = "/events/open-games";
@@ -10,14 +11,21 @@ const BOOKING_HREF = "/booking";
 /* WhatsApp community invite — same link used on /community + /outdoor-laser-tag-malta */
 const WHATSAPP_URL = "https://chat.whatsapp.com/Duox9CiCmasKsv8tcuQScZ";
 
-/* ─── Campaign video (Cloudinary) ──────────────────────────────────────
-   Single known asset, so we reference the delivery URL directly rather
-   than fetching by tag. q_auto lets Cloudinary pick the best quality;
-   the poster is the first frame (so_0) served as a still image. */
-const CAMPAIGN_VIDEO =
-  "https://res.cloudinary.com/dqud5b7pa/video/upload/q_auto/v1782764970/LaserOps_Ad_1_v2_ykknax.mp4";
-const CAMPAIGN_POSTER =
-  "https://res.cloudinary.com/dqud5b7pa/video/upload/so_0/v1782764970/LaserOps_Ad_1_v2_ykknax.jpg";
+/* ─── Campaign clips (Cloudinary) ──────────────────────────────────────
+   Known assets, referenced by URL directly. videoSrc() adds q_auto so
+   Cloudinary picks the best quality; videoPoster() pulls the first frame
+   (so_0) as a JPG thumbnail shown before the clip plays. */
+const VIDEO_URLS = [
+  "https://res.cloudinary.com/dqud5b7pa/video/upload/v1782764970/LaserOps_Ad_1_v2_ykknax.mp4",
+  "https://res.cloudinary.com/dqud5b7pa/video/upload/v1782764992/Double_XP_Clip_v1_gbwdo1.mp4",
+];
+
+function videoSrc(url: string): string {
+  return url.replace("/upload/", "/upload/q_auto/");
+}
+function videoPoster(url: string): string {
+  return url.replace("/upload/", "/upload/so_0/").replace(/\.mp4$/, ".jpg");
+}
 
 /* ─── SEO ──────────────────────────────────────────────────────────────
    Campaign landing page for paid traffic. `index: false` keeps it out of
@@ -131,7 +139,17 @@ const SCOUTING_LINKS = [
 /* ─── Page ─────────────────────────────────────────────────────────── */
 
 export default async function PlayPage() {
-  const reviews = (await fetchGoogleReviews()).slice(0, 3);
+  const [allReviews, siteConfig] = await Promise.all([
+    fetchGoogleReviews(),
+    fetchSiteConfig(),
+  ]);
+  const reviews = allReviews.slice(0, 3);
+  // Same Google reviews destination the homepage uses (Site_Config driven).
+  const googleReviewsUrl = configString(
+    siteConfig,
+    "google_reviews_url",
+    "https://www.google.com/maps/place/LaserOps+Malta/@35.9351506,14.0734794,11z/data=!4m12!1m2!2m1!1slaserops+malta!3m8!1s0x130e4ddaeadfe003:0xda30f052e79ffef8!8m2!3d35.9351506!4d14.37835!9m1!1b1!15sCg5sYXNlcm9wcyBtYWx0YVoQIg5sYXNlcm9wcyBtYWx0YZIBGm91dGRvb3JfYWN0aXZpdHlfb3JnYW5pemVymgFEQ2k5RFFVbFJRVU52WkVOb2RIbGpSamx2VDJwc2EyUkZSa3haYm1SYVpVaENTbVZHYkZWV1JscHlWVWRXTlZSSVl4QULgAQD6AQQIQBA6!16s%2Fg%2F11z6lk5clw!5m2!1e4!1e1?entry=ttu&g_ep=EgoyMDI2MDUwNi4wIKXMDSoASAFQAw%3D%3D",
+  );
 
   return (
     <>
@@ -203,13 +221,12 @@ export default async function PlayPage() {
         {/* Content — top-aligned on mobile (above the figure), centred on desktop. */}
         <Container size="wide" className="relative z-10 flex flex-1 flex-col">
           <div className="w-full pt-6 pb-10 xl:my-auto xl:py-10">
-            <span className="eyebrow">Outdoor Laser Tag · Malta</span>
-            <h1 className="mt-4 max-w-3xl text-balance text-4xl font-extrabold leading-[1.05] sm:text-5xl xl:text-6xl">
+            <h1 className="max-w-3xl text-balance text-4xl font-extrabold leading-[1.05] sm:text-5xl xl:text-6xl">
               Malta&rsquo;s Ultimate{" "}
               <span className="text-accent">Outdoor Laser Tag</span> Experience
             </h1>
 
-            <div className="mt-8 grid max-w-2xl gap-x-6 gap-y-6 sm:grid-cols-2">
+            <div className="mt-8 grid max-w-3xl gap-x-6 gap-y-6 sm:grid-cols-2">
               {/* CTA 1 — Open game (primary) + WhatsApp underneath */}
               <div className="flex flex-col gap-4">
                 <div>
@@ -217,7 +234,7 @@ export default async function PlayPage() {
                     href={OPEN_GAMES_HREF}
                     variant="primary"
                     size="lg"
-                    className="w-full text-sm sm:text-base"
+                    className="w-full whitespace-nowrap text-sm sm:text-base"
                   >
                     Join an Open Game →
                   </Button>
@@ -243,7 +260,7 @@ export default async function PlayPage() {
                   href={BOOKING_HREF}
                   variant="secondary"
                   size="lg"
-                  className="w-full border-2 border-white bg-black/45 text-sm text-white backdrop-blur-sm hover:border-accent hover:bg-black/45 hover:text-accent sm:text-base"
+                  className="w-full whitespace-nowrap border-2 border-white bg-black/45 text-sm text-white backdrop-blur-sm hover:border-accent hover:bg-black/45 hover:text-accent sm:text-base"
                 >
                   Book a Private Game →
                 </Button>
@@ -256,28 +273,38 @@ export default async function PlayPage() {
         </Container>
       </section>
 
-      {/* ── Campaign video ───────────────────────────────────── */}
+      {/* ── Videos ───────────────────────────────────────────── */}
       <section className="border-b border-border bg-bg-elevated">
-        <Container size="narrow" className="py-14 text-center sm:py-16">
-          <SectionLabel>See It In Action</SectionLabel>
-          <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
-            30 Seconds of LaserOps
-          </h2>
-          <div className="mt-8 flex justify-center">
-            <div className="w-full max-w-[360px]">
-              <BracketFrame cornerSize="1.5rem" thickness="2px" inset="-6px">
-                <video
-                  className="block aspect-[9/16] w-full bg-black object-cover"
-                  controls
-                  playsInline
-                  preload="metadata"
-                  poster={CAMPAIGN_POSTER}
+        <Container size="default" className="py-14 sm:py-16">
+          <div className="text-center">
+            <SectionLabel>Watch</SectionLabel>
+            <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
+              Live the Action
+            </h2>
+          </div>
+          {/* Horizontal scroll on mobile; centred row on desktop. */}
+          <div className="mt-8 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 sm:justify-center sm:gap-6">
+            {VIDEO_URLS.map((url) => (
+              <div key={url} className="w-[260px] shrink-0 snap-center sm:w-[300px]">
+                <BracketFrame
+                  cornerSize="1.5rem"
+                  thickness="2px"
+                  inset="-6px"
+                  className="block w-full"
                 >
-                  <source src={CAMPAIGN_VIDEO} type="video/mp4" />
-                  Your browser does not support the video tag.
-                </video>
-              </BracketFrame>
-            </div>
+                  <video
+                    className="block aspect-[9/16] w-full bg-black object-cover"
+                    controls
+                    playsInline
+                    preload="metadata"
+                    poster={videoPoster(url)}
+                  >
+                    <source src={videoSrc(url)} type="video/mp4" />
+                    Your browser does not support the video tag.
+                  </video>
+                </BracketFrame>
+              </div>
+            ))}
           </div>
         </Container>
       </section>
@@ -363,9 +390,25 @@ export default async function PlayPage() {
           <Container size="default" className="py-14 sm:py-16">
             <div className="text-center">
               <SectionLabel>What Players Say</SectionLabel>
-              <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
-                Rated 5.0 on Google
-              </h2>
+              <div className="mt-3">
+                <a
+                  href={googleReviewsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group inline-flex items-center gap-2.5 border border-accent bg-accent/10 px-6 py-3 text-xl font-extrabold tracking-tight text-accent transition-colors hover:bg-accent hover:text-bg sm:text-2xl"
+                >
+                  <span aria-hidden className="text-yellow-400 group-hover:text-bg">
+                    ★★★★★
+                  </span>
+                  Rated 5.0 on Google
+                  <span
+                    aria-hidden
+                    className="transition-transform group-hover:translate-x-0.5"
+                  >
+                    →
+                  </span>
+                </a>
+              </div>
             </div>
             <div className="mt-8 grid gap-5 md:grid-cols-3">
               {reviews.map((review, i) => (
