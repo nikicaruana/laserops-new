@@ -179,6 +179,18 @@ const WEAPON_SPECS: RecordSpec[] = [
     eligible: (r) => readNumeric(r, "PlayerShotsCount") > 250,
     format: fmtPercent,
   },
+  {
+    key: "damage",
+    label: "Most Damage",
+    value: (r) => readNumeric(r, "LaserOps_Damage"),
+    format: fmtInt,
+  },
+  {
+    key: "rating",
+    label: "Best Match Rating",
+    value: (r) => readNumeric(r, "LaserOps_Match_Rating"),
+    format: fmtRatio,
+  },
 ];
 
 /**
