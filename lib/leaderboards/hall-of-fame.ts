@@ -181,22 +181,35 @@ const WEAPON_SPECS: RecordSpec[] = [
   },
 ];
 
-/** Rank rows by a spec, keep the top 3 (value > 0, eligibility applied). */
+/**
+ * Rank rows by a spec, keep the top 3 (value > 0, eligibility applied).
+ * One entry per player: rows are sorted best-first, so the first row seen
+ * for a nickname is that player's best in this category — later rows for
+ * the same player are dropped before taking the top 3.
+ */
 function topThree(rows: GameDataRow[], spec: RecordSpec): RecordEntry[] {
-  return rows
+  const sorted = rows
     .filter((r) => (spec.eligible ? spec.eligible(r) : true))
     .map((r) => ({ row: r, v: spec.value(r) }))
     .filter((x) => x.v > 0)
-    .sort((a, b) => b.v - a.v)
-    .slice(0, 3)
-    .map((x, i) => ({
-      rank: i + 1,
-      nickname: x.row.nickname,
-      profilePicUrl: x.row.profilePicUrl,
-      value: x.v,
-      formatted: spec.format(x.v),
-      matchId: x.row.matchId,
-    }));
+    .sort((a, b) => b.v - a.v);
+
+  const seen = new Set<string>();
+  const deduped = sorted.filter((x) => {
+    const key = x.row.nickname.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  return deduped.slice(0, 3).map((x, i) => ({
+    rank: i + 1,
+    nickname: x.row.nickname,
+    profilePicUrl: x.row.profilePicUrl,
+    value: x.v,
+    formatted: spec.format(x.v),
+    matchId: x.row.matchId,
+  }));
 }
 
 /* ─── 2. All-Time Records ───────────────────────────────────────────── */
