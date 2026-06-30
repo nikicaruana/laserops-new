@@ -25,6 +25,13 @@ export default async function ChallengesLeaderboardPage() {
   const seasons = await fetchSeasons();
   const activeSeason = getActiveSeason(seasons);
 
+  // Soonest upcoming season (by number — robust to date-entry typos). Used to
+  // tell users what's next when the shown season has already concluded (the
+  // gap between an ended season and the next one going active).
+  const nextSeason = [...seasons]
+    .filter((s) => s.status === "upcoming")
+    .sort((a, b) => a.number - b.number)[0];
+
   let challengeData: Awaited<ReturnType<typeof fetchSeasonChallenges>> = [];
   if (activeSeason) {
     const challenges = await fetchChallenges(activeSeason.number);
@@ -34,7 +41,11 @@ export default async function ChallengesLeaderboardPage() {
   return (
     <>
       <DashboardPageHeader title="Seasonal Challenges" hideAddToHome />
-      <SeasonalChallengesView season={activeSeason} challengeData={challengeData} />
+      <SeasonalChallengesView
+        season={activeSeason}
+        nextSeason={nextSeason}
+        challengeData={challengeData}
+      />
     </>
   );
 }

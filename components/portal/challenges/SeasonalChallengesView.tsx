@@ -17,24 +17,36 @@ import type { ChallengeWithEntries } from "@/lib/leaderboards/season-challenges"
 
 type SeasonalChallengesViewProps = {
   season: Season | undefined;
+  /** Soonest upcoming season, shown as "what's next" between seasons. */
+  nextSeason?: Season;
   challengeData: ChallengeWithEntries[];
 };
 
-export function SeasonalChallengesView({ season, challengeData }: SeasonalChallengesViewProps) {
+export function SeasonalChallengesView({
+  season,
+  nextSeason,
+  challengeData,
+}: SeasonalChallengesViewProps) {
   if (!season) {
     return (
       <div className="border border-dashed border-border bg-bg-elevated px-6 py-12 text-center">
         <p className="text-sm font-semibold uppercase tracking-[0.14em] text-text-muted">
-          No active season
+          {nextSeason ? "Next Season Coming Soon" : "No active season"}
         </p>
         <p className="mt-2 text-xs text-text-subtle">
-          The next season will appear here once configured.
+          {nextSeason
+            ? `${nextSeason.name} begins ${formatMonthYear(nextSeason.startYearMonth)}.`
+            : "The next season will appear here once configured."}
         </p>
       </div>
     );
   }
 
   const dateRange = formatSeasonRange(season.startYearMonth, season.endYearMonth);
+  // A completed season only reaches this view as the "between seasons"
+  // fallback (no season is currently active) — so present it as final
+  // standings, not as a live leaderboard.
+  const isConcluded = season.status === "completed";
 
   return (
     <div className="flex flex-col gap-6 sm:gap-8">
@@ -43,10 +55,27 @@ export function SeasonalChallengesView({ season, challengeData }: SeasonalChalle
           to avoid duplication. Season name uses the brand accent yellow
           to make the active season stand out within the page. */}
       <header className="text-center">
-        <h2 className="text-xl font-extrabold uppercase tracking-tight text-accent sm:text-2xl">
+        {isConcluded && (
+          <p className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-accent">
+            Final Standings
+          </p>
+        )}
+        <h2
+          className={`text-xl font-extrabold uppercase tracking-tight text-accent sm:text-2xl ${
+            isConcluded ? "mt-1" : ""
+          }`}
+        >
           {season.name}
         </h2>
         <p className="mt-1 text-sm text-text-muted">{dateRange}</p>
+        {isConcluded && (
+          <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-text-muted">
+            {season.name} has concluded.{" "}
+            {nextSeason
+              ? `${nextSeason.name} begins ${formatMonthYear(nextSeason.startYearMonth)}.`
+              : "The next season will be announced soon."}
+          </p>
+        )}
       </header>
 
       {/* Challenges list. First challenge starts open; rest start
@@ -110,4 +139,11 @@ function formatSeasonRange(start: string, end: string): string {
     return `${startMonth} – ${endMonth} ${ey}`;
   }
   return `${startMonth} ${sy} – ${endMonth} ${ey}`;
+}
+
+/** Format a single YearMonth as "July 2026". */
+function formatMonthYear(yearMonth: string): string {
+  const [y, m] = yearMonth.split("-").map(Number);
+  const month = MONTH_NAMES[m - 1] ?? yearMonth;
+  return `${month} ${y}`;
 }
