@@ -399,7 +399,18 @@ function computeMatchTopEntries(
   // Mark the void parameter to keep TS strict happy.
   void season;
 
-  const top = comparables.slice(0, challenge.topN);
+  // One place per player: keep only each player's single best match. The
+  // list is already sorted best-first (metric desc + tie-breaks), so the
+  // first row seen for a nickname is that player's best — drop the rest.
+  const seenNicknames = new Set<string>();
+  const deduped = comparables.filter((c) => {
+    const key = c.row.nickname.toLowerCase();
+    if (seenNicknames.has(key)) return false;
+    seenNicknames.add(key);
+    return true;
+  });
+
+  const top = deduped.slice(0, challenge.topN);
   return top.map((c, idx) => {
     // Try to enrich with player_stats first (latest profile pic / level),
     // fall back to the per-match row's own values if not found.
