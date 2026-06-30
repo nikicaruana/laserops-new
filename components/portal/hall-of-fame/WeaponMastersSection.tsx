@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { WeaponRecords } from "@/lib/leaderboards/hall-of-fame";
 import { RecordList } from "./RecordList";
 
@@ -16,6 +16,14 @@ export function WeaponMastersSection({
 }) {
   const [selected, setSelected] = useState<string | null>(null);
   const current = weapons.find((w) => w.weaponName === selected) ?? null;
+
+  // Scroll the detail panel into view when a weapon is opened.
+  const detailRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (selected && detailRef.current) {
+      detailRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [selected]);
 
   if (weapons.length === 0) {
     return (
@@ -67,7 +75,10 @@ export function WeaponMastersSection({
       </div>
 
       {current ? (
-        <div className="mt-5 border border-accent/50 bg-bg-elevated p-4 sm:p-6">
+        <div
+          ref={detailRef}
+          className="mt-5 scroll-mt-24 border border-accent/50 bg-bg-elevated p-4 sm:p-6"
+        >
           <h3 className="text-lg font-extrabold tracking-tight sm:text-xl">
             {current.weaponName}
           </h3>
@@ -86,9 +97,12 @@ export function WeaponMastersSection({
                 <p className="text-[0.6rem] font-bold uppercase tracking-[0.14em] text-accent">
                   Weapon Master
                 </p>
-                <p className="truncate font-mono text-sm font-bold text-text sm:text-base">
+                <a
+                  href={`/player-portal/player-stats/summary?ops=${encodeURIComponent(current.master.nickname)}`}
+                  className="block truncate font-mono text-sm font-bold text-text transition-colors hover:text-accent sm:text-base"
+                >
                   {current.master.nickname}
-                </p>
+                </a>
                 <p className="mt-0.5 leading-tight">
                   <span className="font-mono text-base font-bold tabular-nums text-accent">
                     {current.master.formatted}

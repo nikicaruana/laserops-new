@@ -64,9 +64,12 @@ export function RecordList({ label, note, entries }: Props) {
                   decoding="async"
                   className="h-8 w-8 shrink-0 rounded-sm border border-border-strong object-cover sm:h-9 sm:w-9"
                 />
-                <span className="min-w-0 flex-1 truncate text-xs font-semibold text-text sm:text-sm">
+                <a
+                  href={`/player-portal/player-stats/summary?ops=${encodeURIComponent(e.nickname)}`}
+                  className="min-w-0 flex-1 truncate text-xs font-semibold text-text transition-colors hover:text-accent sm:text-sm"
+                >
                   {e.nickname}
-                </span>
+                </a>
                 {value}
               </li>
             );

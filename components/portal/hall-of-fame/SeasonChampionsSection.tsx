@@ -95,9 +95,12 @@ function ChampionCard({
         >
           {place}
         </p>
-        <p className="truncate font-mono text-sm font-bold text-text sm:text-base">
+        <a
+          href={`/player-portal/player-stats/summary?ops=${encodeURIComponent(entry.nickname)}`}
+          className="block truncate font-mono text-sm font-bold text-text transition-colors hover:text-accent sm:text-base"
+        >
           {entry.nickname}
-        </p>
+        </a>
         <p className="mt-0.5 leading-tight">
           <span className="font-mono text-base font-bold tabular-nums text-accent">
             {entry.formatted}
