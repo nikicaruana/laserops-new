@@ -17,6 +17,7 @@ type ChallengeRaw = Record<string, string> & {
   Tiebreak_2: string;
   Top_N: string;
   Prize_Cutoff: string;
+  Threshold: string;
 };
 
 /**
@@ -30,8 +31,15 @@ type ChallengeRaw = Record<string, string> & {
  *   - match_top: pull from Game_Data_Lookup_PUBLIC, do not aggregate —
  *     return raw rows ordered by metric. A single player can appear
  *     multiple times for different matches.
+ *   - gun_threshold_count: pull from Game_Data_Lookup_PUBLIC, scope to the
+ *     season, sum the metric (e.g. PlayerFragsCount) per player PER GUN,
+ *     then rank players by how many distinct guns clear `Threshold`.
  */
-export type ChallengeSourceMode = "period_summed" | "period_max" | "match_top";
+export type ChallengeSourceMode =
+  | "period_summed"
+  | "period_max"
+  | "match_top"
+  | "gun_threshold_count";
 
 /**
  * Typed challenge after parsing.
@@ -66,6 +74,12 @@ export type Challenge = {
    * Rows after this are shown but visually subordinated.
    */
   prizeCutoff: number;
+  /**
+   * Numeric threshold used by threshold-based source modes (currently
+   * `gun_threshold_count`: a gun counts once a player's season kills with
+   * it reach this value). 0 / unset for modes that don't use it.
+   */
+  threshold: number;
 };
 
 /**
@@ -110,6 +124,7 @@ export async function fetchChallenges(
       tiebreak2: (row.Tiebreak_2 ?? "").trim(),
       topN: Math.max(1, parseNumericOr(row.Top_N, 5)),
       prizeCutoff: Math.max(0, parseNumericOr(row.Prize_Cutoff, 2)),
+      threshold: parseNumericOr(row.Threshold, 0),
     });
   }
 
@@ -120,7 +135,12 @@ export async function fetchChallenges(
 
 function normalizeSourceMode(raw: string | undefined): ChallengeSourceMode | null {
   const value = (raw ?? "").trim().toLowerCase();
-  if (value === "period_summed" || value === "period_max" || value === "match_top") {
+  if (
+    value === "period_summed" ||
+    value === "period_max" ||
+    value === "match_top" ||
+    value === "gun_threshold_count"
+  ) {
     return value;
   }
   return null;

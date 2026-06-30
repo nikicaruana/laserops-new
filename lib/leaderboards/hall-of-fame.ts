@@ -296,7 +296,10 @@ export async function fetchHallOfFameChampions(): Promise<SeasonChampions[]> {
         challengeNumber: cd.challenge.challengeNumber,
         name: cd.challenge.name,
         description: cd.challenge.description,
-        metricLabel: humanizeMetric(cd.challenge.metric),
+        metricLabel:
+          cd.challenge.sourceMode === "gun_threshold_count"
+            ? "guns"
+            : humanizeMetric(cd.challenge.metric),
         top: cd.entries.slice(0, 2).map((e) => ({
           rank: e.rank,
           nickname: e.nickname,

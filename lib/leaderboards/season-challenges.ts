@@ -140,6 +140,16 @@ export async function fetchSeasonChallenges(
           excludedNicknames,
         );
       }
+    } else if (challenge.sourceMode === "gun_threshold_count") {
+      if (gameDataResult.ok) {
+        entries = computeGunThresholdCountEntries(
+          challenge,
+          season,
+          gameDataResult.rows,
+          playerStatsByNickname,
+          excludedNicknames,
+        );
+      }
     }
 
     out.push({ challenge, entries });
@@ -412,6 +422,156 @@ function computeMatchTopEntries(
       level,
       metricValue: c.primaryMetric,
       matchId: c.row.matchId,
+      isPrizeWinning: idx + 1 <= challenge.prizeCutoff,
+    };
+  });
+}
+
+/* ---------- Gun-threshold-count computation ---------- */
+
+/**
+ * "Most distinct guns with >= Threshold kills this season."
+ *
+ * Game_Data_Lookup has exactly one row per player per match, each row
+ * recording the single gun used. So a player's season kills with a gun =
+ * the sum of their match kills (PlayerFragsCount) over the matches where
+ * that gun was used. We count how many distinct guns clear the threshold
+ * and rank players by that count. The "Unknown Gun" placeholder and blank
+ * gun cells are not counted as real guns.
+ *
+ * Secondary season aggregates (rounds/matches/kills/score) are summed in
+ * the same pass so the named tie-breaks (e.g. round_win_rate_descending)
+ * work. Final fallback when still tied: more total season kills wins.
+ */
+function computeGunThresholdCountEntries(
+  challenge: Challenge,
+  season: Season,
+  gameRows: GameDataRow[],
+  playerStatsByNickname: Map<string, PlayerStatsRaw>,
+  excludedNicknames: Set<string>,
+): ChallengeEntry[] {
+  const filtered = filterGameDataByMonths(gameRows, season.monthsInWindow);
+  const threshold = challenge.threshold > 0 ? challenge.threshold : 1;
+
+  type Aggregate = {
+    nickname: string;
+    profilePicUrl: string;
+    killsByGun: Map<string, number>;
+    seasonRoundsWon: number;
+    seasonRoundsLost: number;
+    seasonMatchesWon: number;
+    seasonMatchesPlayed: number;
+    seasonKills: number;
+    seasonDeaths: number;
+    seasonScore: number;
+  };
+
+  const aggregates = new Map<string, Aggregate>();
+
+  for (const row of filtered) {
+    const key = row.nickname.toLowerCase();
+    if (excludedNicknames.has(key)) continue;
+
+    let agg = aggregates.get(key);
+    if (!agg) {
+      agg = {
+        nickname: row.nickname,
+        profilePicUrl: row.profilePicUrl,
+        killsByGun: new Map(),
+        seasonRoundsWon: 0,
+        seasonRoundsLost: 0,
+        seasonMatchesWon: 0,
+        seasonMatchesPlayed: 0,
+        seasonKills: 0,
+        seasonDeaths: 0,
+        seasonScore: 0,
+      };
+      aggregates.set(key, agg);
+    }
+
+    const gun = (row.raw.LaserOps_Gun_Used ?? "").trim().toLowerCase();
+    const kills = readGameDataNumeric(row, "PlayerFragsCount");
+    if (gun !== "" && gun !== "unknown gun") {
+      agg.killsByGun.set(gun, (agg.killsByGun.get(gun) ?? 0) + kills);
+    }
+
+    agg.seasonRoundsWon += readGameDataNumeric(row, "LaserOps_Rounds_Won");
+    agg.seasonRoundsLost += readGameDataNumeric(row, "LaserOps_Rounds_Lost");
+    agg.seasonMatchesWon +=
+      readGameDataNumeric(row, "LaserOps_Team_Is_Winner") === 1 ? 1 : 0;
+    agg.seasonMatchesPlayed += 1;
+    agg.seasonKills += kills;
+    agg.seasonDeaths += readGameDataNumeric(row, "PlayerDeathsCount");
+    agg.seasonScore += readGameDataNumeric(row, "LaserOps_Score");
+  }
+
+  type Comparable = {
+    aggregate: Aggregate;
+    count: number;
+    tiebreakInput: TiebreakInput;
+  };
+
+  const comparables: Comparable[] = [];
+  for (const agg of aggregates.values()) {
+    let count = 0;
+    for (const k of agg.killsByGun.values()) {
+      if (k >= threshold) count += 1;
+    }
+    if (count <= 0) continue;
+    comparables.push({
+      aggregate: agg,
+      count,
+      tiebreakInput: {
+        primaryMetric: count,
+        seasonRoundsWon: agg.seasonRoundsWon,
+        seasonRoundsLost: agg.seasonRoundsLost,
+        seasonMatchesWon: agg.seasonMatchesWon,
+        seasonMatchesPlayed: agg.seasonMatchesPlayed,
+        seasonKills: agg.seasonKills,
+        seasonDeaths: agg.seasonDeaths,
+        seasonScore: agg.seasonScore,
+      },
+    });
+  }
+
+  const tb1 = getTiebreak(challenge.tiebreak1);
+  const tb2 = getTiebreak(challenge.tiebreak2);
+
+  comparables.sort((a, b) => {
+    if (b.count !== a.count) return b.count - a.count;
+    if (tb1) {
+      const va = tb1(a.tiebreakInput);
+      const vb = tb1(b.tiebreakInput);
+      if (vb !== va) return vb - va;
+    }
+    if (tb2) {
+      const va = tb2(a.tiebreakInput);
+      const vb = tb2(b.tiebreakInput);
+      if (vb !== va) return vb - va;
+    }
+    // Natural fallback: more total season kills wins.
+    return b.aggregate.seasonKills - a.aggregate.seasonKills;
+  });
+
+  return comparables.slice(0, challenge.topN).map((c, idx) => {
+    const playerStats = playerStatsByNickname.get(
+      c.aggregate.nickname.toLowerCase(),
+    );
+    const rankBadgeUrl = playerStats?.XP_Current_Rank_Badge_URL?.trim() ?? "";
+    const level = parseNumericOr(playerStats?.XP_Current_Level ?? "", 0);
+    const profilePicFromStats = playerStats?.Player_Stats_Profile_Pic?.trim();
+    const profilePicUrl =
+      profilePicFromStats && profilePicFromStats !== ""
+        ? profilePicFromStats
+        : c.aggregate.profilePicUrl;
+
+    return {
+      rank: idx + 1,
+      nickname: c.aggregate.nickname,
+      profilePicUrl,
+      rankBadgeUrl,
+      level,
+      metricValue: c.count,
       isPrizeWinning: idx + 1 <= challenge.prizeCutoff,
     };
   });
