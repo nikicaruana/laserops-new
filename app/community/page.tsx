@@ -54,7 +54,7 @@ const faqs: { q: string; a: string }[] = [
   },
   {
     q: "What's the youngest age you allow?",
-    a: "Ten and up. Younger kids are welcome at private bookings and parties, but open games tend to run at a competitive pace that suits 10+.",
+    a: "Thirteen and up. Younger kids are welcome at private bookings and parties, but open games tend to run at a competitive pace that suits 13+.",
   },
   {
     q: "How often do open games happen?",
@@ -235,11 +235,11 @@ export default async function CommunityPage() {
         <Container size="narrow" className="py-14 sm:py-16">
           <SectionLabel>All Levels</SectionLabel>
           <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
-            Ages 10 and Up, and Beginners Are Genuinely Welcome
+            Ages 13 and Up, and Beginners Are Genuinely Welcome
           </h2>
           <div className="mt-5 space-y-4 text-text-muted">
             <p className="leading-relaxed">
-              The community runs from kids aged 10 up to adults, and we mean it
+              The community runs from kids aged 13 up to adults, and we mean it
               when we say beginners are welcome. Plenty of people who now play most
               weeks walked in for their first open game knowing nothing about
               positioning, comms, or objective play, having come through a private

@@ -39,10 +39,10 @@ const FAQ_ITEMS: FaqItem[] = [
     id: "who-is-it-for",
     question: "Who is it for?",
     searchText:
-      "who age 10 community open games corporate events stag hen birthday parties kids adults private bookings friend groups",
+      "who age 13 community open games corporate events stag hen birthday parties kids adults private bookings friend groups",
     answer: (
       <p>
-        Anyone from age 10 upwards. We host community open games for regular
+        Anyone from age 13 upwards. We host community open games for regular
         players, corporate events, stag and hen dos, birthday parties for kids
         and adults, and private bookings for friend groups. If you can run
         between cover and press a trigger, the game has a version for you.

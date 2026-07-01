@@ -21,7 +21,7 @@ export const FAQS: Faq[] = [
   {
     question: "Who is it for?",
     answer:
-      "Anyone from age 10 upwards. We host community open games for regular players, corporate events, stag and hen dos, birthday parties for kids and adults, and private bookings for friend groups.",
+      "Anyone from age 13 upwards. We host community open games for regular players, corporate events, stag and hen dos, birthday parties for kids and adults, and private bookings for friend groups.",
   },
   {
     question: "Where do you play?",

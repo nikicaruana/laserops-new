@@ -57,11 +57,11 @@ export default function BirthdayPartiesPage() {
         <Container size="narrow" className="py-14 sm:py-16">
           <SectionLabel>For Kids</SectionLabel>
           <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
-            Birthday Parties for Kids From 10 and Up
+            Birthday Parties for Kids From 13 and Up
           </h2>
           <div className="mt-5 space-y-4 text-text-muted">
             <p className="leading-relaxed">
-              Our birthday format runs from age 10 upwards, which covers the
+              Our birthday format runs from age 13 upwards, which covers the
               full stretch from school birthdays through to teenagers. The thing
               about laser tag for younger ages is that it doesn&apos;t matter where
               the group sits on the social spectrum. The quiet kid and the louder
