@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { BracketFrame } from "@/components/portal/BracketFrame";
 import { fetchGoogleReviews } from "@/lib/cms/google-reviews";
 import { fetchSiteConfig, configString } from "@/lib/cms/site-config";
+import { CtaTrack } from "@/components/play/CtaTrack";
 
 /* ─── Destinations ─────────────────────────────────────────────────── */
 const OPEN_GAMES_HREF = "/events/open-games";
@@ -103,7 +104,11 @@ const PLAY_OPTIONS = [
       "Balanced teams",
       "Great for solo players and small groups",
     ],
-    cta: { label: "See Upcoming Open Games →", href: OPEN_GAMES_HREF },
+    cta: {
+      label: "See Upcoming Open Games →",
+      href: OPEN_GAMES_HREF,
+      ctaId: "open_games_section",
+    },
   },
   {
     label: "Private Games",
@@ -112,7 +117,11 @@ const PLAY_OPTIONS = [
       "Birthdays, stags, corporate, friends",
       "Hosted session, kit included, multiple game modes",
     ],
-    cta: { label: "Request a Private Booking →", href: BOOKING_HREF },
+    cta: {
+      label: "Request a Private Booking →",
+      href: BOOKING_HREF,
+      ctaId: "private_booking_section",
+    },
   },
 ];
 
@@ -132,10 +141,18 @@ const DIFFERENTIATORS = [
 ];
 
 const SCOUTING_LINKS = [
-  { label: "Learn about outdoor laser tag", href: "/outdoor-laser-tag-malta" },
-  { label: "View weapons", href: "/weapons" },
-  { label: "View leaderboards", href: "/player-portal/leaderboards" },
-  { label: "See match reports", href: "/match-report" },
+  {
+    label: "Learn about outdoor laser tag",
+    href: "/outdoor-laser-tag-malta",
+    cta: "scouting_outdoor_laser_tag",
+  },
+  { label: "View weapons", href: "/weapons", cta: "scouting_weapons" },
+  {
+    label: "View leaderboards",
+    href: "/player-portal/leaderboards",
+    cta: "scouting_leaderboards",
+  },
+  { label: "See match reports", href: "/match-report", cta: "scouting_match_reports" },
 ];
 
 /* ─── Page ─────────────────────────────────────────────────────────── */
@@ -233,40 +250,46 @@ export default async function PlayPage() {
               {/* CTA 1 — Open game (primary) + WhatsApp underneath */}
               <div className="flex flex-col gap-4">
                 <div>
-                  <Button
-                    href={OPEN_GAMES_HREF}
-                    variant="primary"
-                    size="lg"
-                    className="w-full whitespace-nowrap text-sm sm:text-base"
-                  >
-                    Join an Open Game →
-                  </Button>
+                  <CtaTrack cta="hero_open_game">
+                    <Button
+                      href={OPEN_GAMES_HREF}
+                      variant="primary"
+                      size="lg"
+                      className="w-full whitespace-nowrap text-sm sm:text-base"
+                    >
+                      Join an Open Game →
+                    </Button>
+                  </CtaTrack>
                   <p className="mt-2.5 text-base font-medium leading-snug text-white [text-shadow:0_1px_10px_rgba(0,0,0,0.9)]">
                     Open to everyone ages 10+. €30 for 3-hour session.
                   </p>
                 </div>
-                <Button
-                  href={WHATSAPP_URL}
-                  size="lg"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full gap-2.5 bg-[#25D366] text-sm text-white shadow-[0_0_0_1px_#25D366] hover:bg-[#1fb457] hover:text-white sm:text-base"
-                >
-                  <WhatsAppIcon />
-                  Join our WhatsApp Community →
-                </Button>
+                <CtaTrack cta="hero_whatsapp">
+                  <Button
+                    href={WHATSAPP_URL}
+                    size="lg"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full gap-2.5 bg-[#25D366] text-sm text-white shadow-[0_0_0_1px_#25D366] hover:bg-[#1fb457] hover:text-white sm:text-base"
+                  >
+                    <WhatsAppIcon />
+                    Join our WhatsApp Community →
+                  </Button>
+                </CtaTrack>
               </div>
 
               {/* CTA 2 — Private game (high-contrast outline) */}
               <div>
-                <Button
-                  href={BOOKING_HREF}
-                  variant="secondary"
-                  size="lg"
-                  className="w-full whitespace-nowrap border-2 border-white bg-black/45 text-sm text-white backdrop-blur-sm hover:border-accent hover:bg-black/45 hover:text-accent sm:text-base"
-                >
-                  Book a Private Game →
-                </Button>
+                <CtaTrack cta="hero_private_game">
+                  <Button
+                    href={BOOKING_HREF}
+                    variant="secondary"
+                    size="lg"
+                    className="w-full whitespace-nowrap border-2 border-white bg-black/45 text-sm text-white backdrop-blur-sm hover:border-accent hover:bg-black/45 hover:text-accent sm:text-base"
+                  >
+                    Book a Private Game →
+                  </Button>
+                </CtaTrack>
                 <p className="mt-2.5 text-base font-medium leading-snug text-white [text-shadow:0_1px_10px_rgba(0,0,0,0.9)]">
                   Team Building, Birthdays, Stag Dos, Group Bookings.
                 </p>
@@ -356,9 +379,11 @@ export default async function PlayPage() {
                   ))}
                 </ul>
                 <div className="mt-7">
-                  <Button href={option.cta.href} variant="primary" size="md">
-                    {option.cta.label}
-                  </Button>
+                  <CtaTrack cta={option.cta.ctaId}>
+                    <Button href={option.cta.href} variant="primary" size="md">
+                      {option.cta.label}
+                    </Button>
+                  </CtaTrack>
                 </div>
               </div>
             ))}
@@ -395,23 +420,25 @@ export default async function PlayPage() {
             <div className="text-center">
               <SectionLabel>What Players Say</SectionLabel>
               <div className="mt-3">
-                <a
-                  href={googleReviewsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group inline-flex items-center gap-2.5 border border-accent bg-accent/10 px-6 py-3 text-xl font-extrabold tracking-tight text-accent transition-colors hover:bg-accent hover:text-bg sm:text-2xl"
-                >
-                  <span aria-hidden className="text-yellow-400 group-hover:text-bg">
-                    ★★★★★
-                  </span>
-                  Rated 5.0 on Google
-                  <span
-                    aria-hidden
-                    className="transition-transform group-hover:translate-x-0.5"
+                <CtaTrack cta="google_reviews">
+                  <a
+                    href={googleReviewsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group inline-flex items-center gap-2.5 border border-accent bg-accent/10 px-6 py-3 text-xl font-extrabold tracking-tight text-accent transition-colors hover:bg-accent hover:text-bg sm:text-2xl"
                   >
-                    →
-                  </span>
-                </a>
+                    <span aria-hidden className="text-yellow-400 group-hover:text-bg">
+                      ★★★★★
+                    </span>
+                    Rated 5.0 on Google
+                    <span
+                      aria-hidden
+                      className="transition-transform group-hover:translate-x-0.5"
+                    >
+                      →
+                    </span>
+                  </a>
+                </CtaTrack>
               </div>
             </div>
             <div className="mt-8 grid gap-5 md:grid-cols-3">
@@ -446,15 +473,17 @@ export default async function PlayPage() {
           <ul className="mx-auto mt-8 grid max-w-xl gap-3 sm:grid-cols-2">
             {SCOUTING_LINKS.map((link) => (
               <li key={link.href}>
-                <a
-                  href={link.href}
-                  className="flex items-center justify-between gap-3 border border-border bg-bg px-5 py-4 text-sm font-bold uppercase tracking-[0.08em] text-text transition-colors hover:border-accent hover:text-accent"
-                >
-                  <span>{link.label}</span>
-                  <span aria-hidden className="text-accent">
-                    →
-                  </span>
-                </a>
+                <CtaTrack cta={link.cta}>
+                  <a
+                    href={link.href}
+                    className="flex items-center justify-between gap-3 border border-border bg-bg px-5 py-4 text-sm font-bold uppercase tracking-[0.08em] text-text transition-colors hover:border-accent hover:text-accent"
+                  >
+                    <span>{link.label}</span>
+                    <span aria-hidden className="text-accent">
+                      →
+                    </span>
+                  </a>
+                </CtaTrack>
               </li>
             ))}
           </ul>
@@ -472,12 +501,16 @@ export default async function PlayPage() {
             session for your group.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Button href={OPEN_GAMES_HREF} variant="dark" size="lg">
-              Join an Open Game →
-            </Button>
-            <Button href={BOOKING_HREF} variant="outline-dark" size="lg">
-              Book a Private Game →
-            </Button>
+            <CtaTrack cta="final_open_game">
+              <Button href={OPEN_GAMES_HREF} variant="dark" size="lg">
+                Join an Open Game →
+              </Button>
+            </CtaTrack>
+            <CtaTrack cta="final_private_game">
+              <Button href={BOOKING_HREF} variant="outline-dark" size="lg">
+                Book a Private Game →
+              </Button>
+            </CtaTrack>
           </div>
         </Container>
       </section>
