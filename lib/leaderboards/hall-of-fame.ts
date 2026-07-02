@@ -378,9 +378,8 @@ export type AccoladeLeaders = {
  * winning direction: "desc" = higher sum wins (most/highest accolades), "asc"
  * = lower sum wins (least/lowest accolades).
  *
- * There is no "shots received" column in the data, so Ghost (least shots
- * received) and Swiss Cheese (most shots received) use deaths — times tagged
- * out — as the closest available proxy.
+ * "Shots received" is the PlayerWoundsCount column: Ghost rewards the fewest,
+ * Swiss Cheese the most.
  */
 const ACCOLADE_TIEBREAK: Record<
   string,
@@ -394,12 +393,12 @@ const ACCOLADE_TIEBREAK: Record<
   "Eagle Eye": { column: "PlayerAccuracy", dir: "desc" },
   Specialist: { column: "LaserOps_Score", dir: "desc" },
   Punisher: { column: "PlayerHitsCount", dir: "desc" },
-  Ghost: { column: "PlayerDeathsCount", dir: "asc" }, // proxy for shots received
+  Ghost: { column: "PlayerWoundsCount", dir: "asc" }, // fewest shots received
   Kamikaze: { column: "PlayerDeathsCount", dir: "desc" },
   Rambo: { column: "PlayerShotsCount", dir: "desc" },
   "Ammo Saver": { column: "PlayerShotsCount", dir: "asc" },
   "Spray N Pray": { column: "PlayerAccuracy", dir: "asc" }, // lowest accuracy
-  "Swiss Cheese": { column: "PlayerDeathsCount", dir: "desc" }, // proxy for shots received
+  "Swiss Cheese": { column: "PlayerWoundsCount", dir: "desc" }, // most shots received
   Pacifist: { column: "LaserOps_Damage", dir: "asc" },
 };
 
