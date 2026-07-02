@@ -26,12 +26,8 @@ import { fetchWeapons } from "@/lib/cms/weapons";
 import { fetchSeasons } from "@/lib/cms/seasons";
 import { fetchChallenges } from "@/lib/cms/challenges";
 import { fetchSeasonChallenges } from "@/lib/leaderboards/season-challenges";
-import {
-  fetchAllPlayerStats,
-  FALLBACK_PROFILE_PIC,
-} from "@/lib/player-stats/shared";
 import { ACCOLADES } from "@/lib/player-stats/summary-accolades";
-import { parseNumericOr } from "@/lib/sheets";
+import { unstable_cache } from "next/cache";
 
 /* ─── Types ─────────────────────────────────────────────────────────── */
 
@@ -232,7 +228,7 @@ function topThree(rows: GameDataRow[], spec: RecordSpec): RecordEntry[] {
 
 /* ─── 2. All-Time Records ───────────────────────────────────────────── */
 
-export async function fetchAllTimeRecords(): Promise<RecordCategory[]> {
+async function computeAllTimeRecords(): Promise<RecordCategory[]> {
   const result = await fetchGameDataRows();
   if (!result.ok) return [];
   return ALL_TIME_SPECS.map((spec) => ({
@@ -245,7 +241,7 @@ export async function fetchAllTimeRecords(): Promise<RecordCategory[]> {
 
 /* ─── 3. Weapon Masters ─────────────────────────────────────────────── */
 
-export async function fetchWeaponMasters(): Promise<WeaponRecords[]> {
+async function computeWeaponMasters(): Promise<WeaponRecords[]> {
   const [gameResult, armoryRows, weapons] = await Promise.all([
     fetchGameDataRows(),
     fetchPlayerArmory(),
@@ -375,27 +371,99 @@ export type AccoladeLeaders = {
 };
 
 /**
- * Top 3 holders of every accolade. Per-player per-accolade counts live in
- * Player_Stats_PUBLIC as `<Accolade>_Count` columns, mapped via the ACCOLADES
- * catalog's `sheetCol`. Includes everyone — no admin exclusion.
+ * Tie-break metric per accolade. When players are level on accolade COUNT,
+ * we settle it by summing this Game_Data_Lookup column over the matches where
+ * the accolade was earned. Tied players have the same count (= same number of
+ * qualifying matches), so the summed metric is a fair comparison. `dir` is the
+ * winning direction: "desc" = higher sum wins (most/highest accolades), "asc"
+ * = lower sum wins (least/lowest accolades).
+ *
+ * There is no "shots received" column in the data, so Ghost (least shots
+ * received) and Swiss Cheese (most shots received) use deaths — times tagged
+ * out — as the closest available proxy.
  */
-export async function fetchAccoladeLeaders(): Promise<AccoladeLeaders[]> {
-  const result = await fetchAllPlayerStats();
+const ACCOLADE_TIEBREAK: Record<
+  string,
+  { column: string; dir: "desc" | "asc" }
+> = {
+  MVP: { column: "LaserOps_Score", dir: "desc" }, // highest total score
+  Reaper: { column: "PlayerFragsCount", dir: "desc" }, // most total kills
+  "Apex Predator": { column: "LaserOps_KD", dir: "desc" }, // highest aggregate KD
+  "Heavy Hitter": { column: "LaserOps_Damage", dir: "desc" },
+  Tank: { column: "PlayerDeathsCount", dir: "asc" }, // fewest deaths
+  "Eagle Eye": { column: "PlayerAccuracy", dir: "desc" },
+  Specialist: { column: "LaserOps_Score", dir: "desc" },
+  Punisher: { column: "PlayerHitsCount", dir: "desc" },
+  Ghost: { column: "PlayerDeathsCount", dir: "asc" }, // proxy for shots received
+  Kamikaze: { column: "PlayerDeathsCount", dir: "desc" },
+  Rambo: { column: "PlayerShotsCount", dir: "desc" },
+  "Ammo Saver": { column: "PlayerShotsCount", dir: "asc" },
+  "Spray N Pray": { column: "PlayerAccuracy", dir: "asc" }, // lowest accuracy
+  "Swiss Cheese": { column: "PlayerDeathsCount", dir: "desc" }, // proxy for shots received
+  Pacifist: { column: "LaserOps_Damage", dir: "asc" },
+};
+
+function accoladeTiebreakValue(row: GameDataRow, column: string): number {
+  return column === "LaserOps_Score" ? readScore(row) : readNumeric(row, column);
+}
+
+function isAccoladeEarned(value: string | undefined): boolean {
+  const v = (value ?? "").trim().toLowerCase();
+  return v === "1" || v === "true" || v === "yes" || v === "y";
+}
+
+/**
+ * Top 3 holders of every accolade, computed from Game_Data_Lookup: count =
+ * matches where the `Accolade_<name>` column is set; ties settled by the
+ * per-accolade tie-break metric summed over those matches. Includes everyone.
+ */
+async function computeAccoladeLeaders(): Promise<AccoladeLeaders[]> {
+  const result = await fetchGameDataRows();
   if (!result.ok) return [];
   const rows = result.rows;
 
   return ACCOLADES.map((acc) => {
-    const entries = rows
-      .map((r) => ({
-        nickname: r.Player_Stats_Nickname.trim(),
-        profilePicUrl:
-          (r.Player_Stats_Profile_Pic ?? "").trim() || FALLBACK_PROFILE_PIC,
-        count: parseNumericOr(r[acc.sheetCol] ?? "", 0),
-      }))
-      .filter((x) => x.nickname !== "" && x.count > 0)
-      .sort((a, b) => b.count - a.count || a.nickname.localeCompare(b.nickname))
+    // Catalog sheetCol "MVP_Count" → game-data column "Accolade_MVP".
+    const column = `Accolade_${acc.sheetCol.replace(/_Count$/, "")}`;
+    const tb = ACCOLADE_TIEBREAK[acc.name];
+    const dir = tb?.dir ?? "desc";
+
+    type Agg = {
+      nickname: string;
+      profilePicUrl: string;
+      count: number;
+      tiebreak: number;
+    };
+    const byPlayer = new Map<string, Agg>();
+
+    for (const row of rows) {
+      if (!isAccoladeEarned(row.raw[column])) continue;
+      const key = row.nickname.toLowerCase();
+      let agg = byPlayer.get(key);
+      if (!agg) {
+        agg = { nickname: row.nickname, profilePicUrl: row.profilePicUrl, count: 0, tiebreak: 0 };
+        byPlayer.set(key, agg);
+      }
+      agg.count += 1;
+      if (tb) agg.tiebreak += accoladeTiebreakValue(row, tb.column);
+    }
+
+    const entries = [...byPlayer.values()]
+      .filter((a) => a.count > 0)
+      .sort((a, b) => {
+        if (b.count !== a.count) return b.count - a.count;
+        if (a.tiebreak !== b.tiebreak) {
+          return dir === "asc" ? a.tiebreak - b.tiebreak : b.tiebreak - a.tiebreak;
+        }
+        return a.nickname.localeCompare(b.nickname);
+      })
       .slice(0, 3)
-      .map((x, i) => ({ rank: i + 1, ...x }));
+      .map((a, i) => ({
+        rank: i + 1,
+        nickname: a.nickname,
+        profilePicUrl: a.profilePicUrl,
+        count: a.count,
+      }));
 
     return {
       name: acc.name,
@@ -406,3 +474,32 @@ export async function fetchAccoladeLeaders(): Promise<AccoladeLeaders[]> {
     };
   });
 }
+
+/**
+ * Cached accolade-leaders. The per-match aggregation above runs at most once
+ * per revalidate window (server Data Cache) and the result is reused across
+ * all requests, instead of recomputing on every page load.
+ */
+export const fetchAccoladeLeaders = unstable_cache(
+  computeAccoladeLeaders,
+  ["hall-of-fame-accolade-leaders"],
+  { revalidate: 1800 },
+);
+
+/**
+ * All-Time Records and Weapon Masters are cached the same way. Weapon Masters
+ * especially benefits: it reads the ~3MB Player_Armory sheet, which is over
+ * Next's 2MB fetch-cache limit and so re-fetches on every load — caching the
+ * computed result means that only happens once per revalidate window.
+ */
+export const fetchAllTimeRecords = unstable_cache(
+  computeAllTimeRecords,
+  ["hall-of-fame-all-time-records"],
+  { revalidate: 1800 },
+);
+
+export const fetchWeaponMasters = unstable_cache(
+  computeWeaponMasters,
+  ["hall-of-fame-weapon-masters"],
+  { revalidate: 1800 },
+);
