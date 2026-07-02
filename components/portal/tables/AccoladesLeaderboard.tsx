@@ -1,6 +1,7 @@
 import { fetchGameDataRows } from "@/lib/game-data/lookup";
 import { fetchAccolades } from "@/lib/cms/accolades";
 import { fetchPeriodRows } from "@/lib/leaderboards/period-shared";
+import { isUnclaimedNickname } from "@/lib/leaderboards/unclaimed";
 import { TableErrorState } from "@/components/portal/tables/TableErrorState";
 import { AccoladesLeaderboardTable } from "@/components/portal/tables/AccoladesLeaderboardTable";
 
@@ -37,7 +38,9 @@ export async function AccoladesLeaderboard() {
 
   return (
     <AccoladesLeaderboardTable
-      allRows={gameResult.rows}
+      // Drop unclaimed "Head NN" scores here so they're neither aggregated
+      // nor shipped to the client in the serialised props.
+      allRows={gameResult.rows.filter((r) => !isUnclaimedNickname(r.nickname))}
       accolades={accolades}
       // Period rows passed for filter-options derivation only. If
       // period fetch failed (.ok === false), pass an empty array

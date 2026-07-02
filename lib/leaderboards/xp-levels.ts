@@ -13,6 +13,7 @@ import {
   parseNumericOr,
   type SheetFetchResult,
 } from "@/lib/sheets";
+import { isUnclaimedNickname } from "@/lib/leaderboards/unclaimed";
 
 /** Public, intentionally — anyone with this URL can read the leaderboard tab. */
 const PLAYER_STATS_CSV_URL =
@@ -64,8 +65,10 @@ export async function fetchXpLevelsLeaderboard(): Promise<SheetFetchResult<XpLev
   const sorted = result.rows
     .filter((row) => {
       // Drop rows with no nickname — defensive against blank trailing rows
-      // or accidental empty inserts in the source sheet.
-      return row.Player_Stats_Nickname && row.Player_Stats_Nickname.trim() !== "";
+      // or accidental empty inserts in the source sheet. Also drop unclaimed
+      // "Head NN" headset scores — they never belong on a leaderboard.
+      const nick = row.Player_Stats_Nickname?.trim() ?? "";
+      return nick !== "" && !isUnclaimedNickname(nick);
     })
     .map((row): { row: PlayerStatsRaw; xp: number; xpPerMatch: number } => ({
       row,

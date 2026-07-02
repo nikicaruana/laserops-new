@@ -27,6 +27,7 @@ import { fetchSeasons } from "@/lib/cms/seasons";
 import { fetchChallenges } from "@/lib/cms/challenges";
 import { fetchSeasonChallenges } from "@/lib/leaderboards/season-challenges";
 import { ACCOLADES } from "@/lib/player-stats/summary-accolades";
+import { isUnclaimedNickname } from "@/lib/leaderboards/unclaimed";
 import { unstable_cache } from "next/cache";
 
 /* ─── Types ─────────────────────────────────────────────────────────── */
@@ -203,7 +204,11 @@ const WEAPON_SPECS: RecordSpec[] = [
  */
 function topThree(rows: GameDataRow[], spec: RecordSpec): RecordEntry[] {
   const sorted = rows
-    .filter((r) => (spec.eligible ? spec.eligible(r) : true))
+    .filter(
+      (r) =>
+        !isUnclaimedNickname(r.nickname) &&
+        (spec.eligible ? spec.eligible(r) : true),
+    )
     .map((r) => ({ row: r, v: spec.value(r) }))
     .filter((x) => x.v > 0)
     .sort((a, b) => b.v - a.v);
@@ -264,7 +269,8 @@ async function computeWeaponMasters(): Promise<WeaponRecords[]> {
   const masterByGun = new Map<string, WeaponMaster>();
   for (const a of armoryRows) {
     const gun = a.gunName.trim().toLowerCase();
-    if (gun === "" || a.scoreTotal <= 0) continue;
+    if (gun === "" || a.scoreTotal <= 0 || isUnclaimedNickname(a.playerNickname))
+      continue;
     const existing = masterByGun.get(gun);
     if (!existing || a.scoreTotal > existing.scoreTotal) {
       masterByGun.set(gun, {
@@ -437,6 +443,7 @@ async function computeAccoladeLeaders(): Promise<AccoladeLeaders[]> {
 
     for (const row of rows) {
       if (!isAccoladeEarned(row.raw[column])) continue;
+      if (isUnclaimedNickname(row.nickname)) continue;
       const key = row.nickname.toLowerCase();
       let agg = byPlayer.get(key);
       if (!agg) {

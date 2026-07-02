@@ -35,6 +35,7 @@ import { ACCOLADE_COLUMN_SUFFIXES } from "@/lib/match-report/engine";
 import { accoladeKey, type Accolade } from "@/lib/cms/accolades";
 import type { GameDataRow } from "@/lib/game-data/lookup";
 import { FALLBACK_PROFILE_PIC } from "@/lib/leaderboards/period-shared";
+import { isUnclaimedNickname } from "@/lib/leaderboards/unclaimed";
 
 const DISPLAY_LIMIT = 50;
 
@@ -110,6 +111,7 @@ export function aggregateAccolades(
   // can be derived from it.
   for (const row of gameRows) {
     if (!matchesPeriodFilter(row.yearMonth, filter)) continue;
+    if (isUnclaimedNickname(row.nickname)) continue; // unclaimed "Head NN" scores
 
     // Lazy-init the bucket for this player on first sighting.
     let entry = buckets.get(row.nickname);

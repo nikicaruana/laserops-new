@@ -21,6 +21,7 @@ import {
   parseNumericOr,
   type SheetFetchResult,
 } from "@/lib/sheets";
+import { isUnclaimedNickname } from "@/lib/leaderboards/unclaimed";
 
 /** Public — anyone with this URL can read the leaderboard tab. */
 export const PERIOD_STATS_CSV_URL =
@@ -73,7 +74,14 @@ export async function fetchPeriodRows(): Promise<SheetFetchResult<PeriodRow>> {
   if (!result.ok) return result;
 
   const rows: PeriodRow[] = result.rows
-    .filter((r) => r.LaserOps_Nickname && r.LaserOps_Nickname.trim() !== "")
+    .filter(
+      (r) =>
+        r.LaserOps_Nickname &&
+        r.LaserOps_Nickname.trim() !== "" &&
+        // Unclaimed "Head NN" scores never appear on leaderboards. Period
+        // stats only feed leaderboards + challenges, so filtering here is safe.
+        !isUnclaimedNickname(r.LaserOps_Nickname),
+    )
     .map((r) => {
       const profileRaw = r.LaserOps_Profile_Image?.trim();
       // year may arrive as "2026.00" (Sheets float formatting) — round to int.

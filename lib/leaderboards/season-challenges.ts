@@ -37,6 +37,7 @@ import {
   fetchPeriodRows,
   type PeriodRow,
 } from "@/lib/leaderboards/period-shared";
+import { isUnclaimedNickname } from "@/lib/leaderboards/unclaimed";
 import {
   fetchGameDataRows,
   filterByMonths as filterGameDataByMonths,
@@ -359,7 +360,11 @@ function computeMatchTopEntries(
   };
 
   const comparables: Comparable[] = filtered
-    .filter((row) => !excludedNicknames.has(row.nickname.toLowerCase()))
+    .filter(
+      (row) =>
+        !excludedNicknames.has(row.nickname.toLowerCase()) &&
+        !isUnclaimedNickname(row.nickname),
+    )
     .map((row) => {
       const primary = readGameDataNumeric(row, challenge.metric);
       const matchKills = readGameDataNumeric(row, "PlayerFragsCount");
@@ -481,7 +486,7 @@ function computeGunThresholdCountEntries(
 
   for (const row of filtered) {
     const key = row.nickname.toLowerCase();
-    if (excludedNicknames.has(key)) continue;
+    if (excludedNicknames.has(key) || isUnclaimedNickname(row.nickname)) continue;
 
     let agg = aggregates.get(key);
     if (!agg) {
