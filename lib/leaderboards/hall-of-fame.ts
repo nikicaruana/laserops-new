@@ -26,6 +26,12 @@ import { fetchWeapons } from "@/lib/cms/weapons";
 import { fetchSeasons } from "@/lib/cms/seasons";
 import { fetchChallenges } from "@/lib/cms/challenges";
 import { fetchSeasonChallenges } from "@/lib/leaderboards/season-challenges";
+import {
+  fetchAllPlayerStats,
+  FALLBACK_PROFILE_PIC,
+} from "@/lib/player-stats/shared";
+import { ACCOLADES } from "@/lib/player-stats/summary-accolades";
+import { parseNumericOr } from "@/lib/sheets";
 
 /* ─── Types ─────────────────────────────────────────────────────────── */
 
@@ -344,4 +350,59 @@ export async function fetchHallOfFameChampions(): Promise<SeasonChampions[]> {
     }
   }
   return out;
+}
+
+/* ─── 4. Accolade Leaders ───────────────────────────────────────────── */
+
+export type AccoladeLeaderEntry = {
+  rank: number;
+  nickname: string;
+  profilePicUrl: string;
+  /** How many times this player has earned the accolade. */
+  count: number;
+};
+
+export type AccoladeLeaders = {
+  name: string;
+  /** What the accolade is awarded for, e.g. "Highest Score". */
+  description: string;
+  /** Local badge image path under /public. */
+  iconPath: string;
+  /** XP value / tier (100 / 75 / 50). */
+  tier: number;
+  /** Top 3 players by count (fewer, or empty, if rarely/never earned). */
+  entries: AccoladeLeaderEntry[];
+};
+
+/**
+ * Top 3 holders of every accolade. Per-player per-accolade counts live in
+ * Player_Stats_PUBLIC as `<Accolade>_Count` columns, mapped via the ACCOLADES
+ * catalog's `sheetCol`. Includes everyone — no admin exclusion.
+ */
+export async function fetchAccoladeLeaders(): Promise<AccoladeLeaders[]> {
+  const result = await fetchAllPlayerStats();
+  if (!result.ok) return [];
+  const rows = result.rows;
+
+  return ACCOLADES.map((acc) => {
+    const entries = rows
+      .map((r) => ({
+        nickname: r.Player_Stats_Nickname.trim(),
+        profilePicUrl:
+          (r.Player_Stats_Profile_Pic ?? "").trim() || FALLBACK_PROFILE_PIC,
+        count: parseNumericOr(r[acc.sheetCol] ?? "", 0),
+      }))
+      .filter((x) => x.nickname !== "" && x.count > 0)
+      .sort((a, b) => b.count - a.count || a.nickname.localeCompare(b.nickname))
+      .slice(0, 3)
+      .map((x, i) => ({ rank: i + 1, ...x }));
+
+    return {
+      name: acc.name,
+      description: acc.description,
+      iconPath: acc.iconPath,
+      tier: acc.tier,
+      entries,
+    };
+  });
 }

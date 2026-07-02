@@ -4,10 +4,12 @@ import { HallOfFameTabs } from "@/components/portal/hall-of-fame/HallOfFameTabs"
 import { SeasonChampionsSection } from "@/components/portal/hall-of-fame/SeasonChampionsSection";
 import { AllTimeRecordsSection } from "@/components/portal/hall-of-fame/AllTimeRecordsSection";
 import { WeaponMastersSection } from "@/components/portal/hall-of-fame/WeaponMastersSection";
+import { AccoladeLeadersSection } from "@/components/portal/hall-of-fame/AccoladeLeadersSection";
 import {
   fetchHallOfFameChampions,
   fetchAllTimeRecords,
   fetchWeaponMasters,
+  fetchAccoladeLeaders,
 } from "@/lib/leaderboards/hall-of-fame";
 
 export const metadata: Metadata = {
@@ -24,21 +26,29 @@ export const metadata: Metadata = {
  * sheet layer); the tab wrapper only toggles visibility client-side.
  */
 export default async function HallOfFameLeaderboardPage() {
-  const [champions, allTimeRecords, weaponMasters] = await Promise.all([
-    fetchHallOfFameChampions(),
-    fetchAllTimeRecords(),
-    fetchWeaponMasters(),
-  ]);
+  const [champions, allTimeRecords, weaponMasters, accoladeLeaders] =
+    await Promise.all([
+      fetchHallOfFameChampions(),
+      fetchAllTimeRecords(),
+      fetchWeaponMasters(),
+      fetchAccoladeLeaders(),
+    ]);
 
   return (
     <div className="mx-auto w-full max-w-4xl">
       <DashboardPageHeader title="Hall of Fame" hideAddToHome />
       <HallOfFameTabs
-        labels={["Season Champions", "All-Time Records", "Weapon Masters"]}
+        labels={[
+          "Season Champions",
+          "All-Time Records",
+          "Weapon Masters",
+          "Accolade Leaders",
+        ]}
       >
         <SeasonChampionsSection seasons={champions} />
         <AllTimeRecordsSection categories={allTimeRecords} />
         <WeaponMastersSection weapons={weaponMasters} />
+        <AccoladeLeadersSection accolades={accoladeLeaders} />
       </HallOfFameTabs>
     </div>
   );
