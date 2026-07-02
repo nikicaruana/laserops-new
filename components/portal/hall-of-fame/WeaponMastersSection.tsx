@@ -113,6 +113,11 @@ export function WeaponMastersSection({
             </div>
           ) : null}
 
+          <p className="mt-5 text-sm leading-relaxed text-text-muted">
+            The records below are one-off game records, each set in a single
+            match.
+          </p>
+
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             {current.categories.map((c) => (
               <RecordList
