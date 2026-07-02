@@ -39,13 +39,14 @@ const FAQ_ITEMS: FaqItem[] = [
     id: "who-is-it-for",
     question: "Who is it for?",
     searchText:
-      "who age 13 community open games corporate events stag hen birthday parties kids adults private bookings friend groups",
+      "who age 13 open games younger under 13 private bookings community corporate events stag hen birthday parties kids adults friend groups",
     answer: (
       <p>
-        Anyone from age 13 upwards. We host community open games for regular
-        players, corporate events, stag and hen dos, birthday parties for kids
-        and adults, and private bookings for friend groups. If you can run
-        between cover and press a trigger, the game has a version for you.
+        Open games are for ages 13 and up. We also host corporate events, stag
+        and hen dos, birthday parties for kids and adults, and private bookings
+        for friend groups, where younger ages can be accommodated in the right
+        setting. If you can run between cover and press a trigger, the game has
+        a version for you.
       </p>
     ),
   },
