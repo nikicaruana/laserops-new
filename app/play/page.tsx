@@ -39,7 +39,7 @@ export const metadata: Metadata = {
     absolute: "Play Outdoor Laser Tag in Malta | LaserOps Malta",
   },
   description:
-    "Malta's ultimate outdoor laser tag experience. Join an open game from €30 or book a private session for birthdays, stags, and team building. Ages 13+, no experience needed.",
+    "Malta's ultimate outdoor laser tag experience. Join an open game from €30 or book a private session for birthdays, stags, and team building. 13+ for open games, no experience needed.",
   alternates: { canonical: "/play" },
   robots: { index: false, follow: true },
   openGraph: {
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
     siteName: "LaserOps Malta",
     title: "Play Outdoor Laser Tag in Malta",
     description:
-      "Join an open game from €30 or book a private session for birthdays, stags, and team building. Ages 13+, no experience needed.",
+      "Join an open game from €30 or book a private session for birthdays, stags, and team building. 13+ for open games, no experience needed.",
   },
 };
 
@@ -90,7 +90,7 @@ function Stars({ rating }: { rating: number }) {
 const PROOF_POINTS = [
   "€30/player",
   "3-hour sessions",
-  "Ages 13+",
+  "13+ for open games",
   "No experience needed",
   "Stats after every match",
   "Level up your online profile",
