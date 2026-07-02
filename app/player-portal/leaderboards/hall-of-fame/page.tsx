@@ -25,7 +25,12 @@ export const metadata: Metadata = {
  * All data is fetched server-side here (each fetch is cached at the
  * sheet layer); the tab wrapper only toggles visibility client-side.
  */
-export default async function HallOfFameLeaderboardPage() {
+export default async function HallOfFameLeaderboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>;
+}) {
+  const { tab } = await searchParams;
   const [champions, allTimeRecords, weaponMasters, accoladeLeaders] =
     await Promise.all([
       fetchHallOfFameChampions(),
@@ -44,6 +49,7 @@ export default async function HallOfFameLeaderboardPage() {
           "Weapon Masters",
           "Accolade Leaders",
         ]}
+        initialSlug={tab}
       >
         <SeasonChampionsSection seasons={champions} />
         <AllTimeRecordsSection categories={allTimeRecords} />
