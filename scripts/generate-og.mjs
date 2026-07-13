@@ -29,6 +29,7 @@ const logoUri = "data:image/png;base64," + logo.toString("base64");
 // route dir (under app/) -> card title. "" is the homepage (app/opengraph-image.png).
 const PAGES = {
   "": "Malta's Ultimate Outdoor Laser Tag",
+  play: "Play Outdoor Laser Tag in Malta",
   "outdoor-laser-tag-malta": "Outdoor Laser Tag in Malta",
   weapons: "15+ Tactical Laser Tag Weapons",
   community: "Malta's Laser Tag Community",
