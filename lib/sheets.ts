@@ -41,7 +41,9 @@ export async function fetchSheetAsObjects<T extends Record<string, string>>(
     const res = await fetch(url, {
       // Next.js extended fetch — caches the response for revalidateSeconds at the
       // edge. Subsequent requests within that window don't hit Google.
-      next: { revalidate: revalidateSeconds },
+      // Tagged "sheets" so the /api/revalidate endpoint can force every
+      // sheet-derived cache to re-read on demand (e.g. after editing a match).
+      next: { revalidate: revalidateSeconds, tags: ["sheets"] },
       // Help Google's CDN serve us a cached version.
       headers: { Accept: "text/csv" },
       // Prevent the build from hanging if Google Sheets is slow/unreachable.

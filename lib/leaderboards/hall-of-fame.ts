@@ -489,7 +489,7 @@ async function computeAccoladeLeaders(): Promise<AccoladeLeaders[]> {
 export const fetchAccoladeLeaders = unstable_cache(
   computeAccoladeLeaders,
   ["hall-of-fame-accolade-leaders"],
-  { revalidate: 1800 },
+  { revalidate: 1800, tags: ["sheets"] },
 );
 
 /**
@@ -501,11 +501,11 @@ export const fetchAccoladeLeaders = unstable_cache(
 export const fetchAllTimeRecords = unstable_cache(
   computeAllTimeRecords,
   ["hall-of-fame-all-time-records"],
-  { revalidate: 1800 },
+  { revalidate: 1800, tags: ["sheets"] },
 );
 
 export const fetchWeaponMasters = unstable_cache(
   computeWeaponMasters,
   ["hall-of-fame-weapon-masters"],
-  { revalidate: 1800 },
+  { revalidate: 1800, tags: ["sheets"] },
 );
