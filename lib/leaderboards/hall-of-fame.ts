@@ -235,7 +235,11 @@ function topThree(rows: GameDataRow[], spec: RecordSpec): RecordEntry[] {
 
 async function computeAllTimeRecords(): Promise<RecordCategory[]> {
   const result = await fetchGameDataRows();
-  if (!result.ok) return [];
+  // Throw (rather than return []) on fetch failure so unstable_cache does NOT
+  // persist an empty result — a thrown error is never cached, so the next
+  // request retries. Returning [] here would poison the cache for a full
+  // revalidate window if the sheet hiccuped during a cold recompute.
+  if (!result.ok) throw new Error(`[hall-of-fame] all-time: ${result.error}`);
   return ALL_TIME_SPECS.map((spec) => ({
     key: spec.key,
     label: spec.label,
@@ -253,7 +257,15 @@ async function computeWeaponMasters(): Promise<WeaponRecords[]> {
     fetchWeapons(),
   ]);
 
-  const gameRows = gameResult.ok ? gameResult.rows : [];
+  // Throw on any failed source so a transient sheet hiccup during a cold
+  // recompute isn't cached as an empty [] for the whole revalidate window.
+  // All three sources always carry data in a healthy state, so an empty one
+  // means the fetch failed, not that there's genuinely nothing to show.
+  if (!gameResult.ok || weapons.length === 0 || armoryRows.length === 0) {
+    throw new Error("[hall-of-fame] weapon-masters: source data unavailable");
+  }
+
+  const gameRows = gameResult.rows;
 
   // Group every match row by the gun used (lowercased name).
   const rowsByGun = new Map<string, GameDataRow[]>();
@@ -424,7 +436,9 @@ function isAccoladeEarned(value: string | undefined): boolean {
  */
 async function computeAccoladeLeaders(): Promise<AccoladeLeaders[]> {
   const result = await fetchGameDataRows();
-  if (!result.ok) return [];
+  // Throw (not return []) on failure so unstable_cache never persists an empty
+  // result — see computeAllTimeRecords for the full rationale.
+  if (!result.ok) throw new Error(`[hall-of-fame] accolades: ${result.error}`);
   const rows = result.rows;
 
   return ACCOLADES.map((acc) => {
@@ -488,7 +502,8 @@ async function computeAccoladeLeaders(): Promise<AccoladeLeaders[]> {
  */
 export const fetchAccoladeLeaders = unstable_cache(
   computeAccoladeLeaders,
-  ["hall-of-fame-accolade-leaders"],
+  // Key suffix bumped to v2 to discard any previously-cached empty result.
+  ["hall-of-fame-accolade-leaders-v2"],
   { revalidate: 1800, tags: ["sheets"] },
 );
 
@@ -500,12 +515,12 @@ export const fetchAccoladeLeaders = unstable_cache(
  */
 export const fetchAllTimeRecords = unstable_cache(
   computeAllTimeRecords,
-  ["hall-of-fame-all-time-records"],
+  ["hall-of-fame-all-time-records-v2"],
   { revalidate: 1800, tags: ["sheets"] },
 );
 
 export const fetchWeaponMasters = unstable_cache(
   computeWeaponMasters,
-  ["hall-of-fame-weapon-masters"],
+  ["hall-of-fame-weapon-masters-v2"],
   { revalidate: 1800, tags: ["sheets"] },
 );

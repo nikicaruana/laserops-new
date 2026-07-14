@@ -31,12 +31,16 @@ export default async function HallOfFameLeaderboardPage({
   searchParams: Promise<{ tab?: string }>;
 }) {
   const { tab } = await searchParams;
+  // Each fetch throws (rather than caching an empty result) if its source sheet
+  // is temporarily unavailable. Catch per-section so one flaky dataset shows its
+  // own empty state instead of failing the whole page — and because the throw
+  // wasn't cached, the next visit retries and self-heals.
   const [champions, allTimeRecords, weaponMasters, accoladeLeaders] =
     await Promise.all([
-      fetchHallOfFameChampions(),
-      fetchAllTimeRecords(),
-      fetchWeaponMasters(),
-      fetchAccoladeLeaders(),
+      fetchHallOfFameChampions().catch(() => []),
+      fetchAllTimeRecords().catch(() => []),
+      fetchWeaponMasters().catch(() => []),
+      fetchAccoladeLeaders().catch(() => []),
     ]);
 
   return (
