@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { brand } from "@/lib/brand";
 
 /**
  * Web App Manifest.
@@ -39,6 +40,15 @@ export default function manifest(): MetadataRoute.Manifest {
     display: "standalone",
     background_color: "#ffde00",
     theme_color: "#0a0a0a",
+    // Point back at this same PWA so navigator.getInstalledRelatedApps() can
+    // report it as installed even when the user is browsing in a normal tab
+    // (not inside the installed app). This lets the "Install App" button hide
+    // itself for people who already have it. prefer_related_applications stays
+    // false so we never steer users to a native app (there isn't one).
+    prefer_related_applications: false,
+    related_applications: [
+      { platform: "webapp", url: `${brand.siteUrl}/manifest.webmanifest` },
+    ],
     icons: [
       {
         src: "/icons/icon-192.png",

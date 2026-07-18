@@ -29,9 +29,14 @@ import { cn } from "@/lib/cn";
  *   - Phone-only (sm:hidden). Tablets/desktop have less compelling
  *     install stories and the page header layout doesn't accommodate
  *     this control gracefully on wider widths.
- *   - Hidden if user dismissed it once this session (sessionStorage).
- *     Persistent localStorage feels too aggressive — letting them see
- *     it again next visit is fine.
+ *   - Android: hidden if dismissed this session (sessionStorage) — the
+ *     native prompt can re-fire next visit, and getInstalledRelatedApps()
+ *     reliably hides it once actually installed.
+ *   - iOS: Safari can't tell us the app is already installed while browsing
+ *     a normal tab, so once the user has seen the instructions (or dismissed
+ *     the button) we remember that persistently (localStorage) and stop
+ *     showing it on future visits. Otherwise installed iPhone users get
+ *     nagged every single visit.
  *   - Hidden after a successful install (via the appinstalled event).
  */
 
@@ -68,6 +73,17 @@ function isStandalone(): boolean {
 }
 
 const SESSION_DISMISS_KEY = "laserops:install-dismissed";
+/**
+ * Persistent "don't show again" flag. Used for iOS, where we can't detect an
+ * already-installed app: once the user has engaged with the prompt once, we
+ * remember it across visits so we stop nagging them.
+ */
+const PERSIST_HIDE_KEY = "laserops:install-hidden";
+
+/** navigator.getInstalledRelatedApps — Chromium only, not in the standard lib. */
+type NavigatorWithRelatedApps = Navigator & {
+  getInstalledRelatedApps?: () => Promise<Array<{ platform?: string; url?: string }>>;
+};
 
 export function InstallAppButton() {
   const [mounted, setMounted] = useState(false);
@@ -92,9 +108,29 @@ export function InstallAppButton() {
       return;
     }
 
+    // Reliable installed-detection on Chromium/Android: ask whether this same
+    // PWA (declared in related_applications) is already installed on the device,
+    // even though we're currently in a browser tab. Unsupported on iOS Safari
+    // (the method simply doesn't exist there), so this is a no-op on iPhone.
+    const nav = navigator as NavigatorWithRelatedApps;
+    if (typeof nav.getInstalledRelatedApps === "function") {
+      nav
+        .getInstalledRelatedApps()
+        .then((apps) => {
+          if (Array.isArray(apps) && apps.length > 0) setInstalled(true);
+        })
+        .catch(() => {
+          /* not supported / blocked — fall back to the other signals */
+        });
+    }
+
+    const persistHidden =
+      typeof localStorage !== "undefined" &&
+      localStorage.getItem(PERSIST_HIDE_KEY) === "1";
     const wasDismissed =
-      typeof sessionStorage !== "undefined" &&
-      sessionStorage.getItem(SESSION_DISMISS_KEY) === "1";
+      persistHidden ||
+      (typeof sessionStorage !== "undefined" &&
+        sessionStorage.getItem(SESSION_DISMISS_KEY) === "1");
     setDismissed(wasDismissed);
     setPlatform(detectPlatform());
     setMounted(true);
@@ -142,8 +178,11 @@ export function InstallAppButton() {
   if (!showButton) return null;
 
   async function handleClick() {
-    // iOS: open instructional modal. No API.
+    // iOS: open instructional modal. No API. Once they've opened it, we've
+    // "shown once" — remember it persistently so future visits stay quiet
+    // (Safari gives us no way to know if they went on to install).
     if (platform === "ios") {
+      rememberHiddenPersistently();
       setOpen(true);
       return;
     }
@@ -184,6 +223,19 @@ export function InstallAppButton() {
       sessionStorage.setItem(SESSION_DISMISS_KEY, "1");
     } catch {
       // sessionStorage can throw in private mode — ignore.
+    }
+  }
+
+  /**
+   * Persistently hide the button across future visits. Used for iOS, where we
+   * can't detect an already-installed app — once the user has engaged, we
+   * shouldn't keep re-prompting them every visit.
+   */
+  function rememberHiddenPersistently() {
+    try {
+      localStorage.setItem(PERSIST_HIDE_KEY, "1");
+    } catch {
+      // localStorage can throw in private mode — ignore.
     }
   }
 
@@ -282,7 +334,7 @@ export function InstallAppButton() {
                 onClick={handleDismissForSession}
                 className="text-xs font-semibold uppercase tracking-[0.14em] text-text-subtle transition-colors hover:text-text"
               >
-                Don&apos;t show again this visit
+                Don&apos;t show again
               </button>
               <button
                 type="button"
