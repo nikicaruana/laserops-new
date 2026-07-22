@@ -1,0 +1,61 @@
+-- =============================================================================
+-- Seed · rank_levels (§4.12) — the 1..50 progression ladder from the Ranks sheet
+-- =============================================================================
+-- 50 levels. Score_Threshold thousand-commas stripped to plain numbers.
+-- Idempotent upsert on (operator_id, level).
+-- =============================================================================
+
+insert into public.rank_levels (level, rank_name, score_threshold, est_games, badge_url) values
+  (1, 'Recruit', 0, 0, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783964/Rank_Badges-Recruit_Badge-1_hx1bpc.png'),
+  (2, 'Recruit', 1000, 1, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783966/Rank_Badges-Recruit_Badge-2_cwmjem.png'),
+  (3, 'Recruit', 3500, 1, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783968/Rank_Badges-Recruit_Badge-3_pkxleg.png'),
+  (4, 'Recruit', 7500, 2, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783969/Rank_Badges-Recruit_Badge-4_olqtx0.png'),
+  (5, 'Recruit', 12900, 3, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783971/Rank_Badges-Recruit_Badge-5_iwrpgn.png'),
+  (6, 'Operative', 19600, 4, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783954/Rank_Badges-Operative_Badge-1_mvr6gc.png'),
+  (7, 'Operative', 27600, 5, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783955/Rank_Badges-Operative_Badge-2_g2dabl.png'),
+  (8, 'Operative', 36900, 7, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783955/Rank_Badges-Operative_Badge-3_dd5cl9.png'),
+  (9, 'Operative', 47400, 9, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783957/Rank_Badges-Operative_Badge-4_nk5llb.png'),
+  (10, 'Operative', 59100, 11, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783958/Rank_Badges-Operative_Badge-5_rtctim.png'),
+  (11, 'Ranger', 72100, 13, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783959/Rank_Badges-Ranger_Badge-1_kvoucc.png'),
+  (12, 'Ranger', 86200, 16, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783960/Rank_Badges-Ranger_Badge-2_jinrca.png'),
+  (13, 'Ranger', 101500, 18, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783961/Rank_Badges-Ranger_Badge-3_nq4orq.png'),
+  (14, 'Ranger', 118000, 21, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783961/Rank_Badges-Ranger_Badge-3_nq4orq.png'),
+  (15, 'Ranger', 135700, 24, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783964/Rank_Badges-Ranger_Badge-5_lmp4so.png'),
+  (16, 'Specialist', 154400, 28, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783971/Rank_Badges-Specialist_Badge-1_qlt6uq.png'),
+  (17, 'Specialist', 174400, 31, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783973/Rank_Badges-Specialist_Badge-2_h9ucan.png'),
+  (18, 'Specialist', 195400, 35, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783975/Rank_Badges-Specialist_Badge-3_ttx97d.png'),
+  (19, 'Specialist', 217600, 39, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783975/Rank_Badges-Specialist_Badge-4_o9ervi.png'),
+  (20, 'Specialist', 240900, 43, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783976/Rank_Badges-Specialist_Badge-5_fh060q.png'),
+  (21, 'Veteran', 265300, 47, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783979/Rank_Badges-Veteran_Badge-1_hxyeog.png'),
+  (22, 'Veteran', 290700, 51, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783979/Rank_Badges-Veteran_Badge-2_ormxkb.png'),
+  (23, 'Veteran', 317300, 56, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783980/Rank_Badges-Veteran_Badge-3_a8almv.png'),
+  (24, 'Veteran', 345000, 61, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783983/Rank_Badges-Veteran_Badge-4_b3aalz.png'),
+  (25, 'Veteran', 373700, 66, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783982/Rank_Badges-Veteran_Badge-5_wpyyql.png'),
+  (26, 'Elite', 403500, 71, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783944/Rank_Badges-Elite_Badge-1_nhhobo.png'),
+  (27, 'Elite', 434400, 77, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783944/Rank_Badges-Elite_Badge-2_pb09wk.png'),
+  (28, 'Elite', 466300, 82, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783946/Rank_Badges-Elite_Badge-3_fnid16.png'),
+  (29, 'Elite', 499300, 88, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783947/Rank_Badges-Elite_Badge-4_wvozkd.png'),
+  (30, 'Elite', 533400, 94, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783947/Rank_Badges-Elite_Badge-5_zwgmhb.png'),
+  (31, 'Commander', 568500, 100, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783940/Rank_Badges-Commander_Badge-1_qayp2d.png'),
+  (32, 'Commander', 604600, 107, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783940/Rank_Badges-Commander_Badge-2_jof5xk.png'),
+  (33, 'Commander', 641800, 113, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783941/Rank_Badges-Commander_Badge-3_o767io.png'),
+  (34, 'Commander', 680000, 120, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783942/Rank_Badges-Commander_Badge-4_u5juwu.png'),
+  (35, 'Commander', 719300, 127, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783943/Rank_Badges-Commander_Badge-5_oaiuff.png'),
+  (36, 'Warlord', 759600, 134, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783984/Rank_Badges-Warlord_Badge-1_mhtfka.png'),
+  (37, 'Warlord', 800900, 141, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783986/Rank_Badges-Warlord_Badge-2_ia2qlx.png'),
+  (38, 'Warlord', 843200, 148, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783988/Rank_Badges-Warlord_Badge-3_kllrkm.png'),
+  (39, 'Warlord', 886600, 156, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783988/Rank_Badges-Warlord_Badge-4_zoh3s9.png'),
+  (40, 'Warlord', 930900, 164, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783936/Rank_Badges-Warlord_Badge-5_lxg8tl.png'),
+  (41, 'Apex', 976300, 172, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783937/Rank_Badges-Apex_Badge-1_avtnqw.png'),
+  (42, 'Apex', 1022700, 180, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783937/Rank_Badges-Apex_Badge-2_gsb9cd.png'),
+  (43, 'Apex', 1070100, 188, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783937/Rank_Badges-Apex_Badge-3_drkehw.png'),
+  (44, 'Apex', 1118500, 197, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783938/Rank_Badges-Apex_Badge-4_ttu3lg.png'),
+  (45, 'Apex', 1167900, 205, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783939/Rank_Badges-Apex_Badge-5_ocd3dw.png'),
+  (46, 'Legend', 1218300, 214, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783949/Rank_Badges-Legend_Badge-1_iranm0.png'),
+  (47, 'Legend', 1269700, 223, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783950/Rank_Badges-Legend_Badge-2_mcirzd.png'),
+  (48, 'Legend', 1322100, 232, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783950/Rank_Badges-Legend_Badge-2_mcirzd.png'),
+  (49, 'Legend', 1375500, 242, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783952/Rank_Badges-Legend_Badge-4_a9smam.png'),
+  (50, 'Legend', 1429900, 251, 'https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783953/Rank_Badges-Legend_Badge-5_d0lw13.png')
+on conflict (operator_id, level) do update
+  set rank_name = excluded.rank_name, score_threshold = excluded.score_threshold,
+      est_games = excluded.est_games, badge_url = excluded.badge_url, updated_at = now();
