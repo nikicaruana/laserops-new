@@ -42,6 +42,20 @@ export type CloudinaryImage = {
 const GALLERY_REVALIDATE_SECONDS = 1800;
 
 /**
+ * Folder where player profile pictures are stored (see app/api/profile-pic).
+ * These must NEVER appear in the public gallery — the gallery fetchers below
+ * exclude this folder unconditionally, independent of CLOUDINARY_GALLERY_FOLDER.
+ */
+export const PROFILE_PICS_FOLDER = "laseropsmalta.com/profile-pics";
+
+function isProfilePic(folder: string): boolean {
+  return (
+    folder === PROFILE_PICS_FOLDER ||
+    folder.startsWith(PROFILE_PICS_FOLDER + "/")
+  );
+}
+
+/**
  * Fetch gallery images from Cloudinary. Sorted by created_at descending
  * so newest uploads appear first.
  *
@@ -95,6 +109,8 @@ export async function fetchGalleryImages(): Promise<CloudinaryImage[]> {
 
     const images = data.resources
       .map(parseResource)
+      // Never expose player profile pictures here, regardless of config.
+      .filter((img) => !isProfilePic(img.folder))
       // Filter by asset_folder when configured. Keeps images whose folder
       // exactly matches OR is a subfolder of CLOUDINARY_GALLERY_FOLDER.
       // This is the correct approach for dynamic folder mode — the prefix
@@ -174,7 +190,7 @@ export async function fetchImagesByTag(tag: string): Promise<CloudinaryImage[]> 
     }
     const data = (await res.json()) as { resources?: any[] }; // any: Cloudinary REST response is untyped
     if (!Array.isArray(data.resources)) return [];
-    return data.resources.map(parseResource);
+    return data.resources.map(parseResource).filter((img) => !isProfilePic(img.folder));
   } catch (err) {
     console.error("[cloudinary] fetchImagesByTag failed:", err);
     return [];

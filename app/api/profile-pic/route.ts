@@ -16,8 +16,9 @@
  */
 import crypto from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
+import { PROFILE_PICS_FOLDER } from "@/lib/cloudinary";
 
-const FOLDER = "laseropsmalta.com/profile-pics";
+const FOLDER = PROFILE_PICS_FOLDER;
 const MAX_BYTES = 6 * 1024 * 1024; // 6 MB
 
 export async function POST(request: Request) {
