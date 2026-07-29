@@ -11,6 +11,8 @@
     "generate:og": "node scripts/generate-og.mjs"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.12.4",
+    "@supabase/supabase-js": "^2.111.0",
     "clsx": "^2.1.1",
     "next": "15.1.9",
     "react": "19.0.0",
