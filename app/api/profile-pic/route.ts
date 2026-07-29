@@ -138,3 +138,28 @@ export async function POST(request: Request) {
 
   return Response.json({ ok: true, url: secureUrl });
 }
+
+/**
+ * DELETE — reset the avatar to the default (clear profile_pic_url). The
+ * Cloudinary asset is left in place (it's keyed by account id and is
+ * overwritten on the next upload); only the reference is cleared.
+ */
+export async function DELETE() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return Response.json({ ok: false, error: "Not signed in." }, { status: 401 });
+  }
+
+  const { error } = await supabase
+    .from("accounts")
+    .update({ profile_pic_url: null })
+    .eq("auth_user_id", user.id);
+  if (error) {
+    console.error("[profile-pic] reset failed:", error);
+    return Response.json({ ok: false, error: "Couldn't reset your photo." }, { status: 500 });
+  }
+  return Response.json({ ok: true });
+}

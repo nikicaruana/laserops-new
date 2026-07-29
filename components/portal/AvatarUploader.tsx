@@ -64,6 +64,22 @@ export function AvatarUploader({
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
+  async function removePhoto() {
+    setError(null);
+    setStatus("saving");
+    try {
+      const res = await fetch("/api/profile-pic", { method: "DELETE" });
+      const data = (await res.json()) as { ok: boolean; error?: string };
+      if (!res.ok || !data.ok) throw new Error(data.error || "Couldn't remove photo.");
+      setCurrentUrl(null);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't remove photo.");
+    } finally {
+      setStatus("idle");
+    }
+  }
+
   async function saveCrop() {
     if (!imageSrc || !croppedPixels) return;
     setStatus("saving");
@@ -113,14 +129,26 @@ export function AvatarUploader({
         onChange={onPickFile}
         className="hidden"
       />
-      <Button
-        type="button"
-        variant="secondary"
-        size="sm"
-        onClick={() => fileInputRef.current?.click()}
-      >
-        {currentUrl ? "Change photo" : "Add photo"}
-      </Button>
+      <div className="flex items-center gap-4">
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={() => fileInputRef.current?.click()}
+        >
+          {currentUrl ? "Change photo" : "Add photo"}
+        </Button>
+        {currentUrl && (
+          <button
+            type="button"
+            onClick={removePhoto}
+            disabled={status === "saving"}
+            className="text-xs uppercase tracking-[0.12em] text-text-subtle hover:text-accent disabled:opacity-50"
+          >
+            Remove
+          </button>
+        )}
+      </div>
 
       {error && <p className="text-sm text-red-400">{error}</p>}
 

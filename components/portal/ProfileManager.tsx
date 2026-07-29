@@ -81,6 +81,12 @@ export function ProfileManager(props: Props) {
   const [pwError, setPwError] = useState<string | null>(null);
   const [pwDone, setPwDone] = useState(false);
 
+  // Delete account
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteText, setDeleteText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
   async function saveAccount(e: React.FormEvent) {
     e.preventDefault();
     setFieldError(null);
@@ -134,6 +140,21 @@ export function ProfileManager(props: Props) {
     setCurrentPw("");
     setNewPw("");
     setConfirmPw("");
+  }
+
+  async function deleteAccount() {
+    setDeleteError(null);
+    setDeleting(true);
+    try {
+      const res = await fetch("/api/profile/delete", { method: "POST" });
+      const data = (await res.json()) as { ok: boolean; error?: string };
+      if (!res.ok || !data.ok) throw new Error(data.error || "Couldn't delete account.");
+      // Account + session gone — hard-navigate home (logged out).
+      window.location.assign("/");
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Couldn't delete account.");
+      setDeleting(false);
+    }
   }
 
   return (
@@ -279,6 +300,77 @@ export function ProfileManager(props: Props) {
           </Button>
         </form>
       </Section>
+
+      {/* Danger zone */}
+      <section className="border border-red-900/60 bg-red-950/10 px-5 py-6 sm:px-7">
+        <h2 className="mb-5 text-sm font-semibold uppercase tracking-[0.12em] text-red-400">
+          Danger zone
+        </h2>
+        {!deleteOpen ? (
+          <div>
+            <p className="mb-4 text-sm text-text-muted">
+              Permanently delete your account, profile, and photo.
+            </p>
+            <button
+              type="button"
+              onClick={() => setDeleteOpen(true)}
+              className="border border-red-800 px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.12em] text-red-400 transition-colors hover:bg-red-950/50"
+            >
+              Delete account
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="border border-red-800 bg-red-950/30 px-4 py-3 text-sm">
+              <p className="font-semibold text-red-300">This is permanent and cannot be undone.</p>
+              <p className="mt-2 text-red-400/90">
+                Your profile, photo, stats, ratings, and login will be permanently deleted. Your
+                past games stay in the records but are no longer linked to you.
+              </p>
+            </div>
+            <div>
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">
+                Type DELETE to confirm
+              </label>
+              <input
+                value={deleteText}
+                onChange={(e) => setDeleteText(e.target.value)}
+                placeholder="DELETE"
+                className={inputStyles}
+                autoComplete="off"
+              />
+            </div>
+            {deleteError && (
+              <p className="border border-red-800 bg-red-950/40 px-4 py-3 text-sm text-red-400">
+                {deleteError}
+              </p>
+            )}
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                variant="secondary"
+                size="md"
+                onClick={() => {
+                  setDeleteOpen(false);
+                  setDeleteText("");
+                  setDeleteError(null);
+                }}
+                disabled={deleting}
+              >
+                Cancel
+              </Button>
+              <button
+                type="button"
+                onClick={deleteAccount}
+                disabled={deleteText !== "DELETE" || deleting}
+                className="h-11 bg-red-700 px-6 text-sm font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {deleting ? "Deleting…" : "Permanently delete"}
+              </button>
+            </div>
+          </div>
+        )}
+      </section>
 
       {/* Sign out */}
       <div className="border-t border-border pt-6 text-center">
