@@ -37,7 +37,7 @@ export function WaiverGateForm({ initialMarketing }: { initialMarketing: boolean
       setError(data.error || "Couldn't save. Please try again.");
       return;
     }
-    window.location.assign("/player-portal");
+    window.location.assign("/player-portal/player-stats");
   }
 
   return (

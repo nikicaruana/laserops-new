@@ -16,8 +16,9 @@ export type GateAccount = {
 };
 
 export function postAuthPath(account: GateAccount | null): string {
-  if (!account) return "/player-portal";
+  if (!account) return "/player-portal/player-stats";
   if (!account.ops_tag) return "/player-portal/onboarding";
   if (!account.waiver_accepted_at) return "/player-portal/waiver";
-  return "/player-portal";
+  // Their own stats summary (player-stats entry redirects to ?ops=<their tag>).
+  return "/player-portal/player-stats";
 }

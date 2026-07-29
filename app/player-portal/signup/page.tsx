@@ -18,7 +18,7 @@ export default async function SignupPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (user) redirect("/player-portal");
+  if (user) redirect("/player-portal/player-stats");
 
   return (
     <Container size="narrow" className="py-16 sm:py-24">

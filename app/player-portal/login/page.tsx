@@ -23,7 +23,7 @@ export default async function LoginPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (user) redirect("/player-portal");
+  if (user) redirect("/player-portal/player-stats");
 
   const { error } = await searchParams;
 
