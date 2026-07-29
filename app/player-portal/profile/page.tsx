@@ -25,7 +25,9 @@ export default async function ProfilePage() {
   const [{ data: account }, { data: hasPassword }] = await Promise.all([
     supabase
       .from("accounts")
-      .select("ops_tag, full_name, date_of_birth, profile_pic_url, show_full_name, show_date_of_birth")
+      .select(
+        "ops_tag, full_name, date_of_birth, profile_pic_url, show_full_name, show_date_of_birth, marketing_opt_in",
+      )
       .eq("auth_user_id", user.id)
       .maybeSingle(),
     supabase.rpc("current_user_has_password"),
@@ -54,6 +56,7 @@ export default async function ProfilePage() {
           dateOfBirth={account.date_of_birth}
           showFullName={account.show_full_name ?? false}
           showDateOfBirth={account.show_date_of_birth ?? false}
+          marketingOptIn={account.marketing_opt_in ?? false}
           profilePicUrl={account.profile_pic_url}
           email={user.email ?? null}
           hasPassword={hasPassword ?? false}

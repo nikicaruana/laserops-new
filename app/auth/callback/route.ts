@@ -13,6 +13,7 @@
 import { type EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { postAuthPath } from "@/lib/portalRoute";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -37,17 +38,13 @@ export async function GET(request: Request) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (user) {
-      const { data: account } = await supabase
-        .from("accounts")
-        .select("ops_tag")
-        .eq("auth_user_id", user.id)
-        .maybeSingle();
-      if (account && !account.ops_tag) {
-        return `${origin}/player-portal/onboarding`;
-      }
-    }
-    return `${origin}${next}`;
+    if (!user) return `${origin}${next}`;
+    const { data: account } = await supabase
+      .from("accounts")
+      .select("ops_tag, waiver_accepted_at")
+      .eq("auth_user_id", user.id)
+      .maybeSingle();
+    return `${origin}${postAuthPath(account)}`;
   }
 
   if (code) {

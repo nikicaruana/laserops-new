@@ -14,6 +14,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { GoogleButton } from "@/components/portal/GoogleButton";
+import { postAuthPath } from "@/lib/portalRoute";
 
 const inputStyles =
   "h-14 w-full rounded-none border border-border-strong bg-bg-elevated px-4 text-sm text-text placeholder:text-text-subtle focus:border-accent focus:outline-none";
@@ -25,10 +26,10 @@ async function destinationFor(supabase: ReturnType<typeof createClient>): Promis
   if (!user) return "/player-portal";
   const { data: account } = await supabase
     .from("accounts")
-    .select("ops_tag")
+    .select("ops_tag, waiver_accepted_at")
     .eq("auth_user_id", user.id)
     .maybeSingle();
-  return account && !account.ops_tag ? "/player-portal/onboarding" : "/player-portal";
+  return postAuthPath(account);
 }
 
 export function LoginForm({ hadError }: { hadError?: boolean }) {

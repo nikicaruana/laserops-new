@@ -6,8 +6,7 @@
  * default looks identical everywhere. Stored as null in the DB; this is a
  * display-time fallback, not a stored value.
  */
-export const DEFAULT_AVATAR_URL =
-  "https://i.postimg.cc/sxy2jVMR/Generic-Ops-Profile-Pic.png";
+export const DEFAULT_AVATAR_URL = "/images/default-avatar.png";
 
 /** A player's avatar, falling back to the branded default when unset. */
 export function avatarOrDefault(url: string | null | undefined): string {

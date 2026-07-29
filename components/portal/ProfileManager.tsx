@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { AvatarUploader } from "@/components/portal/AvatarUploader";
 import { Button } from "@/components/ui/Button";
 import { PasswordInput } from "@/components/ui/PasswordInput";
+import { MARKETING_CONSENT_TEXT } from "@/lib/waiver";
 
 const inputStyles =
   "h-14 w-full rounded-none border border-border-strong bg-bg-elevated px-4 text-sm text-text placeholder:text-text-subtle focus:border-accent focus:outline-none";
@@ -24,6 +25,7 @@ type Props = {
   dateOfBirth: string | null; // YYYY-MM-DD
   showFullName: boolean;
   showDateOfBirth: boolean;
+  marketingOptIn: boolean;
   profilePicUrl: string | null;
   email: string | null;
   hasPassword: boolean;
@@ -69,6 +71,7 @@ export function ProfileManager(props: Props) {
   const [dob, setDob] = useState(props.dateOfBirth ?? "");
   const [showFullName, setShowFullName] = useState(props.showFullName);
   const [showDob, setShowDob] = useState(props.showDateOfBirth);
+  const [marketingOptIn, setMarketingOptIn] = useState(props.marketingOptIn);
   const [saving, setSaving] = useState(false);
   const [fieldError, setFieldError] = useState<{ field?: string; message: string } | null>(null);
   const [savedNotice, setSavedNotice] = useState(false);
@@ -101,6 +104,7 @@ export function ProfileManager(props: Props) {
         date_of_birth: dob || null,
         show_full_name: showFullName,
         show_date_of_birth: showDob,
+        marketing_opt_in: marketingOptIn,
       }),
     });
     const data = (await res.json()) as { ok: boolean; field?: string; error?: string };
@@ -220,6 +224,21 @@ export function ProfileManager(props: Props) {
               onChange={setShowDob}
               label="Show my birthday (day & month only) on my public profile"
             />
+          </div>
+
+          <div className="border-t border-border pt-5">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">
+              Emails
+            </p>
+            <label className="flex cursor-pointer items-start gap-2.5 text-xs leading-relaxed text-text-muted">
+              <input
+                type="checkbox"
+                checked={marketingOptIn}
+                onChange={(e) => setMarketingOptIn(e.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0 accent-accent"
+              />
+              <span>{MARKETING_CONSENT_TEXT}</span>
+            </label>
           </div>
 
           {fieldError && (
