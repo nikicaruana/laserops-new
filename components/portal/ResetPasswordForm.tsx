@@ -11,9 +11,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
-
-const inputStyles =
-  "h-14 w-full rounded-none border border-border-strong bg-bg-elevated px-4 text-sm text-text placeholder:text-text-subtle focus:border-accent focus:outline-none";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 
 const MIN_PASSWORD = 8;
 
@@ -72,7 +70,7 @@ export function ResetPasswordForm() {
   if (done) {
     return (
       <div className="border border-accent bg-bg-elevated px-6 py-8 text-center">
-        <p className="text-sm text-text">Password updated. You're all set.</p>
+        <p className="text-sm text-text">Password updated. You&apos;re all set.</p>
         <a
           href="/player-portal"
           className="mt-4 inline-block text-xs uppercase tracking-[0.12em] text-accent hover:underline"
@@ -89,15 +87,13 @@ export function ResetPasswordForm() {
         <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">
           New password
         </span>
-        <input
-          type="password"
+        <PasswordInput
           required
           autoComplete="new-password"
           minLength={MIN_PASSWORD}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder={`At least ${MIN_PASSWORD} characters`}
-          className={inputStyles}
         />
       </label>
 
@@ -105,15 +101,13 @@ export function ResetPasswordForm() {
         <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">
           Confirm new password
         </span>
-        <input
-          type="password"
+        <PasswordInput
           required
           autoComplete="new-password"
           minLength={MIN_PASSWORD}
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
           placeholder="Re-enter new password"
-          className={inputStyles}
         />
       </label>
 

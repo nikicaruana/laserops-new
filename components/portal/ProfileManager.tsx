@@ -13,6 +13,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AvatarUploader } from "@/components/portal/AvatarUploader";
 import { Button } from "@/components/ui/Button";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 
 const inputStyles =
   "h-14 w-full rounded-none border border-border-strong bg-bg-elevated px-4 text-sm text-text placeholder:text-text-subtle focus:border-accent focus:outline-none";
@@ -232,12 +233,10 @@ export function ProfileManager(props: Props) {
               <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">
                 Current password
               </label>
-              <input
-                type="password"
+              <PasswordInput
                 autoComplete="current-password"
                 value={currentPw}
                 onChange={(e) => setCurrentPw(e.target.value)}
-                className={inputStyles}
               />
             </div>
           )}
@@ -245,28 +244,24 @@ export function ProfileManager(props: Props) {
             <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">
               New password
             </label>
-            <input
-              type="password"
+            <PasswordInput
               autoComplete="new-password"
               minLength={8}
               value={newPw}
               onChange={(e) => setNewPw(e.target.value)}
               placeholder="At least 8 characters"
-              className={inputStyles}
             />
           </div>
           <div>
             <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">
               Confirm new password
             </label>
-            <input
-              type="password"
+            <PasswordInput
               autoComplete="new-password"
               minLength={8}
               value={confirmPw}
               onChange={(e) => setConfirmPw(e.target.value)}
               placeholder="Re-enter new password"
-              className={inputStyles}
             />
           </div>
 

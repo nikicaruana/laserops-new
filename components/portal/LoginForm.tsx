@@ -19,6 +19,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 
 type Mode = "signin" | "signup" | "forgot";
 
@@ -31,6 +32,7 @@ export function LoginForm({ hadError }: { hadError?: boolean }) {
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(
     hadError ? "Something went wrong signing you in. Please try again." : null,
@@ -62,6 +64,10 @@ export function LoginForm({ hadError }: { hadError?: boolean }) {
     if (!email.trim() || !password) return;
     if (mode === "signup" && password.length < MIN_PASSWORD) {
       setError(`Password must be at least ${MIN_PASSWORD} characters.`);
+      return;
+    }
+    if (mode === "signup" && password !== confirmPassword) {
+      setError("Passwords don't match.");
       return;
     }
 
@@ -152,7 +158,7 @@ export function LoginForm({ hadError }: { hadError?: boolean }) {
         </label>
 
         {mode !== "forgot" && (
-          <label className="block">
+          <div>
             <div className="mb-2 flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">
                 Password
@@ -171,17 +177,30 @@ export function LoginForm({ hadError }: { hadError?: boolean }) {
                 </button>
               )}
             </div>
-            <input
-              type="password"
+            <PasswordInput
               required
               autoComplete={mode === "signup" ? "new-password" : "current-password"}
               minLength={mode === "signup" ? MIN_PASSWORD : undefined}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder={mode === "signup" ? `At least ${MIN_PASSWORD} characters` : "Your password"}
-              className={inputStyles}
             />
-          </label>
+            {mode === "signup" && (
+              <div className="mt-4">
+                <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">
+                  Confirm password
+                </span>
+                <PasswordInput
+                  required
+                  autoComplete="new-password"
+                  minLength={MIN_PASSWORD}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Re-enter password"
+                />
+              </div>
+            )}
+          </div>
         )}
 
         {error && (
