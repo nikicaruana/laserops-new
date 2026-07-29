@@ -40,7 +40,8 @@ export default async function OnboardingPage() {
             Set up your profile
           </h1>
           <p className="mt-3 text-sm text-text-muted">
-            Welcome to LaserOps. Pick your callsign and a photo to get started.
+            Welcome to LaserOps. Pick your ops tag, add a photo, and sign the waiver to get
+            started.
           </p>
         </div>
         <OnboardingForm

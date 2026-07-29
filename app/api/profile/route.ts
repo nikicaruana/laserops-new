@@ -10,6 +10,7 @@
  */
 import { createClient } from "@/lib/supabase/server";
 import { validateOpsTag } from "@/lib/opsTag";
+import { WAIVER_VERSION } from "@/lib/waiver";
 
 function isValidDob(s: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
@@ -69,6 +70,13 @@ export async function PATCH(request: Request) {
 
   if (typeof body.show_full_name === "boolean") updates.show_full_name = body.show_full_name;
   if (typeof body.show_date_of_birth === "boolean") updates.show_date_of_birth = body.show_date_of_birth;
+  if (typeof body.marketing_opt_in === "boolean") updates.marketing_opt_in = body.marketing_opt_in;
+
+  // Waiver acceptance stamps the time + the version they agreed to.
+  if (body.accept_waiver === true) {
+    updates.waiver_accepted_at = new Date().toISOString();
+    updates.waiver_version = WAIVER_VERSION;
+  }
 
   if (Object.keys(updates).length === 0) {
     return Response.json({ ok: false, error: "Nothing to update." }, { status: 400 });
