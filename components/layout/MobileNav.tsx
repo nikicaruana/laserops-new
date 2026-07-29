@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 import { primaryNav, ctaLinks, utilityNav } from "@/lib/nav";
 import { Logo } from "@/components/ui/Logo";
 import { Button } from "@/components/ui/Button";
+import { useAccount } from "@/lib/hooks/useAccount";
 
 /**
  * MobileNav.
@@ -28,6 +29,7 @@ export function MobileNav() {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const { signedIn, opsTag } = useAccount();
 
   // Portal target only exists after client mount; gate render with mounted flag
   // to avoid SSR/hydration mismatch.
@@ -314,12 +316,31 @@ export function MobileNav() {
       </nav>
 
       {/* CTAs */}
-      <div style={{ padding: "2rem 1.25rem 0", flexShrink: 0, display: "flex", justifyContent: "center" }}>
+      <div
+        style={{
+          padding: "2rem 1.25rem 0",
+          flexShrink: 0,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: "0.75rem",
+        }}
+      >
+        <Button
+          href={signedIn ? "/player-portal/profile" : "/player-portal/login"}
+          variant="secondary"
+          size="lg"
+          onClick={close}
+          className="w-full max-w-[18rem]"
+        >
+          {signedIn ? (opsTag ? `${opsTag} — Profile` : "My Profile") : "Log In / Sign Up"}
+        </Button>
         <Button
           href={ctaLinks.primary.href}
           variant="primary"
           size="lg"
           onClick={close}
+          className="w-full max-w-[18rem]"
         >
           {ctaLinks.primary.label}
         </Button>

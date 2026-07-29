@@ -121,6 +121,18 @@ export default async function ProfilePage() {
             No match stats yet — play a game to start building your record.
           </p>
         )}
+
+        {/* Sign out */}
+        <div className="mt-12 border-t border-border pt-6 text-center">
+          <form action="/auth/signout" method="post">
+            <button
+              type="submit"
+              className="text-xs font-semibold uppercase tracking-[0.12em] text-text-subtle hover:text-accent"
+            >
+              Sign out
+            </button>
+          </form>
+        </div>
       </div>
     </Container>
   );

@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-import { Container } from "@/components/ui/Container";
-import { AccountBadge } from "@/components/portal/AccountBadge";
 
 /**
  * Player Portal layout.
@@ -26,14 +24,5 @@ export const metadata: Metadata = {
 };
 
 export default function PlayerPortalLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="bg-bg">
-      <div className="border-b border-border">
-        <Container className="flex h-11 items-center justify-end">
-          <AccountBadge />
-        </Container>
-      </div>
-      {children}
-    </div>
-  );
+  return <div className="bg-bg">{children}</div>;
 }

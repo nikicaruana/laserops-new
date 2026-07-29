@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
 import { Logo } from "@/components/ui/Logo";
+import { HeaderAuth } from "@/components/layout/HeaderAuth";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { primaryNav, ctaLinks } from "@/lib/nav";
 import { cn } from "@/lib/cn";
@@ -117,8 +118,9 @@ export function Header() {
               )}
           </nav>
 
-          {/* Desktop CTA — only shown xl+ */}
-          <div className="hidden xl:block">
+          {/* Desktop auth + CTA — only shown xl+ */}
+          <div className="hidden items-center gap-3 xl:flex">
+            <HeaderAuth />
             <Button href={ctaLinks.primary.href} variant="primary" size="md">
               {ctaLinks.primary.label}
             </Button>
