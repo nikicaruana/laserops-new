@@ -20,6 +20,7 @@ const MIN_PASSWORD = 8;
 export function ResetPasswordForm() {
   const [ready, setReady] = useState<boolean | null>(null); // null = checking
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -34,6 +35,10 @@ export function ResetPasswordForm() {
     setError(null);
     if (password.length < MIN_PASSWORD) {
       setError(`Password must be at least ${MIN_PASSWORD} characters.`);
+      return;
+    }
+    if (password !== confirm) {
+      setError("Passwords don't match.");
       return;
     }
     setBusy(true);
@@ -92,6 +97,22 @@ export function ResetPasswordForm() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder={`At least ${MIN_PASSWORD} characters`}
+          className={inputStyles}
+        />
+      </label>
+
+      <label className="mt-4 block">
+        <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">
+          Confirm new password
+        </span>
+        <input
+          type="password"
+          required
+          autoComplete="new-password"
+          minLength={MIN_PASSWORD}
+          value={confirm}
+          onChange={(e) => setConfirm(e.target.value)}
+          placeholder="Re-enter new password"
           className={inputStyles}
         />
       </label>

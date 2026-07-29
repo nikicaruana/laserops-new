@@ -75,6 +75,7 @@ export function ProfileManager(props: Props) {
   // Password
   const [currentPw, setCurrentPw] = useState("");
   const [newPw, setNewPw] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
   const [pwBusy, setPwBusy] = useState(false);
   const [pwError, setPwError] = useState<string | null>(null);
   const [pwDone, setPwDone] = useState(false);
@@ -109,6 +110,10 @@ export function ProfileManager(props: Props) {
     e.preventDefault();
     setPwError(null);
     setPwDone(false);
+    if (newPw !== confirmPw) {
+      setPwError("Passwords don't match.");
+      return;
+    }
     setPwBusy(true);
     const res = await fetch("/api/profile/password", {
       method: "POST",
@@ -127,6 +132,7 @@ export function ProfileManager(props: Props) {
     setPwDone(true);
     setCurrentPw("");
     setNewPw("");
+    setConfirmPw("");
   }
 
   return (
@@ -246,6 +252,20 @@ export function ProfileManager(props: Props) {
               value={newPw}
               onChange={(e) => setNewPw(e.target.value)}
               placeholder="At least 8 characters"
+              className={inputStyles}
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">
+              Confirm new password
+            </label>
+            <input
+              type="password"
+              autoComplete="new-password"
+              minLength={8}
+              value={confirmPw}
+              onChange={(e) => setConfirmPw(e.target.value)}
+              placeholder="Re-enter new password"
               className={inputStyles}
             />
           </div>
