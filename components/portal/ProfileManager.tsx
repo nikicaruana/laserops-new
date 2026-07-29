@@ -222,10 +222,6 @@ export function ProfileManager(props: Props) {
             />
           </div>
 
-          <p className="text-xs text-text-subtle">
-            Public profiles are coming soon — these toggles control what other players will see.
-          </p>
-
           {fieldError && (
             <p className="border border-red-800 bg-red-950/40 px-4 py-3 text-sm text-red-400">
               {fieldError.message}

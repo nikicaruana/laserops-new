@@ -41,7 +41,7 @@ export function validateOpsTag(raw: string): OpsTagResult {
     return { ok: false, error: "Use only letters, numbers, spaces, and . _ -" };
   }
   if (matcher.hasMatch(value)) {
-    return { ok: false, error: "That ops tag isn't allowed — please choose another." };
+    return { ok: false, error: "That ops tag isn't allowed. Please choose another." };
   }
   return { ok: true, value };
 }

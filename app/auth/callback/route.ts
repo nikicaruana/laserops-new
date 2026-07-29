@@ -27,13 +27,36 @@ export async function GET(request: Request) {
 
   const supabase = await createClient();
 
+  // New / unfinished accounts (no callsign yet) go to onboarding first;
+  // everyone else continues to `next`. Password-recovery links must NOT be
+  // diverted — they need to reach the reset-password page.
+  async function destination(): Promise<string> {
+    if (type === "recovery" || next.startsWith("/player-portal/reset-password")) {
+      return `${origin}${next}`;
+    }
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) {
+      const { data: account } = await supabase
+        .from("accounts")
+        .select("ops_tag")
+        .eq("auth_user_id", user.id)
+        .maybeSingle();
+      if (account && !account.ops_tag) {
+        return `${origin}/player-portal/onboarding`;
+      }
+    }
+    return `${origin}${next}`;
+  }
+
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) return NextResponse.redirect(`${origin}${next}`);
+    if (!error) return NextResponse.redirect(await destination());
     console.error("[auth/callback] exchangeCodeForSession failed:", error.message);
   } else if (tokenHash && type) {
     const { error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
-    if (!error) return NextResponse.redirect(`${origin}${next}`);
+    if (!error) return NextResponse.redirect(await destination());
     console.error("[auth/callback] verifyOtp failed:", error.message);
   } else {
     console.error(

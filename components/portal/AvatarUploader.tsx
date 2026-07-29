@@ -13,6 +13,7 @@ import { useCallback, useRef, useState } from "react";
 import Cropper from "react-easy-crop";
 import { useRouter } from "next/navigation";
 import { getCroppedBlob, type PixelCrop } from "@/lib/cropImage";
+import { avatarOrDefault } from "@/lib/avatar";
 import { Button } from "@/components/ui/Button";
 
 /** 1:1 delivery transform — safety net on top of the client-side square crop. */
@@ -107,19 +108,13 @@ export function AvatarUploader({
 
   return (
     <div className="flex flex-col items-center gap-4">
-      {/* Current avatar */}
+      {/* Current avatar (branded default when none set) */}
       <div className="relative h-32 w-32 overflow-hidden rounded-full border border-border-strong bg-bg-overlay">
-        {currentUrl ? (
-          <img
-            src={squareUrl(currentUrl, 256)}
-            alt={opsTag ? `${opsTag} avatar` : "Your avatar"}
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-3xl font-bold uppercase text-text-subtle">
-            {opsTag?.charAt(0) ?? "?"}
-          </div>
-        )}
+        <img
+          src={squareUrl(avatarOrDefault(currentUrl), 256)}
+          alt={opsTag ? `${opsTag} avatar` : "Your avatar"}
+          className="h-full w-full object-cover"
+        />
       </div>
 
       <input

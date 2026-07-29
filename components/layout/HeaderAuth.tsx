@@ -11,6 +11,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { useAccount, avatarThumb } from "@/lib/hooks/useAccount";
+import { avatarOrDefault } from "@/lib/avatar";
 
 export function HeaderAuth() {
   const { loading, signedIn, opsTag, email, avatarUrl } = useAccount();
@@ -34,17 +35,11 @@ export function HeaderAuth() {
       aria-label="Your profile"
     >
       <span className="relative block h-7 w-7 shrink-0 overflow-hidden rounded-full border border-border bg-bg-overlay">
-        {avatarUrl ? (
-          <img
-            src={avatarThumb(avatarUrl, 56)}
-            alt=""
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <span className="flex h-full w-full items-center justify-center text-[0.7rem] text-text-subtle">
-            {label.charAt(0)}
-          </span>
-        )}
+        <img
+          src={avatarThumb(avatarOrDefault(avatarUrl), 56)}
+          alt=""
+          className="h-full w-full object-cover"
+        />
       </span>
       <span className="max-w-[10rem] truncate group-hover:text-accent">{label}</span>
     </Link>
