@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Container } from "@/components/ui/Container";
-import { fetchWeapons, listGunTreeBranches } from "@/lib/cms/weapons";
+import { listGunTreeBranches } from "@/lib/cms/weapons";
+import { getWeaponsFromSupabase } from "@/lib/cms/supabase-weapons";
 import { fetchWeaponUsageStats } from "@/lib/weapons/usage-stats";
 import { WeaponsPageClient } from "@/components/weapons/WeaponsPageClient";
 import { WeaponMetaChart } from "@/components/weapons/WeaponMetaChart";
@@ -49,7 +50,7 @@ export default async function WeaponsPage() {
   //
   // Catches in each upstream fetcher return empty arrays on failure,
   // so this never rejects.
-  const weapons = await fetchWeapons();
+  const weapons = await getWeaponsFromSupabase();
   const treeBranches = listGunTreeBranches(weapons);
   // Build a lookup map of gun name -> tree branch for the aggregator.
   // Built once here, used inside the per-row aggregation in

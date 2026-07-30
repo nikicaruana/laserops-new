@@ -6,7 +6,7 @@ import { AllTimeRecordsSection } from "@/components/portal/hall-of-fame/AllTimeR
 import { WeaponMastersSection } from "@/components/portal/hall-of-fame/WeaponMastersSection";
 import { AccoladeLeadersSection } from "@/components/portal/hall-of-fame/AccoladeLeadersSection";
 import { createClient } from "@/lib/supabase/server";
-import { fetchWeapons } from "@/lib/cms/weapons";
+import { getWeaponsFromSupabase } from "@/lib/cms/supabase-weapons";
 import {
   getHallOfFameChampions,
   getAllTimeRecords,
@@ -37,7 +37,7 @@ export default async function HallOfFameLeaderboardPage({
   // Weapon catalogue (image + sort order) still comes from the CMS; the
   // records/masters themselves come from Supabase. Catch per-section so one
   // flaky dataset shows its own empty state instead of failing the whole page.
-  const weapons = await fetchWeapons();
+  const weapons = await getWeaponsFromSupabase();
   const [champions, allTimeRecords, weaponMasters, accoladeLeaders] =
     await Promise.all([
       getHallOfFameChampions(supabase).catch(() => []),

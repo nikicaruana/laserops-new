@@ -3,7 +3,7 @@ import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
 import { WeaponCarousel } from "@/components/weapons/WeaponCarousel";
 import { BracketFrame } from "@/components/portal/BracketFrame";
-import { fetchWeapons } from "@/lib/cms/weapons";
+import { getWeaponsFromSupabase } from "@/lib/cms/supabase-weapons";
 import { fetchImagesByTag, cloudinaryTransform } from "@/lib/cloudinary";
 
 /* ─── Cloudinary delivery transforms ───────────────────────────────── */
@@ -88,7 +88,7 @@ export default async function OutdoorLaserTagPage() {
   // laseropsmalta.com/site_pages/outdoor_laser_tag, pulled by tag.
   // Each fetch fails soft to [] so a missing tag just hides that image.
   const [weapons, heroImgs, arenaImgs, kitImgs] = await Promise.all([
-    fetchWeapons(),
+    getWeaponsFromSupabase(),
     fetchImagesByTag("olt-hero"),
     fetchImagesByTag("olt-arena"),
     fetchImagesByTag("olt-kit"),

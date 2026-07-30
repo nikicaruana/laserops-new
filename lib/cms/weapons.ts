@@ -202,7 +202,7 @@ export function listGunTreeBranches(weapons: Weapon[]): string[] {
  * Niki's spreadsheet is the source of truth, and small variations
  * in how the value gets typed shouldn't break the rendering.
  */
-function parseFireRate(value: string | undefined): FireRate {
+export function parseFireRate(value: string | undefined): FireRate {
   if (!value) return { kind: "auto", rpm: 0 };
   const trimmed = value.trim();
   if (trimmed === "") return { kind: "auto", rpm: 0 };
