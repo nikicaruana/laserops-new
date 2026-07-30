@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { fetchPlayerHistory } from "@/lib/player-history/engine";
+import { createClient } from "@/lib/supabase/server";
+import { getPlayerHistory } from "@/lib/player-history/supabase-engine";
 import { TableErrorState } from "@/components/portal/tables/TableErrorState";
 import { PlayerHistoryView } from "@/components/portal/player-history/PlayerHistoryView";
 import { HistoryEmptyState } from "@/components/portal/player-history/HistoryEmptyState";
@@ -54,7 +55,8 @@ export default async function PlayerHistoryPage({
 }
 
 async function HistoryContent({ ops }: { ops: string }) {
-  const result = await fetchPlayerHistory(ops);
+  const supabase = await createClient();
+  const result = await getPlayerHistory(supabase, ops);
 
   if (!result.ok) {
     if (result.reason === "player-not-found") {
