@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { DashboardPageHeader } from "@/components/portal/DashboardPageHeader";
-import { fetchGameDataRows } from "@/lib/game-data/lookup";
-import { fetchMatchReport, findPlayerInReport } from "@/lib/match-report/engine";
+import { createClient } from "@/lib/supabase/server";
+import { findPlayerInReport } from "@/lib/match-report/engine";
+import { getPlayerLastMatchId, fetchMatchReportSupabase } from "@/lib/match-report/supabase-engine";
 import { MatchOverview } from "@/components/match-report/MatchOverview";
 import { PlayersTable } from "@/components/match-report/PlayersTable";
 import { PlayerStatsCard } from "@/components/match-report/PlayerStatsCard";
@@ -63,59 +64,15 @@ export default async function LastMatchPage({
 }
 
 async function LastMatchContent({ ops }: { ops: string }) {
-  const gameDataResult = await fetchGameDataRows();
+  const supabase = await createClient();
+  const lastMatchId = await getPlayerLastMatchId(supabase, ops);
 
-  if (!gameDataResult.ok) {
-    return (
-      <div className="mt-8 border border-border bg-bg-elevated px-6 py-14 text-center">
-        <p className="text-sm font-semibold uppercase tracking-[0.14em] text-text-muted">
-          Could not load match data
-        </p>
-      </div>
-    );
-  }
-
-  // Filter to this player's rows (case-insensitive)
-  const needle = ops.toLowerCase();
-  const playerRows = gameDataResult.rows.filter(
-    (r) => r.nickname.toLowerCase() === needle,
-  );
-
-  if (playerRows.length === 0) {
-    return (
-      <div className="mt-8 border border-dashed border-border bg-bg-elevated px-6 py-14 text-center">
-        <p className="text-sm font-bold uppercase tracking-[0.18em] text-accent">
-          No Matches Found
-        </p>
-        <p className="mx-auto mt-3 max-w-md text-sm text-text-muted sm:text-base">
-          &ldquo;{ops}&rdquo; hasn&rsquo;t played any recorded matches yet.
-        </p>
-      </div>
-    );
-  }
-
-  // Collect unique match IDs with their yearMonth so we can sort
-  const matchMap = new Map<string, string>(); // matchId → yearMonth
-  for (const row of playerRows) {
-    if (row.matchId && !matchMap.has(row.matchId)) {
-      matchMap.set(row.matchId, row.yearMonth);
-    }
-  }
-
-  // Sort: yearMonth desc first, then matchId desc within the same month.
-  // Both comparisons are string-safe for the YYYY-MM / LO-YYYY-NN formats.
-  const sorted = [...matchMap.entries()].sort(([idA, ymA], [idB, ymB]) => {
-    if (ymB !== ymA) return ymB.localeCompare(ymA);
-    return idB.localeCompare(idA);
-  });
-
-  const lastMatchId = sorted[0]?.[0];
   if (!lastMatchId) {
     return <NoMatchesState ops={ops} />;
   }
 
   // Fetch the full match report
-  const matchResult = await fetchMatchReport(lastMatchId);
+  const matchResult = await fetchMatchReportSupabase(supabase, lastMatchId);
 
   if (!matchResult.ok) {
     return (

@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Container } from "@/components/ui/Container";
-import { fetchMatchReport, fetchAllMatchIds, findPlayerInReport } from "@/lib/match-report/engine";
+import { createClient } from "@/lib/supabase/server";
+import { findPlayerInReport } from "@/lib/match-report/engine";
+import {
+  fetchMatchReportSupabase,
+  listAllMatchIdsSupabase,
+} from "@/lib/match-report/supabase-engine";
 import { MatchSearch } from "@/components/match-report/MatchSearch";
 import { MatchOverview } from "@/components/match-report/MatchOverview";
 import { PlayersTable } from "@/components/match-report/PlayersTable";
@@ -46,8 +51,9 @@ export default async function MatchReportPage({
   const selectedPlayer = (params.player ?? "").trim();
 
   // Always fetch the list of valid match IDs so the search autocomplete
-  // can render. This is cached at the CMS level so repeat visits are cheap.
-  const allMatchIds = await fetchAllMatchIds();
+  // can render.
+  const supabase = await createClient();
+  const allMatchIds = await listAllMatchIdsSupabase(supabase);
 
   return (
     <main className="bg-bg pb-20">
@@ -96,7 +102,8 @@ async function MatchContent({
   matchId: string;
   selectedPlayer: string;
 }) {
-  const result = await fetchMatchReport(matchId);
+  const supabase = await createClient();
+  const result = await fetchMatchReportSupabase(supabase, matchId);
 
   if (!result.ok) {
     return (
