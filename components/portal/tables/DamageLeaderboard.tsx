@@ -1,17 +1,15 @@
-import { fetchPeriodRows } from "@/lib/leaderboards/period-shared";
-import { TableErrorState } from "@/components/portal/tables/TableErrorState";
+import { createClient } from "@/lib/supabase/server";
+import { getPeriodRowsFromSupabase } from "@/lib/leaderboards/supabase-period";
 import { DamageLeaderboardTable } from "@/components/portal/tables/DamageLeaderboardTable";
 
 /**
  * DamageLeaderboard — server-side wrapper for the Damage leaderboard.
  *
- * Same fetch-once-then-client-filter pattern as the other period
- * leaderboards.
+ * Reads monthly period rows from Supabase (leaderboard_period_stats);
+ * the client filters by Year/Month and aggregates on filter change.
  */
 export async function DamageLeaderboard() {
-  const result = await fetchPeriodRows();
-  if (!result.ok) {
-    return <TableErrorState detail={result.error} />;
-  }
-  return <DamageLeaderboardTable allRows={result.rows} />;
+  const supabase = await createClient();
+  const rows = await getPeriodRowsFromSupabase(supabase);
+  return <DamageLeaderboardTable allRows={rows} />;
 }

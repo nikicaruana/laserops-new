@@ -1,18 +1,16 @@
-import { fetchXpLevelsLeaderboard } from "@/lib/leaderboards/xp-levels";
-import { TableErrorState } from "@/components/portal/tables/TableErrorState";
+import { createClient } from "@/lib/supabase/server";
+import { getXpLevelsFromSupabase } from "@/lib/leaderboards/supabase-xp-levels";
 import { XPLevelsLeaderboardTable } from "@/components/portal/tables/XPLevelsLeaderboardTable";
 
 /**
  * XPLevelsLeaderboard — server-side wrapper.
  *
- * Fetches the data on the server (cached for 5min by Next.js fetch revalidate)
- * and either renders the error state OR delegates to the client-side table
- * component which owns sort state and interactivity.
+ * Reads the pre-aggregated per-account XP/level rollup from Supabase
+ * (player_stats_lifetime + rank_levels for the rank badge) and delegates
+ * to the client-side table which owns sort state and interactivity.
  */
 export async function XPLevelsLeaderboard() {
-  const result = await fetchXpLevelsLeaderboard();
-  if (!result.ok) {
-    return <TableErrorState detail={result.error} />;
-  }
-  return <XPLevelsLeaderboardTable rows={result.rows} />;
+  const supabase = await createClient();
+  const rows = await getXpLevelsFromSupabase(supabase);
+  return <XPLevelsLeaderboardTable rows={rows} />;
 }
