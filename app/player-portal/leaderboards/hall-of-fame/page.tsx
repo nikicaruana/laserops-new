@@ -5,12 +5,14 @@ import { SeasonChampionsSection } from "@/components/portal/hall-of-fame/SeasonC
 import { AllTimeRecordsSection } from "@/components/portal/hall-of-fame/AllTimeRecordsSection";
 import { WeaponMastersSection } from "@/components/portal/hall-of-fame/WeaponMastersSection";
 import { AccoladeLeadersSection } from "@/components/portal/hall-of-fame/AccoladeLeadersSection";
+import { createClient } from "@/lib/supabase/server";
+import { fetchWeapons } from "@/lib/cms/weapons";
 import {
-  fetchHallOfFameChampions,
-  fetchAllTimeRecords,
-  fetchWeaponMasters,
-  fetchAccoladeLeaders,
-} from "@/lib/leaderboards/hall-of-fame";
+  getHallOfFameChampions,
+  getAllTimeRecords,
+  getWeaponMasters,
+  getAccoladeLeaders,
+} from "@/lib/leaderboards/supabase-hall-of-fame";
 
 export const metadata: Metadata = {
   title: "Hall of Fame",
@@ -31,16 +33,17 @@ export default async function HallOfFameLeaderboardPage({
   searchParams: Promise<{ tab?: string }>;
 }) {
   const { tab } = await searchParams;
-  // Each fetch throws (rather than caching an empty result) if its source sheet
-  // is temporarily unavailable. Catch per-section so one flaky dataset shows its
-  // own empty state instead of failing the whole page — and because the throw
-  // wasn't cached, the next visit retries and self-heals.
+  const supabase = await createClient();
+  // Weapon catalogue (image + sort order) still comes from the CMS; the
+  // records/masters themselves come from Supabase. Catch per-section so one
+  // flaky dataset shows its own empty state instead of failing the whole page.
+  const weapons = await fetchWeapons();
   const [champions, allTimeRecords, weaponMasters, accoladeLeaders] =
     await Promise.all([
-      fetchHallOfFameChampions().catch(() => []),
-      fetchAllTimeRecords().catch(() => []),
-      fetchWeaponMasters().catch(() => []),
-      fetchAccoladeLeaders().catch(() => []),
+      getHallOfFameChampions(supabase).catch(() => []),
+      getAllTimeRecords(supabase).catch(() => []),
+      getWeaponMasters(supabase, weapons).catch(() => []),
+      getAccoladeLeaders(supabase).catch(() => []),
     ]);
 
   return (
