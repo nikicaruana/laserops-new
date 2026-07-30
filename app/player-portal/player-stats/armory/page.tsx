@@ -3,10 +3,8 @@ import { Suspense } from "react";
 import { DashboardPageHeader } from "@/components/portal/DashboardPageHeader";
 import { ArmoryEmptyState } from "@/components/portal/player-armory/ArmoryEmptyState";
 import { PlayerArmoryView } from "@/components/portal/player-armory/PlayerArmoryView";
-import {
-  fetchPlayerArmory,
-  filterPlayerArmoryByOps,
-} from "@/lib/cms/player-armory";
+import { createClient } from "@/lib/supabase/server";
+import { getPlayerArmoryRows } from "@/lib/cms/supabase-player-armory";
 import {
   fetchExcludedNicknames,
   isPrizeIneligible,
@@ -70,13 +68,14 @@ export default async function PlayerArmoryPage({
 }
 
 async function ArmoryContent({ ops }: { ops: string }) {
+  const supabase = await createClient();
   const [armoryRows, weapons, excludedNicknames] = await Promise.all([
-    fetchPlayerArmory(),
+    getPlayerArmoryRows(supabase, ops),
     fetchWeapons(),
     fetchExcludedNicknames(),
   ]);
 
-  let filtered = filterPlayerArmoryByOps(armoryRows, ops);
+  let filtered = armoryRows;
 
   // Excluded (admin/owner) players have all guns treated as unlocked so
   // they can test weapons before the DATA sheet is updated, without their
