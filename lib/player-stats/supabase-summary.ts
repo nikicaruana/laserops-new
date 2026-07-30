@@ -1,10 +1,9 @@
 /**
  * lib/player-stats/supabase-summary.ts
  * --------------------------------------------------------------------
- * Supabase-backed data source for the Player Summary. Produces the SAME
- * PlayerStatsRaw (Record<string,string>) shape the Sheets version does, so
- * the existing summary projections + components render it unchanged (and the
- * Sheets-based Compare page stays untouched).
+ * Supabase-backed data source for the Player Summary + Compare pages.
+ * Produces the SAME PlayerStatsRaw (Record<string,string>) shape the Sheets
+ * version does, so the existing projections + components render it unchanged.
  *
  * Stats are PER-MATCH (total ÷ games), matching the current live site.
  * Ratings are numeric stars from player_ratings, encoded into synthetic
@@ -46,122 +45,71 @@ type LifetimeRow = {
   rounds_lost: number | null;
 };
 
-export type SummaryRowResult = {
-  row: PlayerStatsRaw;
-  /** Whether the player has an actual rating (drives the unlock explainer). */
-  ratingUnlocked: boolean;
-};
+type RatingRow = Record<
+  | "s_match_win"
+  | "s_rounds_wl"
+  | "s_kills"
+  | "s_damage"
+  | "s_score"
+  | "s_accuracy"
+  | "s_kd"
+  | "s_match_rating"
+  | "rating_overall",
+  number | null
+>;
 
-/**
- * Build the synthetic summary row for one player, looked up by ops tag
- * (case-insensitive on the denormalized nickname). Returns null if the
- * player has no stats row (never played / unknown tag).
- */
-export async function getPlayerSummaryRow(
-  supabase: SupabaseClient,
-  opsTag: string,
-): Promise<SummaryRowResult | null> {
-  const { data: life } = await supabase
-    .from("player_stats_lifetime")
-    .select(
-      "account_id, nickname, profile_pic_url, games, wins, win_rate, total_kills, total_damage, total_score, avg_accuracy, avg_kd, avg_match_rating, current_level, total_xp, rounds_won, rounds_lost",
-    )
-    .ilike("nickname", opsTag)
-    .maybeSingle<LifetimeRow>();
+type RankRow = { level: number; rank_name: string | null; badge_url: string | null; score_threshold: number | null };
 
-  if (!life) return null;
+const LIFETIME_COLS =
+  "account_id, nickname, profile_pic_url, games, wins, win_rate, total_kills, total_damage, total_score, avg_accuracy, avg_kd, avg_match_rating, current_level, total_xp, rounds_won, rounds_lost";
+const RATING_COLS =
+  "s_match_win, s_rounds_wl, s_kills, s_damage, s_score, s_accuracy, s_kd, s_match_rating, rating_overall";
 
-  const accountId = life.account_id;
+/** Level progress fraction (0-1) from the rank_levels score_threshold ladder. */
+function progressFor(ranks: RankRow[], level: number, totalXp: number): number {
+  const cur = ranks.find((r) => r.level === level)?.score_threshold ?? 0;
+  const next = ranks.find((r) => r.level === level + 1)?.score_threshold ?? null;
+  if (next == null) return 1;
+  if (next <= cur) return 0;
+  return Math.max(0, Math.min(1, (totalXp - cur) / (next - cur)));
+}
 
-  const [
-    { data: rating },
-    { data: favGuns },
-    { data: awards },
-    { data: accoladeDefs },
-    { data: ranks },
-    { data: allGuns },
-  ] = await Promise.all([
-    supabase
-      .from("player_ratings")
-      .select(
-        "s_match_win, s_rounds_wl, s_kills, s_damage, s_score, s_accuracy, s_kd, s_match_rating, rating_overall",
-      )
-      .eq("account_id", accountId)
-      .maybeSingle(),
-    supabase
-      .from("player_gun_stats")
-      .select("gun_name, rounds, total_kills")
-      .eq("account_id", accountId)
-      .order("rounds", { ascending: false })
-      .order("total_kills", { ascending: false })
-      .limit(1),
-    supabase.from("match_awards").select("accolade_definition_id").eq("account_id", accountId),
-    supabase.from("accolade_definitions").select("id, name"),
-    supabase.from("rank_levels").select("level, rank_name, badge_url, score_threshold").order("level"),
-    supabase.from("guns").select("name, image_url"),
-  ]);
-
+/** Assemble the synthetic PlayerStatsRaw row from a player's parts. */
+function buildRow(args: {
+  life: LifetimeRow;
+  rating: RatingRow | null;
+  favGun: string;
+  gunImage: string;
+  accoladeCounts: Map<string, number>;
+  accoladesTotal: number;
+  thisRank: RankRow | undefined;
+  progressFraction: number;
+  opsTagFallback: string;
+}): PlayerStatsRaw {
+  const { life, rating: r, favGun, gunImage, accoladeCounts, accoladesTotal, thisRank, progressFraction } = args;
   const games = life.games ?? 0;
   const perMatch = (total: number | null) => (games > 0 ? (total ?? 0) / games : 0);
-  const hasRating = !!rating;
-
-  // Rank + level progress from rank_levels (score_threshold = cumulative XP).
   const level = life.current_level ?? 0;
-  const totalXp = life.total_xp ?? 0;
-  const rankRows = (ranks ?? []) as { level: number; rank_name: string | null; badge_url: string | null; score_threshold: number | null }[];
-  const thisRank = rankRows.find((r) => r.level === level);
-  const nextRank = rankRows.find((r) => r.level === level + 1);
-  const curThresh = thisRank?.score_threshold ?? 0;
-  const nextThresh = nextRank?.score_threshold ?? null;
-  const progressFraction =
-    nextThresh != null && nextThresh > curThresh
-      ? Math.max(0, Math.min(1, (totalXp - curThresh) / (nextThresh - curThresh)))
-      : nextThresh == null
-        ? 1
-        : 0;
 
-  // Favourite gun (most rounds, kills tiebreak) -> image from guns config.
-  const favGun = (favGuns ?? [])[0]?.gun_name ?? "";
-  const gunImage =
-    ((allGuns ?? []) as { name: string; image_url: string | null }[]).find(
-      (g) => g.name === favGun,
-    )?.image_url ?? "";
-
-  // Accolade counts: tally awards by definition id -> name -> catalog sheetCol.
-  const idToName = new Map(
-    ((accoladeDefs ?? []) as { id: string; name: string }[]).map((d) => [d.id, d.name]),
-  );
-  const countByName = new Map<string, number>();
-  for (const a of (awards ?? []) as { accolade_definition_id: string }[]) {
-    const name = idToName.get(a.accolade_definition_id);
-    if (name) countByName.set(name, (countByName.get(name) ?? 0) + 1);
-  }
   const accoladeColumns: Record<string, string> = {};
   for (const acc of ACCOLADES) {
-    accoladeColumns[acc.sheetCol] = String(countByName.get(acc.name) ?? 0);
+    accoladeColumns[acc.sheetCol] = String(accoladeCounts.get(acc.name) ?? 0);
   }
-  const accoladesTotal = (awards ?? []).length;
 
-  const r = rating as
-    | Record<"s_match_win" | "s_rounds_wl" | "s_kills" | "s_damage" | "s_score" | "s_accuracy" | "s_kd" | "s_match_rating" | "rating_overall", number | null>
-    | null;
-
-  const row: PlayerStatsRaw = {
-    Player_Stats_Nickname: life.nickname ?? opsTag,
+  return {
+    Player_Stats_Nickname: life.nickname ?? args.opsTagFallback,
     Player_Stats_Profile_Pic: life.profile_pic_url || DEFAULT_AVATAR_URL,
 
-    // Top / level
     Overall_Rating_Image: starImage(r?.rating_overall ?? null),
     XP_Current_Rank_Badge_URL: thisRank?.badge_url ?? "",
     XP_Current_Level_Display: level > 0 ? `Level ${level}` : "",
     XP_Current_Level: String(level),
     Matches_Played: num(games),
-    XP_Total: num(totalXp),
+    XP_Total: num(life.total_xp),
     XP_Level_Progress_Pct: String(progressFraction),
     Favourite_Gun: favGun,
     Favourite_Gun_Image: gunImage,
 
-    // Stat cards
     Matches_Won: num(life.wins),
     Match_Win_Rate: num(life.win_rate),
     Match_Win_Rating_image: starImage(r?.s_match_win ?? null),
@@ -191,20 +139,163 @@ export async function getPlayerSummaryRow(
     KD_Ratio: num(life.avg_kd),
     KD_Rating_Image: starImage(r?.s_kd ?? null),
 
-    // Accolades
     Accolades_Total: String(accoladesTotal),
     ...accoladeColumns,
   };
+}
 
-  return { row, ratingUnlocked: hasRating };
+export type SummaryRowResult = {
+  row: PlayerStatsRaw;
+  /** Whether the player has an actual rating (drives the unlock explainer). */
+  ratingUnlocked: boolean;
+};
+
+/**
+ * Build the synthetic summary row for one player, looked up by ops tag
+ * (case-insensitive on the denormalized nickname). Returns null if the
+ * player has no stats row (never played / unknown tag).
+ */
+export async function getPlayerSummaryRow(
+  supabase: SupabaseClient,
+  opsTag: string,
+): Promise<SummaryRowResult | null> {
+  const { data: life } = await supabase
+    .from("player_stats_lifetime")
+    .select(LIFETIME_COLS)
+    .ilike("nickname", opsTag)
+    .maybeSingle<LifetimeRow>();
+
+  if (!life) return null;
+
+  const accountId = life.account_id;
+
+  const [{ data: rating }, { data: favGuns }, { data: awards }, { data: accoladeDefs }, { data: ranks }, { data: allGuns }] =
+    await Promise.all([
+      supabase.from("player_ratings").select(RATING_COLS).eq("account_id", accountId).maybeSingle(),
+      supabase
+        .from("player_gun_stats")
+        .select("gun_name, rounds, total_kills")
+        .eq("account_id", accountId)
+        .order("rounds", { ascending: false })
+        .order("total_kills", { ascending: false })
+        .limit(1),
+      supabase.from("match_awards").select("accolade_definition_id").eq("account_id", accountId),
+      supabase.from("accolade_definitions").select("id, name"),
+      supabase.from("rank_levels").select("level, rank_name, badge_url, score_threshold").order("level"),
+      supabase.from("guns").select("name, image_url"),
+    ]);
+
+  const rankRows = (ranks ?? []) as RankRow[];
+  const level = life.current_level ?? 0;
+  const favGun = (favGuns ?? [])[0]?.gun_name ?? "";
+  const gunImage =
+    ((allGuns ?? []) as { name: string; image_url: string | null }[]).find((g) => g.name === favGun)?.image_url ?? "";
+
+  const idToName = new Map(((accoladeDefs ?? []) as { id: string; name: string }[]).map((d) => [d.id, d.name]));
+  const accoladeCounts = new Map<string, number>();
+  for (const a of (awards ?? []) as { accolade_definition_id: string }[]) {
+    const name = idToName.get(a.accolade_definition_id);
+    if (name) accoladeCounts.set(name, (accoladeCounts.get(name) ?? 0) + 1);
+  }
+
+  const row = buildRow({
+    life,
+    rating: (rating as RatingRow | null) ?? null,
+    favGun,
+    gunImage,
+    accoladeCounts,
+    accoladesTotal: (awards ?? []).length,
+    thisRank: rankRows.find((r) => r.level === level),
+    progressFraction: progressFor(rankRows, level, life.total_xp ?? 0),
+    opsTagFallback: opsTag,
+  });
+
+  return { row, ratingUnlocked: !!rating };
+}
+
+/**
+ * Build synthetic rows for ALL players + a distinct-guns-used map (keyed by
+ * lowercased nickname). Powers the Compare page, which does its own
+ * client-side two-player lookup over the full set (like the Sheets version).
+ */
+export async function getAllPlayerSummaryRows(
+  supabase: SupabaseClient,
+): Promise<{ rows: PlayerStatsRaw[]; uniqueGunsMap: Record<string, number> }> {
+  const [{ data: lifeRows }, { data: ratingRows }, { data: gunRows }, { data: awardRows }, { data: accoladeDefs }, { data: ranks }, { data: allGuns }] =
+    await Promise.all([
+      supabase.from("player_stats_lifetime").select(LIFETIME_COLS),
+      supabase.from("player_ratings").select(`account_id, ${RATING_COLS}`),
+      supabase.from("player_gun_stats").select("account_id, gun_name, rounds, total_kills"),
+      supabase.from("match_awards").select("account_id, accolade_definition_id").not("account_id", "is", null),
+      supabase.from("accolade_definitions").select("id, name"),
+      supabase.from("rank_levels").select("level, rank_name, badge_url, score_threshold").order("level"),
+      supabase.from("guns").select("name, image_url"),
+    ]);
+
+  const rankRows = (ranks ?? []) as RankRow[];
+  const gunImage = new Map(((allGuns ?? []) as { name: string; image_url: string | null }[]).map((g) => [g.name, g.image_url ?? ""]));
+  const idToName = new Map(((accoladeDefs ?? []) as { id: string; name: string }[]).map((d) => [d.id, d.name]));
+
+  const ratingByAccount = new Map<string, RatingRow>();
+  for (const r of (ratingRows ?? []) as (RatingRow & { account_id: string })[]) {
+    ratingByAccount.set(r.account_id, r);
+  }
+
+  // Per-account guns: favourite (most rounds, kills tiebreak) + distinct count.
+  const gunsByAccount = new Map<string, { gun_name: string; rounds: number | null; total_kills: number | null }[]>();
+  for (const g of (gunRows ?? []) as { account_id: string; gun_name: string; rounds: number | null; total_kills: number | null }[]) {
+    const list = gunsByAccount.get(g.account_id) ?? [];
+    list.push(g);
+    gunsByAccount.set(g.account_id, list);
+  }
+
+  // Per-account accolade counts by name.
+  const accoladesByAccount = new Map<string, Map<string, number>>();
+  const accoladeTotalByAccount = new Map<string, number>();
+  for (const a of (awardRows ?? []) as { account_id: string; accolade_definition_id: string }[]) {
+    const name = idToName.get(a.accolade_definition_id);
+    if (!name) continue;
+    const m = accoladesByAccount.get(a.account_id) ?? new Map<string, number>();
+    m.set(name, (m.get(name) ?? 0) + 1);
+    accoladesByAccount.set(a.account_id, m);
+    accoladeTotalByAccount.set(a.account_id, (accoladeTotalByAccount.get(a.account_id) ?? 0) + 1);
+  }
+
+  const rows: PlayerStatsRaw[] = [];
+  const uniqueGunsMap: Record<string, number> = {};
+
+  for (const life of (lifeRows ?? []) as LifetimeRow[]) {
+    const acct = life.account_id;
+    const gunList = (gunsByAccount.get(acct) ?? [])
+      .slice()
+      .sort((a, b) => (b.rounds ?? 0) - (a.rounds ?? 0) || (b.total_kills ?? 0) - (a.total_kills ?? 0));
+    const favGun = gunList[0]?.gun_name ?? "";
+    const level = life.current_level ?? 0;
+
+    rows.push(
+      buildRow({
+        life,
+        rating: ratingByAccount.get(acct) ?? null,
+        favGun,
+        gunImage: gunImage.get(favGun) ?? "",
+        accoladeCounts: accoladesByAccount.get(acct) ?? new Map(),
+        accoladesTotal: accoladeTotalByAccount.get(acct) ?? 0,
+        thisRank: rankRows.find((r) => r.level === level),
+        progressFraction: progressFor(rankRows, level, life.total_xp ?? 0),
+        opsTagFallback: life.nickname ?? "",
+      }),
+    );
+
+    const nick = (life.nickname ?? "").trim().toLowerCase();
+    if (nick) uniqueGunsMap[nick] = gunList.length;
+  }
+
+  return { rows, uniqueGunsMap };
 }
 
 /** Distinct player nicknames for the search autocomplete. */
 export async function listSupabaseNicknames(supabase: SupabaseClient): Promise<string[]> {
-  const { data } = await supabase
-    .from("player_stats_lifetime")
-    .select("nickname")
-    .order("nickname");
+  const { data } = await supabase.from("player_stats_lifetime").select("nickname").order("nickname");
   const names = ((data ?? []) as { nickname: string | null }[])
     .map((r) => r.nickname?.trim() ?? "")
     .filter((n) => n !== "");
