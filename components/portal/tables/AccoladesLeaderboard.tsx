@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { fetchAccolades } from "@/lib/cms/accolades";
+import { getAccoladesFromSupabase } from "@/lib/cms/supabase-accolades";
 import { getAccoladeGameRows } from "@/lib/leaderboards/supabase-accolades";
 import { getPeriodRowsFromSupabase } from "@/lib/leaderboards/supabase-period";
 import { AccoladesLeaderboardTable } from "@/components/portal/tables/AccoladesLeaderboardTable";
@@ -23,7 +23,7 @@ export async function AccoladesLeaderboard() {
   const supabase = await createClient();
   const [gameRows, accolades, periodRows] = await Promise.all([
     getAccoladeGameRows(supabase),
-    fetchAccolades(),
+    getAccoladesFromSupabase(),
     getPeriodRowsFromSupabase(supabase),
   ]);
 

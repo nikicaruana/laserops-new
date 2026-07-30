@@ -1,8 +1,13 @@
 import Link from "next/link";
 import { Container } from "@/components/ui/Container";
-import { fetchSeasons, getActiveSeason } from "@/lib/cms/seasons";
-import { fetchChallenges } from "@/lib/cms/challenges";
-import { fetchSeasonChallenges, type ChallengeEntry } from "@/lib/leaderboards/season-challenges";
+import { getActiveSeason } from "@/lib/cms/seasons";
+import { createClient } from "@/lib/supabase/server";
+import {
+  getSeasonsFromSupabase,
+  getChallengesFromSupabase,
+  getSeasonChallengeData,
+} from "@/lib/leaderboards/supabase-challenges";
+import { type ChallengeEntry } from "@/lib/leaderboards/season-challenges";
 import { fetchSiteConfig, configBool, configInt } from "@/lib/cms/site-config";
 import { cn } from "@/lib/cn";
 
@@ -39,16 +44,17 @@ export async function SeasonLeadersSection() {
   }
   const desiredCount = Math.max(1, configInt(config, "homepage_season_leaders_count", 2));
 
-  const seasons = await fetchSeasons();
+  const supabase = await createClient();
+  const seasons = await getSeasonsFromSupabase(supabase);
   const activeSeason = getActiveSeason(seasons);
   if (!activeSeason) return null;
 
-  const challenges = await fetchChallenges(activeSeason.number);
+  const challenges = await getChallengesFromSupabase(supabase, activeSeason.number);
   if (challenges.length === 0) return null;
 
   const featuredChallenge = challenges[0];
 
-  const challengeData = await fetchSeasonChallenges(activeSeason, [featuredChallenge]);
+  const challengeData = await getSeasonChallengeData(supabase, activeSeason, [featuredChallenge]);
   const entries = challengeData[0]?.entries.slice(0, desiredCount) ?? [];
   if (entries.length === 0) return null;
 
