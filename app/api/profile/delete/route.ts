@@ -17,7 +17,7 @@ export async function POST() {
     return Response.json({ ok: false, error: "Not signed in." }, { status: 401 });
   }
 
-  const { error } = await supabase.rpc("delete_my_account");
+  const { data: reclaimCode, error } = await supabase.rpc("delete_my_account");
   if (error) {
     console.error("[api/profile/delete] failed:", error);
     return Response.json({ ok: false, error: "Couldn't delete your account. Please try again." }, { status: 500 });
@@ -30,5 +30,5 @@ export async function POST() {
     // ignore — the user no longer exists server-side
   }
 
-  return Response.json({ ok: true });
+  return Response.json({ ok: true, reclaimCode: (reclaimCode as string | null) ?? null });
 }

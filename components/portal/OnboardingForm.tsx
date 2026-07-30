@@ -37,6 +37,31 @@ export function OnboardingForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Returning-player reclaim
+  const [reclaimOpen, setReclaimOpen] = useState(false);
+  const [reclaimKey, setReclaimKey] = useState("");
+  const [reclaiming, setReclaiming] = useState(false);
+  const [reclaimError, setReclaimError] = useState<string | null>(null);
+
+  async function reclaim(e: React.FormEvent) {
+    e.preventDefault();
+    setReclaimError(null);
+    if (!reclaimKey.trim()) return;
+    setReclaiming(true);
+    const res = await fetch("/api/profile/reclaim", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: reclaimKey.trim() }),
+    });
+    const data = (await res.json()) as { ok: boolean; error?: string };
+    if (!data.ok) {
+      setReclaiming(false);
+      setReclaimError(data.error || "Couldn't restore. Check your key.");
+      return;
+    }
+    window.location.assign("/player-portal/player-stats");
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -71,6 +96,49 @@ export function OnboardingForm({
 
   return (
     <div className="space-y-8">
+      {/* Returning player? Restore old stats with a reclaim key. */}
+      <div className="border border-border bg-bg-elevated px-5 py-4 text-center">
+        {!reclaimOpen ? (
+          <button
+            type="button"
+            onClick={() => setReclaimOpen(true)}
+            className="text-xs uppercase tracking-[0.12em] text-text-subtle hover:text-accent"
+          >
+            Played with us before? Restore your stats
+          </button>
+        ) : (
+          <form onSubmit={reclaim} className="space-y-3">
+            <p className="text-xs text-text-muted">
+              Enter the reclaim key you were given when your old account was deleted.
+            </p>
+            <input
+              value={reclaimKey}
+              onChange={(e) => setReclaimKey(e.target.value)}
+              placeholder="LO-XXXXXXXXXXXX"
+              className={inputStyles}
+              autoComplete="off"
+            />
+            {reclaimError && <p className="text-sm text-red-400">{reclaimError}</p>}
+            <div className="flex justify-center gap-3">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setReclaimOpen(false);
+                  setReclaimError(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" size="sm" disabled={reclaiming}>
+                {reclaiming ? "Restoring…" : "Restore stats"}
+              </Button>
+            </div>
+          </form>
+        )}
+      </div>
+
       <div className="flex flex-col items-center gap-4">
         <AvatarUploader initialUrl={initialAvatarUrl} opsTag={opsTag || null} />
         <p className="text-xs text-text-subtle">

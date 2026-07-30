@@ -89,6 +89,7 @@ export function ProfileManager(props: Props) {
   const [deleteText, setDeleteText] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [reclaimCode, setReclaimCode] = useState<string | null>(null);
 
   async function saveAccount(e: React.FormEvent) {
     e.preventDefault();
@@ -151,10 +152,15 @@ export function ProfileManager(props: Props) {
     setDeleting(true);
     try {
       const res = await fetch("/api/profile/delete", { method: "POST" });
-      const data = (await res.json()) as { ok: boolean; error?: string };
+      const data = (await res.json()) as { ok: boolean; error?: string; reclaimCode?: string | null };
       if (!res.ok || !data.ok) throw new Error(data.error || "Couldn't delete account.");
-      // Account + session gone — hard-navigate home (logged out).
-      window.location.assign("/");
+      setDeleting(false);
+      if (data.reclaimCode) {
+        // Show the key so they can save it before leaving.
+        setReclaimCode(data.reclaimCode);
+      } else {
+        window.location.assign("/");
+      }
     } catch (err) {
       setDeleteError(err instanceof Error ? err.message : "Couldn't delete account.");
       setDeleting(false);
@@ -321,7 +327,23 @@ export function ProfileManager(props: Props) {
         <h2 className="mb-5 text-sm font-semibold uppercase tracking-[0.12em] text-red-400">
           Danger zone
         </h2>
-        {!deleteOpen ? (
+        {reclaimCode ? (
+          <div className="space-y-4 text-center">
+            <p className="text-sm text-text">
+              Your account has been deleted. Save this <strong>reclaim key</strong> — it&apos;s the
+              only way to restore your stats if you ever come back:
+            </p>
+            <div className="select-all border border-accent bg-bg px-4 py-4 font-mono text-lg font-bold tracking-widest text-accent">
+              {reclaimCode}
+            </div>
+            <p className="text-xs text-text-subtle">
+              We can&apos;t show this again. Store it somewhere safe (a note or password manager).
+            </p>
+            <Button type="button" size="md" onClick={() => window.location.assign("/")}>
+              I&apos;ve saved it — done
+            </Button>
+          </div>
+        ) : !deleteOpen ? (
           <div>
             <p className="mb-4 text-sm text-text-muted">
               Permanently delete your account, profile, and photo.
@@ -337,10 +359,11 @@ export function ProfileManager(props: Props) {
         ) : (
           <div className="space-y-4">
             <div className="border border-red-800 bg-red-950/30 px-4 py-3 text-sm">
-              <p className="font-semibold text-red-300">This is permanent and cannot be undone.</p>
+              <p className="font-semibold text-red-300">This deletes your account.</p>
               <p className="mt-2 text-red-400/90">
-                Your profile, photo, stats, ratings, and login will be permanently deleted. Your
-                past games stay in the records but are no longer linked to you.
+                Your personal details (email, name, photo) and login are permanently removed. Your
+                game stats stay in the records but become unclaimed. We&apos;ll give you a reclaim
+                key so you can restore them if you ever come back — save it, or they&apos;re gone.
               </p>
             </div>
             <div>
