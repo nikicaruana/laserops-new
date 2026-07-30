@@ -24,6 +24,7 @@ import type {
   AccoladeLeaders,
 } from "@/lib/leaderboards/hall-of-fame";
 import { ACCOLADES } from "@/lib/player-stats/summary-accolades";
+import { accoladeKey } from "@/lib/cms/accolades";
 import { isUnclaimedNickname } from "@/lib/leaderboards/unclaimed";
 import { FALLBACK_PROFILE_PIC } from "@/lib/leaderboards/period-shared";
 import {
@@ -116,18 +117,22 @@ export async function getAccoladeLeaders(
     .from("v_hof_accolade_leaders")
     .select("accolade, ops_tag, profile_pic_url, times_won");
 
+  // Key by accoladeKey (case/separator-insensitive) so catalogue names match
+  // the view's stored names even when they differ in casing/spelling — e.g.
+  // catalogue "Spray N Pray" vs view "Spray n Pray".
   const byAccolade = new Map<string, AccoladeRow[]>();
   for (const r of (data ?? []) as AccoladeRow[]) {
     if (!r.accolade) continue;
     if (isUnclaimedNickname((r.ops_tag ?? "").trim())) continue;
-    const arr = byAccolade.get(r.accolade);
+    const key = accoladeKey(r.accolade);
+    const arr = byAccolade.get(key);
     if (arr) arr.push(r);
-    else byAccolade.set(r.accolade, [r]);
+    else byAccolade.set(key, [r]);
   }
 
   // Iterate the catalogue so order + description + icon come from one source.
   return ACCOLADES.map((acc): AccoladeLeaders => {
-    const rows = (byAccolade.get(acc.name) ?? [])
+    const rows = (byAccolade.get(accoladeKey(acc.name)) ?? [])
       .slice()
       .sort((a, b) => (b.times_won ?? 0) - (a.times_won ?? 0))
       .slice(0, 3);
