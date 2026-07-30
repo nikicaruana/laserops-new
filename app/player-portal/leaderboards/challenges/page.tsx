@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
 import { DashboardPageHeader } from "@/components/portal/DashboardPageHeader";
-import { fetchSeasons, getActiveSeason } from "@/lib/cms/seasons";
-import { fetchChallenges } from "@/lib/cms/challenges";
-import { fetchSeasonChallenges } from "@/lib/leaderboards/season-challenges";
+import { getActiveSeason } from "@/lib/cms/seasons";
+import { createClient } from "@/lib/supabase/server";
+import {
+  getSeasonsFromSupabase,
+  getChallengesFromSupabase,
+  getSeasonChallengeData,
+} from "@/lib/leaderboards/supabase-challenges";
 import { SeasonalChallengesView } from "@/components/portal/challenges/SeasonalChallengesView";
 
 export const metadata: Metadata = {
@@ -22,7 +26,8 @@ export const metadata: Metadata = {
  * view shows an appropriate empty state — the page never blank-screens.
  */
 export default async function ChallengesLeaderboardPage() {
-  const seasons = await fetchSeasons();
+  const supabase = await createClient();
+  const seasons = await getSeasonsFromSupabase(supabase);
   const activeSeason = getActiveSeason(seasons);
 
   // Soonest upcoming season (by number — robust to date-entry typos). Used to
@@ -32,10 +37,10 @@ export default async function ChallengesLeaderboardPage() {
     .filter((s) => s.status === "upcoming")
     .sort((a, b) => a.number - b.number)[0];
 
-  let challengeData: Awaited<ReturnType<typeof fetchSeasonChallenges>> = [];
+  let challengeData: Awaited<ReturnType<typeof getSeasonChallengeData>> = [];
   if (activeSeason) {
-    const challenges = await fetchChallenges(activeSeason.number);
-    challengeData = await fetchSeasonChallenges(activeSeason, challenges);
+    const challenges = await getChallengesFromSupabase(supabase, activeSeason.number);
+    challengeData = await getSeasonChallengeData(supabase, activeSeason, challenges);
   }
 
   return (
