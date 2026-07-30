@@ -13,6 +13,14 @@ const n = (v: number | null | undefined) => v ?? 0;
 const s = (v: string | null | undefined) => v ?? "";
 const b = (v: boolean | null | undefined) => v === true;
 
+/** Unlock_Progress_Pct is stored as a 0-1 fraction; the card wants 0-100. */
+function normalisePct(v: number | null | undefined): number {
+  const x = v ?? 0;
+  if (!Number.isFinite(x)) return 0;
+  const asPct = x <= 1 ? x * 100 : x;
+  return Math.max(0, Math.min(100, asPct));
+}
+
 type Row = Record<string, unknown>;
 
 export async function getPlayerArmoryRows(
@@ -51,7 +59,7 @@ export async function getPlayerArmoryRows(
     pointsWithPrereqClass: n(r.points_with_prereq_class as number),
     pointsWithPrereqGun: n(r.points_with_prereq_gun as number),
     pointsTowardUnlock: n(r.points_toward_unlock as number),
-    unlockProgressPct: n(r.unlock_progress_pct as number),
+    unlockProgressPct: normalisePct(r.unlock_progress_pct as number),
     unlockProgressRemaining: n(r.unlock_progress_remaining as number),
     unlockProgressText: s(r.unlock_progress_text as string),
     matchesUsed: n(r.matches_used as number),
