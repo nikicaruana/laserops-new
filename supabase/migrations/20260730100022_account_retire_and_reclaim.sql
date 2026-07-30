@@ -25,6 +25,9 @@ alter table public.accounts add constraint accounts_claim_status_check
   check (claim_status in ('migrated_unclaimed', 'claimed', 'native', 'retired'));
 
 -- ---- delete_my_account(): anonymize + retire, return the reclaim key -------
+-- Drop first: it previously returned void, and the return type can't be
+-- changed via CREATE OR REPLACE.
+drop function if exists public.delete_my_account();
 create or replace function public.delete_my_account()
 returns text
 language plpgsql
