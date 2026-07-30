@@ -5,10 +5,8 @@ import { ArmoryEmptyState } from "@/components/portal/player-armory/ArmoryEmptyS
 import { PlayerArmoryView } from "@/components/portal/player-armory/PlayerArmoryView";
 import { createClient } from "@/lib/supabase/server";
 import { getPlayerArmoryRows } from "@/lib/cms/supabase-player-armory";
-import {
-  fetchExcludedNicknames,
-  isPrizeIneligible,
-} from "@/lib/cms/excluded-players";
+import { isPrizeIneligible } from "@/lib/cms/excluded-players";
+import { getExcludedNicknamesFromSupabase } from "@/lib/cms/supabase-excluded-players";
 import { fetchWeapons } from "@/lib/cms/weapons";
 import { buildPlayerArmory } from "@/lib/weapons/armory";
 
@@ -72,7 +70,7 @@ async function ArmoryContent({ ops }: { ops: string }) {
   const [armoryRows, weapons, excludedNicknames] = await Promise.all([
     getPlayerArmoryRows(supabase, ops),
     fetchWeapons(),
-    fetchExcludedNicknames(),
+    getExcludedNicknamesFromSupabase(),
   ]);
 
   let filtered = armoryRows;
