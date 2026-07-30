@@ -19,6 +19,10 @@ export function postAuthPath(account: GateAccount | null): string {
   if (!account) return "/player-portal/player-stats";
   if (!account.ops_tag) return "/player-portal/onboarding";
   if (!account.waiver_accepted_at) return "/player-portal/waiver";
-  // Their own stats summary (player-stats entry redirects to ?ops=<their tag>).
-  return "/player-portal/player-stats";
+  // Go straight to their own stats summary. Returning the final ?ops=<tag>
+  // URL (rather than the /player-portal/player-stats entry, which would then
+  // server-redirect again) avoids an extra redirect hop during the auth
+  // transition — that double-redirect surfaced a brief client-side exception
+  // flash before the page settled.
+  return `/player-portal/player-stats/summary?ops=${encodeURIComponent(account.ops_tag)}`;
 }
