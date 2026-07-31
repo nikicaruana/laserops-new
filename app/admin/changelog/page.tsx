@@ -7,27 +7,25 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { ChangeLogList } from "@/components/admin/ChangeLogList";
-import { TABLE_LABELS, tableLabel, type AuditEntry } from "@/lib/admin/audit";
+import { type AuditEntry } from "@/lib/admin/audit";
 
 export const metadata = { title: "Change log" };
 
-// Sections worth offering as quick filters.
-const FILTERS = [
-  "guns",
-  "gun_classes",
-  "gun_tree_branches",
-  "accolade_definitions",
-  "accolade_rules",
-  "score_formula",
+// Grouped section filters (a group can span several tables).
+const GROUPS: { key: string; label: string; tables: string[] }[] = [
+  { key: "guns", label: "Guns", tables: ["guns", "gun_classes", "gun_tree_branches"] },
+  { key: "accolades", label: "Accolades", tables: ["accolade_definitions", "accolade_rules"] },
+  { key: "scoring", label: "Scoring", tables: ["score_formula", "game_modes"] },
+  { key: "exploit", label: "Exploit control", tables: ["spawn_camp_config", "base_trading_config"] },
 ];
 
 export default async function ChangeLogPage({
   searchParams,
 }: {
-  searchParams: Promise<{ table?: string }>;
+  searchParams: Promise<{ g?: string }>;
 }) {
-  const { table } = await searchParams;
-  const active = table && TABLE_LABELS[table] ? table : undefined;
+  const { g } = await searchParams;
+  const group = GROUPS.find((x) => x.key === g);
 
   const supabase = await createClient();
   let query = supabase
@@ -35,7 +33,7 @@ export default async function ChangeLogPage({
     .select("id, actor_ops_tag, table_name, row_id, action, old_data, new_data, created_at")
     .order("created_at", { ascending: false })
     .limit(200);
-  if (active) query = query.eq("table_name", active);
+  if (group) query = query.in("table_name", group.tables);
   const { data } = await query;
 
   return (
@@ -53,20 +51,20 @@ export default async function ChangeLogPage({
         <Link
           href="/admin/changelog"
           className={`border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] ${
-            !active ? "border-accent text-accent" : "border-border-strong text-text-muted hover:text-accent"
+            !group ? "border-accent text-accent" : "border-border-strong text-text-muted hover:text-accent"
           }`}
         >
           All
         </Link>
-        {FILTERS.map((t) => (
+        {GROUPS.map((gr) => (
           <Link
-            key={t}
-            href={`/admin/changelog?table=${t}`}
+            key={gr.key}
+            href={`/admin/changelog?g=${gr.key}`}
             className={`border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] ${
-              active === t ? "border-accent text-accent" : "border-border-strong text-text-muted hover:text-accent"
+              group?.key === gr.key ? "border-accent text-accent" : "border-border-strong text-text-muted hover:text-accent"
             }`}
           >
-            {tableLabel(t)}
+            {gr.label}
           </Link>
         ))}
       </div>
