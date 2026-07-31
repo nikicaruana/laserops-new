@@ -11,6 +11,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { GunEditor, type GunRecord } from "@/components/admin/GunEditor";
 import { GunDamagePanel, type DamageWindow } from "@/components/admin/GunDamagePanel";
+import { GunDeleteButton } from "@/components/admin/GunDeleteButton";
 
 export async function generateMetadata({
   params,
@@ -72,6 +73,8 @@ export default async function EditGunPage({
           history={(history ?? []) as DamageWindow[]}
         />
       </div>
+
+      <GunDeleteButton gunId={gun.id} gunName={gun.name ?? "this gun"} />
     </div>
   );
 }
