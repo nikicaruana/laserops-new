@@ -3,42 +3,30 @@
 /**
  * components/admin/ScoringFormulaEditor.tsx
  * --------------------------------------------------------------------
- * Editor for the match score formula weights (score_formula_config). The
- * formula SHAPE is fixed; only the weights are tunable:
- *
- *   score = ceil( (frags·KILL + damage·DMG + captures·CAP + hold·CAPTIME)
- *                 · (1 + accuracy·ACC) · (1 + kd·KD) )
- *   where damage = hits · gun_damage.
- *
- * Weights are never shown as a bare list — a live worked example against an
- * editable sample player recomputes as you change any weight (or sample stat),
- * so the effect is visible before saving. Writes back via the admin session
- * (score_formula_config admin-write RLS).
+ * Drag-and-drop builder for the configurable match-score formula. The score is
+ * the sum of GROUPS; each group has additive metric blocks and its own
+ * multipliers. Blocks are draggable between a group's base/multiplier areas and
+ * between groups (moving a block changes its role). A live worked example shows
+ * the effect of every change before saving. Persists the whole structure as
+ * jsonb to score_formula (admin-write RLS).
  */
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
+import {
+  computeGroupValue,
+  computeScore,
+  FORMULA_STATS,
+  type FormulaBlock,
+  type FormulaGroup,
+  type ScoreFormula,
+} from "@/lib/scoring/formula";
 
-export type WeightRow = { key: string; value: number | null; note: string | null };
+// Single operator install — the default operator the schema uses everywhere.
+const OPERATOR_ID = "00000000-0000-0000-0000-000000000001";
 
-const BASE_TERMS = [
-  { key: "KILL_WEIGHT", label: "Kills", stat: "frags" as const },
-  { key: "DAMAGE_WEIGHT", label: "Damage", stat: "damage" as const },
-  { key: "CAPTURE_WEIGHT", label: "Captures", stat: "captures" as const },
-  { key: "CAPTURE_TIME_WEIGHT", label: "Hold time", stat: "hold" as const },
-];
-const MULTIPLIERS = [
-  { key: "ACCURACY_WEIGHT", label: "Accuracy", stat: "accuracy" as const },
-  { key: "KD_WEIGHT", label: "K/D", stat: "kd" as const },
-];
-
-const input =
-  "h-11 w-full rounded-none border border-border-strong bg-bg px-3 text-sm text-text focus:border-accent focus:outline-none";
-const lbl = "mb-1 block text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-text-muted";
-const nf = (n: number, d = 0) =>
-  n.toLocaleString("en-US", { maximumFractionDigits: d, minimumFractionDigits: 0 });
-
+type Area = "baseTerms" | "multipliers";
 type Sample = {
   frags: number;
   hits: number;
@@ -49,151 +37,335 @@ type Sample = {
   kd: number;
 };
 
-export function ScoringFormulaEditor({ rows }: { rows: WeightRow[] }) {
+const input =
+  "h-9 rounded-none border border-border-strong bg-bg px-2 text-sm text-text focus:border-accent focus:outline-none";
+const nf = (n: number, d = 0) =>
+  n.toLocaleString("en-US", { maximumFractionDigits: d, minimumFractionDigits: 0 });
+const newId = () =>
+  typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `id-${Math.random()}`;
+
+export function ScoringFormulaEditor({ initial }: { initial: ScoreFormula }) {
   const router = useRouter();
-
-  const noteByKey = useMemo(() => {
-    const m: Record<string, string> = {};
-    for (const r of rows) m[r.key] = r.note ?? "";
-    return m;
-  }, [rows]);
-
-  const [w, setW] = useState<Record<string, number>>(() => {
-    const m: Record<string, number> = {};
-    for (const r of rows) m[r.key] = r.value ?? 0;
-    return m;
-  });
+  const [formula, setFormula] = useState<ScoreFormula>(initial);
   const [sample, setSample] = useState<Sample>({
     frags: 30,
     hits: 200,
     gunDamage: 25,
-    captures: 0,
-    hold: 0,
+    captures: 3,
+    hold: 40,
     accuracyPct: 22,
     kd: 1.29,
   });
-
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [overZone, setOverZone] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
-  const val = (k: string) => w[k] ?? 0;
-  const setWeight = (k: string, v: number) => {
-    setW((prev) => ({ ...prev, [k]: v }));
-    setSaved(false);
-  };
-  const setStat = (k: keyof Sample, v: number) => setSample((prev) => ({ ...prev, [k]: v }));
+  const dirty = () => setSaved(false);
 
-  const calc = useMemo(() => {
-    const damage = sample.hits * sample.gunDamage;
-    const stat: Record<string, number> = {
+  /* ---- structure mutations (immutable) ---- */
+  function updateBlock(id: string, patch: Partial<FormulaBlock>) {
+    setFormula((f) => ({
+      groups: f.groups.map((g) => ({
+        ...g,
+        baseTerms: g.baseTerms.map((b) => (b.id === id ? { ...b, ...patch } : b)),
+        multipliers: g.multipliers.map((b) => (b.id === id ? { ...b, ...patch } : b)),
+      })),
+    }));
+    dirty();
+  }
+  function removeBlock(id: string) {
+    setFormula((f) => ({
+      groups: f.groups.map((g) => ({
+        ...g,
+        baseTerms: g.baseTerms.filter((b) => b.id !== id),
+        multipliers: g.multipliers.filter((b) => b.id !== id),
+      })),
+    }));
+    dirty();
+  }
+  function addBlock(groupId: string, area: Area) {
+    const block: FormulaBlock = {
+      id: newId(),
+      stat: area === "baseTerms" ? "frags" : "accuracy",
+      weight: area === "baseTerms" ? 1 : 0.1,
+    };
+    setFormula((f) => ({
+      groups: f.groups.map((g) => (g.id === groupId ? { ...g, [area]: [...g[area], block] } : g)),
+    }));
+    dirty();
+  }
+  function moveBlock(id: string, targetGroupId: string, area: Area, beforeId: string | null) {
+    setFormula((f) => {
+      const moved = f.groups
+        .flatMap((g) => [...g.baseTerms, ...g.multipliers])
+        .find((b) => b.id === id);
+      if (!moved) return f;
+      const stripped = f.groups.map((g) => ({
+        ...g,
+        baseTerms: g.baseTerms.filter((b) => b.id !== id),
+        multipliers: g.multipliers.filter((b) => b.id !== id),
+      }));
+      return {
+        groups: stripped.map((g) => {
+          if (g.id !== targetGroupId) return g;
+          const list = [...g[area]];
+          const idx = beforeId ? list.findIndex((b) => b.id === beforeId) : -1;
+          if (idx >= 0) list.splice(idx, 0, moved);
+          else list.push(moved);
+          return { ...g, [area]: list };
+        }),
+      };
+    });
+    dirty();
+  }
+  function addGroup() {
+    setFormula((f) => ({
+      groups: [...f.groups, { id: newId(), label: "New group", baseTerms: [], multipliers: [] }],
+    }));
+    dirty();
+  }
+  function removeGroup(groupId: string) {
+    setFormula((f) => ({ groups: f.groups.filter((g) => g.id !== groupId) }));
+    dirty();
+  }
+  function setGroupLabel(groupId: string, label: string) {
+    setFormula((f) => ({
+      groups: f.groups.map((g) => (g.id === groupId ? { ...g, label } : g)),
+    }));
+    dirty();
+  }
+
+  /* ---- live compute ---- */
+  const stats = useMemo<Record<string, number>>(
+    () => ({
       frags: sample.frags,
-      damage,
+      damage: sample.hits * sample.gunDamage,
       captures: sample.captures,
       hold: sample.hold,
       accuracy: sample.accuracyPct / 100,
       kd: sample.kd,
-    };
-    const baseParts = BASE_TERMS.map((t) => ({
-      ...t,
-      contribution: stat[t.stat] * val(t.key),
-      statValue: stat[t.stat],
-    }));
-    const base = baseParts.reduce((s, p) => s + p.contribution, 0);
-    const accMult = 1 + stat.accuracy * val("ACCURACY_WEIGHT");
-    const kdMult = 1 + stat.kd * val("KD_WEIGHT");
-    const raw = base * accMult * kdMult;
-    const score = Math.ceil(raw);
-    return { damage, baseParts, base, accMult, kdMult, raw, score };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [w, sample]);
+    }),
+    [sample],
+  );
+  const score = computeScore(formula, stats);
 
   async function save() {
     setError(null);
     setSaved(false);
     setSaving(true);
     const supabase = createClient();
-    const results = await Promise.all(
-      Object.entries(w).map(([key, value]) =>
-        supabase.from("score_formula_config").update({ value }).eq("key", key),
-      ),
-    );
+    const { error: err } = await supabase
+      .from("score_formula")
+      .upsert({ operator_id: OPERATOR_ID, structure: formula }, { onConflict: "operator_id" });
     setSaving(false);
-    const firstErr = results.find((r) => r.error)?.error;
-    if (firstErr) {
-      setError(firstErr.message || "Couldn't save weights.");
+    if (err) {
+      setError(err.message || "Couldn't save the formula.");
       return;
     }
     setSaved(true);
     router.refresh();
   }
 
-  const weightField = (t: { key: string; label: string }) => (
-    <div key={t.key}>
-      <label className={lbl}>{t.label}</label>
+  /* ---- block card ---- */
+  const BlockCard = ({ block, groupId, area }: { block: FormulaBlock; groupId: string; area: Area }) => (
+    <div
+      draggable
+      onDragStart={() => setDragId(block.id)}
+      onDragEnd={() => {
+        setDragId(null);
+        setOverZone(null);
+      }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (dragId && dragId !== block.id) moveBlock(dragId, groupId, area, block.id);
+        setDragId(null);
+        setOverZone(null);
+      }}
+      className={`flex items-center gap-2 border border-border-strong bg-bg px-2 py-1.5 ${
+        dragId === block.id ? "opacity-40" : ""
+      }`}
+    >
+      <span className="cursor-grab select-none text-text-subtle" aria-hidden>⠿</span>
+      {area === "multipliers" && <span className="font-mono text-xs text-text-subtle">1+</span>}
+      <select
+        value={block.stat}
+        onChange={(e) => updateBlock(block.id, { stat: e.target.value })}
+        className={`${input} min-w-0 flex-1`}
+      >
+        {FORMULA_STATS.map((s) => (
+          <option key={s.key} value={s.key}>{s.label}</option>
+        ))}
+      </select>
+      <span className="text-text-subtle">×</span>
       <input
         type="number"
         step="any"
-        className={input}
-        value={val(t.key)}
-        onChange={(e) => setWeight(t.key, Number(e.target.value))}
+        value={block.weight}
+        onChange={(e) => updateBlock(block.id, { weight: Number(e.target.value) })}
+        className={`${input} w-20`}
       />
-      {noteByKey[t.key] && (
-        <p className="mt-1 text-[0.65rem] leading-snug text-text-subtle">{noteByKey[t.key]}</p>
-      )}
+      <button
+        type="button"
+        onClick={() => removeBlock(block.id)}
+        aria-label="Remove"
+        className="flex h-6 w-6 shrink-0 items-center justify-center text-text-subtle hover:text-red-400"
+      >
+        ✕
+      </button>
     </div>
   );
 
+  /* ---- drop zone ---- */
+  const Zone = ({
+    groupId,
+    area,
+    children,
+  }: {
+    groupId: string;
+    area: Area;
+    children: React.ReactNode;
+  }) => {
+    const key = `${groupId}:${area}`;
+    return (
+      <div
+        onDragOver={(e) => {
+          e.preventDefault();
+          setOverZone(key);
+        }}
+        onDragLeave={() => setOverZone((z) => (z === key ? null : z))}
+        onDrop={(e) => {
+          e.preventDefault();
+          if (dragId) moveBlock(dragId, groupId, area, null);
+          setDragId(null);
+          setOverZone(null);
+        }}
+        className={`min-h-[3rem] space-y-2 border border-dashed p-2 transition-colors ${
+          overZone === key ? "border-accent bg-accent/5" : "border-border"
+        }`}
+      >
+        {children}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
-      {/* Weights */}
-      <section className="border border-border bg-bg-elevated px-5 py-5">
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
-          <h2 className="text-sm font-bold uppercase tracking-[0.12em] text-accent">Weights</h2>
-          <div className="flex items-center gap-4">
-            {saved && <span className="text-xs text-accent">Saved.</span>}
-            <Button type="button" size="md" onClick={save} disabled={saving}>
-              {saving ? "Saving…" : "Save weights"}
-            </Button>
-          </div>
-        </div>
-
-        <p className="mb-3 text-[0.6rem] font-bold uppercase tracking-[0.16em] text-text-subtle">
-          Base terms
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <p className="text-sm text-text-muted">
+          Drag blocks between a group&rsquo;s base and multiplier areas, or into another group. Score
+          = sum of all groups, rounded up.
         </p>
-        <div className="grid gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
-          {BASE_TERMS.map(weightField)}
+        <div className="flex items-center gap-3">
+          {saved && <span className="text-xs text-accent">Saved.</span>}
+          <button
+            type="button"
+            onClick={addGroup}
+            className="h-10 border border-border-strong px-4 text-xs font-bold uppercase tracking-[0.12em] text-text-muted hover:border-accent hover:text-accent"
+          >
+            + Group
+          </button>
+          <Button type="button" size="md" onClick={save} disabled={saving}>
+            {saving ? "Saving…" : "Save formula"}
+          </Button>
         </div>
+      </div>
+      {error && (
+        <p className="border border-red-800 bg-red-950/40 px-3 py-2 text-xs text-red-400">{error}</p>
+      )}
 
-        <p className="mb-3 mt-6 text-[0.6rem] font-bold uppercase tracking-[0.16em] text-text-subtle">
-          Multipliers
-        </p>
-        <div className="grid gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
-          {MULTIPLIERS.map(weightField)}
-        </div>
+      {/* Groups */}
+      <div className="space-y-4">
+        {formula.groups.map((g, gi) => {
+          const value = computeGroupValue(g, stats);
+          return (
+            <div key={g.id}>
+              {gi > 0 && (
+                <div className="mb-4 text-center font-mono text-lg text-text-subtle">+</div>
+              )}
+              <section className="border border-border bg-bg-elevated px-5 py-5">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <input
+                    value={g.label}
+                    onChange={(e) => setGroupLabel(g.id, e.target.value)}
+                    className={`${input} h-8 max-w-[16rem] flex-1 font-semibold`}
+                  />
+                  <div className="flex items-center gap-3">
+                    <span className="font-mono text-sm text-accent">= {nf(value, 1)}</span>
+                    {formula.groups.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeGroup(g.id)}
+                        aria-label="Remove group"
+                        className="text-text-subtle hover:text-red-400"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                </div>
 
-        {error && (
-          <p className="mt-4 border border-red-800 bg-red-950/40 px-3 py-2 text-xs text-red-400">{error}</p>
-        )}
-      </section>
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <div>
+                    <div className="mb-2 flex items-center justify-between">
+                      <p className="text-[0.6rem] font-bold uppercase tracking-[0.16em] text-text-muted">
+                        Base terms (added)
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => addBlock(g.id, "baseTerms")}
+                        className="text-[0.6rem] font-bold uppercase tracking-[0.12em] text-accent hover:text-accent-soft"
+                      >
+                        + Metric
+                      </button>
+                    </div>
+                    <Zone groupId={g.id} area="baseTerms">
+                      {g.baseTerms.length === 0 && (
+                        <p className="py-1 text-center text-[0.65rem] text-text-subtle">Drop metrics here</p>
+                      )}
+                      {g.baseTerms.map((b) => (
+                        <BlockCard key={b.id} block={b} groupId={g.id} area="baseTerms" />
+                      ))}
+                    </Zone>
+                  </div>
 
-      {/* Formula with current weights substituted */}
-      <section className="border border-border bg-bg-elevated px-5 py-5">
-        <h2 className="mb-3 text-sm font-bold uppercase tracking-[0.12em] text-accent">Formula</h2>
-        <div className="overflow-x-auto">
-          <p className="whitespace-nowrap font-mono text-sm text-text">
-            score = ⌈ ( frags×<b className="text-accent">{val("KILL_WEIGHT")}</b> + damage×
-            <b className="text-accent">{val("DAMAGE_WEIGHT")}</b> + captures×
-            <b className="text-accent">{val("CAPTURE_WEIGHT")}</b> + hold×
-            <b className="text-accent">{val("CAPTURE_TIME_WEIGHT")}</b> ) × (1 + accuracy×
-            <b className="text-accent">{val("ACCURACY_WEIGHT")}</b>) × (1 + kd×
-            <b className="text-accent">{val("KD_WEIGHT")}</b>) ⌉
-          </p>
-        </div>
-        <p className="mt-2 text-[0.65rem] text-text-subtle">
-          damage = hits × gun damage. Accuracy is a 0–1 fraction. ⌈ ⌉ rounds up.
-        </p>
-      </section>
+                  <div>
+                    <div className="mb-2 flex items-center justify-between">
+                      <p className="text-[0.6rem] font-bold uppercase tracking-[0.16em] text-text-muted">
+                        × Multipliers
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => addBlock(g.id, "multipliers")}
+                        className="text-[0.6rem] font-bold uppercase tracking-[0.12em] text-accent hover:text-accent-soft"
+                      >
+                        + Multiplier
+                      </button>
+                    </div>
+                    <Zone groupId={g.id} area="multipliers">
+                      {g.multipliers.length === 0 && (
+                        <p className="py-1 text-center text-[0.65rem] text-text-subtle">
+                          No multipliers — base only
+                        </p>
+                      )}
+                      {g.multipliers.map((b) => (
+                        <BlockCard key={b.id} block={b} groupId={g.id} area="multipliers" />
+                      ))}
+                    </Zone>
+                  </div>
+                </div>
+              </section>
+            </div>
+          );
+        })}
+      </div>
 
       {/* Worked example */}
       <section className="border border-accent/40 bg-bg-elevated px-5 py-5">
@@ -211,59 +383,37 @@ export function ScoringFormulaEditor({ rows }: { rows: WeightRow[] }) {
             ] as [string, keyof Sample][]
           ).map(([label, key]) => (
             <div key={key}>
-              <label className={lbl}>{label}</label>
+              <label className="mb-1 block text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-text-muted">
+                {label}
+              </label>
               <input
                 type="number"
                 step="any"
-                className={input}
+                className={`${input} h-11 w-full`}
                 value={sample[key]}
-                onChange={(e) => setStat(key, Number(e.target.value))}
+                onChange={(e) => setSample((s) => ({ ...s, [key]: Number(e.target.value) }))}
               />
             </div>
           ))}
         </div>
 
-        <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_minmax(0,18rem)]">
-          {/* Breakdown */}
-          <div className="space-y-1.5 font-mono text-xs text-text-muted">
-            <div className="flex justify-between">
-              <span>damage = {nf(sample.hits)} hits × {nf(sample.gunDamage)} dmg</span>
-              <span className="text-text">{nf(calc.damage)}</span>
+        <div className="mt-6 space-y-1.5 border-t border-border pt-4 font-mono text-xs text-text-muted">
+          {formula.groups.map((g) => (
+            <div key={g.id} className="flex justify-between">
+              <span>{g.label}</span>
+              <span className="text-text">{nf(computeGroupValue(g, stats), 1)}</span>
             </div>
-            {calc.baseParts.map((p) => (
-              <div key={p.key} className="flex justify-between">
-                <span>{p.label.toLowerCase()} = {nf(p.statValue, 2)} × {val(p.key)}</span>
-                <span className="text-text">{nf(p.contribution, 1)}</span>
-              </div>
-            ))}
-            <div className="flex justify-between border-t border-border/60 pt-1.5 font-semibold">
-              <span>base total</span>
-              <span className="text-text">{nf(calc.base, 1)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>× accuracy (1 + {(sample.accuracyPct / 100).toFixed(2)}×{val("ACCURACY_WEIGHT")})</span>
-              <span className="text-text">×{calc.accMult.toFixed(4)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>× k/d (1 + {sample.kd}×{val("KD_WEIGHT")})</span>
-              <span className="text-text">×{calc.kdMult.toFixed(4)}</span>
-            </div>
-          </div>
-
-          {/* Score */}
-          <div className="flex flex-col items-center justify-center border border-accent bg-bg px-4 py-6 text-center">
-            <span className="text-[0.65rem] font-bold uppercase tracking-[0.16em] text-text-muted">
-              Match score
-            </span>
-            <span className="mt-1 font-mono text-4xl font-bold tabular-nums text-accent">
-              {nf(calc.score)}
-            </span>
-          </div>
+          ))}
         </div>
 
-        <p className="mt-4 text-[0.65rem] text-text-subtle">
-          Recomputes live as you edit any weight or sample stat. Save to apply the weights (affects
-          scores computed from the next ingest onward).
+        <div className="mt-4 flex items-center justify-between border border-accent bg-bg px-4 py-3">
+          <span className="text-[0.65rem] font-bold uppercase tracking-[0.16em] text-text-muted">
+            Match score (⌈ sum ⌉)
+          </span>
+          <span className="font-mono text-3xl font-bold tabular-nums text-accent">{nf(score)}</span>
+        </div>
+        <p className="mt-2 text-[0.65rem] text-text-subtle">
+          Recomputes live. Save to apply (affects scores computed from the next ingest onward).
         </p>
       </section>
     </div>

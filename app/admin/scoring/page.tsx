@@ -1,20 +1,20 @@
 /**
  * app/admin/scoring/page.tsx
  * --------------------------------------------------------------------
- * Match score formula editor. Loads the score_formula_config weights and
- * renders the tunable weights + a live worked example (ScoringFormulaEditor).
+ * Match score formula builder. Loads the configurable formula structure from
+ * score_formula (falls back to the default shape) and renders the drag-and-drop
+ * builder + live worked example.
  */
 import { createClient } from "@/lib/supabase/server";
-import { ScoringFormulaEditor, type WeightRow } from "@/components/admin/ScoringFormulaEditor";
+import { ScoringFormulaEditor } from "@/components/admin/ScoringFormulaEditor";
+import { parseFormula, defaultFormula } from "@/lib/scoring/formula";
 
 export const metadata = { title: "Scoring formula" };
 
 export default async function AdminScoringPage() {
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("score_formula_config")
-    .select("key, value, note");
-  const rows = (data ?? []) as WeightRow[];
+  const { data } = await supabase.from("score_formula").select("structure").maybeSingle();
+  const formula = data?.structure ? parseFormula(data.structure) : defaultFormula();
 
   return (
     <div>
@@ -23,16 +23,11 @@ export default async function AdminScoringPage() {
           Scoring formula
         </h1>
         <p className="mt-2 text-sm text-text-muted">
-          Tune the match-score weights. The formula shape is fixed; the worked
-          example shows the effect of every change before you save.
+          Build the match-score formula from metric blocks. Score = sum of the groups, rounded up.
         </p>
       </header>
 
-      {rows.length === 0 ? (
-        <p className="text-sm text-text-muted">No score formula config found.</p>
-      ) : (
-        <ScoringFormulaEditor rows={rows} />
-      )}
+      <ScoringFormulaEditor initial={formula} />
     </div>
   );
 }
