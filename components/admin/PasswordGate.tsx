@@ -99,8 +99,10 @@ export function PasswordGate({
           className="pointer-events-none absolute h-0 w-0 opacity-0"
         />
 
+        {/* type=text + text-security: masks the value but isn't recognised as a
+            password field, so Chrome/managers never offer a saved-password fill. */}
         <input
-          type="password"
+          type="text"
           name={fieldName}
           value={password}
           readOnly={readOnly}
@@ -114,6 +116,7 @@ export function PasswordGate({
           data-1p-ignore="true"
           data-bwignore="true"
           data-form-type="other"
+          style={{ WebkitTextSecurity: "disc" } as React.CSSProperties}
           className="mt-4 h-11 w-full rounded-none border border-border-strong bg-bg px-3 text-sm text-text placeholder:text-text-subtle focus:border-accent focus:outline-none"
         />
 
