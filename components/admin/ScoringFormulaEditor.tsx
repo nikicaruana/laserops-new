@@ -46,7 +46,13 @@ const nf = (n: number, d = 0) =>
 const newId = () =>
   typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `id-${Math.random()}`;
 
-export function ScoringFormulaEditor({ initial }: { initial: ScoreFormula }) {
+export function ScoringFormulaEditor({
+  initial,
+  modeSlug,
+}: {
+  initial: ScoreFormula;
+  modeSlug: string;
+}) {
   const router = useRouter();
   const [formula, setFormula] = useState<ScoreFormula>(initial);
   const [sample, setSample] = useState<Sample>({
@@ -160,7 +166,10 @@ export function ScoringFormulaEditor({ initial }: { initial: ScoreFormula }) {
     const supabase = createClient();
     const { error: err } = await supabase
       .from("score_formula")
-      .upsert({ operator_id: OPERATOR_ID, structure: formula }, { onConflict: "operator_id" });
+      .upsert(
+        { operator_id: OPERATOR_ID, mode_slug: modeSlug, structure: formula },
+        { onConflict: "operator_id,mode_slug" },
+      );
     setSaving(false);
     if (err) {
       setError(err.message || "Couldn't save the formula.");

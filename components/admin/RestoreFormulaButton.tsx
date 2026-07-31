@@ -13,7 +13,13 @@ import { createClient } from "@/lib/supabase/client";
 
 const OPERATOR_ID = "00000000-0000-0000-0000-000000000001";
 
-export function RestoreFormulaButton({ structure }: { structure: unknown }) {
+export function RestoreFormulaButton({
+  structure,
+  modeSlug,
+}: {
+  structure: unknown;
+  modeSlug: string;
+}) {
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -25,13 +31,16 @@ export function RestoreFormulaButton({ structure }: { structure: unknown }) {
     const supabase = createClient();
     const { error: err } = await supabase
       .from("score_formula")
-      .upsert({ operator_id: OPERATOR_ID, structure }, { onConflict: "operator_id" });
+      .upsert(
+        { operator_id: OPERATOR_ID, mode_slug: modeSlug, structure },
+        { onConflict: "operator_id,mode_slug" },
+      );
     setBusy(false);
     if (err) {
       setError(err.message || "Couldn't restore.");
       return;
     }
-    router.push("/admin/scoring");
+    router.push(`/admin/scoring?mode=${modeSlug}`);
     router.refresh();
   }
 
