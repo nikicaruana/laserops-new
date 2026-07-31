@@ -8,7 +8,11 @@
  * multipliers. Blocks are draggable between a group's base/multiplier areas and
  * between groups (moving a block changes its role). A live worked example shows
  * the effect of every change before saving. Persists the whole structure as
- * jsonb to score_formula (admin-write RLS).
+ * jsonb to score_formula (admin-write RLS), keyed by game mode.
+ *
+ * BlockCard / Zone are module-level components (not defined inside the editor)
+ * so they keep a stable identity across renders — otherwise every keystroke
+ * would remount the inputs and steal focus.
  */
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -21,7 +25,6 @@ import {
   groupExpression,
   FORMULA_STATS,
   type FormulaBlock,
-  type FormulaGroup,
   type ScoreFormula,
 } from "@/lib/scoring/formula";
 
@@ -45,6 +48,111 @@ const nf = (n: number, d = 0) =>
   n.toLocaleString("en-US", { maximumFractionDigits: d, minimumFractionDigits: 0 });
 const newId = () =>
   typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `id-${Math.random()}`;
+
+/* ---- block card (module-level: stable identity => inputs keep focus) ---- */
+function BlockCard({
+  block,
+  groupId,
+  area,
+  dragId,
+  onDragStart,
+  onDragEnd,
+  onDropOnBlock,
+  onUpdate,
+  onRemove,
+}: {
+  block: FormulaBlock;
+  groupId: string;
+  area: Area;
+  dragId: string | null;
+  onDragStart: (id: string) => void;
+  onDragEnd: () => void;
+  onDropOnBlock: (groupId: string, area: Area, blockId: string) => void;
+  onUpdate: (id: string, patch: Partial<FormulaBlock>) => void;
+  onRemove: (id: string) => void;
+}) {
+  return (
+    <div
+      draggable
+      onDragStart={() => onDragStart(block.id)}
+      onDragEnd={onDragEnd}
+      onDragOver={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onDropOnBlock(groupId, area, block.id);
+      }}
+      className={`flex items-center gap-2 border border-border-strong bg-bg px-2 py-1.5 ${
+        dragId === block.id ? "opacity-40" : ""
+      }`}
+    >
+      <span className="cursor-grab select-none text-text-subtle" aria-hidden>⠿</span>
+      {area === "multipliers" && <span className="font-mono text-xs text-text-subtle">1+</span>}
+      <select
+        value={block.stat}
+        onChange={(e) => onUpdate(block.id, { stat: e.target.value })}
+        className={`${input} min-w-0 flex-1`}
+      >
+        {FORMULA_STATS.map((s) => (
+          <option key={s.key} value={s.key}>{s.label}</option>
+        ))}
+      </select>
+      <span className="text-text-subtle">×</span>
+      <input
+        type="number"
+        step="any"
+        value={block.weight}
+        onChange={(e) => onUpdate(block.id, { weight: Number(e.target.value) })}
+        className={`${input} w-20`}
+      />
+      <button
+        type="button"
+        onClick={() => onRemove(block.id)}
+        aria-label="Remove"
+        className="flex h-6 w-6 shrink-0 items-center justify-center text-text-subtle hover:text-red-400"
+      >
+        ✕
+      </button>
+    </div>
+  );
+}
+
+/* ---- drop zone (module-level) ---- */
+function Zone({
+  active,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  children,
+}: {
+  active: boolean;
+  onDragOver: () => void;
+  onDragLeave: () => void;
+  onDrop: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      onDragOver={(e) => {
+        e.preventDefault();
+        onDragOver();
+      }}
+      onDragLeave={onDragLeave}
+      onDrop={(e) => {
+        e.preventDefault();
+        onDrop();
+      }}
+      className={`min-h-[3rem] space-y-2 border border-dashed p-2 transition-colors ${
+        active ? "border-accent bg-accent/5" : "border-border"
+      }`}
+    >
+      {children}
+    </div>
+  );
+}
 
 export function ScoringFormulaEditor({
   initial,
@@ -145,6 +253,23 @@ export function ScoringFormulaEditor({
     dirty();
   }
 
+  /* ---- drag glue ---- */
+  const onDragStart = (id: string) => setDragId(id);
+  const onDragEnd = () => {
+    setDragId(null);
+    setOverZone(null);
+  };
+  const onDropOnBlock = (groupId: string, area: Area, blockId: string) => {
+    if (dragId && dragId !== blockId) moveBlock(dragId, groupId, area, blockId);
+    setDragId(null);
+    setOverZone(null);
+  };
+  const dropInZone = (groupId: string, area: Area) => {
+    if (dragId) moveBlock(dragId, groupId, area, null);
+    setDragId(null);
+    setOverZone(null);
+  };
+
   /* ---- live compute ---- */
   const stats = useMemo<Record<string, number>>(
     () => ({
@@ -179,92 +304,21 @@ export function ScoringFormulaEditor({
     router.refresh();
   }
 
-  /* ---- block card ---- */
-  const BlockCard = ({ block, groupId, area }: { block: FormulaBlock; groupId: string; area: Area }) => (
-    <div
-      draggable
-      onDragStart={() => setDragId(block.id)}
-      onDragEnd={() => {
-        setDragId(null);
-        setOverZone(null);
-      }}
-      onDragOver={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-      }}
-      onDrop={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (dragId && dragId !== block.id) moveBlock(dragId, groupId, area, block.id);
-        setDragId(null);
-        setOverZone(null);
-      }}
-      className={`flex items-center gap-2 border border-border-strong bg-bg px-2 py-1.5 ${
-        dragId === block.id ? "opacity-40" : ""
-      }`}
-    >
-      <span className="cursor-grab select-none text-text-subtle" aria-hidden>⠿</span>
-      {area === "multipliers" && <span className="font-mono text-xs text-text-subtle">1+</span>}
-      <select
-        value={block.stat}
-        onChange={(e) => updateBlock(block.id, { stat: e.target.value })}
-        className={`${input} min-w-0 flex-1`}
-      >
-        {FORMULA_STATS.map((s) => (
-          <option key={s.key} value={s.key}>{s.label}</option>
-        ))}
-      </select>
-      <span className="text-text-subtle">×</span>
-      <input
-        type="number"
-        step="any"
-        value={block.weight}
-        onChange={(e) => updateBlock(block.id, { weight: Number(e.target.value) })}
-        className={`${input} w-20`}
+  const renderBlocks = (g: { id: string }, area: Area, blocks: FormulaBlock[]) =>
+    blocks.map((b) => (
+      <BlockCard
+        key={b.id}
+        block={b}
+        groupId={g.id}
+        area={area}
+        dragId={dragId}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        onDropOnBlock={onDropOnBlock}
+        onUpdate={updateBlock}
+        onRemove={removeBlock}
       />
-      <button
-        type="button"
-        onClick={() => removeBlock(block.id)}
-        aria-label="Remove"
-        className="flex h-6 w-6 shrink-0 items-center justify-center text-text-subtle hover:text-red-400"
-      >
-        ✕
-      </button>
-    </div>
-  );
-
-  /* ---- drop zone ---- */
-  const Zone = ({
-    groupId,
-    area,
-    children,
-  }: {
-    groupId: string;
-    area: Area;
-    children: React.ReactNode;
-  }) => {
-    const key = `${groupId}:${area}`;
-    return (
-      <div
-        onDragOver={(e) => {
-          e.preventDefault();
-          setOverZone(key);
-        }}
-        onDragLeave={() => setOverZone((z) => (z === key ? null : z))}
-        onDrop={(e) => {
-          e.preventDefault();
-          if (dragId) moveBlock(dragId, groupId, area, null);
-          setDragId(null);
-          setOverZone(null);
-        }}
-        className={`min-h-[3rem] space-y-2 border border-dashed p-2 transition-colors ${
-          overZone === key ? "border-accent bg-accent/5" : "border-border"
-        }`}
-      >
-        {children}
-      </div>
-    );
-  };
+    ));
 
   return (
     <div className="space-y-6">
@@ -319,9 +373,7 @@ export function ScoringFormulaEditor({
           const value = computeGroupValue(g, stats);
           return (
             <div key={g.id}>
-              {gi > 0 && (
-                <div className="mb-4 text-center font-mono text-lg text-text-subtle">+</div>
-              )}
+              {gi > 0 && <div className="mb-4 text-center font-mono text-lg text-text-subtle">+</div>}
               <section className="border border-border bg-bg-elevated px-5 py-5">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <input
@@ -358,13 +410,16 @@ export function ScoringFormulaEditor({
                         + Metric
                       </button>
                     </div>
-                    <Zone groupId={g.id} area="baseTerms">
+                    <Zone
+                      active={overZone === `${g.id}:baseTerms`}
+                      onDragOver={() => setOverZone(`${g.id}:baseTerms`)}
+                      onDragLeave={() => setOverZone((z) => (z === `${g.id}:baseTerms` ? null : z))}
+                      onDrop={() => dropInZone(g.id, "baseTerms")}
+                    >
                       {g.baseTerms.length === 0 && (
                         <p className="py-1 text-center text-[0.65rem] text-text-subtle">Drop metrics here</p>
                       )}
-                      {g.baseTerms.map((b) => (
-                        <BlockCard key={b.id} block={b} groupId={g.id} area="baseTerms" />
-                      ))}
+                      {renderBlocks(g, "baseTerms", g.baseTerms)}
                     </Zone>
                   </div>
 
@@ -381,15 +436,18 @@ export function ScoringFormulaEditor({
                         + Multiplier
                       </button>
                     </div>
-                    <Zone groupId={g.id} area="multipliers">
+                    <Zone
+                      active={overZone === `${g.id}:multipliers`}
+                      onDragOver={() => setOverZone(`${g.id}:multipliers`)}
+                      onDragLeave={() => setOverZone((z) => (z === `${g.id}:multipliers` ? null : z))}
+                      onDrop={() => dropInZone(g.id, "multipliers")}
+                    >
                       {g.multipliers.length === 0 && (
                         <p className="py-1 text-center text-[0.65rem] text-text-subtle">
                           No multipliers — base only
                         </p>
                       )}
-                      {g.multipliers.map((b) => (
-                        <BlockCard key={b.id} block={b} groupId={g.id} area="multipliers" />
-                      ))}
+                      {renderBlocks(g, "multipliers", g.multipliers)}
                     </Zone>
                   </div>
                 </div>
