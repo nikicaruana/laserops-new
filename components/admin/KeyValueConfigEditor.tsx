@@ -66,11 +66,16 @@ export function KeyValueConfigEditor({
     setState("idle");
   }
 
+  const weightKeys = useMemo(() => new Set(weightSum?.keys ?? []), [weightSum]);
   const sum = useMemo(() => {
     if (!weightSum) return null;
     return weightSum.keys.reduce((acc, k) => acc + (Number(vals[k]) || 0), 0);
   }, [vals, weightSum]);
   const sumOk = sum === null || Math.abs(sum - weightSum!.target) < 1e-6;
+  const pctOf = (key: string): string => {
+    if (!weightSum) return "";
+    return (((Number(vals[key]) || 0) / weightSum.target) * 100).toFixed(1);
+  };
 
   // Preserve field order but split into groups for rendering.
   const groups = useMemo(() => {
@@ -121,43 +126,75 @@ export function KeyValueConfigEditor({
             </h2>
           )}
           <div className="grid gap-4 sm:grid-cols-2">
-            {group.items.map((f) => (
-              <div key={f.key}>
-                <label className={lbl}>{f.label}</label>
-                {f.kind === "select" ? (
-                  <select className={input} value={vals[f.key] ?? ""} onChange={(e) => set(f.key, e.target.value)}>
-                    {(f.options ?? []).map((o) => (
-                      <option key={o.value} value={o.value}>{o.label}</option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    type={f.kind === "text" ? "text" : "number"}
-                    step={f.step ?? "any"}
-                    className={input}
-                    value={vals[f.key] ?? ""}
-                    onChange={(e) => set(f.key, e.target.value)}
-                    onFocus={(e) => e.target.select()}
-                  />
-                )}
-                {f.help && <p className="mt-1 text-[0.65rem] text-text-subtle">{f.help}</p>}
-              </div>
-            ))}
+            {group.items.map((f) => {
+              const isWeight = weightKeys.has(f.key);
+              return (
+                <div key={f.key}>
+                  <label className={lbl}>{f.label}</label>
+                  {f.kind === "select" ? (
+                    <select className={input} value={vals[f.key] ?? ""} onChange={(e) => set(f.key, e.target.value)}>
+                      {(f.options ?? []).map((o) => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </select>
+                  ) : isWeight ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        step={f.step ?? "any"}
+                        className={`${input} flex-1`}
+                        value={vals[f.key] ?? ""}
+                        onChange={(e) => set(f.key, e.target.value)}
+                        onFocus={(e) => e.target.select()}
+                      />
+                      <span className="w-16 shrink-0 text-right font-mono text-xs tabular-nums text-text-muted">
+                        {pctOf(f.key)}%
+                      </span>
+                    </div>
+                  ) : (
+                    <input
+                      type={f.kind === "text" ? "text" : "number"}
+                      step={f.step ?? "any"}
+                      className={input}
+                      value={vals[f.key] ?? ""}
+                      onChange={(e) => set(f.key, e.target.value)}
+                      onFocus={(e) => e.target.select()}
+                    />
+                  )}
+                  {f.help && <p className="mt-1 text-[0.65rem] text-text-subtle">{f.help}</p>}
+                </div>
+              );
+            })}
           </div>
         </section>
       ))}
 
       {weightSum && (
-        <p
-          className={`border-l-2 px-3 py-2 text-xs ${
+        <div
+          className={`border px-4 py-3 ${
             sumOk
-              ? "border-accent bg-bg text-text-muted"
-              : "border-amber-500 bg-amber-950/30 text-amber-300"
+              ? "border-border bg-bg-elevated"
+              : "border-red-800 bg-red-950/40"
           }`}
         >
-          {weightSum.label}: {sum?.toFixed(4)} / {weightSum.target}.{" "}
-          {sumOk ? "Balanced." : `Off by ${(sum! - weightSum.target).toFixed(4)} — ratings will be skewed until this sums to ${weightSum.target}.`}
-        </p>
+          <div className="flex items-baseline justify-between">
+            <span className="text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-text-muted">
+              {weightSum.label} · running total
+            </span>
+            <span className={`font-mono text-lg tabular-nums ${sumOk ? "text-accent" : "text-red-400"}`}>
+              {sum?.toFixed(4)}
+              <span className="ml-1 text-xs text-text-subtle">/ {weightSum.target}</span>
+              <span className="ml-2 text-sm">({((sum ?? 0) / weightSum.target * 100).toFixed(1)}%)</span>
+            </span>
+          </div>
+          {!sumOk && (
+            <p className="mt-2 text-xs text-red-400">
+              Weights must total {weightSum.target} ({(weightSum.target * 100).toFixed(0)}%). Currently
+              off by {((sum ?? 0) - weightSum.target).toFixed(4)}. Saving is blocked until this
+              balances.
+            </p>
+          )}
+        </div>
       )}
 
       {error && (
@@ -169,10 +206,14 @@ export function KeyValueConfigEditor({
           type="button"
           size="md"
           onClick={() => {
+            if (!sumOk) {
+              setError(`Component weights must total ${weightSum!.target} before saving.`);
+              return;
+            }
             setError(null);
             setGateOpen(true);
           }}
-          disabled={state === "saving"}
+          disabled={state === "saving" || !sumOk}
         >
           {state === "saving" ? "Saving…" : "Save changes"}
         </Button>
