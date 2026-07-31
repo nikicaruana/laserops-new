@@ -35,12 +35,12 @@ const SECTIONS: { heading: string; items: Item[] }[] = [
   {
     heading: "Progression",
     items: [
-      { label: "XP & Levels" },
-      { label: "ELO" },
-      { label: "Ratings" },
+      { label: "XP & Levels", href: "/admin/xp" },
+      { label: "ELO", href: "/admin/elo" },
+      { label: "Ratings", href: "/admin/ratings" },
       { label: "Scoring formula", href: "/admin/scoring" },
       { label: "Accolades", href: "/admin/accolades" },
-      { label: "Streaks" },
+      { label: "Streaks", href: "/admin/streaks" },
     ],
   },
   {

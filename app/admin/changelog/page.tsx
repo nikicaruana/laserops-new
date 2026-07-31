@@ -16,6 +16,20 @@ const GROUPS: { key: string; label: string; tables: string[] }[] = [
   { key: "guns", label: "Guns", tables: ["guns", "gun_classes", "gun_tree_branches"] },
   { key: "accolades", label: "Accolades", tables: ["accolade_definitions", "accolade_rules"] },
   { key: "scoring", label: "Scoring", tables: ["score_formula", "game_modes"] },
+  {
+    key: "progression",
+    label: "XP / ELO / Ratings / Streaks",
+    tables: [
+      "xp_config",
+      "rank_levels",
+      "elo_config",
+      "elo_tiers",
+      "rating_config",
+      "rating_brackets",
+      "streak_definitions",
+      "streak_rules",
+    ],
+  },
   { key: "exploit", label: "Exploit control", tables: ["spawn_camp_config", "base_trading_config"] },
 ];
 

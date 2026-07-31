@@ -19,7 +19,7 @@ export function AdminImageUploader({
 }: {
   value: string | null;
   onChange: (url: string) => void;
-  kind: "gun" | "accolade" | "team";
+  kind: "gun" | "accolade" | "team" | "rank" | "tier" | "streak";
   previewClass?: string;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);

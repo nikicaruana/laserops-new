@@ -52,12 +52,18 @@ export const PROFILE_PICS_FOLDER = "laseropsmalta.com/profile-pics";
 export const GUNS_FOLDER = "laseropsmalta.com/guns";
 export const ACCOLADES_FOLDER = "laseropsmalta.com/accolades";
 export const TEAMS_FOLDER = "laseropsmalta.com/team-badges";
+export const RANK_BADGES_FOLDER = "laseropsmalta.com/rank-badges";
+export const TIER_BADGES_FOLDER = "laseropsmalta.com/tier-badges";
+export const STREAK_BADGES_FOLDER = "laseropsmalta.com/streak-badges";
 
 /** Allowed image-upload kinds -> Cloudinary folder. */
 export const ADMIN_IMAGE_FOLDERS: Record<string, string> = {
   gun: GUNS_FOLDER,
   accolade: ACCOLADES_FOLDER,
   team: TEAMS_FOLDER,
+  rank: RANK_BADGES_FOLDER,
+  tier: TIER_BADGES_FOLDER,
+  streak: STREAK_BADGES_FOLDER,
 };
 
 function isProfilePic(folder: string): boolean {
