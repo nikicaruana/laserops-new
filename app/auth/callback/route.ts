@@ -20,7 +20,11 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
-  const next = searchParams.get("next") ?? "/player-portal";
+  const rawNext = searchParams.get("next") ?? "/player-portal";
+  // Only ever redirect within the app — reject absolute or protocol-relative
+  // ("//evil.com") targets to avoid an open redirect.
+  const next =
+    rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/player-portal";
 
   // Surface any error Supabase itself passed back (e.g. expired link).
   const providerError =
@@ -28,9 +32,11 @@ export async function GET(request: Request) {
 
   const supabase = await createClient();
 
-  // New / unfinished accounts (no callsign yet) go to onboarding first;
-  // everyone else continues to `next`. Password-recovery links must NOT be
-  // diverted — they need to reach the reset-password page.
+  // New / unfinished accounts (no callsign yet) go to onboarding first.
+  // Password-recovery links must NOT be diverted — they need to reach the
+  // reset-password page. Otherwise: incomplete accounts are forced through
+  // onboarding/waiver; complete accounts honor an explicit `next` (e.g.
+  // returning to /profile after linking Google), defaulting to their summary.
   async function destination(): Promise<string> {
     if (type === "recovery" || next.startsWith("/player-portal/reset-password")) {
       return `${origin}${next}`;
@@ -44,7 +50,11 @@ export async function GET(request: Request) {
       .select("ops_tag, waiver_accepted_at")
       .eq("auth_user_id", user.id)
       .maybeSingle();
-    return `${origin}${postAuthPath(account)}`;
+    const gated = postAuthPath(account);
+    if (!account?.ops_tag || !account?.waiver_accepted_at) {
+      return `${origin}${gated}`;
+    }
+    return `${origin}${next !== "/player-portal" ? next : gated}`;
   }
 
   if (code) {

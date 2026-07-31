@@ -15,6 +15,7 @@ import { AvatarUploader } from "@/components/portal/AvatarUploader";
 import { Button } from "@/components/ui/Button";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { MARKETING_CONSENT_TEXT } from "@/lib/waiver";
+import { createClient } from "@/lib/supabase/client";
 
 const inputStyles =
   "h-14 w-full rounded-none border border-border-strong bg-bg-elevated px-4 text-sm text-text placeholder:text-text-subtle focus:border-accent focus:outline-none";
@@ -29,7 +30,20 @@ type Props = {
   profilePicUrl: string | null;
   email: string | null;
   hasPassword: boolean;
+  /** OAuth/email providers currently linked to this login, e.g. ["email","google"]. */
+  linkedProviders: string[];
 };
+
+function GoogleGlyph() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" className="shrink-0">
+      <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62Z" />
+      <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.02-3.7H.92v2.33A9 9 0 0 0 9 18Z" />
+      <path fill="#FBBC05" d="M3.98 10.72a5.4 5.4 0 0 1 0-3.44V4.95H.92a9 9 0 0 0 0 8.1l3.06-2.33Z" />
+      <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.47.89 11.43 0 9 0A9 9 0 0 0 .92 4.95l3.06 2.33C4.68 5.16 6.66 3.58 9 3.58Z" />
+    </svg>
+  );
+}
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -83,6 +97,56 @@ export function ProfileManager(props: Props) {
   const [pwBusy, setPwBusy] = useState(false);
   const [pwError, setPwError] = useState<string | null>(null);
   const [pwDone, setPwDone] = useState(false);
+
+  // Connected accounts (OAuth identity linking)
+  const googleLinked = props.linkedProviders.includes("google");
+  // Supabase forbids unlinking the last identity; require a second sign-in
+  // method so the player can't lock themselves out.
+  const canUnlinkGoogle = googleLinked && props.linkedProviders.length >= 2;
+  const [connBusy, setConnBusy] = useState(false);
+  const [connError, setConnError] = useState<string | null>(null);
+
+  async function linkGoogle() {
+    setConnError(null);
+    setConnBusy(true);
+    const supabase = createClient();
+    const { error } = await supabase.auth.linkIdentity({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=/player-portal/profile`,
+      },
+    });
+    if (error) {
+      setConnError(error.message || "Couldn't start the Google connection.");
+      setConnBusy(false);
+    }
+    // On success the browser redirects to Google; nothing more to do here.
+  }
+
+  async function unlinkGoogle() {
+    setConnError(null);
+    setConnBusy(true);
+    const supabase = createClient();
+    const { data, error: listErr } = await supabase.auth.getUserIdentities();
+    if (listErr || !data) {
+      setConnError(listErr?.message || "Couldn't load connected accounts.");
+      setConnBusy(false);
+      return;
+    }
+    const google = data.identities.find((i) => i.provider === "google");
+    if (!google) {
+      setConnBusy(false);
+      router.refresh();
+      return;
+    }
+    const { error } = await supabase.auth.unlinkIdentity(google);
+    setConnBusy(false);
+    if (error) {
+      setConnError(error.message || "Couldn't disconnect Google.");
+      return;
+    }
+    router.refresh();
+  }
 
   // Delete account
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -320,6 +384,53 @@ export function ProfileManager(props: Props) {
             {pwBusy ? "Saving…" : props.hasPassword ? "Change password" : "Set password"}
           </Button>
         </form>
+      </Section>
+
+      {/* Connected accounts */}
+      <Section title="Connected accounts">
+        <p className="mb-4 text-xs text-text-muted">
+          Link your Google account to sign in with one tap. Connect or disconnect it anytime.
+        </p>
+        <div className="flex items-center justify-between gap-4 border border-border-strong bg-bg px-4 py-3.5">
+          <div className="flex items-center gap-3">
+            <GoogleGlyph />
+            <div>
+              <p className="text-sm font-semibold text-text">Google</p>
+              <p className="text-xs text-text-subtle">
+                {googleLinked ? "Connected" : "Not connected"}
+              </p>
+            </div>
+          </div>
+          {googleLinked ? (
+            <button
+              type="button"
+              onClick={unlinkGoogle}
+              disabled={connBusy || !canUnlinkGoogle}
+              className="border border-border-strong px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-text-muted transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {connBusy ? "…" : "Disconnect"}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={linkGoogle}
+              disabled={connBusy}
+              className="border border-accent px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-accent transition-colors hover:bg-accent hover:text-bg disabled:opacity-50"
+            >
+              {connBusy ? "…" : "Connect"}
+            </button>
+          )}
+        </div>
+        {googleLinked && !canUnlinkGoogle && (
+          <p className="mt-2 text-xs text-text-subtle">
+            This is your only sign-in method. Set a password above before disconnecting Google.
+          </p>
+        )}
+        {connError && (
+          <p className="mt-3 border border-red-800 bg-red-950/40 px-4 py-3 text-sm text-red-400">
+            {connError}
+          </p>
+        )}
       </Section>
 
       {/* Danger zone */}

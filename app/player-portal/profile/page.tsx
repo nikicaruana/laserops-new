@@ -60,6 +60,7 @@ export default async function ProfilePage() {
           profilePicUrl={account.profile_pic_url}
           email={user.email ?? null}
           hasPassword={hasPassword ?? false}
+          linkedProviders={(user.identities ?? []).map((i) => i.provider)}
         />
       </div>
     </Container>
