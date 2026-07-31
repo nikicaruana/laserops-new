@@ -16,6 +16,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
+import { PasswordGate } from "@/components/admin/PasswordGate";
 
 export type AccoladeRule = {
   id: string | null;
@@ -86,18 +87,14 @@ export function AccoladeRuleEditor({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [gateOpen, setGateOpen] = useState(false);
 
   function set<K extends keyof AccoladeRule>(key: K, value: AccoladeRule[K]) {
     setR((prev) => ({ ...prev, [key]: value }));
     setSaved(false);
   }
 
-  async function save(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setSaved(false);
-
-    // Build a clean payload for the chosen rule type (null out irrelevant cols).
+  function buildPayload(): { payload?: Record<string, unknown>; error?: string } {
     const payload: Record<string, unknown> = {
       accolade_definition_id: accoladeId,
       rule_type: r.rule_type,
@@ -108,13 +105,13 @@ export function AccoladeRuleEditor({
       params: {},
     };
     if (r.rule_type === "match_superlative") {
-      if (!r.stat_key) return setError("Pick a stat.");
+      if (!r.stat_key) return { error: "Pick a stat." };
       payload.stat_key = r.stat_key;
       payload.direction = r.direction ?? "max";
     } else if (r.rule_type === "threshold") {
-      if (!r.stat_key) return setError("Pick a stat.");
+      if (!r.stat_key) return { error: "Pick a stat." };
       if (r.threshold_value === null || Number.isNaN(r.threshold_value)) {
-        return setError("Enter a threshold value.");
+        return { error: "Enter a threshold value." };
       }
       payload.stat_key = r.stat_key;
       payload.comparator = r.comparator ?? ">=";
@@ -123,10 +120,28 @@ export function AccoladeRuleEditor({
       try {
         payload.params = JSON.parse(paramsText || "{}");
       } catch {
-        return setError("Params must be valid JSON.");
+        return { error: "Params must be valid JSON." };
       }
     }
+    return { payload };
+  }
 
+  function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSaved(false);
+    const { error: verr } = buildPayload();
+    if (verr) return setError(verr);
+    setGateOpen(true);
+  }
+
+  async function doSave() {
+    setGateOpen(false);
+    const { payload, error: verr } = buildPayload();
+    if (verr || !payload) {
+      setError(verr ?? "Couldn't build the rule.");
+      return;
+    }
     setSaving(true);
     const supabase = createClient();
     const res = r.id
@@ -143,7 +158,7 @@ export function AccoladeRuleEditor({
   }
 
   return (
-    <form onSubmit={save} className="max-w-2xl">
+    <form onSubmit={onSubmit} className="max-w-2xl">
       <fieldset className="border border-border bg-bg-elevated px-5 py-5">
         <legend className="px-2 text-[0.65rem] font-bold uppercase tracking-[0.16em] text-accent">
           Award rule
@@ -239,6 +254,13 @@ export function AccoladeRuleEditor({
           </Button>
         </div>
       </fieldset>
+
+      <PasswordGate
+        open={gateOpen}
+        action="this award-rule change"
+        onCancel={() => setGateOpen(false)}
+        onVerified={doSave}
+      />
     </form>
   );
 }

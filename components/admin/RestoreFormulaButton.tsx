@@ -5,11 +5,12 @@
  * --------------------------------------------------------------------
  * Re-applies an older scoring-formula version as the current formula (going
  * forward). Does NOT undo scoring already done — that's "recompute from date X".
- * Two-step confirm; writes via the admin session (logged as a new change).
+ * Gated behind a password re-auth (sensitive change).
  */
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { PasswordGate } from "@/components/admin/PasswordGate";
 
 const OPERATOR_ID = "00000000-0000-0000-0000-000000000001";
 
@@ -21,11 +22,12 @@ export function RestoreFormulaButton({
   modeSlug: string;
 }) {
   const router = useRouter();
-  const [confirming, setConfirming] = useState(false);
+  const [gateOpen, setGateOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function restore() {
+  async function doRestore() {
+    setGateOpen(false);
     setBusy(true);
     setError(null);
     const supabase = createClient();
@@ -44,36 +46,23 @@ export function RestoreFormulaButton({
     router.refresh();
   }
 
-  if (!confirming) {
-    return (
-      <button
-        type="button"
-        onClick={() => setConfirming(true)}
-        className="border border-border-strong px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-text-muted hover:border-accent hover:text-accent"
-      >
-        Restore
-      </button>
-    );
-  }
   return (
     <div className="flex items-center gap-2">
       <button
         type="button"
-        onClick={restore}
+        onClick={() => setGateOpen(true)}
         disabled={busy}
-        className="border border-accent bg-accent px-3 py-1.5 text-xs font-bold uppercase tracking-[0.1em] text-bg disabled:opacity-50"
+        className="border border-border-strong px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-text-muted hover:border-accent hover:text-accent disabled:opacity-50"
       >
-        {busy ? "Restoring…" : "Confirm"}
-      </button>
-      <button
-        type="button"
-        onClick={() => setConfirming(false)}
-        disabled={busy}
-        className="px-2 py-1.5 text-xs uppercase tracking-[0.1em] text-text-subtle hover:text-text"
-      >
-        Cancel
+        {busy ? "Restoring…" : "Restore"}
       </button>
       {error && <span className="text-xs text-red-400">{error}</span>}
+      <PasswordGate
+        open={gateOpen}
+        action="this rollback"
+        onCancel={() => setGateOpen(false)}
+        onVerified={doRestore}
+      />
     </div>
   );
 }

@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
 import { AdminImageUploader } from "@/components/admin/AdminImageUploader";
+import { PasswordGate } from "@/components/admin/PasswordGate";
 
 export type AccoladeRecord = {
   id: string;
@@ -49,6 +50,7 @@ export function AccoladeEditor({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [gateOpen, setGateOpen] = useState(false);
 
   function set<K extends keyof AccoladeRecord>(key: K, value: AccoladeRecord[K]) {
     setF((prev) => ({ ...prev, [key]: value }));
@@ -56,7 +58,7 @@ export function AccoladeEditor({
   }
   const num = (v: string): number | null => (v.trim() === "" ? null : Number(v));
 
-  async function save(e: React.FormEvent) {
+  function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setSaved(false);
@@ -64,10 +66,15 @@ export function AccoladeEditor({
       setError("Name is required.");
       return;
     }
+    setGateOpen(true);
+  }
+
+  async function doSave() {
+    setGateOpen(false);
     setSaving(true);
     const supabase = createClient();
     const payload = {
-      name: f.name.trim(),
+      name: (f.name ?? "").trim(),
       description: f.description,
       badge_url: f.badge_url,
       xp: f.xp ?? 0,
@@ -105,7 +112,7 @@ export function AccoladeEditor({
   }
 
   return (
-    <form onSubmit={save} className="max-w-2xl space-y-5">
+    <form onSubmit={onSubmit} className="max-w-2xl space-y-5">
       <fieldset className="border border-border bg-bg-elevated px-5 py-5">
         <legend className="px-2 text-[0.65rem] font-bold uppercase tracking-[0.16em] text-accent">
           Accolade
@@ -174,6 +181,13 @@ export function AccoladeEditor({
       <Button type="submit" size="md" disabled={saving}>
         {saving ? (isCreate ? "Creating…" : "Saving…") : isCreate ? "Create accolade" : "Save accolade"}
       </Button>
+
+      <PasswordGate
+        open={gateOpen}
+        action={isCreate ? "the new accolade" : "this accolade change"}
+        onCancel={() => setGateOpen(false)}
+        onVerified={doSave}
+      />
     </form>
   );
 }

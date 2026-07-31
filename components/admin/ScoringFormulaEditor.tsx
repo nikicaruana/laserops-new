@@ -18,6 +18,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
+import { PasswordGate } from "@/components/admin/PasswordGate";
 import {
   computeGroupValue,
   computeScore,
@@ -178,6 +179,7 @@ export function ScoringFormulaEditor({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [gateOpen, setGateOpen] = useState(false);
 
   const dirty = () => setSaved(false);
 
@@ -285,7 +287,8 @@ export function ScoringFormulaEditor({
   );
   const score = computeScore(formula, stats);
 
-  async function save() {
+  async function doSave() {
+    setGateOpen(false);
     setError(null);
     setSaved(false);
     setSaving(true);
@@ -338,7 +341,7 @@ export function ScoringFormulaEditor({
           >
             + Group
           </button>
-          <Button type="button" size="md" onClick={save} disabled={saving}>
+          <Button type="button" size="md" onClick={() => setGateOpen(true)} disabled={saving}>
             {saving ? "Saving…" : "Save formula"}
           </Button>
         </div>
@@ -508,6 +511,13 @@ export function ScoringFormulaEditor({
           Recomputes live. Save to apply (affects scores computed from the next ingest onward).
         </p>
       </section>
+
+      <PasswordGate
+        open={gateOpen}
+        action="the scoring formula change"
+        onCancel={() => setGateOpen(false)}
+        onVerified={doSave}
+      />
     </div>
   );
 }
