@@ -7,6 +7,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AccoladeEditor, type AccoladeRecord } from "@/components/admin/AccoladeEditor";
+import { AccoladeRuleEditor, type AccoladeRule } from "@/components/admin/AccoladeRuleEditor";
 import { AdminDeleteButton } from "@/components/admin/AdminDeleteButton";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
@@ -19,11 +20,20 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 export default async function EditAccoladePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
-  const { data: accolade } = await supabase
-    .from("accolade_definitions")
-    .select("id, name, description, badge_url, xp, points, scope, is_active")
-    .eq("id", id)
-    .maybeSingle();
+  const [{ data: accolade }, { data: rule }] = await Promise.all([
+    supabase
+      .from("accolade_definitions")
+      .select("id, name, description, badge_url, xp, points, scope, is_active")
+      .eq("id", id)
+      .maybeSingle(),
+    supabase
+      .from("accolade_rules")
+      .select("id, rule_type, stat_key, direction, comparator, threshold_value, params")
+      .eq("accolade_definition_id", id)
+      .order("created_at")
+      .limit(1)
+      .maybeSingle(),
+  ]);
   if (!accolade) notFound();
 
   return (
@@ -44,6 +54,13 @@ export default async function EditAccoladePage({ params }: { params: Promise<{ i
       </header>
 
       <AccoladeEditor accolade={accolade as AccoladeRecord} />
+
+      <div className="mt-6">
+        <AccoladeRuleEditor
+          accoladeId={accolade.id}
+          initialRule={(rule ?? null) as AccoladeRule | null}
+        />
+      </div>
 
       <AdminDeleteButton
         table="accolade_definitions"
