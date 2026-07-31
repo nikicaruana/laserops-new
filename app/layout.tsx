@@ -4,6 +4,7 @@ import "./globals.css";
 
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { ChromeGate } from "@/components/layout/ChromeGate";
 import { GTM, GTMNoScript } from "@/components/tracking/GTM";
 import { CookieConsent } from "@/components/tracking/CookieConsent";
 import { EngagedSessionTracker } from "@/components/tracking/EngagedSession";
@@ -139,12 +140,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           Skip to content
         </a>
-        <Header />
+        <ChromeGate>
+          <Header />
+        </ChromeGate>
         <main id="main" className="flex-1">
           {children}
         </main>
-        <Footer />
-        <CookieConsent />
+        <ChromeGate>
+          <Footer />
+          <CookieConsent />
+        </ChromeGate>
         <EngagedSessionTracker />
       </body>
     </html>
