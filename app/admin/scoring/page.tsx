@@ -5,6 +5,7 @@
  * score_formula (falls back to the default shape) and renders the drag-and-drop
  * builder + live worked example.
  */
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { ScoringFormulaEditor } from "@/components/admin/ScoringFormulaEditor";
 import { parseFormula, defaultFormula } from "@/lib/scoring/formula";
@@ -18,13 +19,21 @@ export default async function AdminScoringPage() {
 
   return (
     <div>
-      <header className="mb-8 border-b border-border pb-6">
-        <h1 className="text-2xl font-extrabold uppercase tracking-tight text-text sm:text-3xl">
-          Scoring formula
-        </h1>
-        <p className="mt-2 text-sm text-text-muted">
-          Build the match-score formula from metric blocks. Score = sum of the groups, rounded up.
-        </p>
+      <header className="mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-6">
+        <div>
+          <h1 className="text-2xl font-extrabold uppercase tracking-tight text-text sm:text-3xl">
+            Scoring formula
+          </h1>
+          <p className="mt-2 text-sm text-text-muted">
+            Build the match-score formula from metric blocks. Score = sum of the groups, rounded up.
+          </p>
+        </div>
+        <Link
+          href="/admin/scoring/history"
+          className="flex h-10 items-center border border-border-strong px-4 text-xs font-bold uppercase tracking-[0.12em] text-text-muted hover:border-accent hover:text-accent"
+        >
+          History &amp; rollback
+        </Link>
       </header>
 
       <div className="mb-6 border-l-4 border-amber-500 bg-amber-500/10 px-4 py-3 text-sm text-amber-200/90">

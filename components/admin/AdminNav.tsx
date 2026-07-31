@@ -16,7 +16,13 @@ import { cn } from "@/lib/cn";
 type Item = { label: string; href?: string };
 
 const SECTIONS: { heading: string; items: Item[] }[] = [
-  { heading: "Overview", items: [{ label: "Dashboard", href: "/admin" }] },
+  {
+    heading: "Overview",
+    items: [
+      { label: "Dashboard", href: "/admin" },
+      { label: "Change log", href: "/admin/changelog" },
+    ],
+  },
   {
     heading: "Arsenal",
     items: [
