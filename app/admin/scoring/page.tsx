@@ -27,6 +27,12 @@ export default async function AdminScoringPage() {
         </p>
       </header>
 
+      <div className="mb-6 border-l-4 border-amber-500 bg-amber-500/10 px-4 py-3 text-sm text-amber-200/90">
+        <span className="font-semibold text-amber-300">Heads up —</span> this formula is finely
+        tuned for the best gameplay experience. Changing it affects how every future match is
+        scored, so adjust deliberately. Past games keep the score they were computed with.
+      </div>
+
       <ScoringFormulaEditor initial={formula} />
     </div>
   );

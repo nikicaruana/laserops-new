@@ -17,6 +17,8 @@ import { createClient } from "@/lib/supabase/client";
 import {
   computeGroupValue,
   computeScore,
+  formulaExpression,
+  groupExpression,
   FORMULA_STATS,
   type FormulaBlock,
   type FormulaGroup,
@@ -280,6 +282,27 @@ export function ScoringFormulaEditor({ initial }: { initial: ScoreFormula }) {
       {error && (
         <p className="border border-red-800 bg-red-950/40 px-3 py-2 text-xs text-red-400">{error}</p>
       )}
+
+      {/* Live written preview */}
+      <section className="border border-border bg-bg-elevated px-5 py-4">
+        <h2 className="mb-2 text-[0.65rem] font-bold uppercase tracking-[0.16em] text-text-muted">
+          Formula
+        </h2>
+        <div className="overflow-x-auto">
+          <p className="whitespace-nowrap font-mono text-sm text-text">
+            score = {formulaExpression(formula)}
+          </p>
+          {formula.groups.length > 1 && (
+            <ul className="mt-2 space-y-1">
+              {formula.groups.map((g) => (
+                <li key={g.id} className="whitespace-nowrap font-mono text-xs text-text-muted">
+                  <span className="text-accent">{g.label || "group"}</span> = {groupExpression(g)}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </section>
 
       {/* Groups */}
       <div className="space-y-4">

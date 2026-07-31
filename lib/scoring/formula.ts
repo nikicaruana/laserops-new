@@ -53,6 +53,26 @@ export function computeScore(formula: ScoreFormula, stats: Record<string, number
   return Math.ceil(computeRaw(formula, stats));
 }
 
+const fmtWeight = (w: number): string => String(w);
+
+/** Human-readable expression for one group, e.g. "(Kills×50 + Damage×0.2) × (1 + Accuracy×0.2)". */
+export function groupExpression(g: FormulaGroup): string {
+  const base = g.baseTerms.length
+    ? g.baseTerms.map((t) => `${statLabel(t.stat)}×${fmtWeight(t.weight)}`).join(" + ")
+    : "0";
+  const wrapped = g.multipliers.length ? `(${base})` : base;
+  const mult = g.multipliers
+    .map((t) => ` × (1 + ${statLabel(t.stat)}×${fmtWeight(t.weight)})`)
+    .join("");
+  return `${wrapped}${mult}`;
+}
+
+/** Full formula expression, e.g. "⌈ (Kills×50…) × (…) + (Captures×0…) ⌉". */
+export function formulaExpression(f: ScoreFormula): string {
+  const inner = f.groups.map(groupExpression).join(" + ");
+  return `⌈ ${inner || "0"} ⌉`;
+}
+
 /** Default formula = the original fixed shape (all terms in one group). */
 export function defaultFormula(): ScoreFormula {
   return {
