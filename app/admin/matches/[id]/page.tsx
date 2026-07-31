@@ -1,20 +1,21 @@
 /**
  * app/admin/matches/[id]/page.tsx
  * --------------------------------------------------------------------
- * Match detail — the match's lifecycle/processing summary plus its player
- * entries (match_player_aggregate). Read view for Phase 1; adding / editing /
- * merging entries and JSON/CSV ingestion land in later phases.
+ * Match detail — lifecycle/processing summary, admin lifecycle actions, the
+ * signups (for upcoming games) and the player entries (for played games).
+ * Entry add/edit/merge and JSON/CSV ingestion arrive in later phases.
  */
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { MatchStatusBadge } from "@/components/admin/MatchStatusBadge";
+import { MatchAdminActions } from "@/components/admin/MatchAdminActions";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
-  const { data } = await supabase.from("matches").select("match_code").eq("id", id).maybeSingle();
-  return { title: data?.match_code ? `${data.match_code} · Matches` : "Match" };
+  const { data } = await supabase.from("matches").select("match_code, title").eq("id", id).maybeSingle();
+  return { title: data?.title || data?.match_code ? `${data?.title ?? data?.match_code} · Matches` : "Match" };
 }
 
 type Entry = {
@@ -31,7 +32,15 @@ type Entry = {
   accuracy: number | null;
   was_winner: boolean | null;
   xp_total: number | null;
-  elo_after: number | null;
+};
+
+type Signup = {
+  id: string;
+  payment_intent: string | null;
+  status: string | null;
+  paid_at: string | null;
+  created_at: string | null;
+  account: { ops_tag: string | null; full_name: string | null } | null;
 };
 
 function fmtDateTime(iso: string | null, dateOnly: string | null): string {
@@ -61,25 +70,32 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: match }, { data: entryRows }] = await Promise.all([
+  const [{ data: match }, { data: signupRows }, { data: entryRows }] = await Promise.all([
     supabase
       .from("matches")
       .select(
-        "id, match_code, status, scheduled_at, played_on, round_count, source_file_type, xp_distributed_at, elo_calculated_at, winning_team_colour, is_private, is_double_xp",
+        "id, match_code, title, status, scheduled_at, played_on, round_count, source_file_type, xp_distributed_at, elo_calculated_at, winning_team_colour, is_private, is_double_xp, min_players, max_players, price_eur, registered_count, paid_count, on_day_count, reached_quorum_at",
       )
       .eq("id", id)
       .maybeSingle(),
     supabase
+      .from("match_signups")
+      .select("id, payment_intent, status, paid_at, created_at, account:accounts(ops_tag, full_name)")
+      .eq("match_id", id)
+      .order("created_at"),
+    supabase
       .from("match_player_aggregate")
       .select(
-        "id, nickname, headset_label, team_colour, gun_used, account_id, score, frags, deaths, kd, accuracy, was_winner, xp_total, elo_after",
+        "id, nickname, headset_label, team_colour, gun_used, account_id, score, frags, deaths, kd, accuracy, was_winner, xp_total",
       )
       .eq("match_id", id)
       .order("score", { ascending: false, nullsFirst: false }),
   ]);
 
   if (!match) notFound();
+  const signups = ((signupRows ?? []) as unknown as Signup[]).filter((s) => s.status !== "cancelled");
   const entries = (entryRows ?? []) as Entry[];
+  const isPlayed = match.status === "completed" || entries.length > 0;
 
   return (
     <div>
@@ -90,8 +106,9 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
       </div>
 
       <header className="mb-6 flex flex-wrap items-center gap-4 border-b border-border pb-6">
-        <h1 className="font-mono text-2xl font-extrabold uppercase tracking-tight text-text sm:text-3xl">
-          {match.match_code ?? "Match"}
+        <span className="font-mono text-sm text-text-muted">{match.match_code ?? "—"}</span>
+        <h1 className="text-2xl font-extrabold uppercase tracking-tight text-text sm:text-3xl">
+          {match.title || match.match_code || "Match"}
         </h1>
         <MatchStatusBadge status={match.status} />
         {match.is_double_xp && (
@@ -106,92 +123,150 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         )}
       </header>
 
+      <div className="mb-6">
+        <MatchAdminActions matchId={match.id} status={match.status} />
+      </div>
+
       <div className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Fact label="Date / time">{fmtDateTime(match.scheduled_at, match.played_on)}</Fact>
-        <Fact label="Players">{entries.length}</Fact>
+        <Fact label="Registered">
+          {match.registered_count ?? 0}
+          <span className="text-text-subtle"> / {match.min_players ?? 10} min{match.max_players ? ` · ${match.max_players} max` : ""}</span>
+        </Fact>
+        <Fact label="Paid">
+          {match.paid_count ?? 0} paid
+          <span className="text-text-subtle"> · {match.on_day_count ?? 0} on the day</span>
+        </Fact>
+        <Fact label="Price">{match.price_eur != null ? `€${Number(match.price_eur).toFixed(2)}` : "—"}</Fact>
         <Fact label="Rounds">{match.round_count ?? "—"}</Fact>
         <Fact label="Source file">{match.source_file_type ? match.source_file_type.toUpperCase() : "—"}</Fact>
         <Fact label="XP">
-          {match.xp_distributed_at ? (
-            <span className="text-accent">Distributed</span>
-          ) : (
-            <span className="text-text-subtle">Pending</span>
-          )}
+          {match.xp_distributed_at ? <span className="text-accent">Distributed</span> : <span className="text-text-subtle">Pending</span>}
         </Fact>
         <Fact label="ELO">
-          {match.elo_calculated_at ? (
-            <span className="text-accent">Calculated</span>
-          ) : (
-            <span className="text-text-subtle">Pending</span>
-          )}
+          {match.elo_calculated_at ? <span className="text-accent">Calculated</span> : <span className="text-text-subtle">Pending</span>}
         </Fact>
-        <Fact label="Winning team">{match.winning_team_colour ?? "—"}</Fact>
       </div>
 
-      <h2 className="mb-3 text-sm font-bold uppercase tracking-[0.12em] text-accent">
-        Player entries ({entries.length})
-      </h2>
-
-      {entries.length === 0 ? (
-        <p className="border border-dashed border-border px-4 py-10 text-center text-sm text-text-muted">
-          No entries yet. Players joining a live match or a JSON/CSV import will populate this.
-        </p>
-      ) : (
-        <div className="overflow-x-auto border border-border">
-          <table className="w-full min-w-[820px] text-left text-sm">
-            <thead>
-              <tr className="border-b border-border bg-bg-elevated text-[0.6rem] uppercase tracking-[0.14em] text-text-muted">
-                <th className="px-4 py-3 font-semibold">Player</th>
-                <th className="px-4 py-3 font-semibold">Headband</th>
-                <th className="px-4 py-3 font-semibold">Team</th>
-                <th className="px-4 py-3 font-semibold">Gun</th>
-                <th className="px-4 py-3 text-right font-semibold">Score</th>
-                <th className="px-4 py-3 text-right font-semibold">K</th>
-                <th className="px-4 py-3 text-right font-semibold">D</th>
-                <th className="px-4 py-3 text-right font-semibold">K/D</th>
-                <th className="px-4 py-3 text-right font-semibold">Acc</th>
-                <th className="px-4 py-3 text-right font-semibold">XP</th>
-                <th className="px-4 py-3 text-center font-semibold">Linked</th>
-              </tr>
-            </thead>
-            <tbody>
-              {entries.map((e) => (
-                <tr key={e.id} className="border-b border-border last:border-0 hover:bg-bg-elevated/50">
-                  <td className="px-4 py-3">
-                    <span className="font-semibold text-text">{e.nickname ?? "—"}</span>
-                    {e.was_winner && <span className="ml-2 text-[0.6rem] font-bold uppercase text-accent">Win</span>}
-                  </td>
-                  <td className="px-4 py-3 font-mono text-text-muted">{e.headset_label ?? "—"}</td>
-                  <td className="px-4 py-3 text-text-muted">{e.team_colour ?? "—"}</td>
-                  <td className="px-4 py-3 text-text-muted">{e.gun_used ?? "—"}</td>
-                  <td className="px-4 py-3 text-right font-mono tabular-nums text-text">{e.score ?? "—"}</td>
-                  <td className="px-4 py-3 text-right font-mono tabular-nums text-text-muted">{e.frags ?? "—"}</td>
-                  <td className="px-4 py-3 text-right font-mono tabular-nums text-text-muted">{e.deaths ?? "—"}</td>
-                  <td className="px-4 py-3 text-right font-mono tabular-nums text-text-muted">
-                    {e.kd === null || e.kd === undefined ? "—" : e.kd.toFixed(2)}
-                  </td>
-                  <td className="px-4 py-3 text-right font-mono tabular-nums text-text-muted">
-                    {e.accuracy === null || e.accuracy === undefined ? "—" : `${Math.round(e.accuracy * 100)}%`}
-                  </td>
-                  <td className="px-4 py-3 text-right font-mono tabular-nums text-text-muted">{e.xp_total ?? "—"}</td>
-                  <td className="px-4 py-3 text-center">
-                    {e.account_id ? (
-                      <span className="text-accent" title="Linked to an account">●</span>
-                    ) : (
-                      <span className="text-text-subtle/50" title="Unresolved (no linked account)">○</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {/* Signups (booking side) */}
+      {!isPlayed && (
+        <section className="mb-10">
+          <h2 className="mb-3 text-sm font-bold uppercase tracking-[0.12em] text-accent">
+            Signups ({signups.length})
+          </h2>
+          {signups.length === 0 ? (
+            <p className="border border-dashed border-border px-4 py-10 text-center text-sm text-text-muted">
+              No signups yet. Players sign up from the games list on their account.
+            </p>
+          ) : (
+            <div className="overflow-x-auto border border-border">
+              <table className="w-full min-w-[560px] text-left text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-bg-elevated text-[0.6rem] uppercase tracking-[0.14em] text-text-muted">
+                    <th className="px-4 py-3 font-semibold">Player</th>
+                    <th className="px-4 py-3 font-semibold">Paying</th>
+                    <th className="px-4 py-3 font-semibold">Payment</th>
+                    <th className="px-4 py-3 font-semibold">Signed up</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {signups.map((s) => (
+                    <tr key={s.id} className="border-b border-border last:border-0">
+                      <td className="px-4 py-3 font-semibold text-text">
+                        {s.account?.full_name || s.account?.ops_tag || "—"}
+                        {s.account?.full_name && s.account?.ops_tag && (
+                          <span className="ml-2 font-mono text-xs text-text-subtle">{s.account.ops_tag}</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-text-muted">
+                        {s.payment_intent === "on_day" ? "On the day" : "Online"}
+                      </td>
+                      <td className="px-4 py-3">
+                        {s.paid_at ? (
+                          <span className="text-accent">Paid</span>
+                        ) : s.payment_intent === "on_day" ? (
+                          <span className="text-amber-300">Due on day</span>
+                        ) : (
+                          <span className="text-text-subtle">Unpaid</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-text-muted">{fmtDateTime(s.created_at, null)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
       )}
 
-      <p className="mt-4 text-[0.65rem] text-text-subtle">
-        Adding, editing, and merging entries (headband switches) and JSON/CSV ingestion arrive in the
-        next phases of the Match Manager.
-      </p>
+      {/* Entries (played side) */}
+      {isPlayed && (
+        <section>
+          <h2 className="mb-3 text-sm font-bold uppercase tracking-[0.12em] text-accent">
+            Player entries ({entries.length})
+          </h2>
+          {entries.length === 0 ? (
+            <p className="border border-dashed border-border px-4 py-10 text-center text-sm text-text-muted">
+              No entries yet. Players joining a live match or a JSON/CSV import will populate this.
+            </p>
+          ) : (
+            <div className="overflow-x-auto border border-border">
+              <table className="w-full min-w-[820px] text-left text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-bg-elevated text-[0.6rem] uppercase tracking-[0.14em] text-text-muted">
+                    <th className="px-4 py-3 font-semibold">Player</th>
+                    <th className="px-4 py-3 font-semibold">Headband</th>
+                    <th className="px-4 py-3 font-semibold">Team</th>
+                    <th className="px-4 py-3 font-semibold">Gun</th>
+                    <th className="px-4 py-3 text-right font-semibold">Score</th>
+                    <th className="px-4 py-3 text-right font-semibold">K</th>
+                    <th className="px-4 py-3 text-right font-semibold">D</th>
+                    <th className="px-4 py-3 text-right font-semibold">K/D</th>
+                    <th className="px-4 py-3 text-right font-semibold">Acc</th>
+                    <th className="px-4 py-3 text-right font-semibold">XP</th>
+                    <th className="px-4 py-3 text-center font-semibold">Linked</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {entries.map((e) => (
+                    <tr key={e.id} className="border-b border-border last:border-0 hover:bg-bg-elevated/50">
+                      <td className="px-4 py-3">
+                        <span className="font-semibold text-text">{e.nickname ?? "—"}</span>
+                        {e.was_winner && <span className="ml-2 text-[0.6rem] font-bold uppercase text-accent">Win</span>}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-text-muted">{e.headset_label ?? "—"}</td>
+                      <td className="px-4 py-3 text-text-muted">{e.team_colour ?? "—"}</td>
+                      <td className="px-4 py-3 text-text-muted">{e.gun_used ?? "—"}</td>
+                      <td className="px-4 py-3 text-right font-mono tabular-nums text-text">{e.score ?? "—"}</td>
+                      <td className="px-4 py-3 text-right font-mono tabular-nums text-text-muted">{e.frags ?? "—"}</td>
+                      <td className="px-4 py-3 text-right font-mono tabular-nums text-text-muted">{e.deaths ?? "—"}</td>
+                      <td className="px-4 py-3 text-right font-mono tabular-nums text-text-muted">
+                        {e.kd === null || e.kd === undefined ? "—" : e.kd.toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3 text-right font-mono tabular-nums text-text-muted">
+                        {e.accuracy === null || e.accuracy === undefined ? "—" : `${Math.round(e.accuracy * 100)}%`}
+                      </td>
+                      <td className="px-4 py-3 text-right font-mono tabular-nums text-text-muted">{e.xp_total ?? "—"}</td>
+                      <td className="px-4 py-3 text-center">
+                        {e.account_id ? (
+                          <span className="text-accent" title="Linked to an account">●</span>
+                        ) : (
+                          <span className="text-text-subtle/50" title="Unresolved (no linked account)">○</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <p className="mt-4 text-[0.65rem] text-text-subtle">
+            Adding, editing, and merging entries and JSON/CSV ingestion arrive in the next Match
+            Manager phases.
+          </p>
+        </section>
+      )}
     </div>
   );
 }

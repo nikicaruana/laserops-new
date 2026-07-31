@@ -53,6 +53,7 @@ export const primaryNav: NavLink[] = [
     highlight: true,
     mobileExpand: true,
     children: [
+      { label: "Upcoming Games", href: "/player-portal/games", highlight: true },
       { label: "Leaderboards", href: "/player-portal/leaderboards", highlight: true },
       { label: "Player Stats", href: "/player-portal/player-stats", highlight: true },
       { label: "Match Report", href: "/match-report", redHighlight: true },

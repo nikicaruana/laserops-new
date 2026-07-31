@@ -16,6 +16,7 @@ export const metadata = { title: "Match Manager" };
 type Row = {
   id: string;
   match_code: string | null;
+  title: string | null;
   status: string | null;
   scheduled_at: string | null;
   played_on: string | null;
@@ -23,6 +24,9 @@ type Row = {
   source_file_type: string | null;
   xp_distributed_at: string | null;
   elo_calculated_at: string | null;
+  registered_count: number | null;
+  paid_count: number | null;
+  on_day_count: number | null;
   match_player_aggregate: { count: number }[] | null;
 };
 
@@ -73,7 +77,7 @@ export default async function AdminMatchesPage({
   let query = supabase
     .from("matches")
     .select(
-      "id, match_code, status, scheduled_at, played_on, round_count, source_file_type, xp_distributed_at, elo_calculated_at, match_player_aggregate(count)",
+      "id, match_code, title, status, scheduled_at, played_on, round_count, source_file_type, xp_distributed_at, elo_calculated_at, registered_count, paid_count, on_day_count, match_player_aggregate(count)",
     )
     .order("scheduled_at", { ascending: false, nullsFirst: false })
     .order("played_on", { ascending: false, nullsFirst: false })
@@ -94,6 +98,12 @@ export default async function AdminMatchesPage({
             Every game and its processing state. Click a match to manage entries and ingest data.
           </p>
         </div>
+        <Link
+          href="/admin/matches/new"
+          className="flex h-11 items-center gap-2 border border-accent bg-accent px-5 text-xs font-bold uppercase tracking-[0.12em] text-bg transition-transform active:scale-[0.98]"
+        >
+          + New open game
+        </Link>
       </header>
 
       <div className="mb-6 flex flex-wrap items-center gap-2">
@@ -118,13 +128,15 @@ export default async function AdminMatchesPage({
         </p>
       ) : (
         <div className="overflow-x-auto border border-border">
-          <table className="w-full min-w-[820px] text-left text-sm">
+          <table className="w-full min-w-[960px] text-left text-sm">
             <thead>
               <tr className="border-b border-border bg-bg-elevated text-[0.6rem] uppercase tracking-[0.14em] text-text-muted">
                 <th className="px-4 py-3 font-semibold">Match</th>
                 <th className="px-4 py-3 font-semibold">Date / time</th>
                 <th className="px-4 py-3 font-semibold">Status</th>
-                <th className="px-4 py-3 text-right font-semibold">Players</th>
+                <th className="px-4 py-3 text-right font-semibold">Reg</th>
+                <th className="px-4 py-3 text-right font-semibold">Paid</th>
+                <th className="px-4 py-3 text-right font-semibold">On day</th>
                 <th className="px-4 py-3 text-center font-semibold">File</th>
                 <th className="px-4 py-3 text-right font-semibold">Rounds</th>
                 <th className="px-4 py-3 font-semibold">XP</th>
@@ -134,13 +146,24 @@ export default async function AdminMatchesPage({
             </thead>
             <tbody>
               {rows.map((m) => {
-                const players = m.match_player_aggregate?.[0]?.count ?? 0;
+                const played = m.status === "completed";
+                const entriesCount = m.match_player_aggregate?.[0]?.count ?? 0;
+                const reg = played ? entriesCount : m.registered_count ?? 0;
                 return (
                   <tr key={m.id} className="border-b border-border last:border-0 hover:bg-bg-elevated/50">
-                    <td className="px-4 py-3 font-mono font-semibold text-text">{m.match_code ?? "—"}</td>
+                    <td className="px-4 py-3">
+                      <span className="font-mono font-semibold text-text">{m.match_code ?? "—"}</span>
+                      {m.title && <span className="ml-2 text-text-muted">{m.title}</span>}
+                    </td>
                     <td className="px-4 py-3 text-text-muted">{fmtDateTime(m.scheduled_at, m.played_on)}</td>
                     <td className="px-4 py-3"><MatchStatusBadge status={m.status} /></td>
-                    <td className="px-4 py-3 text-right font-mono tabular-nums text-text">{players}</td>
+                    <td className="px-4 py-3 text-right font-mono tabular-nums text-text">{reg}</td>
+                    <td className="px-4 py-3 text-right font-mono tabular-nums text-text-muted">
+                      {played ? "—" : m.paid_count ?? 0}
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono tabular-nums text-text-muted">
+                      {played ? "—" : m.on_day_count ?? 0}
+                    </td>
                     <td className="px-4 py-3 text-center text-xs uppercase text-text-muted">
                       {m.source_file_type ?? "—"}
                     </td>
