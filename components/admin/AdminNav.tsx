@@ -41,7 +41,13 @@ const SECTIONS: { heading: string; items: Item[] }[] = [
       { label: "Streaks" },
     ],
   },
-  { heading: "Seasons", items: [{ label: "Seasons" }, { label: "Challenges" }] },
+  {
+    heading: "Seasons",
+    items: [
+      { label: "Seasons", href: "/admin/seasons" },
+      { label: "Challenges", href: "/admin/challenges" },
+    ],
+  },
   {
     heading: "Integrity",
     items: [{ label: "Exploit control", href: "/admin/exploit-control" }],
