@@ -51,11 +51,13 @@ export const PROFILE_PICS_FOLDER = "laseropsmalta.com/profile-pics";
 /** Folders for admin-uploaded config images (see app/api/admin/image). */
 export const GUNS_FOLDER = "laseropsmalta.com/guns";
 export const ACCOLADES_FOLDER = "laseropsmalta.com/accolades";
+export const TEAMS_FOLDER = "laseropsmalta.com/team-badges";
 
 /** Allowed image-upload kinds -> Cloudinary folder. */
 export const ADMIN_IMAGE_FOLDERS: Record<string, string> = {
   gun: GUNS_FOLDER,
   accolade: ACCOLADES_FOLDER,
+  team: TEAMS_FOLDER,
 };
 
 function isProfilePic(folder: string): boolean {

@@ -52,7 +52,13 @@ const SECTIONS: { heading: string; items: Item[] }[] = [
     heading: "Integrity",
     items: [{ label: "Exploit control", href: "/admin/exploit-control" }],
   },
-  { heading: "Other", items: [{ label: "Teams" }, { label: "Excluded players" }] },
+  {
+    heading: "Other",
+    items: [
+      { label: "Teams", href: "/admin/teams" },
+      { label: "Excluded players", href: "/admin/excluded-players" },
+    ],
+  },
 ];
 
 export function AdminNav() {
