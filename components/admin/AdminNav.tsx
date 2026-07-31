@@ -26,6 +26,10 @@ const SECTIONS: { heading: string; items: Item[] }[] = [
     ],
   },
   {
+    heading: "Matches",
+    items: [{ label: "Match Manager", href: "/admin/matches" }],
+  },
+  {
     heading: "Arsenal",
     items: [
       { label: "Guns", href: "/admin/guns" },
