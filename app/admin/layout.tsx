@@ -10,6 +10,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AdminNav } from "@/components/admin/AdminNav";
+import { SelectNumberOnFocus } from "@/components/admin/SelectNumberOnFocus";
 
 export const metadata: Metadata = {
   title: { default: "Admin", template: "%s · Admin · LaserOps" },
@@ -32,6 +33,7 @@ export default async function AdminLayout({
 
   return (
     <div className="min-h-screen bg-bg">
+      <SelectNumberOnFocus />
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 sm:px-6 lg:flex-row lg:gap-10 lg:px-8 lg:py-12">
         <AdminNav />
         <main className="min-w-0 flex-1">{children}</main>
