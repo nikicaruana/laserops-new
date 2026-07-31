@@ -27,7 +27,7 @@ export const FORMULA_STATS: { key: string; label: string }[] = [
   { key: "frags", label: "Kills" },
   { key: "damage", label: "Damage" },
   { key: "captures", label: "Captures" },
-  { key: "hold", label: "Hold time" },
+  { key: "hold", label: "Hold time (s)" },
   { key: "accuracy", label: "Accuracy" },
   { key: "kd", label: "K/D" },
 ];
