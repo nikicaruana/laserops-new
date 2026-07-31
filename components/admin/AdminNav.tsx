@@ -34,7 +34,7 @@ const SECTIONS: { heading: string; items: Item[] }[] = [
       { label: "ELO" },
       { label: "Ratings" },
       { label: "Scoring formula" },
-      { label: "Accolades" },
+      { label: "Accolades", href: "/admin/accolades" },
       { label: "Streaks" },
     ],
   },

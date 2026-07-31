@@ -12,7 +12,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
-import { GunImageUploader } from "@/components/admin/GunImageUploader";
+import { AdminImageUploader } from "@/components/admin/AdminImageUploader";
 
 export type GunRecord = {
   id: string;
@@ -181,7 +181,7 @@ export function GunEditor({
         </Field>
         <div className="sm:col-span-2">
           <label className={label}>Image</label>
-          <GunImageUploader value={f.image_url} onChange={(url) => set("image_url", url)} />
+          <AdminImageUploader value={f.image_url} onChange={(url) => set("image_url", url)} kind="gun" />
         </div>
         <Field label="Tree branch">
           <select className={input} value={f.tree_branch ?? ""} onChange={(e) => set("tree_branch", e.target.value || null)}>

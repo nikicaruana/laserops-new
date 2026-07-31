@@ -48,8 +48,15 @@ const GALLERY_REVALIDATE_SECONDS = 1800;
  */
 export const PROFILE_PICS_FOLDER = "laseropsmalta.com/profile-pics";
 
-/** Folder where admin-uploaded gun images are stored (see app/api/admin/gun-image). */
+/** Folders for admin-uploaded config images (see app/api/admin/image). */
 export const GUNS_FOLDER = "laseropsmalta.com/guns";
+export const ACCOLADES_FOLDER = "laseropsmalta.com/accolades";
+
+/** Allowed image-upload kinds -> Cloudinary folder. */
+export const ADMIN_IMAGE_FOLDERS: Record<string, string> = {
+  gun: GUNS_FOLDER,
+  accolade: ACCOLADES_FOLDER,
+};
 
 function isProfilePic(folder: string): boolean {
   return (

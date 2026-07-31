@@ -33,7 +33,7 @@ export default async function AdminDashboard() {
     hint: string;
   }[] = [
     { label: "Guns", href: "/admin/guns", count: guns, hint: "Catalogue, specs, damage timeline" },
-    { label: "Accolades", count: accolades, hint: "Definitions, XP tiers, rules" },
+    { label: "Accolades", href: "/admin/accolades", count: accolades, hint: "Definitions, XP tiers, badges" },
     { label: "Scoring formula", count: null, hint: "Weights + live preview" },
     { label: "Seasons", count: seasons, hint: "Windows + status" },
     { label: "Challenges", count: challenges, hint: "Per-season leaderboards" },

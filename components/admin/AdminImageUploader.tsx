@@ -1,22 +1,26 @@
 "use client";
 
 /**
- * components/admin/GunImageUploader.tsx
+ * components/admin/AdminImageUploader.tsx
  * --------------------------------------------------------------------
- * Image control for the gun editor. Shows the current image and lets an
- * admin upload a new one to Cloudinary (via /api/admin/gun-image, which is
- * admin-gated and server-signs the upload). The returned URL is handed back
- * via onChange; the parent form persists it to guns.image_url on save.
+ * Generic admin image control. Shows the current image and uploads a new one
+ * to Cloudinary via /api/admin/image (admin-gated, server-signed) for the
+ * given `kind` (gun / accolade / …). The returned URL is handed back through
+ * onChange; the parent form persists it. `previewClass` sizes the thumbnail.
  */
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 
-export function GunImageUploader({
+export function AdminImageUploader({
   value,
   onChange,
+  kind,
+  previewClass = "h-16 w-28",
 }: {
   value: string | null;
   onChange: (url: string) => void;
+  kind: "gun" | "accolade";
+  previewClass?: string;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -34,7 +38,8 @@ export function GunImageUploader({
     try {
       const form = new FormData();
       form.append("file", file);
-      const res = await fetch("/api/admin/gun-image", { method: "POST", body: form });
+      form.append("kind", kind);
+      const res = await fetch("/api/admin/image", { method: "POST", body: form });
       const data = (await res.json()) as { ok: boolean; url?: string; error?: string };
       if (!res.ok || !data.ok || !data.url) throw new Error(data.error || "Upload failed.");
       onChange(data.url);
@@ -49,14 +54,14 @@ export function GunImageUploader({
   return (
     <div>
       <div className="flex items-center gap-4">
-        <div className="flex h-16 w-28 shrink-0 items-center justify-center border border-border-strong bg-bg">
+        <div
+          className={`flex ${previewClass} shrink-0 items-center justify-center border border-border-strong bg-bg`}
+        >
           {value ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={value} alt="" className="max-h-full max-w-full object-contain" />
           ) : (
-            <span className="text-[0.6rem] uppercase tracking-wide text-text-subtle">
-              No image
-            </span>
+            <span className="text-[0.6rem] uppercase tracking-wide text-text-subtle">No image</span>
           )}
         </div>
         <div className="flex flex-col items-start gap-2">

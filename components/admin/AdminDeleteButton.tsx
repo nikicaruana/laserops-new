@@ -1,18 +1,31 @@
 "use client";
 
 /**
- * components/admin/GunDeleteButton.tsx
+ * components/admin/AdminDeleteButton.tsx
  * --------------------------------------------------------------------
- * Danger-zone delete for a gun. Requires typing DELETE to confirm, then
- * removes the guns row (gun_damage_history cascades via FK) through the
- * admin's session (guns_admin_write RLS) and returns to the list.
+ * Generic danger-zone delete for a config row. Requires typing DELETE to
+ * confirm, then removes the row from `table` (any FK-cascades apply) through
+ * the admin's session (that table's admin-write RLS) and navigates to
+ * `redirectTo`.
  */
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
 
-export function GunDeleteButton({ gunId, gunName }: { gunId: string; gunName: string }) {
+export function AdminDeleteButton({
+  table,
+  id,
+  name,
+  redirectTo,
+  noun = "item",
+}: {
+  table: string;
+  id: string;
+  name: string;
+  redirectTo: string;
+  noun?: string;
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
@@ -23,13 +36,13 @@ export function GunDeleteButton({ gunId, gunName }: { gunId: string; gunName: st
     setError(null);
     setBusy(true);
     const supabase = createClient();
-    const { error: err } = await supabase.from("guns").delete().eq("id", gunId);
+    const { error: err } = await supabase.from(table).delete().eq("id", id);
     if (err) {
       setError(err.message || "Couldn't delete.");
       setBusy(false);
       return;
     }
-    router.push("/admin/guns");
+    router.push(redirectTo);
     router.refresh();
   }
 
@@ -41,15 +54,14 @@ export function GunDeleteButton({ gunId, gunName }: { gunId: string; gunName: st
       {!open ? (
         <div className="flex flex-wrap items-center justify-between gap-4">
           <p className="text-sm text-text-muted">
-            Permanently delete <span className="font-semibold text-text">{gunName}</span> and
-            its damage history.
+            Permanently delete <span className="font-semibold text-text">{name}</span>.
           </p>
           <button
             type="button"
             onClick={() => setOpen(true)}
             className="border border-red-800 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-red-400 transition-colors hover:bg-red-950/50"
           >
-            Delete gun
+            Delete {noun}
           </button>
         </div>
       ) : (
