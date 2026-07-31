@@ -6,6 +6,18 @@
  */
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { RecomputeButton } from "@/components/admin/RecomputeButton";
+
+function whenText(iso: string | null): string {
+  if (!iso) return "never";
+  return new Date(iso).toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 async function countOf(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -19,11 +31,12 @@ async function countOf(
 
 export default async function AdminDashboard() {
   const supabase = await createClient();
-  const [guns, accolades, seasons, challenges] = await Promise.all([
+  const [guns, accolades, seasons, challenges, { data: status }] = await Promise.all([
     countOf(supabase, "guns"),
     countOf(supabase, "accolade_definitions"),
     countOf(supabase, "seasons"),
     countOf(supabase, "challenges"),
+    supabase.from("read_model_status").select("last_recomputed_at").maybeSingle(),
   ]);
 
   const cards: {
@@ -91,6 +104,26 @@ export default async function AdminDashboard() {
           );
         })}
       </div>
+
+      {/* Maintenance */}
+      <section className="mt-8 border border-border bg-bg-elevated px-5 py-5">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2 className="text-sm font-bold uppercase tracking-[0.12em] text-accent">
+              Recompute read-models
+            </h2>
+            <p className="mt-2 max-w-xl text-xs text-text-muted">
+              Rebuilds the derived tables (lifetime stats, period stats, gun stats, ratings, season
+              standings) from stored match data + current config. Run after importing games or
+              editing season / challenge / rating config. Does not re-score past games.
+            </p>
+            <p className="mt-2 text-[0.65rem] text-text-subtle">
+              Last run: {whenText(status?.last_recomputed_at ?? null)}
+            </p>
+          </div>
+          <RecomputeButton />
+        </div>
+      </section>
     </div>
   );
 }
