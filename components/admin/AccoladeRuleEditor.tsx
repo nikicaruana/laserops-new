@@ -16,7 +16,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
-import { PasswordGate } from "@/components/admin/PasswordGate";
+import { TotpGate } from "@/components/admin/TotpGate";
 
 export type AccoladeRule = {
   id: string | null;
@@ -255,7 +255,7 @@ export function AccoladeRuleEditor({
         </div>
       </fieldset>
 
-      <PasswordGate
+      <TotpGate
         open={gateOpen}
         action="this award-rule change"
         onCancel={() => setGateOpen(false)}

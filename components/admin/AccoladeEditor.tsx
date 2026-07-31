@@ -13,7 +13,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
 import { AdminImageUploader } from "@/components/admin/AdminImageUploader";
-import { PasswordGate } from "@/components/admin/PasswordGate";
+import { TotpGate } from "@/components/admin/TotpGate";
 
 export type AccoladeRecord = {
   id: string;
@@ -182,7 +182,7 @@ export function AccoladeEditor({
         {saving ? (isCreate ? "Creating…" : "Saving…") : isCreate ? "Create accolade" : "Save accolade"}
       </Button>
 
-      <PasswordGate
+      <TotpGate
         open={gateOpen}
         action={isCreate ? "the new accolade" : "this accolade change"}
         onCancel={() => setGateOpen(false)}

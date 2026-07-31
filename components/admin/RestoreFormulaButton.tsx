@@ -10,7 +10,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { PasswordGate } from "@/components/admin/PasswordGate";
+import { TotpGate } from "@/components/admin/TotpGate";
 
 const OPERATOR_ID = "00000000-0000-0000-0000-000000000001";
 
@@ -57,7 +57,7 @@ export function RestoreFormulaButton({
         {busy ? "Restoring…" : "Restore"}
       </button>
       {error && <span className="text-xs text-red-400">{error}</span>}
-      <PasswordGate
+      <TotpGate
         open={gateOpen}
         action="this rollback"
         onCancel={() => setGateOpen(false)}

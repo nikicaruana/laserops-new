@@ -11,6 +11,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { SelectNumberOnFocus } from "@/components/admin/SelectNumberOnFocus";
+import { AdminIdleLogout } from "@/components/admin/AdminIdleLogout";
 
 export const metadata: Metadata = {
   title: { default: "Admin", template: "%s · Admin · LaserOps" },
@@ -34,6 +35,7 @@ export default async function AdminLayout({
   return (
     <div className="min-h-screen bg-bg">
       <SelectNumberOnFocus />
+      <AdminIdleLogout />
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 sm:px-6 lg:flex-row lg:gap-10 lg:px-8 lg:py-12">
         <AdminNav />
         <main className="min-w-0 flex-1">{children}</main>

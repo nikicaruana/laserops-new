@@ -18,7 +18,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
-import { PasswordGate } from "@/components/admin/PasswordGate";
+import { TotpGate } from "@/components/admin/TotpGate";
 import {
   computeGroupValue,
   computeScore,
@@ -512,7 +512,7 @@ export function ScoringFormulaEditor({
         </p>
       </section>
 
-      <PasswordGate
+      <TotpGate
         open={gateOpen}
         action="the scoring formula change"
         onCancel={() => setGateOpen(false)}
