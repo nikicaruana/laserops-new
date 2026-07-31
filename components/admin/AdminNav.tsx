@@ -5,7 +5,9 @@
  * --------------------------------------------------------------------
  * Sidebar navigation for the admin area. Lists the config sections; ones
  * not built yet are shown disabled with a "soon" tag so the roadmap is
- * visible. Active link is derived from the pathname.
+ * visible. The active link is the LONGEST href the pathname matches, so a
+ * child route (e.g. /admin/guns/taxonomy) highlights its own item rather
+ * than the parent (/admin/guns).
  */
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -22,8 +24,7 @@ const SECTIONS: { heading: string; items: Item[] }[] = [
     heading: "Arsenal",
     items: [
       { label: "Guns", href: "/admin/guns" },
-      { label: "Accolades" },
-      { label: "Scoring formula" },
+      { label: "Classes & Trees", href: "/admin/guns/taxonomy" },
     ],
   },
   {
@@ -32,6 +33,9 @@ const SECTIONS: { heading: string; items: Item[] }[] = [
       { label: "XP & Levels" },
       { label: "ELO" },
       { label: "Ratings" },
+      { label: "Scoring formula" },
+      { label: "Accolades" },
+      { label: "Streaks" },
     ],
   },
   {
@@ -40,16 +44,20 @@ const SECTIONS: { heading: string; items: Item[] }[] = [
   },
   {
     heading: "Other",
-    items: [
-      { label: "Teams" },
-      { label: "Streaks" },
-      { label: "Excluded players" },
-    ],
+    items: [{ label: "Teams" }, { label: "Excluded players" }],
   },
 ];
 
 export function AdminNav() {
   const pathname = usePathname();
+
+  // Match an href against the current path, then pick the longest match so the
+  // most specific route wins (taxonomy beats guns on /admin/guns/taxonomy).
+  const matches = (href: string) =>
+    href === "/admin" ? pathname === "/admin" : pathname === href || pathname.startsWith(href + "/");
+  const activeHref = SECTIONS.flatMap((s) => s.items.map((i) => i.href))
+    .filter((h): h is string => Boolean(h) && matches(h!))
+    .sort((a, b) => b.length - a.length)[0];
 
   return (
     <nav className="lg:w-56 lg:shrink-0">
@@ -76,11 +84,7 @@ export function AdminNav() {
             </p>
             <ul className="flex flex-col gap-0.5">
               {section.items.map((item) => {
-                const active =
-                  item.href &&
-                  (item.href === "/admin"
-                    ? pathname === "/admin"
-                    : pathname.startsWith(item.href));
+                const active = item.href && item.href === activeHref;
                 return (
                   <li key={item.label}>
                     {item.href ? (
