@@ -5,10 +5,15 @@
  * --------------------------------------------------------------------
  * Re-authentication modal for sensitive admin changes. When `open`, prompts
  * the admin to re-enter their password; on a correct password (verified server-
- * side) it calls onVerified() to perform the actual write. The field is set up
- * to resist password-manager save/autofill (autoComplete off + ignore hints).
+ * side) it calls onVerified() to perform the actual write.
+ *
+ * Anti-autofill: Chrome ignores autoComplete="off" for password fields, so we
+ * use the readonly-until-focus trick — the field is readOnly on mount (the
+ * browser's autofill pass skips readOnly fields), and only becomes editable
+ * once the admin actually clicks it. Combined with a randomised field name +
+ * a decoy username, the field stays genuinely empty until typed into.
  */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 
 export function PasswordGate({
@@ -25,14 +30,15 @@ export function PasswordGate({
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [readOnly, setReadOnly] = useState(true);
+  const [fieldName, setFieldName] = useState("reauth-field");
 
   useEffect(() => {
     if (open) {
       setPassword("");
       setError(null);
-      // Focus after paint.
-      requestAnimationFrame(() => inputRef.current?.focus());
+      setReadOnly(true);
+      setFieldName(`reauth-${Math.random().toString(36).slice(2)}`);
     }
   }, [open]);
 
@@ -81,18 +87,24 @@ export function PasswordGate({
         className="w-full max-w-sm border border-border-strong bg-bg-elevated p-6"
       >
         <h3 className="text-sm font-bold uppercase tracking-[0.12em] text-accent">Confirm it&rsquo;s you</h3>
-        <p className="mt-2 text-xs text-text-muted">
-          Re-enter your password to apply {action}.
-        </p>
+        <p className="mt-2 text-xs text-text-muted">Re-enter your password to apply {action}.</p>
 
-        {/* Decoy fields absorb autofill so the real field stays clean. */}
-        <input type="text" name="username" autoComplete="username" className="hidden" tabIndex={-1} aria-hidden />
+        {/* Decoy field absorbs any autofill so the real one stays clean. */}
+        <input
+          type="text"
+          name="username"
+          autoComplete="username"
+          tabIndex={-1}
+          aria-hidden
+          className="pointer-events-none absolute h-0 w-0 opacity-0"
+        />
 
         <input
-          ref={inputRef}
           type="password"
-          name="admin-reauth"
+          name={fieldName}
           value={password}
+          readOnly={readOnly}
+          onFocus={() => setReadOnly(false)}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
           autoComplete="off"
