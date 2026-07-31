@@ -62,13 +62,15 @@ export default async function EditAccoladePage({ params }: { params: Promise<{ i
         />
       </div>
 
-      <AdminDeleteButton
-        table="accolade_definitions"
-        id={accolade.id}
-        name={accolade.name ?? "this accolade"}
-        redirectTo="/admin/accolades"
-        noun="accolade"
-      />
+      <div className="max-w-2xl">
+        <AdminDeleteButton
+          table="accolade_definitions"
+          id={accolade.id}
+          name={accolade.name ?? "this accolade"}
+          redirectTo="/admin/accolades"
+          noun="accolade"
+        />
+      </div>
     </div>
   );
 }
