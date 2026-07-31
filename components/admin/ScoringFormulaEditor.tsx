@@ -84,7 +84,6 @@ export function ScoringFormulaEditor({ rows }: { rows: WeightRow[] }) {
   };
   const setStat = (k: keyof Sample, v: number) => setSample((prev) => ({ ...prev, [k]: v }));
 
-  // Live computation.
   const calc = useMemo(() => {
     const damage = sample.hits * sample.gunDamage;
     const stat: Record<string, number> = {
@@ -106,6 +105,7 @@ export function ScoringFormulaEditor({ rows }: { rows: WeightRow[] }) {
     const raw = base * accMult * kdMult;
     const score = Math.ceil(raw);
     return { damage, baseParts, base, accMult, kdMult, raw, score };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [w, sample]);
 
   async function save() {
@@ -128,118 +128,111 @@ export function ScoringFormulaEditor({ rows }: { rows: WeightRow[] }) {
     router.refresh();
   }
 
-  return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,20rem)_1fr]">
-      {/* Weights */}
-      <div className="space-y-5">
-        <section className="border border-border bg-bg-elevated px-5 py-5">
-          <h2 className="mb-4 text-sm font-bold uppercase tracking-[0.12em] text-accent">Weights</h2>
-          <div className="space-y-4">
-            <p className="text-[0.6rem] font-bold uppercase tracking-[0.16em] text-text-subtle">Base terms</p>
-            {BASE_TERMS.map((t) => (
-              <div key={t.key}>
-                <label className={lbl}>{t.label}</label>
-                <input
-                  type="number"
-                  step="any"
-                  className={input}
-                  value={val(t.key)}
-                  onChange={(e) => setWeight(t.key, Number(e.target.value))}
-                />
-                {noteByKey[t.key] && <p className="mt-1 text-[0.65rem] text-text-subtle">{noteByKey[t.key]}</p>}
-              </div>
-            ))}
-            <p className="pt-2 text-[0.6rem] font-bold uppercase tracking-[0.16em] text-text-subtle">Multipliers</p>
-            {MULTIPLIERS.map((t) => (
-              <div key={t.key}>
-                <label className={lbl}>{t.label}</label>
-                <input
-                  type="number"
-                  step="any"
-                  className={input}
-                  value={val(t.key)}
-                  onChange={(e) => setWeight(t.key, Number(e.target.value))}
-                />
-                {noteByKey[t.key] && <p className="mt-1 text-[0.65rem] text-text-subtle">{noteByKey[t.key]}</p>}
-              </div>
-            ))}
-          </div>
+  const weightField = (t: { key: string; label: string }) => (
+    <div key={t.key}>
+      <label className={lbl}>{t.label}</label>
+      <input
+        type="number"
+        step="any"
+        className={input}
+        value={val(t.key)}
+        onChange={(e) => setWeight(t.key, Number(e.target.value))}
+      />
+      {noteByKey[t.key] && (
+        <p className="mt-1 text-[0.65rem] leading-snug text-text-subtle">{noteByKey[t.key]}</p>
+      )}
+    </div>
+  );
 
-          {error && (
-            <p className="mt-4 border border-red-800 bg-red-950/40 px-3 py-2 text-xs text-red-400">{error}</p>
-          )}
-          {saved && (
-            <p className="mt-4 border border-accent bg-bg px-3 py-2 text-xs text-accent">Weights saved.</p>
-          )}
-          <div className="mt-5">
-            <Button type="button" size="md" onClick={save} disabled={saving} className="w-full">
+  return (
+    <div className="space-y-6">
+      {/* Weights */}
+      <section className="border border-border bg-bg-elevated px-5 py-5">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
+          <h2 className="text-sm font-bold uppercase tracking-[0.12em] text-accent">Weights</h2>
+          <div className="flex items-center gap-4">
+            {saved && <span className="text-xs text-accent">Saved.</span>}
+            <Button type="button" size="md" onClick={save} disabled={saving}>
               {saving ? "Saving…" : "Save weights"}
             </Button>
           </div>
-        </section>
-      </div>
+        </div>
 
-      {/* Live preview */}
-      <div className="space-y-5">
-        {/* Formula with current weights substituted */}
-        <section className="border border-border bg-bg-elevated px-5 py-5">
-          <h2 className="mb-3 text-sm font-bold uppercase tracking-[0.12em] text-accent">Formula</h2>
-          <div className="overflow-x-auto">
-            <p className="whitespace-nowrap font-mono text-sm text-text">
-              score = ⌈ ( frags×<b className="text-accent">{val("KILL_WEIGHT")}</b> + damage×
-              <b className="text-accent">{val("DAMAGE_WEIGHT")}</b> + captures×
-              <b className="text-accent">{val("CAPTURE_WEIGHT")}</b> + hold×
-              <b className="text-accent">{val("CAPTURE_TIME_WEIGHT")}</b> ) × (1 + accuracy×
-              <b className="text-accent">{val("ACCURACY_WEIGHT")}</b>) × (1 + kd×
-              <b className="text-accent">{val("KD_WEIGHT")}</b>) ⌉
-            </p>
-          </div>
-          <p className="mt-2 text-[0.65rem] text-text-subtle">
-            damage = hits × gun damage. Accuracy is a 0–1 fraction. ⌈ ⌉ rounds up.
+        <p className="mb-3 text-[0.6rem] font-bold uppercase tracking-[0.16em] text-text-subtle">
+          Base terms
+        </p>
+        <div className="grid gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
+          {BASE_TERMS.map(weightField)}
+        </div>
+
+        <p className="mb-3 mt-6 text-[0.6rem] font-bold uppercase tracking-[0.16em] text-text-subtle">
+          Multipliers
+        </p>
+        <div className="grid gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
+          {MULTIPLIERS.map(weightField)}
+        </div>
+
+        {error && (
+          <p className="mt-4 border border-red-800 bg-red-950/40 px-3 py-2 text-xs text-red-400">{error}</p>
+        )}
+      </section>
+
+      {/* Formula with current weights substituted */}
+      <section className="border border-border bg-bg-elevated px-5 py-5">
+        <h2 className="mb-3 text-sm font-bold uppercase tracking-[0.12em] text-accent">Formula</h2>
+        <div className="overflow-x-auto">
+          <p className="whitespace-nowrap font-mono text-sm text-text">
+            score = ⌈ ( frags×<b className="text-accent">{val("KILL_WEIGHT")}</b> + damage×
+            <b className="text-accent">{val("DAMAGE_WEIGHT")}</b> + captures×
+            <b className="text-accent">{val("CAPTURE_WEIGHT")}</b> + hold×
+            <b className="text-accent">{val("CAPTURE_TIME_WEIGHT")}</b> ) × (1 + accuracy×
+            <b className="text-accent">{val("ACCURACY_WEIGHT")}</b>) × (1 + kd×
+            <b className="text-accent">{val("KD_WEIGHT")}</b>) ⌉
           </p>
-        </section>
+        </div>
+        <p className="mt-2 text-[0.65rem] text-text-subtle">
+          damage = hits × gun damage. Accuracy is a 0–1 fraction. ⌈ ⌉ rounds up.
+        </p>
+      </section>
 
-        {/* Worked example */}
-        <section className="border border-accent/40 bg-bg-elevated px-5 py-5">
-          <h2 className="mb-4 text-sm font-bold uppercase tracking-[0.12em] text-accent">
-            Worked example
-          </h2>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {(
-              [
-                ["Frags", "frags"],
-                ["Hits", "hits"],
-                ["Gun dmg", "gunDamage"],
-                ["Captures", "captures"],
-                ["Hold (s)", "hold"],
-                ["Accuracy %", "accuracyPct"],
-                ["K/D", "kd"],
-              ] as [string, keyof Sample][]
-            ).map(([label, key]) => (
-              <div key={key}>
-                <label className={lbl}>{label}</label>
-                <input
-                  type="number"
-                  step="any"
-                  className={input}
-                  value={sample[key]}
-                  onChange={(e) => setStat(key, Number(e.target.value))}
-                />
-              </div>
-            ))}
-          </div>
+      {/* Worked example */}
+      <section className="border border-accent/40 bg-bg-elevated px-5 py-5">
+        <h2 className="mb-4 text-sm font-bold uppercase tracking-[0.12em] text-accent">Worked example</h2>
+        <div className="grid grid-cols-2 gap-x-5 gap-y-4 sm:grid-cols-4 lg:grid-cols-7">
+          {(
+            [
+              ["Frags", "frags"],
+              ["Hits", "hits"],
+              ["Gun dmg", "gunDamage"],
+              ["Captures", "captures"],
+              ["Hold (s)", "hold"],
+              ["Accuracy %", "accuracyPct"],
+              ["K/D", "kd"],
+            ] as [string, keyof Sample][]
+          ).map(([label, key]) => (
+            <div key={key}>
+              <label className={lbl}>{label}</label>
+              <input
+                type="number"
+                step="any"
+                className={input}
+                value={sample[key]}
+                onChange={(e) => setStat(key, Number(e.target.value))}
+              />
+            </div>
+          ))}
+        </div>
 
+        <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_minmax(0,18rem)]">
           {/* Breakdown */}
-          <div className="mt-5 space-y-1.5 border-t border-border pt-4 font-mono text-xs text-text-muted">
+          <div className="space-y-1.5 font-mono text-xs text-text-muted">
             <div className="flex justify-between">
               <span>damage = {nf(sample.hits)} hits × {nf(sample.gunDamage)} dmg</span>
               <span className="text-text">{nf(calc.damage)}</span>
             </div>
             {calc.baseParts.map((p) => (
               <div key={p.key} className="flex justify-between">
-                <span>
-                  {p.label.toLowerCase()} = {nf(p.statValue, 2)} × {val(p.key)}
-                </span>
+                <span>{p.label.toLowerCase()} = {nf(p.statValue, 2)} × {val(p.key)}</span>
                 <span className="text-text">{nf(p.contribution, 1)}</span>
               </div>
             ))}
@@ -257,20 +250,22 @@ export function ScoringFormulaEditor({ rows }: { rows: WeightRow[] }) {
             </div>
           </div>
 
-          <div className="mt-4 flex items-center justify-between border border-accent bg-bg px-4 py-3">
+          {/* Score */}
+          <div className="flex flex-col items-center justify-center border border-accent bg-bg px-4 py-6 text-center">
             <span className="text-[0.65rem] font-bold uppercase tracking-[0.16em] text-text-muted">
               Match score
             </span>
-            <span className="font-mono text-3xl font-bold tabular-nums text-accent">
+            <span className="mt-1 font-mono text-4xl font-bold tabular-nums text-accent">
               {nf(calc.score)}
             </span>
           </div>
-          <p className="mt-2 text-[0.65rem] text-text-subtle">
-            Recomputes live as you edit any weight or sample stat. Save to apply the weights
-            (affects scores computed from the next ingest onward).
-          </p>
-        </section>
-      </div>
+        </div>
+
+        <p className="mt-4 text-[0.65rem] text-text-subtle">
+          Recomputes live as you edit any weight or sample stat. Save to apply the weights (affects
+          scores computed from the next ingest onward).
+        </p>
+      </section>
     </div>
   );
 }
