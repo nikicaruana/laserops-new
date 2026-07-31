@@ -12,6 +12,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
+import { GunImageUploader } from "@/components/admin/GunImageUploader";
 
 export type GunRecord = {
   id: string;
@@ -165,9 +166,10 @@ export function GunEditor({
         <Field label="Class" hint="e.g. AR, SMG, LMG, Sniper, DMR, Shotgun">
           <input className={input} value={f.class ?? ""} onChange={(e) => set("class", e.target.value)} />
         </Field>
-        <Field label="Image URL">
-          <input className={input} value={f.image_url ?? ""} onChange={(e) => set("image_url", e.target.value)} />
-        </Field>
+        <div className="sm:col-span-2">
+          <label className={label}>Image</label>
+          <GunImageUploader value={f.image_url} onChange={(url) => set("image_url", url)} />
+        </div>
         <Field label="Tree branch">
           <input className={input} value={f.tree_branch ?? ""} onChange={(e) => set("tree_branch", e.target.value)} />
         </Field>

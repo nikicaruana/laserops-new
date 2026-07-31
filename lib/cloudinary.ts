@@ -48,6 +48,9 @@ const GALLERY_REVALIDATE_SECONDS = 1800;
  */
 export const PROFILE_PICS_FOLDER = "laseropsmalta.com/profile-pics";
 
+/** Folder where admin-uploaded gun images are stored (see app/api/admin/gun-image). */
+export const GUNS_FOLDER = "laseropsmalta.com/guns";
+
 function isProfilePic(folder: string): boolean {
   return (
     folder === PROFILE_PICS_FOLDER ||

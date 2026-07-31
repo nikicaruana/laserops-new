@@ -20,5 +20,6 @@ export const config = {
     "/admin/:path*",
     "/auth/:path*",
     "/api/profile-pic/:path*",
+    "/api/admin/:path*",
   ],
 };
