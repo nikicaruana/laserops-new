@@ -78,12 +78,20 @@ function Group({ title, children }: { title: string; children: React.ReactNode }
 export function GunEditor({
   gun,
   mode = "edit",
+  classOptions = [],
+  treeOptions = [],
 }: {
   gun: GunRecord;
   mode?: "edit" | "create";
+  classOptions?: string[];
+  treeOptions?: string[];
 }) {
   const router = useRouter();
   const isCreate = mode === "create";
+  // Include the current value even if it's not (yet) in the canonical list, so
+  // an existing gun's value is never silently dropped.
+  const withCurrent = (opts: string[], current: string | null) =>
+    current && !opts.includes(current) ? [current, ...opts] : opts;
   const [f, setF] = useState<GunRecord>(gun);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -163,15 +171,25 @@ export function GunEditor({
         <Field label="Name">
           <input className={input} value={f.name ?? ""} onChange={(e) => set("name", e.target.value)} />
         </Field>
-        <Field label="Class" hint="e.g. AR, SMG, LMG, Sniper, DMR, Shotgun">
-          <input className={input} value={f.class ?? ""} onChange={(e) => set("class", e.target.value)} />
+        <Field label="Class" hint="Manage the list in Classes & Trees">
+          <select className={input} value={f.class ?? ""} onChange={(e) => set("class", e.target.value || null)}>
+            <option value="">—</option>
+            {withCurrent(classOptions, f.class).map((o) => (
+              <option key={o} value={o}>{o}</option>
+            ))}
+          </select>
         </Field>
         <div className="sm:col-span-2">
           <label className={label}>Image</label>
           <GunImageUploader value={f.image_url} onChange={(url) => set("image_url", url)} />
         </div>
         <Field label="Tree branch">
-          <input className={input} value={f.tree_branch ?? ""} onChange={(e) => set("tree_branch", e.target.value)} />
+          <select className={input} value={f.tree_branch ?? ""} onChange={(e) => set("tree_branch", e.target.value || null)}>
+            <option value="">—</option>
+            {withCurrent(treeOptions, f.tree_branch).map((o) => (
+              <option key={o} value={o}>{o}</option>
+            ))}
+          </select>
         </Field>
         <Field label="Sort order">
           <input type="number" className={input} value={f.sort_order ?? ""} onChange={(e) => set("sort_order", num(e.target.value))} />

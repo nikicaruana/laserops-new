@@ -14,13 +14,19 @@ export const metadata = { title: "New gun" };
 
 export default async function NewGunPage() {
   const supabase = await createClient();
-  const { data: last } = await supabase
-    .from("guns")
-    .select("sort_order")
-    .order("sort_order", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const [{ data: last }, { data: classes }, { data: branches }] = await Promise.all([
+    supabase
+      .from("guns")
+      .select("sort_order")
+      .order("sort_order", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase.from("gun_classes").select("name").order("sort_order"),
+    supabase.from("gun_tree_branches").select("name").order("sort_order"),
+  ]);
   const nextSort = (last?.sort_order ?? 0) + 1;
+  const classOptions = (classes ?? []).map((c) => c.name as string);
+  const treeOptions = (branches ?? []).map((b) => b.name as string);
 
   const blank: GunRecord = {
     id: "",
@@ -67,7 +73,7 @@ export default async function NewGunPage() {
       </header>
 
       <div className="max-w-3xl">
-        <GunEditor gun={blank} mode="create" />
+        <GunEditor gun={blank} mode="create" classOptions={classOptions} treeOptions={treeOptions} />
       </div>
     </div>
   );

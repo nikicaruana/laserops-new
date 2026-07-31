@@ -40,12 +40,20 @@ export default async function AdminGunsPage() {
             timeline.
           </p>
         </div>
-        <Link
-          href="/admin/guns/new"
-          className="flex h-11 items-center gap-2 border border-accent bg-accent px-5 text-xs font-bold uppercase tracking-[0.12em] text-bg transition-transform active:scale-[0.98]"
-        >
-          + New gun
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/admin/guns/taxonomy"
+            className="flex h-11 items-center border border-border-strong px-4 text-xs font-bold uppercase tracking-[0.12em] text-text-muted transition-colors hover:border-accent hover:text-accent"
+          >
+            Classes &amp; Trees
+          </Link>
+          <Link
+            href="/admin/guns/new"
+            className="flex h-11 items-center gap-2 border border-accent bg-accent px-5 text-xs font-bold uppercase tracking-[0.12em] text-bg transition-transform active:scale-[0.98]"
+          >
+            + New gun
+          </Link>
+        </div>
       </header>
 
       <div className="overflow-x-auto border border-border">

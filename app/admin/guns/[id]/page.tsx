@@ -32,16 +32,22 @@ export default async function EditGunPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: gun }, { data: history }] = await Promise.all([
-    supabase.from("guns").select("*").eq("id", id).maybeSingle(),
-    supabase
-      .from("gun_damage_history")
-      .select("id, damage, effective_from, effective_to, note")
-      .eq("gun_id", id)
-      .order("effective_from", { ascending: false }),
-  ]);
+  const [{ data: gun }, { data: history }, { data: classes }, { data: branches }] =
+    await Promise.all([
+      supabase.from("guns").select("*").eq("id", id).maybeSingle(),
+      supabase
+        .from("gun_damage_history")
+        .select("id, damage, effective_from, effective_to, note")
+        .eq("gun_id", id)
+        .order("effective_from", { ascending: false }),
+      supabase.from("gun_classes").select("name").order("sort_order"),
+      supabase.from("gun_tree_branches").select("name").order("sort_order"),
+    ]);
 
   if (!gun) notFound();
+
+  const classOptions = (classes ?? []).map((c) => c.name as string);
+  const treeOptions = (branches ?? []).map((b) => b.name as string);
 
   return (
     <div>
@@ -66,7 +72,7 @@ export default async function EditGunPage({
       </header>
 
       <div className="grid gap-8 lg:grid-cols-[1fr_minmax(0,22rem)]">
-        <GunEditor gun={gun as GunRecord} />
+        <GunEditor gun={gun as GunRecord} classOptions={classOptions} treeOptions={treeOptions} />
         <GunDamagePanel
           gunId={gun.id}
           currentDamage={gun.damage}
