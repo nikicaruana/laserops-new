@@ -106,6 +106,7 @@ function BlockCard({
         step="any"
         value={block.weight}
         onChange={(e) => onUpdate(block.id, { weight: Number(e.target.value) })}
+        onFocus={(e) => e.target.select()}
         className={`${input} w-20`}
       />
       <button
@@ -482,6 +483,7 @@ export function ScoringFormulaEditor({
                 className={`${input} h-11 w-full`}
                 value={sample[key]}
                 onChange={(e) => setSample((s) => ({ ...s, [key]: Number(e.target.value) }))}
+                onFocus={(e) => e.target.select()}
               />
             </div>
           ))}
