@@ -30,7 +30,7 @@ const SECTIONS: { heading: string; items: Item[] }[] = [
       { label: "XP & Levels" },
       { label: "ELO" },
       { label: "Ratings" },
-      { label: "Scoring formula" },
+      { label: "Scoring formula", href: "/admin/scoring" },
       { label: "Accolades", href: "/admin/accolades" },
       { label: "Streaks" },
     ],

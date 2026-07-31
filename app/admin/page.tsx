@@ -34,7 +34,7 @@ export default async function AdminDashboard() {
   }[] = [
     { label: "Guns", href: "/admin/guns", count: guns, hint: "Catalogue, specs, damage timeline" },
     { label: "Accolades", href: "/admin/accolades", count: accolades, hint: "Definitions, XP tiers, badges" },
-    { label: "Scoring formula", count: null, hint: "Weights + live preview" },
+    { label: "Scoring formula", href: "/admin/scoring", count: null, hint: "Weights + live preview" },
     { label: "Seasons", count: seasons, hint: "Windows + status" },
     { label: "Challenges", count: challenges, hint: "Per-season leaderboards" },
   ];
