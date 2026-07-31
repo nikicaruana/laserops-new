@@ -62,7 +62,7 @@ export function AdminNav() {
         </Link>
         <Link
           href="/"
-          className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-text-subtle hover:text-accent lg:hidden"
+          className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-text-muted hover:text-accent lg:hidden"
         >
           Exit
         </Link>
@@ -71,7 +71,7 @@ export function AdminNav() {
       <div className="flex flex-col gap-6">
         {SECTIONS.map((section) => (
           <div key={section.heading}>
-            <p className="mb-2 text-[0.6rem] font-bold uppercase tracking-[0.2em] text-text-subtle">
+            <p className="mb-2 text-[0.6rem] font-bold uppercase tracking-[0.2em] text-text-muted">
               {section.heading}
             </p>
             <ul className="flex flex-col gap-0.5">
@@ -90,15 +90,15 @@ export function AdminNav() {
                           "flex items-center justify-between border-l-2 px-3 py-1.5 text-sm transition-colors",
                           active
                             ? "border-accent bg-bg-elevated font-semibold text-accent"
-                            : "border-transparent text-text-muted hover:border-border-strong hover:text-text",
+                            : "border-transparent text-text hover:border-accent hover:text-accent",
                         )}
                       >
                         {item.label}
                       </Link>
                     ) : (
-                      <span className="flex items-center justify-between border-l-2 border-transparent px-3 py-1.5 text-sm text-text-subtle/60">
+                      <span className="flex items-center justify-between border-l-2 border-transparent px-3 py-1.5 text-sm text-text-muted">
                         {item.label}
-                        <span className="text-[0.55rem] font-bold uppercase tracking-[0.14em] text-text-subtle/50">
+                        <span className="text-[0.55rem] font-bold uppercase tracking-[0.14em] text-text-subtle">
                           soon
                         </span>
                       </span>
@@ -113,7 +113,7 @@ export function AdminNav() {
 
       <Link
         href="/"
-        className="mt-8 hidden text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-text-subtle hover:text-accent lg:block"
+        className="mt-8 hidden text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-text-muted hover:text-accent lg:block"
       >
         ← Exit admin
       </Link>
