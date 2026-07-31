@@ -15,5 +15,10 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/player-portal/:path*", "/auth/:path*", "/api/profile-pic/:path*"],
+  matcher: [
+    "/player-portal/:path*",
+    "/admin/:path*",
+    "/auth/:path*",
+    "/api/profile-pic/:path*",
+  ],
 };
