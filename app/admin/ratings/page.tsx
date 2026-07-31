@@ -108,7 +108,8 @@ export default async function AdminRatingsPage() {
           canAdd
           canDelete
           addLabel="+ Add band"
-          newRow={() => ({ id: null, stars: "", label: "", min_percentile: "", max_percentile: "", sort_order: (bracketInitial.length + 1) })}
+          autoIncrement="sort_order"
+          newRowTemplate={{ stars: "", label: "", min_percentile: "", max_percentile: "", sort_order: "" }}
         />
       </section>
     </div>

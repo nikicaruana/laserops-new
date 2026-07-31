@@ -112,7 +112,8 @@ export default async function AdminEloPage() {
           canAdd
           canDelete
           addLabel="+ Add tier"
-          newRow={() => ({ id: null, tier_name: "", min_elo: "", max_elo: "", sort_order: (tierInitial.length + 1), badge_url: null })}
+          autoIncrement="sort_order"
+          newRowTemplate={{ tier_name: "", min_elo: "", max_elo: "", sort_order: "", badge_url: null }}
         />
       </section>
     </div>

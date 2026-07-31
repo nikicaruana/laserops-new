@@ -42,7 +42,8 @@ export function ConfigTableEditor({
   gateAction,
   canAdd = false,
   canDelete = false,
-  newRow,
+  newRowTemplate,
+  autoIncrement,
   addLabel = "+ Add row",
 }: {
   table: string;
@@ -52,7 +53,10 @@ export function ConfigTableEditor({
   gateAction: string;
   canAdd?: boolean;
   canDelete?: boolean;
-  newRow?: () => EditableRow;
+  /** Plain, serializable blank row (server components can't pass a factory fn). */
+  newRowTemplate?: Record<string, unknown>;
+  /** Column set to (row count + 1) when a new row is added, e.g. "sort_order". */
+  autoIncrement?: string;
   addLabel?: string;
 }) {
   const router = useRouter();
@@ -77,8 +81,15 @@ export function ConfigTableEditor({
   }
 
   function addRow() {
-    if (!newRow) return;
-    setRows((prev) => [...prev, newRow()]);
+    if (!newRowTemplate) return;
+    setRows((prev) => [
+      ...prev,
+      {
+        ...newRowTemplate,
+        id: null,
+        ...(autoIncrement ? { [autoIncrement]: prev.length + 1 } : {}),
+      },
+    ]);
     setState("idle");
   }
 
