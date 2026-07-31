@@ -40,6 +40,12 @@ export default async function AdminGunsPage() {
             timeline.
           </p>
         </div>
+        <Link
+          href="/admin/guns/new"
+          className="flex h-11 items-center gap-2 border border-accent bg-accent px-5 text-xs font-bold uppercase tracking-[0.12em] text-bg transition-transform active:scale-[0.98]"
+        >
+          + New gun
+        </Link>
       </header>
 
       <div className="overflow-x-auto border border-border">

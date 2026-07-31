@@ -74,8 +74,15 @@ function Group({ title, children }: { title: string; children: React.ReactNode }
   );
 }
 
-export function GunEditor({ gun }: { gun: GunRecord }) {
+export function GunEditor({
+  gun,
+  mode = "edit",
+}: {
+  gun: GunRecord;
+  mode?: "edit" | "create";
+}) {
   const router = useRouter();
+  const isCreate = mode === "create";
   const [f, setF] = useState<GunRecord>(gun);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -92,33 +99,54 @@ export function GunEditor({ gun }: { gun: GunRecord }) {
     e.preventDefault();
     setError(null);
     setSaved(false);
+    if (isCreate && (!f.name || f.name.trim() === "")) {
+      setError("Name is required.");
+      return;
+    }
     setSaving(true);
     const supabase = createClient();
-    // Damage is intentionally excluded — it's managed in the damage panel.
-    const { error: err } = await supabase
-      .from("guns")
-      .update({
-        name: f.name,
-        image_url: f.image_url,
-        class: f.class,
-        tree_branch: f.tree_branch,
-        is_default: f.is_default ?? false,
-        is_visible: f.is_visible ?? true,
-        sort_order: f.sort_order,
-        unlock_type: f.unlock_type,
-        unlock_prerequisite_class: f.unlock_prerequisite_class,
-        unlock_prerequisite_gun: f.unlock_prerequisite_gun,
-        unlock_requirement_points: f.unlock_requirement_points,
-        unlock_requirement_level: f.unlock_requirement_level,
-        unlock_display_text: f.unlock_display_text,
-        unlock_tier: f.unlock_tier,
-        mag_size: f.mag_size,
-        reload: f.reload,
-        fire_rate: f.fire_rate,
-        difficulty: f.difficulty,
-        description: f.description,
-      })
-      .eq("id", gun.id);
+    // Fields common to create + edit. Damage is excluded from EDIT (managed in
+    // the damage panel) but seeded on CREATE (the insert trigger opens the
+    // first damage-history window from it).
+    const base = {
+      name: f.name,
+      image_url: f.image_url,
+      class: f.class,
+      tree_branch: f.tree_branch,
+      is_default: f.is_default ?? false,
+      is_visible: f.is_visible ?? true,
+      sort_order: f.sort_order,
+      unlock_type: f.unlock_type,
+      unlock_prerequisite_class: f.unlock_prerequisite_class,
+      unlock_prerequisite_gun: f.unlock_prerequisite_gun,
+      unlock_requirement_points: f.unlock_requirement_points,
+      unlock_requirement_level: f.unlock_requirement_level,
+      unlock_display_text: f.unlock_display_text,
+      unlock_tier: f.unlock_tier,
+      mag_size: f.mag_size,
+      reload: f.reload,
+      fire_rate: f.fire_rate,
+      difficulty: f.difficulty,
+      description: f.description,
+    };
+
+    if (isCreate) {
+      const { data, error: err } = await supabase
+        .from("guns")
+        .insert({ ...base, damage: f.damage })
+        .select("id")
+        .single();
+      setSaving(false);
+      if (err || !data) {
+        setError(err?.message || "Couldn't create gun.");
+        return;
+      }
+      // Off to the full edit page (with the damage panel) for the new gun.
+      router.push(`/admin/guns/${data.id}`);
+      return;
+    }
+
+    const { error: err } = await supabase.from("guns").update(base).eq("id", gun.id);
     setSaving(false);
     if (err) {
       setError(err.message || "Couldn't save.");
@@ -159,9 +187,15 @@ export function GunEditor({ gun }: { gun: GunRecord }) {
       </Group>
 
       <Group title="Specs">
-        <Field label="Damage" hint="Managed in the Damage panel →">
-          <input className={`${input} opacity-60`} value={f.damage ?? "—"} disabled readOnly />
-        </Field>
+        {isCreate ? (
+          <Field label="Initial damage" hint="Seeds the damage timeline (in effect since launch).">
+            <input type="number" step="any" className={input} value={f.damage ?? ""} onChange={(e) => set("damage", num(e.target.value))} />
+          </Field>
+        ) : (
+          <Field label="Damage" hint="Managed in the Damage panel →">
+            <input className={`${input} opacity-60`} value={f.damage ?? "—"} disabled readOnly />
+          </Field>
+        )}
         <Field label="Mag size">
           <input type="number" className={input} value={f.mag_size ?? ""} onChange={(e) => set("mag_size", num(e.target.value))} />
         </Field>
@@ -225,7 +259,7 @@ export function GunEditor({ gun }: { gun: GunRecord }) {
 
       <div className="flex items-center gap-4">
         <Button type="submit" size="md" disabled={saving}>
-          {saving ? "Saving…" : "Save gun"}
+          {saving ? (isCreate ? "Creating…" : "Saving…") : isCreate ? "Create gun" : "Save gun"}
         </Button>
       </div>
     </form>
