@@ -28,7 +28,8 @@ type Row = {
 
 const TABS: { key: string; label: string }[] = [
   { key: "all", label: "All" },
-  { key: "scheduled", label: "Scheduled" },
+  { key: "tentative", label: "Tentative" },
+  { key: "awaiting_confirm", label: "Awaiting OK" },
   { key: "confirmed", label: "Confirmed" },
   { key: "live", label: "Live" },
   { key: "completed", label: "Completed" },
