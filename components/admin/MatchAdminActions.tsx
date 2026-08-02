@@ -6,24 +6,41 @@
  * Lifecycle actions for a match in the admin detail view. Which buttons show
  * depends on the current status:
  *   tentative / awaiting_confirm -> Confirm game, Cancel
- *   confirmed                    -> Cancel  (Start match / live is Phase 4)
- * Writes matches.status via the admin session (admin_all RLS).
+ *   confirmed                    -> Start match (generates the 4-digit entry
+ *                                   code + goes live), Cancel
+ *   live                         -> Complete match
+ *   cancelled                    -> Reopen
+ * Writes matches.status (+ entry_code / went_live_at / played_on) via the admin
+ * session (admin_all RLS). The match ID (LO-YYYY-NN) is stamped on go-live by a
+ * DB trigger.
  */
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-export function MatchAdminActions({ matchId, status }: { matchId: string; status: string | null }) {
+function gen4() {
+  return String(Math.floor(1000 + Math.random() * 9000));
+}
+
+export function MatchAdminActions({
+  matchId,
+  status,
+  scheduledAt,
+}: {
+  matchId: string;
+  status: string | null;
+  scheduledAt: string | null;
+}) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function setStatus(next: string, confirmMsg?: string) {
+  async function patch(fields: Record<string, unknown>, confirmMsg?: string) {
     if (confirmMsg && !window.confirm(confirmMsg)) return;
     setBusy(true);
     setError(null);
     const supabase = createClient();
-    const { error: err } = await supabase.from("matches").update({ status: next }).eq("id", matchId);
+    const { error: err } = await supabase.from("matches").update(fields).eq("id", matchId);
     setBusy(false);
     if (err) {
       setError(err.message);
@@ -33,42 +50,74 @@ export function MatchAdminActions({ matchId, status }: { matchId: string; status
   }
 
   const s = status ?? "tentative";
-  const canConfirm = s === "tentative" || s === "awaiting_confirm";
-  const canCancel = s !== "completed" && s !== "cancelled";
-  const canReopen = s === "cancelled";
 
   return (
     <div className="flex flex-wrap items-center gap-3">
-      {canConfirm && (
+      {(s === "tentative" || s === "awaiting_confirm") && (
         <button
           type="button"
-          onClick={() => setStatus("confirmed")}
+          onClick={() => patch({ status: "confirmed" })}
           disabled={busy}
           className="border border-accent bg-accent px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-bg transition-transform active:scale-[0.98] disabled:opacity-50"
         >
           Confirm game
         </button>
       )}
-      {canCancel && (
+
+      {s === "confirmed" && (
         <button
           type="button"
-          onClick={() => setStatus("cancelled", "Cancel this game? Players who signed up will need to be told.")}
+          onClick={() =>
+            patch(
+              { status: "live", entry_code: gen4(), went_live_at: new Date().toISOString() },
+              "Start this match now? It goes live and gets a join code for players.",
+            )
+          }
+          disabled={busy}
+          className="border border-accent bg-accent px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-bg transition-transform active:scale-[0.98] disabled:opacity-50"
+        >
+          Start match
+        </button>
+      )}
+
+      {s === "live" && (
+        <button
+          type="button"
+          onClick={() =>
+            patch(
+              { status: "completed", played_on: (scheduledAt ?? new Date().toISOString()).slice(0, 10) },
+              "Mark this match completed? Players can no longer join.",
+            )
+          }
+          disabled={busy}
+          className="border border-accent bg-accent px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-bg transition-transform active:scale-[0.98] disabled:opacity-50"
+        >
+          Complete match
+        </button>
+      )}
+
+      {s !== "completed" && s !== "cancelled" && (
+        <button
+          type="button"
+          onClick={() => patch({ status: "cancelled" }, "Cancel this game? Players who signed up will need to be told.")}
           disabled={busy}
           className="border border-red-800 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-red-400 hover:bg-red-950/40 disabled:opacity-50"
         >
           Cancel game
         </button>
       )}
-      {canReopen && (
+
+      {s === "cancelled" && (
         <button
           type="button"
-          onClick={() => setStatus("tentative")}
+          onClick={() => patch({ status: "tentative" })}
           disabled={busy}
           className="border border-border-strong px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-text-muted hover:border-accent hover:text-accent disabled:opacity-50"
         >
           Reopen
         </button>
       )}
+
       {error && <span className="text-xs text-red-400">{error}</span>}
     </div>
   );

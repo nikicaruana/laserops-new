@@ -75,7 +75,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
     supabase
       .from("matches")
       .select(
-        "id, match_code, title, status, scheduled_at, played_on, round_count, source_file_type, xp_distributed_at, elo_calculated_at, winning_team_colour, is_private, is_double_xp, min_players, max_players, price_eur, pricing_mode, deposit_eur, registered_count, paid_count, on_day_count, reached_quorum_at",
+        "id, match_code, title, status, scheduled_at, played_on, round_count, source_file_type, xp_distributed_at, elo_calculated_at, winning_team_colour, is_private, is_double_xp, min_players, max_players, price_eur, pricing_mode, deposit_eur, registered_count, paid_count, on_day_count, reached_quorum_at, entry_code",
       )
       .eq("id", id)
       .maybeSingle(),
@@ -127,8 +127,21 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
       </header>
 
       <div className="mb-6">
-        <MatchAdminActions matchId={match.id} status={match.status} />
+        <MatchAdminActions matchId={match.id} status={match.status} scheduledAt={match.scheduled_at} />
       </div>
+
+      {match.status === "live" && match.entry_code && (
+        <div className="mb-8 flex flex-wrap items-center gap-5 border border-accent bg-accent/10 px-5 py-4">
+          <div>
+            <p className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-accent">Join code</p>
+            <p className="font-mono text-4xl font-extrabold tracking-[0.3em] text-accent">{match.entry_code}</p>
+          </div>
+          <p className="max-w-xs text-xs text-text-muted">
+            Read this out to players on site. They enter it under &quot;Join live game&quot; to be added
+            to this match.
+          </p>
+        </div>
+      )}
 
       <div className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Fact label="Date / time">{fmtDateTime(match.scheduled_at, match.played_on)}</Fact>
