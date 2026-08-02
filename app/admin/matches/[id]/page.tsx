@@ -10,6 +10,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { MatchStatusBadge } from "@/components/admin/MatchStatusBadge";
 import { MatchAdminActions } from "@/components/admin/MatchAdminActions";
+import { EditableMatchTitle } from "@/components/admin/EditableMatchTitle";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -106,10 +107,12 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
       </div>
 
       <header className="mb-6 flex flex-wrap items-center gap-4 border-b border-border pb-6">
-        <span className="font-mono text-sm text-text-muted">{match.match_code ?? "—"}</span>
-        <h1 className="text-2xl font-extrabold uppercase tracking-tight text-text sm:text-3xl">
-          {match.title || match.match_code || "Match"}
-        </h1>
+        <span className="font-mono text-sm text-text-muted">{match.match_code ?? "No ID yet"}</span>
+        <EditableMatchTitle
+          matchId={match.id}
+          initialTitle={match.title}
+          fallback={match.match_code || "Match"}
+        />
         <MatchStatusBadge status={match.status} />
         {match.is_double_xp && (
           <span className="border border-amber-700 bg-amber-950/40 px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-[0.12em] text-amber-300">

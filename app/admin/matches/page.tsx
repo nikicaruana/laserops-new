@@ -128,10 +128,11 @@ export default async function AdminMatchesPage({
         </p>
       ) : (
         <div className="overflow-x-auto border border-border">
-          <table className="w-full min-w-[960px] text-left text-sm">
+          <table className="w-full min-w-[1080px] text-left text-sm">
             <thead>
               <tr className="border-b border-border bg-bg-elevated text-[0.6rem] uppercase tracking-[0.14em] text-text-muted">
-                <th className="px-4 py-3 font-semibold">Match</th>
+                <th className="px-4 py-3 font-semibold">Match ID</th>
+                <th className="px-4 py-3 font-semibold">Title</th>
                 <th className="px-4 py-3 font-semibold">Date / time</th>
                 <th className="px-4 py-3 font-semibold">Status</th>
                 <th className="px-4 py-3 text-right font-semibold">Reg</th>
@@ -151,10 +152,8 @@ export default async function AdminMatchesPage({
                 const reg = played ? entriesCount : m.registered_count ?? 0;
                 return (
                   <tr key={m.id} className="border-b border-border last:border-0 hover:bg-bg-elevated/50">
-                    <td className="px-4 py-3">
-                      <span className="font-mono font-semibold text-text">{m.match_code ?? "—"}</span>
-                      {m.title && <span className="ml-2 text-text-muted">{m.title}</span>}
-                    </td>
+                    <td className="px-4 py-3 font-mono font-semibold text-text">{m.match_code ?? "—"}</td>
+                    <td className="px-4 py-3 text-text-muted">{m.title ?? "—"}</td>
                     <td className="px-4 py-3 text-text-muted">{fmtDateTime(m.scheduled_at, m.played_on)}</td>
                     <td className="px-4 py-3"><MatchStatusBadge status={m.status} /></td>
                     <td className="px-4 py-3 text-right font-mono tabular-nums text-text">{reg}</td>
