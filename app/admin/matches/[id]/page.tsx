@@ -11,6 +11,7 @@ import { createClient } from "@/lib/supabase/server";
 import { MatchStatusBadge } from "@/components/admin/MatchStatusBadge";
 import { MatchAdminActions } from "@/components/admin/MatchAdminActions";
 import { EditableMatchTitle } from "@/components/admin/EditableMatchTitle";
+import { CopyInviteLink } from "@/components/portal/CopyInviteLink";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -142,6 +143,16 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
           </p>
         </div>
       )}
+
+      <div className="mb-8">
+        <p className="mb-2 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-text-muted">
+          Invite link
+        </p>
+        <CopyInviteLink matchId={match.id} />
+        <p className="mt-1.5 text-[0.65rem] text-text-subtle">
+          Share this so players can view the game and sign up.
+        </p>
+      </div>
 
       <div className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Fact label="Date / time">{fmtDateTime(match.scheduled_at, match.played_on)}</Fact>

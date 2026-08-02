@@ -10,6 +10,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { MatchStatusBadge } from "@/components/admin/MatchStatusBadge";
+import { CopyInviteLink } from "@/components/portal/CopyInviteLink";
 
 export const metadata = { title: "Match Manager" };
 
@@ -176,12 +177,15 @@ export default async function AdminMatchesPage({
                       <Done at={m.elo_calculated_at} doneLabel="Calculated" pendingLabel="Pending" />
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <Link
-                        href={`/admin/matches/${m.id}`}
-                        className="text-xs font-bold uppercase tracking-[0.12em] text-accent hover:text-accent-soft"
-                      >
-                        Manage
-                      </Link>
+                      <div className="flex items-center justify-end gap-3">
+                        {!played && m.status !== "cancelled" && <CopyInviteLink matchId={m.id} compact />}
+                        <Link
+                          href={`/admin/matches/${m.id}`}
+                          className="text-xs font-bold uppercase tracking-[0.12em] text-accent hover:text-accent-soft"
+                        >
+                          Manage
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 );
