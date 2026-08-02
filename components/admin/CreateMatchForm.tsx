@@ -3,11 +3,13 @@
 /**
  * components/admin/CreateMatchForm.tsx
  * --------------------------------------------------------------------
- * Admin creates an open game (a "slot"). Inserts a matches row as `tentative`
- * and open for signups; match_code + created_by are assigned by DB trigger.
- * Redirects to the match detail page to manage signups.
+ * Admin creates an open game (a "slot"). Setup order: date (calendar) ->
+ * start time (30-min dropdown, 08:00-21:00) -> end time (auto +3h, editable)
+ * -> title (auto-generated from those, still editable). Inserts a matches row
+ * as `tentative`; match_code + created_by are assigned by DB trigger. Only the
+ * start (scheduled_at) is stored; the end time just feeds the title.
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
@@ -17,26 +19,60 @@ const input =
 const lbl = "mb-1.5 block text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-text-muted";
 const numOrNull = (v: string) => (v.trim() === "" ? null : Number(v));
 
+const fmtMins = (mins: number) => {
+  const h = Math.floor(mins / 60) % 24;
+  const m = mins % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+};
+// Start: 08:00 -> 21:00. End: 08:30 -> 24:00 (shown as 00:00) so 21:00 + 3h works.
+const START_OPTIONS = Array.from({ length: (1260 - 480) / 30 + 1 }, (_, i) => fmtMins(480 + i * 30));
+const END_OPTIONS = Array.from({ length: (1440 - 510) / 30 + 1 }, (_, i) => fmtMins(510 + i * 30));
+const addHours = (hhmm: string, hrs: number) => {
+  const [h, m] = hhmm.split(":").map(Number);
+  return fmtMins((h * 60 + m + hrs * 60) % 1440);
+};
+
 export function CreateMatchForm() {
   const router = useRouter();
+  const [date, setDate] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+  const [endDirty, setEndDirty] = useState(false);
+  const [isDoubleXp, setIsDoubleXp] = useState(false);
   const [title, setTitle] = useState("");
-  const [scheduledAt, setScheduledAt] = useState("");
+  const [titleDirty, setTitleDirty] = useState(false);
   const [minPlayers, setMinPlayers] = useState("10");
   const [maxPlayers, setMaxPlayers] = useState("");
   const [priceEur, setPriceEur] = useState("");
-  const [isDoubleXp, setIsDoubleXp] = useState(false);
   const [isPrivate, setIsPrivate] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Auto-generate the title from the setup params until the admin edits it.
+  useEffect(() => {
+    if (titleDirty) return;
+    if (!date || !startTime || !endTime) {
+      setTitle("");
+      return;
+    }
+    const [y, m, d] = date.split("-");
+    const kind = isDoubleXp ? "Double XP Match" : "Open Match";
+    setTitle(`${kind} - ${d}/${m}/${y} ${startTime} - ${endTime}`);
+  }, [date, startTime, endTime, isDoubleXp, titleDirty]);
+
+  function onStart(v: string) {
+    setStartTime(v);
+    if (!endDirty && v) setEndTime(addHours(v, 3));
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!scheduledAt) {
-      setError("Pick a date and time.");
+    if (!date || !startTime) {
+      setError("Pick a date and start time.");
       return;
     }
-    const when = new Date(scheduledAt);
+    const when = new Date(`${date}T${startTime}:00`);
     if (Number.isNaN(when.getTime())) {
       setError("That date/time isn't valid.");
       return;
@@ -69,20 +105,74 @@ export function CreateMatchForm() {
     <form onSubmit={onSubmit} className="max-w-2xl space-y-5">
       <fieldset className="border border-border bg-bg-elevated px-5 py-5">
         <legend className="px-2 text-[0.65rem] font-bold uppercase tracking-[0.16em] text-accent">
-          Open game
+          When
+        </legend>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div className="sm:col-span-3">
+            <label className={lbl}>Date</label>
+            <input type="date" className={input} value={date} onChange={(e) => setDate(e.target.value)} />
+          </div>
+          <div>
+            <label className={lbl}>Start time</label>
+            <select className={input} value={startTime} onChange={(e) => onStart(e.target.value)}>
+              <option value="">Select…</option>
+              {START_OPTIONS.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className={lbl}>End time</label>
+            <select
+              className={input}
+              value={endTime}
+              onChange={(e) => {
+                setEndTime(e.target.value);
+                setEndDirty(true);
+              }}
+            >
+              <option value="">Select…</option>
+              {END_OPTIONS.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+            <p className="mt-1 text-[0.65rem] text-text-subtle">Defaults to 3 hours after the start.</p>
+          </div>
+          <div className="flex items-end pb-2">
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-text-muted">
+              <input type="checkbox" className="h-4 w-4 accent-accent" checked={isDoubleXp} onChange={(e) => setIsDoubleXp(e.target.checked)} />
+              Double XP
+            </label>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset className="border border-border bg-bg-elevated px-5 py-5">
+        <legend className="px-2 text-[0.65rem] font-bold uppercase tracking-[0.16em] text-accent">
+          Details
         </legend>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <label className={lbl}>Title (optional)</label>
-            <input className={input} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Friday Night Open Game" />
-          </div>
-          <div className="sm:col-span-2">
-            <label className={lbl}>Date &amp; time</label>
+            <div className="mb-1.5 flex items-center justify-between">
+              <label className={`${lbl} mb-0`}>Title</label>
+              {titleDirty && (
+                <button
+                  type="button"
+                  onClick={() => setTitleDirty(false)}
+                  className="text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-text-subtle hover:text-accent"
+                >
+                  Reset to auto
+                </button>
+              )}
+            </div>
             <input
-              type="datetime-local"
               className={input}
-              value={scheduledAt}
-              onChange={(e) => setScheduledAt(e.target.value)}
+              value={title}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                setTitleDirty(true);
+              }}
+              placeholder="Fills in from the date and times above"
             />
           </div>
           <div>
@@ -98,11 +188,7 @@ export function CreateMatchForm() {
             <label className={lbl}>Price per player (EUR, optional)</label>
             <input type="number" step="0.01" min="0" className={input} value={priceEur} onChange={(e) => setPriceEur(e.target.value)} onFocus={(e) => e.target.select()} placeholder="e.g. 15" />
           </div>
-          <div className="flex flex-col justify-end gap-2 pb-1">
-            <label className="flex cursor-pointer items-center gap-2 text-sm text-text-muted">
-              <input type="checkbox" className="h-4 w-4 accent-accent" checked={isDoubleXp} onChange={(e) => setIsDoubleXp(e.target.checked)} />
-              Double XP
-            </label>
+          <div className="flex items-end pb-2">
             <label className="flex cursor-pointer items-center gap-2 text-sm text-text-muted">
               <input type="checkbox" className="h-4 w-4 accent-accent" checked={isPrivate} onChange={(e) => setIsPrivate(e.target.checked)} />
               Private (not shown on the public games list)
