@@ -67,10 +67,15 @@ export function CreateMatchForm() {
   const [minPlayers, setMinPlayers] = useState("10");
   const [maxPlayers, setMaxPlayers] = useState("");
   const [priceEur, setPriceEur] = useState("");
+  const [pricingMode, setPricingMode] = useState<"per_player" | "flat">("per_player");
+  const [depositEur, setDepositEur] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const isPrivate = matchType === "private";
+  // Only private bookings can be a flat lump sum; everything else is per player.
+  const effectiveMode = isPrivate ? pricingMode : "per_player";
+  const priceLabel = effectiveMode === "flat" ? "Flat rate (EUR)" : "Price per player (EUR, optional)";
 
   // Auto-generate the title from the setup params until the admin edits it.
   useEffect(() => {
@@ -111,6 +116,8 @@ export function CreateMatchForm() {
         min_players: Number(minPlayers) || (isPrivate ? 0 : 10),
         max_players: numOrNull(maxPlayers),
         price_eur: numOrNull(priceEur),
+        pricing_mode: effectiveMode,
+        deposit_eur: isPrivate ? numOrNull(depositEur) : null,
         is_double_xp: matchType === "double_xp",
         is_private: isPrivate,
       })
@@ -225,10 +232,27 @@ export function CreateMatchForm() {
             <label className={lbl}>Max players (optional)</label>
             <input type="number" min="1" className={input} value={maxPlayers} onChange={(e) => setMaxPlayers(e.target.value)} onFocus={(e) => e.target.select()} placeholder="No cap" />
           </div>
+
+          {isPrivate && (
+            <div>
+              <label className={lbl}>Pricing</label>
+              <select className={input} value={pricingMode} onChange={(e) => setPricingMode(e.target.value as "per_player" | "flat")}>
+                <option value="per_player">Per player</option>
+                <option value="flat">Flat rate (lump sum)</option>
+              </select>
+            </div>
+          )}
           <div>
-            <label className={lbl}>Price per player (EUR, optional)</label>
-            <input type="number" step="0.01" min="0" className={input} value={priceEur} onChange={(e) => setPriceEur(e.target.value)} onFocus={(e) => e.target.select()} placeholder="e.g. 15" />
+            <label className={lbl}>{priceLabel}</label>
+            <input type="number" step="0.01" min="0" className={input} value={priceEur} onChange={(e) => setPriceEur(e.target.value)} onFocus={(e) => e.target.select()} placeholder={effectiveMode === "flat" ? "e.g. 300" : "e.g. 15"} />
           </div>
+          {isPrivate && (
+            <div>
+              <label className={lbl}>Deposit (EUR, optional)</label>
+              <input type="number" step="0.01" min="0" className={input} value={depositEur} onChange={(e) => setDepositEur(e.target.value)} onFocus={(e) => e.target.select()} placeholder="e.g. 50" />
+              <p className="mt-1 text-[0.65rem] text-text-subtle">A deposit payment link can be generated later.</p>
+            </div>
+          )}
         </div>
       </fieldset>
 

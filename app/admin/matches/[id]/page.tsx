@@ -74,7 +74,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
     supabase
       .from("matches")
       .select(
-        "id, match_code, title, status, scheduled_at, played_on, round_count, source_file_type, xp_distributed_at, elo_calculated_at, winning_team_colour, is_private, is_double_xp, min_players, max_players, price_eur, registered_count, paid_count, on_day_count, reached_quorum_at",
+        "id, match_code, title, status, scheduled_at, played_on, round_count, source_file_type, xp_distributed_at, elo_calculated_at, winning_team_colour, is_private, is_double_xp, min_players, max_players, price_eur, pricing_mode, deposit_eur, registered_count, paid_count, on_day_count, reached_quorum_at",
       )
       .eq("id", id)
       .maybeSingle(),
@@ -137,7 +137,14 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
           {match.paid_count ?? 0} paid
           <span className="text-text-subtle"> · {match.on_day_count ?? 0} on the day</span>
         </Fact>
-        <Fact label="Price">{match.price_eur != null ? `€${Number(match.price_eur).toFixed(2)}` : "—"}</Fact>
+        <Fact label="Price">
+          {match.price_eur != null
+            ? `€${Number(match.price_eur).toFixed(2)}${match.pricing_mode === "flat" ? " flat" : " / player"}`
+            : "—"}
+          {match.deposit_eur != null && (
+            <span className="text-text-subtle"> · €{Number(match.deposit_eur).toFixed(2)} deposit</span>
+          )}
+        </Fact>
         <Fact label="Rounds">{match.round_count ?? "—"}</Fact>
         <Fact label="Source file">{match.source_file_type ? match.source_file_type.toUpperCase() : "—"}</Fact>
         <Fact label="XP">
