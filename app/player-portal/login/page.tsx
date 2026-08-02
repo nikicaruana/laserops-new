@@ -8,6 +8,7 @@ import { redirect } from "next/navigation";
 import { Container } from "@/components/ui/Container";
 import { LoginForm } from "@/components/portal/LoginForm";
 import { createClient } from "@/lib/supabase/server";
+import { safeNextPath } from "@/lib/portalRoute";
 
 export const metadata: Metadata = {
   title: "Sign In",
@@ -16,16 +17,17 @@ export const metadata: Metadata = {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; next?: string }>;
 }) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (user) redirect("/player-portal/player-stats");
+  const { error, next } = await searchParams;
+  const safeNext = safeNextPath(next);
 
-  const { error } = await searchParams;
+  if (user) redirect(safeNext ?? "/player-portal/player-stats");
 
   return (
     <Container size="narrow" className="py-16 sm:py-24">
@@ -38,7 +40,7 @@ export default async function LoginPage({
             Sign in to see your stats, ratings, and season standings.
           </p>
         </div>
-        <LoginForm hadError={error === "auth"} />
+        <LoginForm hadError={error === "auth"} next={safeNext ?? undefined} />
       </div>
     </Container>
   );

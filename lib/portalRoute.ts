@@ -15,6 +15,16 @@ export type GateAccount = {
   waiver_accepted_at: string | null;
 };
 
+/**
+ * Sanitise a `next` redirect target: only same-app absolute paths are allowed,
+ * never absolute URLs or protocol-relative ("//evil.com") ones (open-redirect
+ * guard). Returns null when there's no usable target.
+ */
+export function safeNextPath(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  return raw.startsWith("/") && !raw.startsWith("//") ? raw : null;
+}
+
 export function postAuthPath(account: GateAccount | null): string {
   if (!account) return "/player-portal/player-stats";
   if (!account.ops_tag) return "/player-portal/onboarding";

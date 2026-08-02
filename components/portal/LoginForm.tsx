@@ -19,20 +19,26 @@ import { postAuthPath } from "@/lib/portalRoute";
 const inputStyles =
   "h-14 w-full rounded-none border border-border-strong bg-bg-elevated px-4 text-sm text-text placeholder:text-text-subtle focus:border-accent focus:outline-none";
 
-async function destinationFor(supabase: ReturnType<typeof createClient>): Promise<string> {
+async function destinationFor(
+  supabase: ReturnType<typeof createClient>,
+  next?: string,
+): Promise<string> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return "/player-portal";
+  if (!user) return next ?? "/player-portal";
   const { data: account } = await supabase
     .from("accounts")
     .select("ops_tag, waiver_accepted_at")
     .eq("auth_user_id", user.id)
     .maybeSingle();
+  // A fully-onboarded player returns to where they came from (e.g. a match
+  // invite). New / unfinished accounts still go through onboarding / waiver.
+  if (next && account?.ops_tag && account?.waiver_accepted_at) return next;
   return postAuthPath(account);
 }
 
-export function LoginForm({ hadError }: { hadError?: boolean }) {
+export function LoginForm({ hadError, next }: { hadError?: boolean; next?: string }) {
   const [forgot, setForgot] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -73,7 +79,7 @@ export function LoginForm({ hadError }: { hadError?: boolean }) {
       setError(error.message);
       return;
     }
-    window.location.assign(await destinationFor(supabase));
+    window.location.assign(await destinationFor(supabase, next));
   }
 
   async function magicLink() {
@@ -87,7 +93,11 @@ export function LoginForm({ hadError }: { hadError?: boolean }) {
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
-      options: { emailRedirectTo: redirectTo() },
+      options: {
+        emailRedirectTo: redirectTo(
+          next ? `/auth/callback?next=${encodeURIComponent(next)}` : "/auth/callback",
+        ),
+      },
     });
     setBusy(false);
     if (error) setError(error.message);
@@ -175,7 +185,7 @@ export function LoginForm({ hadError }: { hadError?: boolean }) {
           </div>
 
           <div className="space-y-3">
-            <GoogleButton label="Continue with Google" />
+            <GoogleButton label="Continue with Google" next={next} />
             <button
               type="button"
               onClick={magicLink}
