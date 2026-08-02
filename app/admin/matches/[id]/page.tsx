@@ -76,7 +76,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
     supabase
       .from("matches")
       .select(
-        "id, match_code, title, status, scheduled_at, played_on, round_count, source_file_type, xp_distributed_at, elo_calculated_at, winning_team_colour, is_private, is_double_xp, min_players, max_players, price_eur, pricing_mode, deposit_eur, registered_count, paid_count, on_day_count, reached_quorum_at, entry_code",
+        "id, match_code, title, status, scheduled_at, played_on, round_count, source_file_type, xp_distributed_at, elo_calculated_at, winning_team_colour, is_private, is_double_xp, min_players, max_players, price_eur, pricing_mode, deposit_eur, registered_count, paid_count, on_day_count, reached_quorum_at, entry_code, invite_code",
       )
       .eq("id", id)
       .maybeSingle(),
@@ -148,7 +148,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         <p className="mb-2 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-text-muted">
           Invite link
         </p>
-        <CopyInviteLink matchId={match.id} />
+        <CopyInviteLink code={match.invite_code} />
         <p className="mt-1.5 text-[0.65rem] text-text-subtle">
           Share this so players can view the game and sign up.
         </p>

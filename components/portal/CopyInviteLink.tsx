@@ -3,7 +3,7 @@
 /**
  * components/portal/CopyInviteLink.tsx
  * --------------------------------------------------------------------
- * Copy a match's invite link (origin + /games/<id>) to the clipboard.
+ * Copy a match's invite link (origin + /invite/<code>) to the clipboard.
  *   full    -> a read-only field showing the URL + a Copy button (manage page)
  *   compact -> a small "Copy link" button (table rows)
  * The URL is built on the client so it uses whatever origin the app is served
@@ -11,16 +11,18 @@
  */
 import { useEffect, useState } from "react";
 
-export function CopyInviteLink({ matchId, compact = false }: { matchId: string; compact?: boolean }) {
+export function CopyInviteLink({ code, compact = false }: { code: string | null; compact?: boolean }) {
   const [url, setUrl] = useState("");
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    setUrl(`${window.location.origin}/games/${matchId}`);
-  }, [matchId]);
+    if (code) setUrl(`${window.location.origin}/invite/${code}`);
+  }, [code]);
+
+  if (!code) return null;
 
   async function copy() {
-    const value = url || `/games/${matchId}`;
+    const value = url || `/invite/${code}`;
     try {
       await navigator.clipboard.writeText(value);
       setCopied(true);

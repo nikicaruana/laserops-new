@@ -28,6 +28,7 @@ type Row = {
   registered_count: number | null;
   paid_count: number | null;
   on_day_count: number | null;
+  invite_code: string | null;
   match_player_aggregate: { count: number }[] | null;
 };
 
@@ -78,7 +79,7 @@ export default async function AdminMatchesPage({
   let query = supabase
     .from("matches")
     .select(
-      "id, match_code, title, status, scheduled_at, played_on, round_count, source_file_type, xp_distributed_at, elo_calculated_at, registered_count, paid_count, on_day_count, match_player_aggregate(count)",
+      "id, match_code, title, status, scheduled_at, played_on, round_count, source_file_type, xp_distributed_at, elo_calculated_at, registered_count, paid_count, on_day_count, invite_code, match_player_aggregate(count)",
     )
     .order("scheduled_at", { ascending: false, nullsFirst: false })
     .order("played_on", { ascending: false, nullsFirst: false })
@@ -143,7 +144,7 @@ export default async function AdminMatchesPage({
                 <th className="px-4 py-3 text-right font-semibold">Rounds</th>
                 <th className="px-4 py-3 font-semibold">XP</th>
                 <th className="px-4 py-3 font-semibold">ELO</th>
-                <th className="px-4 py-3" />
+                <th className="px-4 py-3 text-right font-semibold">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -176,9 +177,9 @@ export default async function AdminMatchesPage({
                     <td className="px-4 py-3">
                       <Done at={m.elo_calculated_at} doneLabel="Calculated" pendingLabel="Pending" />
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-3">
-                        {!played && m.status !== "cancelled" && <CopyInviteLink matchId={m.id} compact />}
+                    <td className="whitespace-nowrap px-4 py-3 text-right">
+                      <div className="flex items-center justify-end gap-5">
+                        {!played && m.status !== "cancelled" && <CopyInviteLink code={m.invite_code} compact />}
                         <Link
                           href={`/admin/matches/${m.id}`}
                           className="text-xs font-bold uppercase tracking-[0.12em] text-accent hover:text-accent-soft"

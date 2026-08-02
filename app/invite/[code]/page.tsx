@@ -1,10 +1,10 @@
 /**
- * app/games/[id]/page.tsx
+ * app/invite/[code]/page.tsx
  * --------------------------------------------------------------------
- * Public match invite page (the invite-link destination). Shows the match
- * details to anyone with the link. If the viewer is signed in with an account,
- * they get the sign-up control; otherwise a CTA to sign in / create an account
- * (routing back here). A richer signed-out overlay is a later refinement.
+ * Public match invite page (the /invite/<code> destination). Shows the match
+ * details to anyone with the link. Signed-in players get the sign-up control;
+ * signed-out visitors get a CTA to sign in / create an account (routing back
+ * here). A richer signed-out overlay is a later refinement.
  */
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -19,7 +19,6 @@ export const metadata: Metadata = { title: "Game invite", robots: { index: false
 
 type Game = {
   id: string;
-  match_code: string | null;
   title: string | null;
   status: string | null;
   scheduled_at: string | null;
@@ -45,16 +44,16 @@ function fmtDateTime(iso: string | null): string {
   });
 }
 
-export default async function GameInvitePage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+export default async function GameInvitePage({ params }: { params: Promise<{ code: string }> }) {
+  const { code } = await params;
   const supabase = await createClient();
 
   const { data: match } = await supabase
     .from("matches")
     .select(
-      "id, match_code, title, status, scheduled_at, min_players, max_players, price_eur, pricing_mode, registered_count, is_double_xp",
+      "id, title, status, scheduled_at, min_players, max_players, price_eur, pricing_mode, registered_count, is_double_xp",
     )
-    .eq("id", id)
+    .eq("invite_code", code)
     .maybeSingle();
 
   if (!match) notFound();
@@ -91,6 +90,7 @@ export default async function GameInvitePage({ params }: { params: Promise<{ id:
     g.price_eur != null
       ? `€${Number(g.price_eur).toFixed(2)}${g.pricing_mode === "flat" ? " total" : " per player"}`
       : null;
+  const backHref = `/invite/${code}`;
 
   return (
     <Container size="narrow" className="py-12 sm:py-16">
@@ -140,10 +140,10 @@ export default async function GameInvitePage({ params }: { params: Promise<{ id:
                 Sign in or create an account to join this game.
               </p>
               <div className="flex flex-wrap gap-3">
-                <Button href={`/player-portal/login?next=/games/${g.id}`} variant="primary" size="md">
+                <Button href={`/player-portal/login?next=${backHref}`} variant="primary" size="md">
                   Sign in
                 </Button>
-                <Button href={`/player-portal/signup?next=/games/${g.id}`} variant="secondary" size="md">
+                <Button href={`/player-portal/signup?next=${backHref}`} variant="secondary" size="md">
                   Create account
                 </Button>
               </div>
