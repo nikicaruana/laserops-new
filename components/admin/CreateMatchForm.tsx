@@ -3,16 +3,39 @@
 /**
  * components/admin/CreateMatchForm.tsx
  * --------------------------------------------------------------------
- * Admin creates an open game (a "slot"). Setup order: date (calendar) ->
- * start time (30-min dropdown, 08:00-21:00) -> end time (auto +3h, editable)
- * -> title (auto-generated from those, still editable). Inserts a matches row
- * as `tentative`; match_code + created_by are assigned by DB trigger. Only the
- * start (scheduled_at) is stored; the end time just feeds the title.
+ * Admin match creator. A type dropdown drives everything:
+ *   open match          -> public, tentative (awaiting signups)
+ *   double XP open match -> public, tentative, double XP
+ *   private booking     -> not public, created already confirmed
+ * Setup order: type -> date (calendar) -> start time (30-min dropdown,
+ * 08:00-21:00) -> end time (auto +3h, editable) -> title (auto from those,
+ * editable). Inserts a matches row; match_code + created_by come from a DB
+ * trigger. Only the start (scheduled_at) is stored; end time feeds the title.
  */
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
+
+type MatchType = "open" | "double_xp" | "private";
+
+const TYPE_META: Record<MatchType, { label: string; titlePrefix: string; hint: string }> = {
+  open: {
+    label: "Open match",
+    titlePrefix: "Open Match",
+    hint: "Public. Players sign up; confirms for your sign-off once it hits the minimum.",
+  },
+  double_xp: {
+    label: "Double XP open match",
+    titlePrefix: "Double XP Match",
+    hint: "Public open match where all XP is doubled.",
+  },
+  private: {
+    label: "Private booking",
+    titlePrefix: "Private Booking",
+    hint: "Not shown on the public games list. Created already confirmed (a direct booking).",
+  },
+};
 
 const input =
   "h-11 w-full rounded-none border border-border-strong bg-bg px-3 text-sm text-text placeholder:text-text-subtle focus:border-accent focus:outline-none";
@@ -34,19 +57,20 @@ const addHours = (hhmm: string, hrs: number) => {
 
 export function CreateMatchForm() {
   const router = useRouter();
+  const [matchType, setMatchType] = useState<MatchType>("open");
   const [date, setDate] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [endDirty, setEndDirty] = useState(false);
-  const [isDoubleXp, setIsDoubleXp] = useState(false);
   const [title, setTitle] = useState("");
   const [titleDirty, setTitleDirty] = useState(false);
   const [minPlayers, setMinPlayers] = useState("10");
   const [maxPlayers, setMaxPlayers] = useState("");
   const [priceEur, setPriceEur] = useState("");
-  const [isPrivate, setIsPrivate] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const isPrivate = matchType === "private";
 
   // Auto-generate the title from the setup params until the admin edits it.
   useEffect(() => {
@@ -56,9 +80,8 @@ export function CreateMatchForm() {
       return;
     }
     const [y, m, d] = date.split("-");
-    const kind = isDoubleXp ? "Double XP Match" : "Open Match";
-    setTitle(`${kind} - ${d}/${m}/${y} ${startTime} - ${endTime}`);
-  }, [date, startTime, endTime, isDoubleXp, titleDirty]);
+    setTitle(`${TYPE_META[matchType].titlePrefix} - ${d}/${m}/${y} ${startTime} - ${endTime}`);
+  }, [date, startTime, endTime, matchType, titleDirty]);
 
   function onStart(v: string) {
     setStartTime(v);
@@ -84,18 +107,18 @@ export function CreateMatchForm() {
       .insert({
         title: title.trim() || null,
         scheduled_at: when.toISOString(),
-        status: "tentative",
-        min_players: Number(minPlayers) || 10,
+        status: isPrivate ? "confirmed" : "tentative",
+        min_players: Number(minPlayers) || (isPrivate ? 0 : 10),
         max_players: numOrNull(maxPlayers),
         price_eur: numOrNull(priceEur),
-        is_double_xp: isDoubleXp,
+        is_double_xp: matchType === "double_xp",
         is_private: isPrivate,
       })
       .select("id")
       .single();
     setSaving(false);
     if (err || !data) {
-      setError(err?.message || "Couldn't create the game.");
+      setError(err?.message || "Couldn't create the match.");
       return;
     }
     router.push(`/admin/matches/${data.id}`);
@@ -103,6 +126,22 @@ export function CreateMatchForm() {
 
   return (
     <form onSubmit={onSubmit} className="max-w-2xl space-y-5">
+      <fieldset className="border border-border bg-bg-elevated px-5 py-5">
+        <legend className="px-2 text-[0.65rem] font-bold uppercase tracking-[0.16em] text-accent">
+          Match type
+        </legend>
+        <select
+          className={input}
+          value={matchType}
+          onChange={(e) => setMatchType(e.target.value as MatchType)}
+        >
+          {(Object.keys(TYPE_META) as MatchType[]).map((t) => (
+            <option key={t} value={t}>{TYPE_META[t].label}</option>
+          ))}
+        </select>
+        <p className="mt-1.5 text-[0.65rem] text-text-subtle">{TYPE_META[matchType].hint}</p>
+      </fieldset>
+
       <fieldset className="border border-border bg-bg-elevated px-5 py-5">
         <legend className="px-2 text-[0.65rem] font-bold uppercase tracking-[0.16em] text-accent">
           When
@@ -144,12 +183,6 @@ export function CreateMatchForm() {
             </select>
             <p className="mt-1 text-[0.65rem] text-text-subtle">Defaults to 3 hours after the start.</p>
           </div>
-          <div className="flex items-end pb-2">
-            <label className="flex cursor-pointer items-center gap-2 text-sm text-text-muted">
-              <input type="checkbox" className="h-4 w-4 accent-accent" checked={isDoubleXp} onChange={(e) => setIsDoubleXp(e.target.checked)} />
-              Double XP
-            </label>
-          </div>
         </div>
       </fieldset>
 
@@ -178,13 +211,15 @@ export function CreateMatchForm() {
                 setTitle(e.target.value);
                 setTitleDirty(true);
               }}
-              placeholder="Fills in from the date and times above"
+              placeholder="Fills in from the type, date and times above"
             />
           </div>
           <div>
-            <label className={lbl}>Min players (quorum)</label>
-            <input type="number" min="1" className={input} value={minPlayers} onChange={(e) => setMinPlayers(e.target.value)} onFocus={(e) => e.target.select()} />
-            <p className="mt-1 text-[0.65rem] text-text-subtle">Confirms for admin sign-off once this many sign up.</p>
+            <label className={lbl}>{isPrivate ? "Expected players" : "Min players (quorum)"}</label>
+            <input type="number" min="0" className={input} value={minPlayers} onChange={(e) => setMinPlayers(e.target.value)} onFocus={(e) => e.target.select()} />
+            {!isPrivate && (
+              <p className="mt-1 text-[0.65rem] text-text-subtle">Confirms for admin sign-off once this many sign up.</p>
+            )}
           </div>
           <div>
             <label className={lbl}>Max players (optional)</label>
@@ -194,12 +229,6 @@ export function CreateMatchForm() {
             <label className={lbl}>Price per player (EUR, optional)</label>
             <input type="number" step="0.01" min="0" className={input} value={priceEur} onChange={(e) => setPriceEur(e.target.value)} onFocus={(e) => e.target.select()} placeholder="e.g. 15" />
           </div>
-          <div className="flex items-end pb-2">
-            <label className="flex cursor-pointer items-center gap-2 text-sm text-text-muted">
-              <input type="checkbox" className="h-4 w-4 accent-accent" checked={isPrivate} onChange={(e) => setIsPrivate(e.target.checked)} />
-              Private (not shown on the public games list)
-            </label>
-          </div>
         </div>
       </fieldset>
 
@@ -208,7 +237,7 @@ export function CreateMatchForm() {
       )}
 
       <Button type="submit" size="md" disabled={saving}>
-        {saving ? "Creating…" : "Create open game"}
+        {saving ? "Creating…" : "Create match"}
       </Button>
     </form>
   );

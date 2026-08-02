@@ -7,7 +7,7 @@
 import Link from "next/link";
 import { CreateMatchForm } from "@/components/admin/CreateMatchForm";
 
-export const metadata = { title: "New open game" };
+export const metadata = { title: "Create match" };
 
 export default function NewMatchPage() {
   return (
@@ -19,11 +19,11 @@ export default function NewMatchPage() {
       </div>
       <header className="mb-8 border-b border-border pb-6">
         <h1 className="text-2xl font-extrabold uppercase tracking-tight text-text sm:text-3xl">
-          New open game
+          Create match
         </h1>
         <p className="mt-2 text-sm text-text-muted">
-          Opens for player signups immediately. Reaches &quot;Awaiting OK&quot; once the minimum
-          players sign up; you confirm it from there.
+          Open matches (with or without Double XP) accept player signups; a private booking is a
+          direct booking created already confirmed and kept off the public list.
         </p>
       </header>
 

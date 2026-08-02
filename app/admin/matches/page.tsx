@@ -102,7 +102,7 @@ export default async function AdminMatchesPage({
           href="/admin/matches/new"
           className="flex h-11 items-center gap-2 border border-accent bg-accent px-5 text-xs font-bold uppercase tracking-[0.12em] text-bg transition-transform active:scale-[0.98]"
         >
-          + New open game
+          + Create match
         </Link>
       </header>
 
