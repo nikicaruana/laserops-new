@@ -110,7 +110,13 @@ export function CreateMatchForm() {
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="sm:col-span-3">
             <label className={lbl}>Date</label>
-            <input type="date" className={input} value={date} onChange={(e) => setDate(e.target.value)} />
+            <input
+              type="date"
+              className={`${input} [color-scheme:dark]`}
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              onClick={(e) => e.currentTarget.showPicker?.()}
+            />
           </div>
           <div>
             <label className={lbl}>Start time</label>
