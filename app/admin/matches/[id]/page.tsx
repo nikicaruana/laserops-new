@@ -12,6 +12,7 @@ import { MatchStatusBadge } from "@/components/admin/MatchStatusBadge";
 import { MatchAdminActions } from "@/components/admin/MatchAdminActions";
 import { EditableMatchTitle } from "@/components/admin/EditableMatchTitle";
 import { CopyInviteLink } from "@/components/portal/CopyInviteLink";
+import { MatchParticipantsManager, type Participant } from "@/components/admin/MatchParticipantsManager";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -95,9 +96,22 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   ]);
 
   if (!match) notFound();
+
+  const [{ data: participantRows }, { data: gunRows }] = await Promise.all([
+    supabase
+      .from("match_participants")
+      .select("id, account_id, headset_label, gun_used, display_name, source, account:accounts(ops_tag, full_name)")
+      .eq("match_id", id)
+      .order("joined_at"),
+    supabase.from("guns").select("name").order("name"),
+  ]);
+
   const signups = ((signupRows ?? []) as unknown as Signup[]).filter((s) => s.status !== "cancelled");
   const entries = (entryRows ?? []) as Entry[];
+  const participants = (participantRows ?? []) as unknown as Participant[];
+  const guns = ((gunRows ?? []) as { name: string }[]).map((g) => g.name).filter(Boolean);
   const isPlayed = match.status === "completed" || entries.length > 0;
+  const showRoster = ["confirmed", "live", "completed"].includes(match.status ?? "") || match.is_private || participants.length > 0;
 
   return (
     <div>
@@ -182,8 +196,22 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         </Fact>
       </div>
 
-      {/* Signups (booking side) */}
-      {!isPlayed && (
+      {/* Roster — live joins + manual admin entries */}
+      {showRoster && (
+        <section className="mb-10">
+          <h2 className="mb-1 text-sm font-bold uppercase tracking-[0.12em] text-accent">
+            Roster ({participants.length})
+          </h2>
+          <p className="mb-3 text-xs text-text-muted">
+            Players in the match with their headband and gun. Signed-up players join live with the
+            code; add walk-ins (e.g. private-booking guests) by hand.
+          </p>
+          <MatchParticipantsManager matchId={match.id} initial={participants} guns={guns} />
+        </section>
+      )}
+
+      {/* Signups (booking side) — not for private bookings */}
+      {!isPlayed && !match.is_private && (
         <section className="mb-10">
           <h2 className="mb-3 text-sm font-bold uppercase tracking-[0.12em] text-accent">
             Signups ({signups.length})
