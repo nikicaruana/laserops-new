@@ -84,14 +84,16 @@ export default async function GamesPage() {
   const selectCols =
     "id, match_code, title, status, scheduled_at, min_players, max_players, price_eur, pricing_mode, registered_count, is_double_xp";
 
-  const [{ data: signupRows }, guns] = await Promise.all([
+  const [{ data: signupRows }, guns, { data: participantRows }] = await Promise.all([
     supabase
       .from("match_signups")
       .select("match_id, payment_intent, status, paid_at, booked_gun")
       .eq("account_id", account.id),
     getUnlockedGuns(supabase, account.ops_tag, { includeLocked: account.is_admin === true }),
+    supabase.from("match_participants").select("match_id").eq("account_id", account.id),
   ]);
 
+  const joinedIds = new Set(((participantRows ?? []) as { match_id: string }[]).map((p) => p.match_id));
   const mine = new Map<string, MySignup>();
   for (const s of (signupRows ?? []) as MySignup[]) mine.set(s.match_id, s);
   const registeredIds = ((signupRows ?? []) as MySignup[])
@@ -125,7 +127,8 @@ export default async function GamesPage() {
     const isFull = g.max_players != null && reg >= g.max_players;
     const pct = Math.min(100, Math.round((reg / Math.max(1, min)) * 100));
     const mySignup = mine.get(g.id) ?? null;
-    const canJoin = g.status === "live" && mySignup?.status === "registered";
+    const isLiveMine = g.status === "live" && mySignup?.status === "registered";
+    const joined = joinedIds.has(g.id);
     const showPrice = g.price_eur != null && g.pricing_mode === "per_player";
     return (
       <li
@@ -163,14 +166,24 @@ export default async function GamesPage() {
         </div>
 
         <div className="shrink-0">
-          {canJoin ? (
-            <Link
-              href={`/player-portal/games/${g.id}/join`}
-              className="inline-flex items-center gap-2 border border-accent bg-accent px-5 py-2.5 text-xs font-bold uppercase tracking-[0.12em] text-bg transition-transform active:scale-[0.98]"
-            >
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-bg" />
-              Join game
-            </Link>
+          {isLiveMine ? (
+            joined ? (
+              <Link
+                href={`/player-portal/games/${g.id}/live`}
+                className="inline-flex items-center gap-2 border border-accent px-5 py-2.5 text-xs font-bold uppercase tracking-[0.12em] text-accent transition-colors hover:bg-accent/10"
+              >
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
+                View live game
+              </Link>
+            ) : (
+              <Link
+                href={`/player-portal/games/${g.id}/join`}
+                className="inline-flex items-center gap-2 border border-accent bg-accent px-5 py-2.5 text-xs font-bold uppercase tracking-[0.12em] text-bg transition-transform active:scale-[0.98]"
+              >
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-bg" />
+                Join game
+              </Link>
+            )
           ) : (
             <GameSignupControl
               matchId={g.id}

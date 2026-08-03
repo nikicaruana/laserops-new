@@ -77,6 +77,7 @@ export default async function GameInvitePage({ params }: { params: Promise<{ cod
   let accountId: string | null = null;
   let mySignup: { payment_intent: string | null; status: string | null; paid_at: string | null; booked_gun: string | null } | null = null;
   let guns: UnlockedGun[] = [];
+  let joined = false;
   if (user) {
     const { data: account } = await supabase
       .from("accounts")
@@ -85,7 +86,7 @@ export default async function GameInvitePage({ params }: { params: Promise<{ cod
       .maybeSingle();
     accountId = account?.id ?? null;
     if (accountId) {
-      const [{ data: s }, g2] = await Promise.all([
+      const [{ data: s }, g2, { data: part }] = await Promise.all([
         supabase
           .from("match_signups")
           .select("payment_intent, status, paid_at, booked_gun")
@@ -93,9 +94,16 @@ export default async function GameInvitePage({ params }: { params: Promise<{ cod
           .eq("account_id", accountId)
           .maybeSingle(),
         getUnlockedGuns(supabase, account?.ops_tag, { includeLocked: account?.is_admin === true }),
+        supabase
+          .from("match_participants")
+          .select("id")
+          .eq("match_id", g.id)
+          .eq("account_id", accountId)
+          .maybeSingle(),
       ]);
       mySignup = s ?? null;
       guns = g2;
+      joined = Boolean(part);
     }
   }
 
@@ -105,7 +113,7 @@ export default async function GameInvitePage({ params }: { params: Promise<{ cod
   const pct = Math.min(100, Math.round((reg / Math.max(1, min)) * 100));
   const showPrice = g.price_eur != null && g.pricing_mode === "per_player";
   const backHref = `/invite/${code}`;
-  const canJoin = g.status === "live" && mySignup?.status === "registered";
+  const isLiveMine = g.status === "live" && mySignup?.status === "registered";
 
   return (
     <section className="relative isolate flex min-h-[calc(100svh-72px)] items-center justify-center overflow-hidden py-16">
@@ -161,14 +169,24 @@ export default async function GameInvitePage({ params }: { params: Promise<{ cod
         {/* CTA */}
         <div className="mt-7 border-t border-white/10 pt-6">
           {user && accountId ? (
-            canJoin ? (
-              <Link
-                href={`/player-portal/games/${g.id}/join`}
-                className="inline-flex items-center gap-2 border border-accent bg-accent px-6 py-3 text-sm font-bold uppercase tracking-[0.12em] text-bg transition-transform active:scale-[0.98]"
-              >
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-bg" />
-                Join game
-              </Link>
+            isLiveMine ? (
+              joined ? (
+                <Link
+                  href={`/player-portal/games/${g.id}/live`}
+                  className="inline-flex items-center gap-2 border border-accent px-6 py-3 text-sm font-bold uppercase tracking-[0.12em] text-accent transition-colors hover:bg-accent/10"
+                >
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
+                  View live game
+                </Link>
+              ) : (
+                <Link
+                  href={`/player-portal/games/${g.id}/join`}
+                  className="inline-flex items-center gap-2 border border-accent bg-accent px-6 py-3 text-sm font-bold uppercase tracking-[0.12em] text-bg transition-transform active:scale-[0.98]"
+                >
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-bg" />
+                  Join game
+                </Link>
+              )
             ) : (
               <div className="flex flex-col items-center gap-3">
                 <GameSignupControl
