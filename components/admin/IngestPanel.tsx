@@ -186,7 +186,9 @@ function RoundPreview({
               <th className={th}>Headband</th>
               <th className={th}>Player</th>
               <th className={th}>Team</th>
-              <th className={`${th} text-right`}>Score</th>
+              <th className={`${th} text-right`} title="The game hardware's own score, from the file — NOT the LaserOps scoring formula (that's computed at commit).">
+                Game score
+              </th>
               <th className={`${th} text-right`}>K</th>
               <th className={`${th} text-right`}>D</th>
               <th className={`${th} text-right`}>Dmg</th>
