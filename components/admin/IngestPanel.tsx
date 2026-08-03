@@ -192,8 +192,8 @@ function RoundPreview({
               <th className={`${th} text-right`}>Dmg</th>
               <th className={`${th} text-right`}>Caps</th>
               <th className={`${th} text-right`}>Cap time</th>
-              <th className={`${th} text-right`} title="Spawn kills dealt">Sp.K</th>
-              <th className={`${th} text-right`} title="Spawn-damage hits dealt">Sp.Dmg</th>
+              <th className={`${th} text-right`} title="Kills within 3s of the victim's respawn">Sp.K</th>
+              <th className={`${th} text-right`} title="Damage dealt in spawn windows (voidable amount)">Sp.Dmg</th>
             </tr>
           </thead>
           <tbody>

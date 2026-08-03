@@ -14,6 +14,7 @@ import { EditableMatchTitle } from "@/components/admin/EditableMatchTitle";
 import { CopyInviteLink } from "@/components/portal/CopyInviteLink";
 import { MatchParticipantsManager, type Participant, type ParticipantPayment } from "@/components/admin/MatchParticipantsManager";
 import { IngestPanel, type SavedRound } from "@/components/admin/IngestPanel";
+import { parseRound } from "@/lib/ingestion/round-parser";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -109,11 +110,23 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
     supabase.from("guns").select("name").order("name"),
     supabase
       .from("match_ingest_rounds")
-      .select("id, filename, parsed")
+      .select("id, filename, raw_file")
       .eq("match_id", id)
       .order("created_at"),
   ]);
-  const ingestRounds = (ingestRows ?? []) as unknown as SavedRound[];
+  // Re-parse the stored raw file with the CURRENT parser on every load, so
+  // parser improvements show without re-uploading. Falls back to nothing on a
+  // parse error.
+  const ingestRounds: SavedRound[] = ((ingestRows ?? []) as { id: string; filename: string | null; raw_file: string | null }[])
+    .map((row) => {
+      if (!row.raw_file) return null;
+      try {
+        return { id: row.id, filename: row.filename, parsed: parseRound(row.raw_file) };
+      } catch {
+        return null;
+      }
+    })
+    .filter((x): x is SavedRound => x !== null);
 
   const signups = ((signupRows ?? []) as unknown as Signup[]).filter((s) => s.status !== "cancelled");
   const payments: Record<string, ParticipantPayment> = {};

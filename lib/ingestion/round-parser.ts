@@ -99,7 +99,8 @@ export type Round = {
   damage_dealt: Record<number, number>;
   /** Capture/hold time per player = Σ seconds the bases they captured were held. */
   hold_seconds: Record<number, number>;
-  /** Spawn-flagged kills / damage-hits BY each player (the shooter) — who's spawn camping. */
+  /** Who's spawn camping (the shooter): spawn_kills_by = count of spawn kills;
+   *  spawn_damage_by = total DAMAGE dealt in spawn-flagged hits (the voidable amount). */
   spawn_kills_by: Record<number, number>;
   spawn_damage_by: Record<number, number>;
   ingestion_flags: IngestionFlag[];
@@ -437,7 +438,7 @@ export function parseRound(text: string): Round {
     if (rs != null && toEpoch(d.time) - rs <= SPAWN_WINDOW_SECONDS) {
       d.is_spawn_damage = true;
       spawnDamage++;
-      if (spawn_damage_by[d.actor_id] != null) spawn_damage_by[d.actor_id]++;
+      if (spawn_damage_by[d.actor_id] != null) spawn_damage_by[d.actor_id] += d.damage;
     }
   }
   for (const k of kills) {
