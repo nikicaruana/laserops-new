@@ -14,6 +14,7 @@ type ArmoryRow = {
   gun_display_title: string | null;
   gun_used_img: string | null;
   gun_player_image: string | null;
+  gun_is_unlocked: boolean | null;
 };
 
 export async function getUnlockedGuns(
@@ -27,7 +28,7 @@ export async function getUnlockedGuns(
   // includeLocked (admins) returns the whole catalogue, not just unlocked guns.
   let query = supabase
     .from("player_armory")
-    .select("gun_name, gun_display_title, gun_used_img, gun_player_image, gun_sort_order")
+    .select("gun_name, gun_display_title, gun_used_img, gun_player_image, gun_is_unlocked, gun_sort_order")
     .ilike("nickname", opsTag.trim())
     .order("gun_sort_order");
   if (!opts.includeLocked) query = query.eq("gun_is_unlocked", true);
@@ -39,9 +40,13 @@ export async function getUnlockedGuns(
     // Never surface the synthetic "Unknown" / "None" fallback gun.
     if (!r.gun_name || isFallbackGunName(r.gun_name) || seen.has(r.gun_name)) continue;
     seen.add(r.gun_name);
+    // gun_display_title holds the UNLOCK CRITERIA text for locked guns (only
+    // visible to admins/excluded who see locked guns), so only trust it when
+    // the gun is unlocked; otherwise fall back to the gun name.
+    const label = r.gun_is_unlocked ? r.gun_display_title || r.gun_name : r.gun_name;
     out.push({
       name: r.gun_name,
-      label: r.gun_display_title || r.gun_name,
+      label,
       img: r.gun_used_img || r.gun_player_image || null,
     });
   }
