@@ -35,7 +35,7 @@ export function GunCarousel({
             onClick={() => onChange(g.name)}
             aria-pressed={selected}
             className={cn(
-              "group w-28 shrink-0 snap-start overflow-hidden border-2 text-left transition-colors",
+              "group w-36 shrink-0 snap-start overflow-hidden border-2 text-left transition-colors",
               selected ? "border-accent" : "border-transparent hover:border-border-strong",
             )}
           >
@@ -54,7 +54,7 @@ export function GunCarousel({
             </div>
             <p
               className={cn(
-                "truncate px-1.5 py-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.06em]",
+                "line-clamp-2 min-h-[2.4rem] px-2 py-1.5 text-[0.7rem] font-semibold uppercase leading-tight tracking-[0.04em]",
                 selected ? "bg-accent/15 text-accent" : "text-text-muted",
               )}
             >

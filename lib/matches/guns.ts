@@ -5,6 +5,7 @@
  * for the gun carousel used when booking / joining a match.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { isFallbackGunName } from "@/lib/cms/weapons";
 
 export type UnlockedGun = { name: string; label: string; img: string | null };
 
@@ -29,7 +30,8 @@ export async function getUnlockedGuns(
   const seen = new Set<string>();
   const out: UnlockedGun[] = [];
   for (const r of (data ?? []) as ArmoryRow[]) {
-    if (!r.gun_name || seen.has(r.gun_name)) continue;
+    // Never surface the synthetic "Unknown" / "None" fallback gun.
+    if (!r.gun_name || isFallbackGunName(r.gun_name) || seen.has(r.gun_name)) continue;
     seen.add(r.gun_name);
     out.push({
       name: r.gun_name,
