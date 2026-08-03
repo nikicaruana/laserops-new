@@ -94,6 +94,11 @@ export type Round = {
   };
   base_ownership: BaseOwnershipPeriod[];
   final_player_counters: Record<number, PlayerCounters>;
+  /** Real damage dealt per player = Σ actual PlayerHitEvent.Damage (the game
+   *  already reports applied damage, so this caps overkill — unlike hits×gun). */
+  damage_dealt: Record<number, number>;
+  /** Capture/hold time per player = Σ seconds the bases they captured were held. */
+  hold_seconds: Record<number, number>;
   ingestion_flags: IngestionFlag[];
 };
 
@@ -376,6 +381,27 @@ export function parseRound(text: string): Round {
     }
   }
 
+  // Derived: real damage dealt per player (JSON-accurate, already applied/capped).
+  const damage_dealt: Record<number, number> = {};
+  const hold_seconds: Record<number, number> = {};
+  for (const pid of playerIds) {
+    damage_dealt[pid] = 0;
+    hold_seconds[pid] = 0;
+  }
+  for (const d of damage) {
+    if (damage_dealt[d.actor_id] != null) damage_dealt[d.actor_id] += d.damage;
+  }
+  // Capture/hold time: attribute each ownership period's seconds to the player
+  // who captured it (matched by base + capture timestamp).
+  for (const period of base_ownership) {
+    const cap = captures.find(
+      (c) => c.base_id === period.base_id && c.time === period.from_time && c.capturing_player_id != null,
+    );
+    if (cap?.capturing_player_id != null && hold_seconds[cap.capturing_player_id] != null) {
+      hold_seconds[cap.capturing_player_id] += period.held_seconds;
+    }
+  }
+
   // 12. Spawn flags: per event, victim-centric, vs the victim's most recent
   // MID-ROUND respawn. Initial spawn excluded (respawns list already is).
   const respawnsByPlayer = new Map<number, number[]>();
@@ -430,6 +456,8 @@ export function parseRound(text: string): Round {
     events: { damage, kills, respawns, captures },
     base_ownership,
     final_player_counters,
+    damage_dealt,
+    hold_seconds,
     ingestion_flags: flags,
   };
 }

@@ -27,11 +27,10 @@ export type Participant = {
   account: { ops_tag: string | null; full_name: string | null } | null;
 };
 
-type EditRow = Participant & { extraText: string };
+type EditRow = Participant & { extra: string[] };
 
 const cell =
   "h-10 w-full rounded-none border border-border-strong bg-bg px-2 text-sm text-text focus:border-accent focus:outline-none";
-const splitHeadbands = (s: string) => s.split(",").map((x) => x.trim()).filter(Boolean);
 
 export function MatchParticipantsManager({
   matchId,
@@ -44,7 +43,7 @@ export function MatchParticipantsManager({
 }) {
   const router = useRouter();
   const [rows, setRows] = useState<EditRow[]>(
-    initial.map((p) => ({ ...p, extraText: (p.extra_headbands ?? []).join(", ") })),
+    initial.map((p) => ({ ...p, extra: [...(p.extra_headbands ?? [])] })),
   );
   const [newRow, setNewRow] = useState({ display_name: "", headset_label: "", gun_used: guns[0] ?? "" });
   const [busy, setBusy] = useState(false);
@@ -52,6 +51,17 @@ export function MatchParticipantsManager({
 
   function setField(id: string, key: keyof EditRow, value: string) {
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, [key]: value } : r)));
+  }
+  function addExtra(id: string) {
+    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, extra: [...r.extra, ""] } : r)));
+  }
+  function setExtra(id: string, idx: number, value: string) {
+    setRows((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, extra: r.extra.map((x, i) => (i === idx ? value : x)) } : r)),
+    );
+  }
+  function removeExtra(id: string, idx: number) {
+    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, extra: r.extra.filter((_, i) => i !== idx) } : r)));
   }
 
   async function saveRow(row: EditRow) {
@@ -62,7 +72,7 @@ export function MatchParticipantsManager({
       .from("match_participants")
       .update({
         headset_label: row.headset_label?.trim() || null,
-        extra_headbands: splitHeadbands(row.extraText),
+        extra_headbands: row.extra.map((x) => x.trim()).filter(Boolean),
         gun_used: row.gun_used?.trim() || null,
         display_name: row.display_name?.trim() || null,
       })
@@ -162,18 +172,42 @@ export function MatchParticipantsManager({
                   </td>
                   <td className="px-3 py-2 font-mono text-xs text-text-muted">{r.account?.ops_tag ?? "—"}</td>
                   <td className="px-3 py-2">
-                    <input
-                      className={`${cell} font-mono`}
-                      value={r.headset_label ?? ""}
-                      onChange={(e) => setField(r.id, "headset_label", e.target.value)}
-                      placeholder="—"
-                    />
-                    <input
-                      className={`${cell} mt-1 h-8 font-mono text-xs`}
-                      value={r.extraText}
-                      onChange={(e) => setField(r.id, "extraText", e.target.value)}
-                      placeholder="extra headbands (comma sep)"
-                    />
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <input
+                        className={`${cell} w-20 font-mono`}
+                        value={r.headset_label ?? ""}
+                        onChange={(e) => setField(r.id, "headset_label", e.target.value)}
+                        placeholder="—"
+                      />
+                      {r.extra.map((x, idx) => (
+                        <span key={idx} className="inline-flex items-center gap-1 border border-border-strong bg-bg pl-2">
+                          <input
+                            className="h-8 w-14 bg-transparent font-mono text-xs text-text focus:outline-none"
+                            value={x}
+                            onChange={(e) => setExtra(r.id, idx, e.target.value)}
+                            placeholder="##"
+                            autoFocus={x === ""}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeExtra(r.id, idx)}
+                            className="px-1.5 text-text-subtle hover:text-red-400"
+                            aria-label="Remove headband"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => addExtra(r.id)}
+                        title="Add another headband (mid-game swap)"
+                        className="flex h-8 w-8 items-center justify-center border border-border-strong text-text-muted hover:border-accent hover:text-accent"
+                        aria-label="Add another headband"
+                      >
+                        +
+                      </button>
+                    </div>
                   </td>
                   <td className="px-3 py-2">{gunSelect(r.gun_used ?? "", (v) => setField(r.id, "gun_used", v))}</td>
                   <td className="px-3 py-2 text-center text-[0.6rem] uppercase tracking-[0.1em] text-text-subtle">

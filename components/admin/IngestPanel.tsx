@@ -18,7 +18,14 @@ type Parsed = { name: string; round?: Round; error?: string };
 const th = "px-2 py-2 text-left text-[0.55rem] font-semibold uppercase tracking-[0.1em] text-text-muted";
 const td = "px-2 py-1.5 text-sm";
 
-export function IngestPanel() {
+const fmtHold = (s: number): string => {
+  if (!s) return "—";
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return `${m}:${String(sec).padStart(2, "0")}`;
+};
+
+export function IngestPanel({ headbandLabels = {} }: { headbandLabels?: Record<number, string> }) {
   const [files, setFiles] = useState<Parsed[]>([]);
   const [busy, setBusy] = useState(false);
 
@@ -62,13 +69,23 @@ export function IngestPanel() {
       </div>
 
       {files.map((f, i) => (
-        <RoundPreview key={`${f.name}-${i}`} name={f.name} parsed={f} index={i + 1} />
+        <RoundPreview key={`${f.name}-${i}`} name={f.name} parsed={f} index={i + 1} headbandLabels={headbandLabels} />
       ))}
     </div>
   );
 }
 
-function RoundPreview({ name, parsed, index }: { name: string; parsed: Parsed; index: number }) {
+function RoundPreview({
+  name,
+  parsed,
+  index,
+  headbandLabels,
+}: {
+  name: string;
+  parsed: Parsed;
+  index: number;
+  headbandLabels: Record<number, string>;
+}) {
   if (parsed.error || !parsed.round) {
     return (
       <div className="border border-red-800 bg-red-950/40 px-4 py-3">
@@ -122,28 +139,31 @@ function RoundPreview({ name, parsed, index }: { name: string; parsed: Parsed; i
           <thead className="border-b border-border">
             <tr>
               <th className={th}>Headband</th>
-              <th className={th}>Name</th>
+              <th className={th}>Player</th>
               <th className={th}>Team</th>
               <th className={`${th} text-right`}>Score</th>
               <th className={`${th} text-right`}>K</th>
               <th className={`${th} text-right`}>D</th>
-              <th className={`${th} text-right`}>Hits</th>
+              <th className={`${th} text-right`}>Dmg</th>
               <th className={`${th} text-right`}>Caps</th>
+              <th className={`${th} text-right`}>Cap time</th>
             </tr>
           </thead>
           <tbody>
             {r.players.map((p) => {
               const c = r.final_player_counters[p.in_game_player_id];
+              const label = (p.headband_no != null && headbandLabels[p.headband_no]) || p.name;
               return (
                 <tr key={p.in_game_player_id} className="border-b border-border/60 last:border-0">
                   <td className={`${td} font-mono font-semibold text-accent`}>{p.headband_no ?? "—"}</td>
-                  <td className={`${td} text-text`}>{p.name}</td>
+                  <td className={`${td} text-text`}>{label}</td>
                   <td className={`${td} text-text-muted`}>{p.team}</td>
                   <td className={`${td} text-right font-mono tabular-nums text-text`}>{c?.score ?? 0}</td>
                   <td className={`${td} text-right font-mono tabular-nums text-text-muted`}>{c?.frags ?? 0}</td>
                   <td className={`${td} text-right font-mono tabular-nums text-text-muted`}>{c?.deaths ?? 0}</td>
-                  <td className={`${td} text-right font-mono tabular-nums text-text-muted`}>{c?.hits ?? 0}</td>
+                  <td className={`${td} text-right font-mono tabular-nums text-text-muted`}>{r.damage_dealt[p.in_game_player_id] ?? 0}</td>
                   <td className={`${td} text-right font-mono tabular-nums text-text-muted`}>{c?.captures ?? 0}</td>
+                  <td className={`${td} text-right font-mono tabular-nums text-text-muted`}>{fmtHold(r.hold_seconds[p.in_game_player_id] ?? 0)}</td>
                 </tr>
               );
             })}

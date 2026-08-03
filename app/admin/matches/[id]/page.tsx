@@ -115,6 +115,18 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   const isPlayed = match.status === "completed" || entries.length > 0;
   const showRoster = ["confirmed", "live", "completed"].includes(match.status ?? "") || match.is_private || participants.length > 0;
 
+  // headband number -> a label (ops tag / name) so the ingest preview can show
+  // who each headband is instead of the raw "Head NN".
+  const headbandLabels: Record<number, string> = {};
+  for (const p of participants) {
+    const label = p.account?.ops_tag || p.account?.full_name || p.display_name;
+    if (!label) continue;
+    for (const hb of [p.headset_label, ...(p.extra_headbands ?? [])]) {
+      const n = hb ? parseInt(hb, 10) : NaN;
+      if (!Number.isNaN(n)) headbandLabels[n] = label;
+    }
+  }
+
   return (
     <div>
       <div className="mb-6 flex items-center gap-3 text-xs">
@@ -340,7 +352,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
           committing stats (XP / ELO) turns on once the parser is validated against a real game
           file.
         </p>
-        <IngestPanel />
+        <IngestPanel headbandLabels={headbandLabels} />
       </section>
     </div>
   );

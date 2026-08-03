@@ -43,6 +43,10 @@ check("longest hold base 1", longest(1), 236);
 check("longest hold base 2", longest(2), 309);
 check("longest hold base 3", longest(3), 496);
 
+// Damage dealt per player (JSON-accurate: Σ actual per-hit damage).
+check("damage dealt by ids", [4, 5, 6, 7].map((p) => round.damage_dealt[p]), [250, 1075, 475, 2600]);
+check("Σ hold seconds > 0", Object.values(round.hold_seconds).reduce((a, b) => a + b, 0) > 0, true);
+
 // Cross-check sums.
 const sumFrags = Object.values(round.final_player_counters).reduce((a, c) => a + c.frags, 0);
 const sumCaps = Object.values(round.final_player_counters).reduce((a, c) => a + c.captures, 0);
