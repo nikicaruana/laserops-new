@@ -31,6 +31,8 @@ type EditRow = Participant & { extra: string[] };
 
 const cell =
   "h-10 w-full rounded-none border border-border-strong bg-bg px-2 text-sm text-text focus:border-accent focus:outline-none";
+const hbInput =
+  "h-10 w-16 rounded-none border border-border-strong bg-bg px-2 font-mono text-sm text-text focus:border-accent focus:outline-none";
 
 export type ParticipantPayment = { intent: string | null; paid: boolean };
 
@@ -187,7 +189,7 @@ export function MatchParticipantsManager({
                   <td className="px-3 py-2">
                     <div className="flex flex-wrap items-center gap-1.5">
                       <input
-                        className={`${cell} w-14 font-mono`}
+                        className={hbInput}
                         value={r.headset_label ?? ""}
                         onChange={(e) => setField(r.id, "headset_label", e.target.value)}
                         placeholder="—"
