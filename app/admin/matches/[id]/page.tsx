@@ -13,7 +13,7 @@ import { MatchAdminActions } from "@/components/admin/MatchAdminActions";
 import { EditableMatchTitle } from "@/components/admin/EditableMatchTitle";
 import { CopyInviteLink } from "@/components/portal/CopyInviteLink";
 import { MatchParticipantsManager, type Participant } from "@/components/admin/MatchParticipantsManager";
-import { IngestPanel } from "@/components/admin/IngestPanel";
+import { IngestPanel, type SavedRound } from "@/components/admin/IngestPanel";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -99,14 +99,20 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
 
   if (!match) notFound();
 
-  const [{ data: participantRows }, { data: gunRows }] = await Promise.all([
+  const [{ data: participantRows }, { data: gunRows }, { data: ingestRows }] = await Promise.all([
     supabase
       .from("match_participants")
       .select("id, account_id, headset_label, extra_headbands, gun_used, display_name, source, account:accounts(ops_tag, full_name)")
       .eq("match_id", id)
       .order("joined_at"),
     supabase.from("guns").select("name").order("name"),
+    supabase
+      .from("match_ingest_rounds")
+      .select("id, filename, parsed")
+      .eq("match_id", id)
+      .order("created_at"),
   ]);
+  const ingestRounds = (ingestRows ?? []) as unknown as SavedRound[];
 
   const signups = ((signupRows ?? []) as unknown as Signup[]).filter((s) => s.status !== "cancelled");
   const entries = (entryRows ?? []) as Entry[];
@@ -352,7 +358,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
           committing stats (XP / ELO) turns on once the parser is validated against a real game
           file.
         </p>
-        <IngestPanel headbandLabels={headbandLabels} />
+        <IngestPanel matchId={match.id} rounds={ingestRounds} headbandLabels={headbandLabels} />
       </section>
     </div>
   );

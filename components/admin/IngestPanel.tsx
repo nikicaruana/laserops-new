@@ -3,17 +3,20 @@
 /**
  * components/admin/IngestPanel.tsx
  * --------------------------------------------------------------------
- * Admin ingest PREVIEW. Drop one or more round JSON files; each is parsed in
- * the browser (pure parser, no upload) and shown as extracted facts — round
- * meta, per-player stats, captures, and any ingestion flags. Nothing is saved:
- * this is the "parse + preview, don't commit" step. Committing stats (writing
- * aggregates + XP/ELO) comes once the parser is validated against a real game
- * file.
+ * Admin ingest PREVIEW + STAGING. Drop one or more round JSON files; each is
+ * parsed in the browser, then SAVED to match_ingest_rounds (raw file + parsed
+ * jsonb) so it survives a refresh. Renders the persisted rounds as extracted
+ * facts. Nothing is written to player stats/XP/ELO yet — committing those is a
+ * separate, later step gated on real-file validation.
  */
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { parseRound, type Round } from "@/lib/ingestion/round-parser";
+import { createClient } from "@/lib/supabase/client";
 
-type Parsed = { name: string; round?: Round; error?: string };
+const OPERATOR_ID = "00000000-0000-0000-0000-000000000001";
+
+export type SavedRound = { id: string; filename: string | null; parsed: Round };
 
 const th = "px-2 py-2 text-left text-[0.55rem] font-semibold uppercase tracking-[0.1em] text-text-muted";
 const td = "px-2 py-1.5 text-sm";
@@ -25,51 +28,91 @@ const fmtHold = (s: number): string => {
   return `${m}:${String(sec).padStart(2, "0")}`;
 };
 
-export function IngestPanel({ headbandLabels = {} }: { headbandLabels?: Record<number, string> }) {
-  const [files, setFiles] = useState<Parsed[]>([]);
+export function IngestPanel({
+  matchId,
+  rounds,
+  headbandLabels = {},
+}: {
+  matchId: string;
+  rounds: SavedRound[];
+  headbandLabels?: Record<number, string>;
+}) {
+  const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const picked = Array.from(e.target.files ?? []);
     if (picked.length === 0) return;
     setBusy(true);
-    const out: Parsed[] = [];
+    setError(null);
+    const supabase = createClient();
     for (const f of picked) {
       try {
         const text = await f.text();
-        out.push({ name: f.name, round: parseRound(text) });
+        const parsed = parseRound(text);
+        const { error: err } = await supabase.from("match_ingest_rounds").insert({
+          operator_id: OPERATOR_ID,
+          match_id: matchId,
+          filename: f.name,
+          raw_file: text,
+          parsed,
+        });
+        if (err) {
+          setError(`${f.name}: ${err.message}`);
+          break;
+        }
       } catch (err) {
-        out.push({ name: f.name, error: err instanceof Error ? err.message : "Couldn't parse this file." });
+        setError(`${f.name}: ${err instanceof Error ? err.message : "Couldn't parse"}`);
+        break;
       }
     }
-    setFiles(out);
     setBusy(false);
     e.target.value = "";
+    router.refresh();
+  }
+
+  async function remove(id: string) {
+    if (!window.confirm("Remove this ingested round?")) return;
+    setBusy(true);
+    const supabase = createClient();
+    const { error: err } = await supabase.from("match_ingest_rounds").delete().eq("id", id);
+    setBusy(false);
+    if (err) return setError(err.message);
+    router.refresh();
   }
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-4 border border-border bg-bg-elevated px-4 py-4">
         <label className="inline-flex cursor-pointer items-center gap-2 border border-accent bg-accent px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-bg">
-          {busy ? "Parsing…" : "Choose round file(s)"}
-          <input type="file" accept=".json,application/json" multiple onChange={onPick} className="hidden" />
+          {busy ? "Saving…" : "Choose round file(s)"}
+          <input type="file" accept=".json,application/json" multiple onChange={onPick} className="hidden" disabled={busy} />
         </label>
         <p className="text-[0.7rem] text-text-subtle">
-          One JSON file per round. Parsed in your browser for preview — nothing is saved yet.
+          One JSON file per round. Parsed + saved to this match — preview only, no stats written yet.
         </p>
-        {files.length > 0 && (
-          <button
-            type="button"
-            onClick={() => setFiles([])}
-            className="ml-auto text-[0.65rem] font-semibold uppercase tracking-[0.1em] text-text-subtle hover:text-accent"
-          >
-            Clear
-          </button>
-        )}
       </div>
 
-      {files.map((f, i) => (
-        <RoundPreview key={`${f.name}-${i}`} name={f.name} parsed={f} index={i + 1} headbandLabels={headbandLabels} />
+      {error && (
+        <p className="border border-red-800 bg-red-950/40 px-4 py-3 text-sm text-red-400">{error}</p>
+      )}
+
+      {rounds.length === 0 && (
+        <p className="border border-dashed border-border px-4 py-8 text-center text-sm text-text-muted">
+          No round files ingested yet.
+        </p>
+      )}
+
+      {rounds.map((sr, i) => (
+        <RoundPreview
+          key={sr.id}
+          name={sr.filename ?? `round ${i + 1}`}
+          round={sr.parsed}
+          index={i + 1}
+          headbandLabels={headbandLabels}
+          onRemove={() => remove(sr.id)}
+        />
       ))}
     </div>
   );
@@ -77,24 +120,17 @@ export function IngestPanel({ headbandLabels = {} }: { headbandLabels?: Record<n
 
 function RoundPreview({
   name,
-  parsed,
+  round: r,
   index,
   headbandLabels,
+  onRemove,
 }: {
   name: string;
-  parsed: Parsed;
+  round: Round;
   index: number;
   headbandLabels: Record<number, string>;
+  onRemove: () => void;
 }) {
-  if (parsed.error || !parsed.round) {
-    return (
-      <div className="border border-red-800 bg-red-950/40 px-4 py-3">
-        <p className="text-sm font-semibold text-red-400">{name}</p>
-        <p className="text-xs text-red-400/80">{parsed.error ?? "Parse failed."}</p>
-      </div>
-    );
-  }
-  const r = parsed.round;
   const kills = r.events.kills.length;
   const hits = r.events.damage.length;
   const captures = r.events.captures.length;
@@ -118,11 +154,20 @@ function RoundPreview({
     <div className="border border-border bg-bg-elevated">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-2.5">
         <span className="font-mono text-xs text-text-muted">{name}</span>
-        {r.ingestion_flags.length > 0 && (
-          <span className="text-[0.6rem] font-bold uppercase tracking-[0.1em] text-amber-300">
-            {r.ingestion_flags.length} flag{r.ingestion_flags.length === 1 ? "" : "s"}
-          </span>
-        )}
+        <div className="flex items-center gap-3">
+          {r.ingestion_flags.length > 0 && (
+            <span className="text-[0.6rem] font-bold uppercase tracking-[0.1em] text-amber-300">
+              {r.ingestion_flags.length} flag{r.ingestion_flags.length === 1 ? "" : "s"}
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={onRemove}
+            className="text-[0.6rem] font-bold uppercase tracking-[0.1em] text-text-subtle hover:text-red-400"
+          >
+            Remove
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-px border-b border-border bg-border sm:grid-cols-5">
@@ -135,7 +180,7 @@ function RoundPreview({
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[560px]">
+        <table className="w-full min-w-[620px]">
           <thead className="border-b border-border">
             <tr>
               <th className={th}>Headband</th>
