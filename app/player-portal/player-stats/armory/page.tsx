@@ -67,17 +67,18 @@ export default async function PlayerArmoryPage({
 
 async function ArmoryContent({ ops }: { ops: string }) {
   const supabase = await createClient();
-  const [armoryRows, weapons, excludedNicknames] = await Promise.all([
+  const [armoryRows, weapons, excludedNicknames, { data: adminRow }] = await Promise.all([
     getPlayerArmoryRows(supabase, ops),
     getWeaponsFromSupabase(),
     getExcludedNicknamesFromSupabase(),
+    supabase.from("accounts").select("is_admin").ilike("ops_tag", ops).maybeSingle(),
   ]);
 
   let filtered = armoryRows;
 
-  // Excluded (admin/owner) players have all guns treated as unlocked so
-  // they can test weapons before the DATA sheet is updated, without their
-  // stats being hidden from armory charts and detail panels.
+  // Excluded (owner/staff) players AND admins have all guns treated as
+  // unlocked so they can test weapons before the armory data is updated,
+  // without their stats being hidden from armory charts and detail panels.
   //
   // For originally-locked rows we also:
   //   - clear gunDisplayTitle (the sheet may store the unlock criteria text
@@ -85,7 +86,8 @@ async function ArmoryContent({ ops }: { ops: string }) {
   //   - redirect gunPlayerImage to gunUsedImg (the precomputed image is the
   //     locked silhouette; swapping to the actual gun image avoids showing
   //     a de-blurred silhouette)
-  if (filtered.length > 0 && isPrizeIneligible(ops, excludedNicknames)) {
+  const unlockAll = isPrizeIneligible(ops, excludedNicknames) || adminRow?.is_admin === true;
+  if (filtered.length > 0 && unlockAll) {
     filtered = filtered.map((row) => {
       if (row.gunIsUnlocked) return row; // already unlocked — leave as-is
       return {
