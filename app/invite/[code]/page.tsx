@@ -29,6 +29,7 @@ type Game = {
   pricing_mode: string | null;
   registered_count: number | null;
   is_double_xp: boolean | null;
+  is_private: boolean | null;
 };
 
 const ACTION_IMAGES = ["action-1.jpg", "action-2.jpg", "action-3.jpg", "action-4.jpg", "action-5.jpg", "action-6.jpg"];
@@ -60,7 +61,7 @@ export default async function GameInvitePage({ params }: { params: Promise<{ cod
   const { data: match } = await supabase
     .from("matches")
     .select(
-      "id, title, status, scheduled_at, min_players, max_players, price_eur, pricing_mode, registered_count, is_double_xp",
+      "id, title, status, scheduled_at, min_players, max_players, price_eur, pricing_mode, registered_count, is_double_xp, is_private",
     )
     .eq("invite_code", code)
     .maybeSingle();
@@ -98,6 +99,7 @@ export default async function GameInvitePage({ params }: { params: Promise<{ cod
   const pct = Math.min(100, Math.round((reg / Math.max(1, min)) * 100));
   const showPrice = g.price_eur != null && g.pricing_mode === "per_player";
   const backHref = `/invite/${code}`;
+  const canJoin = g.status === "live" && mySignup?.status === "registered";
 
   return (
     <section className="relative isolate flex min-h-[calc(100svh-72px)] items-center justify-center overflow-hidden py-16">
@@ -153,15 +155,29 @@ export default async function GameInvitePage({ params }: { params: Promise<{ cod
         {/* CTA */}
         <div className="mt-7 border-t border-white/10 pt-6">
           {user && accountId ? (
-            <div className="flex flex-col items-center gap-3">
-              <GameSignupControl
-                matchId={g.id}
-                accountId={accountId}
-                status={g.status}
-                isFull={isFull}
-                mySignup={mySignup}
-              />
-            </div>
+            canJoin ? (
+              <Link
+                href={`/player-portal/games/${g.id}/join`}
+                className="inline-flex items-center gap-2 border border-accent bg-accent px-6 py-3 text-sm font-bold uppercase tracking-[0.12em] text-bg transition-transform active:scale-[0.98]"
+              >
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-bg" />
+                Join game
+              </Link>
+            ) : g.is_private ? (
+              <p className="text-sm text-white/70">
+                This is a private booking. A marshal will add you to the game on the day.
+              </p>
+            ) : (
+              <div className="flex flex-col items-center gap-3">
+                <GameSignupControl
+                  matchId={g.id}
+                  accountId={accountId}
+                  status={g.status}
+                  isFull={isFull}
+                  mySignup={mySignup}
+                />
+              </div>
+            )
           ) : (
             <div>
               <p className="mb-4 text-sm text-white/70">Sign in or create an account to lock in your spot.</p>
