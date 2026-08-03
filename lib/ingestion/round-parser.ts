@@ -99,6 +99,9 @@ export type Round = {
   damage_dealt: Record<number, number>;
   /** Capture/hold time per player = Σ seconds the bases they captured were held. */
   hold_seconds: Record<number, number>;
+  /** Spawn-flagged kills / damage-hits BY each player (the shooter) — who's spawn camping. */
+  spawn_kills_by: Record<number, number>;
+  spawn_damage_by: Record<number, number>;
   ingestion_flags: IngestionFlag[];
 };
 
@@ -421,6 +424,12 @@ export function parseRound(text: string): Round {
     }
     return best;
   };
+  const spawn_kills_by: Record<number, number> = {};
+  const spawn_damage_by: Record<number, number> = {};
+  for (const pid of playerIds) {
+    spawn_kills_by[pid] = 0;
+    spawn_damage_by[pid] = 0;
+  }
   let spawnDamage = 0;
   let spawnKills = 0;
   for (const d of damage) {
@@ -428,6 +437,7 @@ export function parseRound(text: string): Round {
     if (rs != null && toEpoch(d.time) - rs <= SPAWN_WINDOW_SECONDS) {
       d.is_spawn_damage = true;
       spawnDamage++;
+      if (spawn_damage_by[d.actor_id] != null) spawn_damage_by[d.actor_id]++;
     }
   }
   for (const k of kills) {
@@ -435,6 +445,7 @@ export function parseRound(text: string): Round {
     if (rs != null && toEpoch(k.time) - rs <= SPAWN_WINDOW_SECONDS) {
       k.is_spawn_kill = true;
       spawnKills++;
+      if (spawn_kills_by[k.actor_id] != null) spawn_kills_by[k.actor_id]++;
     }
   }
   if (spawnDamage > 0) flags.push({ code: "spawn_damage", detail: String(spawnDamage) });
@@ -458,6 +469,8 @@ export function parseRound(text: string): Round {
     final_player_counters,
     damage_dealt,
     hold_seconds,
+    spawn_kills_by,
+    spawn_damage_by,
     ingestion_flags: flags,
   };
 }

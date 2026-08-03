@@ -180,7 +180,7 @@ function RoundPreview({
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[620px]">
+        <table className="w-full min-w-[760px]">
           <thead className="border-b border-border">
             <tr>
               <th className={th}>Headband</th>
@@ -192,6 +192,8 @@ function RoundPreview({
               <th className={`${th} text-right`}>Dmg</th>
               <th className={`${th} text-right`}>Caps</th>
               <th className={`${th} text-right`}>Cap time</th>
+              <th className={`${th} text-right`} title="Spawn kills dealt">Sp.K</th>
+              <th className={`${th} text-right`} title="Spawn-damage hits dealt">Sp.Dmg</th>
             </tr>
           </thead>
           <tbody>
@@ -209,6 +211,8 @@ function RoundPreview({
                   <td className={`${td} text-right font-mono tabular-nums text-text-muted`}>{r.damage_dealt[p.in_game_player_id] ?? 0}</td>
                   <td className={`${td} text-right font-mono tabular-nums text-text-muted`}>{c?.captures ?? 0}</td>
                   <td className={`${td} text-right font-mono tabular-nums text-text-muted`}>{fmtHold(r.hold_seconds[p.in_game_player_id] ?? 0)}</td>
+                  <td className={`${td} text-right font-mono tabular-nums ${(r.spawn_kills_by[p.in_game_player_id] ?? 0) > 0 ? "text-amber-300" : "text-text-subtle"}`}>{r.spawn_kills_by[p.in_game_player_id] ?? 0}</td>
+                  <td className={`${td} text-right font-mono tabular-nums ${(r.spawn_damage_by[p.in_game_player_id] ?? 0) > 0 ? "text-amber-300" : "text-text-subtle"}`}>{r.spawn_damage_by[p.in_game_player_id] ?? 0}</td>
                 </tr>
               );
             })}

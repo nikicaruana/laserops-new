@@ -32,14 +32,26 @@ type EditRow = Participant & { extra: string[] };
 const cell =
   "h-10 w-full rounded-none border border-border-strong bg-bg px-2 text-sm text-text focus:border-accent focus:outline-none";
 
+export type ParticipantPayment = { intent: string | null; paid: boolean };
+
+function payLabel(p: ParticipantPayment | undefined): { text: string; className: string } {
+  if (!p) return { text: "No signup", className: "text-text-subtle" };
+  if (p.paid) return { text: "Paid", className: "text-accent" };
+  if (p.intent === "on_day") return { text: "On the day", className: "text-amber-300" };
+  if (p.intent === "online") return { text: "Unpaid", className: "text-text-subtle" };
+  return { text: "Not chosen", className: "text-text-subtle" };
+}
+
 export function MatchParticipantsManager({
   matchId,
   initial,
   guns,
+  payments = {},
 }: {
   matchId: string;
   initial: Participant[];
   guns: string[];
+  payments?: Record<string, ParticipantPayment>;
 }) {
   const router = useRouter();
   const [rows, setRows] = useState<EditRow[]>(
@@ -148,6 +160,7 @@ export function MatchParticipantsManager({
               <th className="px-3 py-3 font-semibold">Ops tag</th>
               <th className="px-3 py-3 font-semibold">Headband(s)</th>
               <th className="px-3 py-3 font-semibold">Gun</th>
+              <th className="px-3 py-3 font-semibold">Payment</th>
               <th className="px-3 py-3 text-center font-semibold">Source</th>
               <th className="px-3 py-3" />
             </tr>
@@ -157,7 +170,7 @@ export function MatchParticipantsManager({
               const linked = Boolean(r.account_id);
               const name = r.account?.full_name || r.account?.ops_tag;
               return (
-                <tr key={r.id} className="border-b border-border align-top last:border-0">
+                <tr key={r.id} className="border-b border-border align-middle last:border-0">
                   <td className="px-3 py-2">
                     {linked ? (
                       <span className="font-semibold text-text">{name ?? "Player"}</span>
@@ -174,7 +187,7 @@ export function MatchParticipantsManager({
                   <td className="px-3 py-2">
                     <div className="flex flex-wrap items-center gap-1.5">
                       <input
-                        className={`${cell} w-20 font-mono`}
+                        className={`${cell} w-14 font-mono`}
                         value={r.headset_label ?? ""}
                         onChange={(e) => setField(r.id, "headset_label", e.target.value)}
                         placeholder="—"
@@ -210,6 +223,16 @@ export function MatchParticipantsManager({
                     </div>
                   </td>
                   <td className="px-3 py-2">{gunSelect(r.gun_used ?? "", (v) => setField(r.id, "gun_used", v))}</td>
+                  <td className="px-3 py-2 text-xs">
+                    {r.account_id ? (
+                      (() => {
+                        const l = payLabel(payments[r.account_id]);
+                        return <span className={l.className}>{l.text}</span>;
+                      })()
+                    ) : (
+                      <span className="text-text-subtle">—</span>
+                    )}
+                  </td>
                   <td className="px-3 py-2 text-center text-[0.6rem] uppercase tracking-[0.1em] text-text-subtle">
                     {r.source === "admin" ? "Added" : "Joined"}
                   </td>
@@ -236,7 +259,7 @@ export function MatchParticipantsManager({
             })}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-3 py-8 text-center text-sm text-text-muted">
+                <td colSpan={7} className="px-3 py-8 text-center text-sm text-text-muted">
                   No players on this match yet. Add them below or let signed-up players join live.
                 </td>
               </tr>

@@ -12,7 +12,7 @@ import { MatchStatusBadge } from "@/components/admin/MatchStatusBadge";
 import { MatchAdminActions } from "@/components/admin/MatchAdminActions";
 import { EditableMatchTitle } from "@/components/admin/EditableMatchTitle";
 import { CopyInviteLink } from "@/components/portal/CopyInviteLink";
-import { MatchParticipantsManager, type Participant } from "@/components/admin/MatchParticipantsManager";
+import { MatchParticipantsManager, type Participant, type ParticipantPayment } from "@/components/admin/MatchParticipantsManager";
 import { IngestPanel, type SavedRound } from "@/components/admin/IngestPanel";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
@@ -40,6 +40,7 @@ type Entry = {
 
 type Signup = {
   id: string;
+  account_id: string | null;
   payment_intent: string | null;
   status: string | null;
   paid_at: string | null;
@@ -85,7 +86,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
       .maybeSingle(),
     supabase
       .from("match_signups")
-      .select("id, payment_intent, status, paid_at, created_at, phone, account:accounts(ops_tag, full_name)")
+      .select("id, account_id, payment_intent, status, paid_at, created_at, phone, account:accounts(ops_tag, full_name)")
       .eq("match_id", id)
       .order("created_at"),
     supabase
@@ -115,6 +116,10 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   const ingestRounds = (ingestRows ?? []) as unknown as SavedRound[];
 
   const signups = ((signupRows ?? []) as unknown as Signup[]).filter((s) => s.status !== "cancelled");
+  const payments: Record<string, ParticipantPayment> = {};
+  for (const s of signups) {
+    if (s.account_id) payments[s.account_id] = { intent: s.payment_intent, paid: Boolean(s.paid_at) };
+  }
   const entries = (entryRows ?? []) as Entry[];
   const participants = (participantRows ?? []) as unknown as Participant[];
   const guns = ((gunRows ?? []) as { name: string }[]).map((g) => g.name).filter(Boolean);
@@ -226,7 +231,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
             Players in the match with their headband and gun. Signed-up players join live with the
             code; add walk-ins (e.g. private-booking guests) by hand.
           </p>
-          <MatchParticipantsManager matchId={match.id} initial={participants} guns={guns} />
+          <MatchParticipantsManager matchId={match.id} initial={participants} guns={guns} payments={payments} />
         </section>
       )}
 
