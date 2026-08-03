@@ -18,12 +18,15 @@ type ArmoryRow = {
 
 export async function getUnlockedGuns(
   supabase: SupabaseClient,
-  accountId: string,
+  opsTag: string | null | undefined,
 ): Promise<UnlockedGun[]> {
+  if (!opsTag || !opsTag.trim()) return [];
+  // Armory rows are keyed by nickname (ops_tag); account_id is null on
+  // unresolved rows, so match on nickname like the canonical armory adapter.
   const { data } = await supabase
     .from("player_armory")
     .select("gun_name, gun_display_title, gun_used_img, gun_player_image, gun_sort_order")
-    .eq("account_id", accountId)
+    .ilike("nickname", opsTag.trim())
     .eq("gun_is_unlocked", true)
     .order("gun_sort_order");
 
