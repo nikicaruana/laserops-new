@@ -4,14 +4,15 @@
  * components/portal/JoinMatchForm.tsx
  * --------------------------------------------------------------------
  * A signed-up player joins a live match: enter the 4-digit code the marshal
- * calls out, their headband number, and the gun they're using (from their
- * unlocked armory). Calls the join_live_match RPC, which verifies the code +
- * signup + live status server-side. On success shows a confirmation.
+ * calls out, their headband number, and pick a gun from their unlocked armory
+ * (carousel). Defaults to the gun they booked at signup, if any. Calls the
+ * join_live_match RPC, which verifies the code + signup + live status.
  */
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
+import { GunCarousel, type CarouselGun } from "@/components/portal/GunCarousel";
 
 const input =
   "h-12 w-full rounded-none border border-border-strong bg-bg-elevated px-4 text-sm text-text placeholder:text-text-subtle focus:border-accent focus:outline-none";
@@ -21,18 +22,22 @@ export function JoinMatchForm({
   matchId,
   guns,
   initial,
+  bookedGun,
 }: {
   matchId: string;
-  guns: string[];
+  guns: CarouselGun[];
   initial: { headband: string | null; gun: string | null } | null;
+  bookedGun: string | null;
 }) {
   const router = useRouter();
   const [code, setCode] = useState("");
   const [headband, setHeadband] = useState(initial?.headband ?? "");
-  const [gun, setGun] = useState(initial?.gun ?? (guns[0] ?? ""));
+  const [gun, setGun] = useState(initial?.gun ?? bookedGun ?? guns[0]?.name ?? "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [joined, setJoined] = useState(false);
+
+  const gunLabel = guns.find((g) => g.name === gun)?.label ?? gun;
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -64,7 +69,7 @@ export function JoinMatchForm({
           {gun && (
             <>
               {" "}
-              · <span className="font-semibold text-text">{gun}</span>
+              · <span className="font-semibold text-text">{gunLabel}</span>
             </>
           )}
         </p>
@@ -76,7 +81,7 @@ export function JoinMatchForm({
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
+    <form onSubmit={onSubmit} className="space-y-5">
       <div>
         <label className={lbl}>Entry code</label>
         <input
@@ -102,23 +107,13 @@ export function JoinMatchForm({
       </div>
 
       <div>
-        <label className={lbl}>Your gun</label>
+        <label className={lbl}>
+          Your gun{bookedGun && gun === bookedGun ? " · booked" : ""}
+        </label>
         {guns.length > 0 ? (
-          <select className={input} value={gun} onChange={(e) => setGun(e.target.value)}>
-            {guns.map((g) => (
-              <option key={g} value={g}>{g}</option>
-            ))}
-          </select>
+          <GunCarousel guns={guns} value={gun} onChange={setGun} />
         ) : (
-          <input
-            className={input}
-            value={gun}
-            onChange={(e) => setGun(e.target.value)}
-            placeholder="Gun name"
-          />
-        )}
-        {guns.length > 0 && (
-          <p className="mt-1 text-[0.7rem] text-text-subtle">Pick from the guns you&rsquo;ve unlocked.</p>
+          <input className={input} value={gun} onChange={(e) => setGun(e.target.value)} placeholder="Gun name" />
         )}
       </div>
 

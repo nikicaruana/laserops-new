@@ -11,6 +11,7 @@ import { redirect, notFound } from "next/navigation";
 import { Container } from "@/components/ui/Container";
 import { createClient } from "@/lib/supabase/server";
 import { JoinMatchForm } from "@/components/portal/JoinMatchForm";
+import { getUnlockedGuns } from "@/lib/matches/guns";
 
 export const metadata: Metadata = { title: "Join game", robots: { index: false, follow: false } };
 
@@ -43,19 +44,14 @@ export default async function JoinMatchPage({ params }: { params: Promise<{ id: 
     .maybeSingle();
   if (!match) notFound();
 
-  const [{ data: signup }, { data: armory }, { data: participant }] = await Promise.all([
+  const [{ data: signup }, guns, { data: participant }] = await Promise.all([
     supabase
       .from("match_signups")
-      .select("status")
+      .select("status, booked_gun")
       .eq("match_id", id)
       .eq("account_id", account.id)
       .maybeSingle(),
-    supabase
-      .from("player_armory")
-      .select("gun_name, gun_sort_order")
-      .eq("account_id", account.id)
-      .eq("gun_is_unlocked", true)
-      .order("gun_sort_order"),
+    getUnlockedGuns(supabase, account.id),
     supabase
       .from("match_participants")
       .select("headset_label, gun_used")
@@ -64,9 +60,6 @@ export default async function JoinMatchPage({ params }: { params: Promise<{ id: 
       .maybeSingle(),
   ]);
 
-  const guns = Array.from(
-    new Set(((armory ?? []) as { gun_name: string }[]).map((a) => a.gun_name).filter(Boolean)),
-  );
   const isRegistered = signup?.status === "registered";
 
   return (
@@ -104,6 +97,7 @@ export default async function JoinMatchPage({ params }: { params: Promise<{ id: 
             <JoinMatchForm
               matchId={match.id}
               guns={guns}
+              bookedGun={signup?.booked_gun ?? null}
               initial={
                 participant
                   ? { headband: participant.headset_label ?? null, gun: participant.gun_used ?? null }

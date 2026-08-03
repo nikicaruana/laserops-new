@@ -14,6 +14,7 @@ import { Container } from "@/components/ui/Container";
 import { createClient } from "@/lib/supabase/server";
 import { GameSignupControl } from "@/components/portal/GameSignupControl";
 import { MatchStatusBadge } from "@/components/admin/MatchStatusBadge";
+import { getUnlockedGuns } from "@/lib/matches/guns";
 
 export const metadata: Metadata = { title: "Upcoming Games" };
 
@@ -31,7 +32,13 @@ type Game = {
   is_double_xp: boolean | null;
 };
 
-type MySignup = { match_id: string; payment_intent: string | null; status: string | null; paid_at: string | null };
+type MySignup = {
+  match_id: string;
+  payment_intent: string | null;
+  status: string | null;
+  paid_at: string | null;
+  booked_gun: string | null;
+};
 
 const ACTIVE = ["tentative", "awaiting_confirm", "confirmed", "live"];
 
@@ -77,10 +84,13 @@ export default async function GamesPage() {
   const selectCols =
     "id, match_code, title, status, scheduled_at, min_players, max_players, price_eur, pricing_mode, registered_count, is_double_xp";
 
-  const { data: signupRows } = await supabase
-    .from("match_signups")
-    .select("match_id, payment_intent, status, paid_at")
-    .eq("account_id", account.id);
+  const [{ data: signupRows }, guns] = await Promise.all([
+    supabase
+      .from("match_signups")
+      .select("match_id, payment_intent, status, paid_at, booked_gun")
+      .eq("account_id", account.id),
+    getUnlockedGuns(supabase, account.id),
+  ]);
 
   const mine = new Map<string, MySignup>();
   for (const s of (signupRows ?? []) as MySignup[]) mine.set(s.match_id, s);
@@ -168,6 +178,7 @@ export default async function GamesPage() {
               status={g.status}
               isFull={isFull}
               mySignup={mySignup}
+              guns={guns}
             />
           )}
         </div>

@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/Button";
 import { Logo } from "@/components/ui/Logo";
 import { createClient } from "@/lib/supabase/server";
 import { GameSignupControl } from "@/components/portal/GameSignupControl";
+import { getUnlockedGuns, type UnlockedGun } from "@/lib/matches/guns";
 
 export const metadata: Metadata = { title: "Game invite", robots: { index: false, follow: false } };
 
@@ -74,7 +75,8 @@ export default async function GameInvitePage({ params }: { params: Promise<{ cod
   } = await supabase.auth.getUser();
 
   let accountId: string | null = null;
-  let mySignup: { payment_intent: string | null; status: string | null; paid_at: string | null } | null = null;
+  let mySignup: { payment_intent: string | null; status: string | null; paid_at: string | null; booked_gun: string | null } | null = null;
+  let guns: UnlockedGun[] = [];
   if (user) {
     const { data: account } = await supabase
       .from("accounts")
@@ -83,13 +85,17 @@ export default async function GameInvitePage({ params }: { params: Promise<{ cod
       .maybeSingle();
     accountId = account?.id ?? null;
     if (accountId) {
-      const { data: s } = await supabase
-        .from("match_signups")
-        .select("payment_intent, status, paid_at")
-        .eq("match_id", g.id)
-        .eq("account_id", accountId)
-        .maybeSingle();
+      const [{ data: s }, g2] = await Promise.all([
+        supabase
+          .from("match_signups")
+          .select("payment_intent, status, paid_at, booked_gun")
+          .eq("match_id", g.id)
+          .eq("account_id", accountId)
+          .maybeSingle(),
+        getUnlockedGuns(supabase, accountId),
+      ]);
       mySignup = s ?? null;
+      guns = g2;
     }
   }
 
@@ -171,6 +177,7 @@ export default async function GameInvitePage({ params }: { params: Promise<{ cod
                   status={g.status}
                   isFull={isFull}
                   mySignup={mySignup}
+                  guns={guns}
                 />
               </div>
             )
