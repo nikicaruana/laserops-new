@@ -19,16 +19,19 @@ type ArmoryRow = {
 export async function getUnlockedGuns(
   supabase: SupabaseClient,
   opsTag: string | null | undefined,
+  opts: { includeLocked?: boolean } = {},
 ): Promise<UnlockedGun[]> {
   if (!opsTag || !opsTag.trim()) return [];
   // Armory rows are keyed by nickname (ops_tag); account_id is null on
   // unresolved rows, so match on nickname like the canonical armory adapter.
-  const { data } = await supabase
+  // includeLocked (admins) returns the whole catalogue, not just unlocked guns.
+  let query = supabase
     .from("player_armory")
     .select("gun_name, gun_display_title, gun_used_img, gun_player_image, gun_sort_order")
     .ilike("nickname", opsTag.trim())
-    .eq("gun_is_unlocked", true)
     .order("gun_sort_order");
+  if (!opts.includeLocked) query = query.eq("gun_is_unlocked", true);
+  const { data } = await query;
 
   const seen = new Set<string>();
   const out: UnlockedGun[] = [];

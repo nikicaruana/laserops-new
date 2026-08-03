@@ -65,7 +65,7 @@ export default async function GamesPage() {
 
   const { data: account } = await supabase
     .from("accounts")
-    .select("id, ops_tag")
+    .select("id, ops_tag, is_admin")
     .eq("auth_user_id", user.id)
     .maybeSingle();
 
@@ -89,7 +89,7 @@ export default async function GamesPage() {
       .from("match_signups")
       .select("match_id, payment_intent, status, paid_at, booked_gun")
       .eq("account_id", account.id),
-    getUnlockedGuns(supabase, account.ops_tag),
+    getUnlockedGuns(supabase, account.ops_tag, { includeLocked: account.is_admin === true }),
   ]);
 
   const mine = new Map<string, MySignup>();

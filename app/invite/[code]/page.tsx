@@ -80,7 +80,7 @@ export default async function GameInvitePage({ params }: { params: Promise<{ cod
   if (user) {
     const { data: account } = await supabase
       .from("accounts")
-      .select("id, ops_tag")
+      .select("id, ops_tag, is_admin")
       .eq("auth_user_id", user.id)
       .maybeSingle();
     accountId = account?.id ?? null;
@@ -92,7 +92,7 @@ export default async function GameInvitePage({ params }: { params: Promise<{ cod
           .eq("match_id", g.id)
           .eq("account_id", accountId)
           .maybeSingle(),
-        getUnlockedGuns(supabase, account?.ops_tag),
+        getUnlockedGuns(supabase, account?.ops_tag, { includeLocked: account?.is_admin === true }),
       ]);
       mySignup = s ?? null;
       guns = g2;

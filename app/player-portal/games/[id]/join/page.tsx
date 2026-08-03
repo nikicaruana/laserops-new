@@ -26,7 +26,7 @@ export default async function JoinMatchPage({ params }: { params: Promise<{ id: 
 
   const { data: account } = await supabase
     .from("accounts")
-    .select("id, ops_tag")
+    .select("id, ops_tag, is_admin")
     .eq("auth_user_id", user.id)
     .maybeSingle();
   if (!account) {
@@ -51,7 +51,7 @@ export default async function JoinMatchPage({ params }: { params: Promise<{ id: 
       .eq("match_id", id)
       .eq("account_id", account.id)
       .maybeSingle(),
-    getUnlockedGuns(supabase, account.ops_tag),
+    getUnlockedGuns(supabase, account.ops_tag, { includeLocked: account.is_admin === true }),
     supabase
       .from("match_participants")
       .select("headset_label, gun_used")
