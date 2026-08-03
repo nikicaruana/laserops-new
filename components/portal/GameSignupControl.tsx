@@ -46,6 +46,7 @@ export function GameSignupControl({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [booking, setBooking] = useState(false);
+  const [phone, setPhone] = useState("");
   const [pendingGun, setPendingGun] = useState(mySignup?.booked_gun ?? guns[0]?.name ?? "");
 
   const open = status === "tentative" || status === "awaiting_confirm" || status === "confirmed";
@@ -61,7 +62,7 @@ export function GameSignupControl({
     const { error: err } = await supabase
       .from("match_signups")
       .upsert(
-        { match_id: matchId, account_id: accountId, status: "registered" },
+        { match_id: matchId, account_id: accountId, status: "registered", phone: phone.trim() || null },
         { onConflict: "match_id,account_id" },
       );
     setBusy(false);
@@ -180,6 +181,14 @@ export function GameSignupControl({
 
   return (
     <div className={`flex flex-col gap-2 ${col}`}>
+      <input
+        type="tel"
+        inputMode="tel"
+        value={phone}
+        onChange={(e) => setPhone(e.target.value)}
+        placeholder="Phone (optional)"
+        className="h-10 w-52 max-w-full rounded-none border border-border-strong bg-bg-elevated px-3 text-sm text-text placeholder:text-text-subtle focus:border-accent focus:outline-none"
+      />
       <button
         type="button"
         onClick={signUp}

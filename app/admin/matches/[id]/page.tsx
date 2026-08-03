@@ -43,6 +43,7 @@ type Signup = {
   status: string | null;
   paid_at: string | null;
   created_at: string | null;
+  phone: string | null;
   account: { ops_tag: string | null; full_name: string | null } | null;
 };
 
@@ -83,7 +84,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
       .maybeSingle(),
     supabase
       .from("match_signups")
-      .select("id, payment_intent, status, paid_at, created_at, account:accounts(ops_tag, full_name)")
+      .select("id, payment_intent, status, paid_at, created_at, phone, account:accounts(ops_tag, full_name)")
       .eq("match_id", id)
       .order("created_at"),
     supabase
@@ -226,6 +227,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
                 <thead>
                   <tr className="border-b border-border bg-bg-elevated text-[0.6rem] uppercase tracking-[0.14em] text-text-muted">
                     <th className="px-4 py-3 font-semibold">Player</th>
+                    <th className="px-4 py-3 font-semibold">Phone</th>
                     <th className="px-4 py-3 font-semibold">Paying</th>
                     <th className="px-4 py-3 font-semibold">Payment</th>
                     <th className="px-4 py-3 font-semibold">Signed up</th>
@@ -240,16 +242,19 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
                           <span className="ml-2 font-mono text-xs text-text-subtle">{s.account.ops_tag}</span>
                         )}
                       </td>
+                      <td className="px-4 py-3 font-mono text-text-muted">{s.phone || "—"}</td>
                       <td className="px-4 py-3 text-text-muted">
-                        {s.payment_intent === "on_day" ? "On the day" : "Online"}
+                        {s.payment_intent === "on_day" ? "On the day" : s.payment_intent === "online" ? "Online" : "Not chosen"}
                       </td>
                       <td className="px-4 py-3">
                         {s.paid_at ? (
                           <span className="text-accent">Paid</span>
                         ) : s.payment_intent === "on_day" ? (
                           <span className="text-amber-300">Due on day</span>
-                        ) : (
+                        ) : s.payment_intent === "online" ? (
                           <span className="text-text-subtle">Unpaid</span>
+                        ) : (
+                          <span className="text-text-subtle">—</span>
                         )}
                       </td>
                       <td className="px-4 py-3 text-text-muted">{fmtDateTime(s.created_at, null)}</td>
