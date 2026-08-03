@@ -13,6 +13,7 @@ import { MatchAdminActions } from "@/components/admin/MatchAdminActions";
 import { EditableMatchTitle } from "@/components/admin/EditableMatchTitle";
 import { CopyInviteLink } from "@/components/portal/CopyInviteLink";
 import { MatchParticipantsManager, type Participant } from "@/components/admin/MatchParticipantsManager";
+import { IngestPanel } from "@/components/admin/IngestPanel";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -328,12 +329,19 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
               </table>
             </div>
           )}
-          <p className="mt-4 text-[0.65rem] text-text-subtle">
-            Adding, editing, and merging entries and JSON/CSV ingestion arrive in the next Match
-            Manager phases.
-          </p>
         </section>
       )}
+
+      {/* Ingest data (preview) */}
+      <section className="mt-10">
+        <h2 className="mb-1 text-sm font-bold uppercase tracking-[0.12em] text-accent">Ingest data</h2>
+        <p className="mb-3 text-xs text-text-muted">
+          Upload the round JSON file(s) to preview the extracted stats. Preview only for now —
+          committing stats (XP / ELO) turns on once the parser is validated against a real game
+          file.
+        </p>
+        <IngestPanel />
+      </section>
     </div>
   );
 }
