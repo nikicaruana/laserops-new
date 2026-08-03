@@ -198,7 +198,7 @@ function RoundPreview({
           </thead>
           <tbody>
             {r.players.map((p) => {
-              const c = r.final_player_counters[p.in_game_player_id];
+              const c = r.final_player_counters?.[p.in_game_player_id];
               const label = (p.headband_no != null && headbandLabels[p.headband_no]) || p.name;
               return (
                 <tr key={p.in_game_player_id} className="border-b border-border/60 last:border-0">
@@ -208,11 +208,11 @@ function RoundPreview({
                   <td className={`${td} text-right font-mono tabular-nums text-text`}>{c?.score ?? 0}</td>
                   <td className={`${td} text-right font-mono tabular-nums text-text-muted`}>{c?.frags ?? 0}</td>
                   <td className={`${td} text-right font-mono tabular-nums text-text-muted`}>{c?.deaths ?? 0}</td>
-                  <td className={`${td} text-right font-mono tabular-nums text-text-muted`}>{r.damage_dealt[p.in_game_player_id] ?? 0}</td>
+                  <td className={`${td} text-right font-mono tabular-nums text-text-muted`}>{r.damage_dealt?.[p.in_game_player_id] ?? 0}</td>
                   <td className={`${td} text-right font-mono tabular-nums text-text-muted`}>{c?.captures ?? 0}</td>
-                  <td className={`${td} text-right font-mono tabular-nums text-text-muted`}>{fmtHold(r.hold_seconds[p.in_game_player_id] ?? 0)}</td>
-                  <td className={`${td} text-right font-mono tabular-nums ${(r.spawn_kills_by[p.in_game_player_id] ?? 0) > 0 ? "text-amber-300" : "text-text-subtle"}`}>{r.spawn_kills_by[p.in_game_player_id] ?? 0}</td>
-                  <td className={`${td} text-right font-mono tabular-nums ${(r.spawn_damage_by[p.in_game_player_id] ?? 0) > 0 ? "text-amber-300" : "text-text-subtle"}`}>{r.spawn_damage_by[p.in_game_player_id] ?? 0}</td>
+                  <td className={`${td} text-right font-mono tabular-nums text-text-muted`}>{fmtHold(r.hold_seconds?.[p.in_game_player_id] ?? 0)}</td>
+                  <td className={`${td} text-right font-mono tabular-nums ${(r.spawn_kills_by?.[p.in_game_player_id] ?? 0) > 0 ? "text-amber-300" : "text-text-subtle"}`}>{r.spawn_kills_by?.[p.in_game_player_id] ?? 0}</td>
+                  <td className={`${td} text-right font-mono tabular-nums ${(r.spawn_damage_by?.[p.in_game_player_id] ?? 0) > 0 ? "text-amber-300" : "text-text-subtle"}`}>{r.spawn_damage_by?.[p.in_game_player_id] ?? 0}</td>
                 </tr>
               );
             })}
