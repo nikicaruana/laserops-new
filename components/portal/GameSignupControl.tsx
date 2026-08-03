@@ -30,6 +30,7 @@ export function GameSignupControl({
   isFull,
   mySignup,
   guns = [],
+  align = "end",
 }: {
   matchId: string;
   accountId: string;
@@ -37,8 +38,11 @@ export function GameSignupControl({
   isFull: boolean;
   mySignup: MySignup;
   guns?: CarouselGun[];
+  /** "end" for right-aligned cards (games list); "center" for the invite card. */
+  align?: "end" | "center";
 }) {
   const router = useRouter();
+  const col = align === "center" ? "items-center text-center" : "items-start sm:items-end";
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [booking, setBooking] = useState(false);
@@ -101,7 +105,7 @@ export function GameSignupControl({
     const bookedLabel = guns.find((g) => g.name === mySignup?.booked_gun)?.label ?? mySignup?.booked_gun;
 
     return (
-      <div className="flex flex-col items-start gap-2 sm:items-end">
+      <div className={`flex flex-col gap-2 ${col}`}>
         <span className="inline-flex items-center gap-2 border border-accent bg-accent/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.12em] text-accent">
           ✓ You&apos;re in
           {paymentOpen && chosen ? (mySignup?.paid_at ? " · paid" : onDay ? " · paying on day" : " · paying online") : ""}
@@ -109,9 +113,11 @@ export function GameSignupControl({
 
         {/* Payment only opens after the match is confirmed */}
         {!paymentOpen ? (
-          <span className="text-[0.7rem] text-text-subtle">Payment opens once the game&apos;s confirmed.</span>
+          <span className="border-l-2 border-amber-500/70 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-amber-300">
+            Payment opens once the game&apos;s confirmed
+          </span>
         ) : !chosen ? (
-          <div className="flex flex-col items-start gap-1.5 sm:items-end">
+          <div className={`flex flex-col gap-1.5 ${col}`}>
             <span className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-text-muted">
               How will you pay?
             </span>
@@ -127,7 +133,7 @@ export function GameSignupControl({
         ) : (
           <>
             {canBook && (
-              <div className="w-64 max-w-full sm:text-right">
+              <div className={`w-64 max-w-full ${align === "center" ? "text-center" : "sm:text-right"}`}>
                 {booking ? (
                   <div className="text-left">
                     <p className="mb-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-text-muted">Book your gun</p>
@@ -173,7 +179,7 @@ export function GameSignupControl({
   }
 
   return (
-    <div className="flex flex-col items-start gap-2 sm:items-end">
+    <div className={`flex flex-col gap-2 ${col}`}>
       <button
         type="button"
         onClick={signUp}

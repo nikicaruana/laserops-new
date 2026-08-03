@@ -178,6 +178,7 @@ export default async function GameInvitePage({ params }: { params: Promise<{ cod
                   isFull={isFull}
                   mySignup={mySignup}
                   guns={guns}
+                  align="center"
                 />
               </div>
             )
