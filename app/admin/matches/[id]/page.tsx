@@ -100,7 +100,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   const [{ data: participantRows }, { data: gunRows }] = await Promise.all([
     supabase
       .from("match_participants")
-      .select("id, account_id, headset_label, gun_used, display_name, source, account:accounts(ops_tag, full_name)")
+      .select("id, account_id, headset_label, extra_headbands, gun_used, display_name, source, account:accounts(ops_tag, full_name)")
       .eq("match_id", id)
       .order("joined_at"),
     supabase.from("guns").select("name").order("name"),

@@ -3,11 +3,11 @@
 /**
  * components/admin/MatchParticipantsManager.tsx
  * --------------------------------------------------------------------
- * Admin roster for a match: who's playing, on which headband, with which gun.
- * Rows come from live joins (players) or are added by hand here (private
- * bookings / walk-ins). Admins can add, edit (headband / gun / name), and
- * remove entries. Writes match_participants directly (admin_all RLS).
- * Full headband-merge tooling is a later phase; this covers manual entry.
+ * Admin roster for a match: who's playing, their ops tag, headband(s) and gun.
+ * Rows come from live joins (players) or are added by hand (private bookings /
+ * walk-ins). Each player can carry EXTRA headbands too — if a headband dies
+ * mid-game and they're reissued another, ingestion merges the scores. Admins
+ * add, edit, and remove entries. Writes match_participants (admin_all RLS).
  */
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -20,14 +20,18 @@ export type Participant = {
   id: string;
   account_id: string | null;
   headset_label: string | null;
+  extra_headbands: string[] | null;
   gun_used: string | null;
   display_name: string | null;
   source: string | null;
   account: { ops_tag: string | null; full_name: string | null } | null;
 };
 
+type EditRow = Participant & { extraText: string };
+
 const cell =
   "h-10 w-full rounded-none border border-border-strong bg-bg px-2 text-sm text-text focus:border-accent focus:outline-none";
+const splitHeadbands = (s: string) => s.split(",").map((x) => x.trim()).filter(Boolean);
 
 export function MatchParticipantsManager({
   matchId,
@@ -39,16 +43,18 @@ export function MatchParticipantsManager({
   guns: string[];
 }) {
   const router = useRouter();
-  const [rows, setRows] = useState<Participant[]>(initial);
+  const [rows, setRows] = useState<EditRow[]>(
+    initial.map((p) => ({ ...p, extraText: (p.extra_headbands ?? []).join(", ") })),
+  );
   const [newRow, setNewRow] = useState({ display_name: "", headset_label: "", gun_used: guns[0] ?? "" });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function setField(id: string, key: keyof Participant, value: string) {
+  function setField(id: string, key: keyof EditRow, value: string) {
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, [key]: value } : r)));
   }
 
-  async function saveRow(row: Participant) {
+  async function saveRow(row: EditRow) {
     setBusy(true);
     setError(null);
     const supabase = createClient();
@@ -56,6 +62,7 @@ export function MatchParticipantsManager({
       .from("match_participants")
       .update({
         headset_label: row.headset_label?.trim() || null,
+        extra_headbands: splitHeadbands(row.extraText),
         gun_used: row.gun_used?.trim() || null,
         display_name: row.display_name?.trim() || null,
       })
@@ -94,7 +101,13 @@ export function MatchParticipantsManager({
       source: "admin",
     });
     setBusy(false);
-    if (err) return setError(err.message === "duplicate key value violates unique constraint \"match_participants_match_id_headset_label_key\"" ? "That headband is already on this match." : err.message);
+    if (err) {
+      return setError(
+        err.message.includes("match_participants_match_id_headset_label_key")
+          ? "That headband is already on this match."
+          : err.message,
+      );
+    }
     setNewRow({ display_name: "", headset_label: "", gun_used: guns[0] ?? "" });
     router.refresh();
   }
@@ -118,11 +131,12 @@ export function MatchParticipantsManager({
       )}
 
       <div className="overflow-x-auto border border-border">
-        <table className="w-full min-w-[720px] text-left text-sm">
+        <table className="w-full min-w-[820px] text-left text-sm">
           <thead>
             <tr className="border-b border-border bg-bg-elevated text-[0.6rem] uppercase tracking-[0.14em] text-text-muted">
               <th className="px-3 py-3 font-semibold">Player</th>
-              <th className="px-3 py-3 font-semibold">Headband</th>
+              <th className="px-3 py-3 font-semibold">Ops tag</th>
+              <th className="px-3 py-3 font-semibold">Headband(s)</th>
               <th className="px-3 py-3 font-semibold">Gun</th>
               <th className="px-3 py-3 text-center font-semibold">Source</th>
               <th className="px-3 py-3" />
@@ -133,7 +147,7 @@ export function MatchParticipantsManager({
               const linked = Boolean(r.account_id);
               const name = r.account?.full_name || r.account?.ops_tag;
               return (
-                <tr key={r.id} className="border-b border-border last:border-0">
+                <tr key={r.id} className="border-b border-border align-top last:border-0">
                   <td className="px-3 py-2">
                     {linked ? (
                       <span className="font-semibold text-text">{name ?? "Player"}</span>
@@ -146,12 +160,19 @@ export function MatchParticipantsManager({
                       />
                     )}
                   </td>
+                  <td className="px-3 py-2 font-mono text-xs text-text-muted">{r.account?.ops_tag ?? "—"}</td>
                   <td className="px-3 py-2">
                     <input
                       className={`${cell} font-mono`}
                       value={r.headset_label ?? ""}
                       onChange={(e) => setField(r.id, "headset_label", e.target.value)}
                       placeholder="—"
+                    />
+                    <input
+                      className={`${cell} mt-1 h-8 font-mono text-xs`}
+                      value={r.extraText}
+                      onChange={(e) => setField(r.id, "extraText", e.target.value)}
+                      placeholder="extra headbands (comma sep)"
                     />
                   </td>
                   <td className="px-3 py-2">{gunSelect(r.gun_used ?? "", (v) => setField(r.id, "gun_used", v))}</td>
@@ -181,7 +202,7 @@ export function MatchParticipantsManager({
             })}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-3 py-8 text-center text-sm text-text-muted">
+                <td colSpan={6} className="px-3 py-8 text-center text-sm text-text-muted">
                   No players on this match yet. Add them below or let signed-up players join live.
                 </td>
               </tr>
@@ -220,6 +241,9 @@ export function MatchParticipantsManager({
             Add
           </Button>
         </div>
+        <p className="mt-2 text-[0.65rem] text-text-subtle">
+          Extra headbands (for a mid-game swap) can be added on the player&apos;s row after adding.
+        </p>
       </div>
     </div>
   );
