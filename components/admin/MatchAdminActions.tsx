@@ -49,6 +49,21 @@ export function MatchAdminActions({
     router.refresh();
   }
 
+  // Confirming goes through an API route so signed-up players get the
+  // "payment is open" email.
+  async function confirmGame() {
+    setBusy(true);
+    setError(null);
+    const res = await fetch(`/api/matches/${matchId}/confirm`, { method: "POST" });
+    const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+    setBusy(false);
+    if (!res.ok || !data.ok) {
+      setError(data.error || "Couldn't confirm the game.");
+      return;
+    }
+    router.refresh();
+  }
+
   const s = status ?? "tentative";
 
   return (
@@ -56,7 +71,7 @@ export function MatchAdminActions({
       {(s === "tentative" || s === "awaiting_confirm") && (
         <button
           type="button"
-          onClick={() => patch({ status: "confirmed" })}
+          onClick={confirmGame}
           disabled={busy}
           className="border border-accent bg-accent px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-bg transition-transform active:scale-[0.98] disabled:opacity-50"
         >
