@@ -15,6 +15,7 @@ import { CopyInviteLink } from "@/components/portal/CopyInviteLink";
 import { MatchParticipantsManager, type Participant, type ParticipantPayment } from "@/components/admin/MatchParticipantsManager";
 import { IngestPanel, type SavedRound } from "@/components/admin/IngestPanel";
 import { parseRound } from "@/lib/ingestion/round-parser";
+import { parseFormula, defaultFormula } from "@/lib/scoring/formula";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -101,7 +102,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
 
   if (!match) notFound();
 
-  const [{ data: participantRows }, { data: gunRows }, { data: ingestRows }] = await Promise.all([
+  const [{ data: participantRows }, { data: gunRows }, { data: ingestRows }, { data: formulaRows }, { data: spawnRows }] = await Promise.all([
     supabase
       .from("match_participants")
       .select("id, account_id, headset_label, extra_headbands, gun_used, display_name, source, account:accounts(ops_tag, full_name)")
@@ -113,6 +114,8 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
       .select("id, filename, raw_file")
       .eq("match_id", id)
       .order("created_at"),
+    supabase.from("score_formula").select("structure, mode_slug"),
+    supabase.from("spawn_camp_config").select("consequence_mode, mode_slug"),
   ]);
   // Re-parse the stored raw file with the CURRENT parser on every load, so
   // parser improvements show without re-uploading. Falls back to nothing on a
@@ -127,6 +130,15 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
       }
     })
     .filter((x): x is SavedRound => x !== null);
+
+  // Scoring formula (prefer domination) + spawn-camp consequence for the on-the-fly
+  // LaserOps score in the ingest preview.
+  const fRows = (formulaRows ?? []) as { structure: unknown; mode_slug: string | null }[];
+  const fRow = fRows.find((r) => r.mode_slug === "domination") ?? fRows[0];
+  const scoreFormula = fRow ? parseFormula(fRow.structure) : defaultFormula();
+  const sRows = (spawnRows ?? []) as { consequence_mode: string | null; mode_slug: string | null }[];
+  const sRow = sRows.find((r) => r.mode_slug === "domination") ?? sRows[0];
+  const voidSpawn = sRow?.consequence_mode === "void";
 
   const signups = ((signupRows ?? []) as unknown as Signup[]).filter((s) => s.status !== "cancelled");
   const payments: Record<string, ParticipantPayment> = {};
@@ -376,7 +388,13 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
           committing stats (XP / ELO) turns on once the parser is validated against a real game
           file.
         </p>
-        <IngestPanel matchId={match.id} rounds={ingestRounds} headbandLabels={headbandLabels} />
+        <IngestPanel
+          matchId={match.id}
+          rounds={ingestRounds}
+          headbandLabels={headbandLabels}
+          formula={scoreFormula}
+          voidSpawn={voidSpawn}
+        />
       </section>
     </div>
   );

@@ -12,6 +12,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { parseRound, type Round } from "@/lib/ingestion/round-parser";
+import { laserOpsScores } from "@/lib/ingestion/score";
+import type { ScoreFormula } from "@/lib/scoring/formula";
 import { createClient } from "@/lib/supabase/client";
 
 const OPERATOR_ID = "00000000-0000-0000-0000-000000000001";
@@ -32,10 +34,14 @@ export function IngestPanel({
   matchId,
   rounds,
   headbandLabels = {},
+  formula,
+  voidSpawn,
 }: {
   matchId: string;
   rounds: SavedRound[];
   headbandLabels?: Record<number, string>;
+  formula: ScoreFormula;
+  voidSpawn: boolean;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -111,6 +117,8 @@ export function IngestPanel({
           round={sr.parsed}
           index={i + 1}
           headbandLabels={headbandLabels}
+          formula={formula}
+          voidSpawn={voidSpawn}
           onRemove={() => remove(sr.id)}
         />
       ))}
@@ -123,14 +131,19 @@ function RoundPreview({
   round: r,
   index,
   headbandLabels,
+  formula,
+  voidSpawn,
   onRemove,
 }: {
   name: string;
   round: Round;
   index: number;
   headbandLabels: Record<number, string>;
+  formula: ScoreFormula;
+  voidSpawn: boolean;
   onRemove: () => void;
 }) {
+  const scores = laserOpsScores(r, formula, voidSpawn);
   const kills = r.events.kills.length;
   const hits = r.events.damage.length;
   const captures = r.events.captures.length;
@@ -186,8 +199,8 @@ function RoundPreview({
               <th className={th}>Headband</th>
               <th className={th}>Player</th>
               <th className={th}>Team</th>
-              <th className={`${th} text-right`} title="The game hardware's own score, from the file — NOT the LaserOps scoring formula (that's computed at commit).">
-                Game score
+              <th className={`${th} text-right`} title={`LaserOps score from your scoring formula${voidSpawn ? " (spawn kills/damage voided)" : ""}`}>
+                LaserOps
               </th>
               <th className={`${th} text-right`}>K</th>
               <th className={`${th} text-right`}>D</th>
@@ -207,7 +220,7 @@ function RoundPreview({
                   <td className={`${td} font-mono font-semibold text-accent`}>{p.headband_no ?? "—"}</td>
                   <td className={`${td} text-text`}>{label}</td>
                   <td className={`${td} text-text-muted`}>{p.team}</td>
-                  <td className={`${td} text-right font-mono tabular-nums text-text`}>{c?.score ?? 0}</td>
+                  <td className={`${td} text-right font-mono tabular-nums font-semibold text-accent`}>{scores[p.in_game_player_id] ?? 0}</td>
                   <td className={`${td} text-right font-mono tabular-nums text-text-muted`}>{c?.frags ?? 0}</td>
                   <td className={`${td} text-right font-mono tabular-nums text-text-muted`}>{c?.deaths ?? 0}</td>
                   <td className={`${td} text-right font-mono tabular-nums text-text-muted`}>{r.damage_dealt?.[p.in_game_player_id] ?? 0}</td>
