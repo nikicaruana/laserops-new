@@ -7,6 +7,7 @@
  * minimum players.
  */
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Container } from "@/components/ui/Container";
 import { createClient } from "@/lib/supabase/server";
@@ -75,9 +76,10 @@ export default async function GamesPage() {
       .select(
         "id, match_code, title, status, scheduled_at, min_players, max_players, price_eur, registered_count, is_double_xp",
       )
-      .in("status", ["tentative", "awaiting_confirm", "confirmed"])
       .eq("is_private", false)
-      .gte("scheduled_at", nowIso)
+      .or(
+        `and(status.in.(tentative,awaiting_confirm,confirmed),scheduled_at.gte.${nowIso}),status.eq.live`,
+      )
       .order("scheduled_at", { ascending: true }),
     supabase
       .from("match_signups")
@@ -112,6 +114,8 @@ export default async function GamesPage() {
             const min = g.min_players ?? 10;
             const isFull = g.max_players != null && reg >= g.max_players;
             const pct = Math.min(100, Math.round((reg / Math.max(1, min)) * 100));
+            const mySignup = mine.get(g.id) ?? null;
+            const canJoin = g.status === "live" && mySignup?.status === "registered";
             return (
               <li
                 key={g.id}
@@ -149,13 +153,23 @@ export default async function GamesPage() {
                 </div>
 
                 <div className="shrink-0">
-                  <GameSignupControl
-                    matchId={g.id}
-                    accountId={account.id}
-                    status={g.status}
-                    isFull={isFull}
-                    mySignup={mine.get(g.id) ?? null}
-                  />
+                  {canJoin ? (
+                    <Link
+                      href={`/player-portal/games/${g.id}/join`}
+                      className="inline-flex items-center gap-2 border border-accent bg-accent px-5 py-2.5 text-xs font-bold uppercase tracking-[0.12em] text-bg transition-transform active:scale-[0.98]"
+                    >
+                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-bg" />
+                      Join game
+                    </Link>
+                  ) : (
+                    <GameSignupControl
+                      matchId={g.id}
+                      accountId={account.id}
+                      status={g.status}
+                      isFull={isFull}
+                      mySignup={mySignup}
+                    />
+                  )}
                 </div>
               </li>
             );
