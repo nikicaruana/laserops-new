@@ -31,7 +31,7 @@ export function GameSignupControl({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const open = status === "tentative" || status === "awaiting_confirm";
+  const open = status === "tentative" || status === "awaiting_confirm" || status === "confirmed";
   const signedUp = Boolean(mySignup && mySignup.status !== "cancelled");
 
   async function signUp(intent: "online" | "on_day") {
@@ -122,7 +122,7 @@ export function GameSignupControl({
   if (!open) {
     return (
       <span className="text-xs font-semibold uppercase tracking-[0.12em] text-text-subtle">
-        {status === "confirmed" ? "Signups closed" : "Not open"}
+        {status === "live" ? "Game in progress" : "Signups closed"}
       </span>
     );
   }
