@@ -61,7 +61,6 @@ export default async function AdminStreaksPage() {
                 <th className="px-4 py-3 font-semibold">Earned for</th>
                 <th className="px-4 py-3 text-center font-semibold">Tier</th>
                 <th className="px-4 py-3 text-right font-semibold">Points</th>
-                <th className="px-4 py-3 text-right font-semibold">XP</th>
                 <th className="px-4 py-3 text-center font-semibold">Active</th>
                 <th className="px-4 py-3" />
               </tr>
@@ -83,7 +82,6 @@ export default async function AdminStreaksPage() {
                   <td className="px-4 py-3 text-text-muted">{s.description}</td>
                   <td className="px-4 py-3 text-center font-mono tabular-nums text-text-muted">{s.tier ?? "—"}</td>
                   <td className="px-4 py-3 text-right font-mono tabular-nums text-text">{s.points ?? 0}</td>
-                  <td className="px-4 py-3 text-right font-mono tabular-nums text-text-muted">{s.xp ?? 0}</td>
                   <td className="px-4 py-3 text-center">
                     {s.is_active ? <span className="text-accent">●</span> : <span className="text-text-subtle/50">○</span>}
                   </td>

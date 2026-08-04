@@ -23,7 +23,7 @@ export default async function EditStreakPage({ params }: { params: Promise<{ id:
   const [{ data: streak }, { data: rule }] = await Promise.all([
     supabase
       .from("streak_definitions")
-      .select("id, name, description, badge_url, xp, points, tier, is_active")
+      .select("id, name, description, badge_url, xp, points, tier, is_active, streak_key")
       .eq("id", id)
       .maybeSingle(),
     supabase
@@ -55,9 +55,20 @@ export default async function EditStreakPage({ params }: { params: Promise<{ id:
 
       <StreakEditor streak={streak as StreakRecord} />
 
-      <div className="mt-6">
-        <StreakRuleEditor streakId={streak.id} initialRule={(rule ?? null) as StreakRule | null} />
-      </div>
+      {streak.streak_key ? (
+        <div className="mt-6 max-w-2xl border-l-2 border-accent bg-bg-elevated px-5 py-4">
+          <p className="text-[0.65rem] font-bold uppercase tracking-[0.16em] text-accent">Built-in streak</p>
+          <p className="mt-2 text-sm text-text-muted">
+            This streak is detected automatically from the match data by the ingestion engine (
+            <span className="font-mono text-xs">{streak.streak_key}</span>) — there&apos;s no firing
+            rule to configure. Adjust its name, tier, and points above; the rest is computed for you.
+          </p>
+        </div>
+      ) : (
+        <div className="mt-6">
+          <StreakRuleEditor streakId={streak.id} initialRule={(rule ?? null) as StreakRule | null} />
+        </div>
+      )}
 
       <div className="mt-6 max-w-2xl">
         <AdminDeleteButton

@@ -70,7 +70,7 @@ export function StreakEditor({
       name: (f.name ?? "").trim(),
       description: f.description,
       badge_url: f.badge_url,
-      xp: f.xp ?? 0,
+      xp: f.points ?? 0, // points contribute to XP — keep them aligned
       points: f.points ?? 0,
       tier: f.tier,
       is_active: f.is_active ?? true,
@@ -143,10 +143,6 @@ export function StreakEditor({
           <div>
             <label className={lbl}>Tier</label>
             <input type="number" min="1" className={input} value={f.tier ?? ""} onChange={(e) => set("tier", num(e.target.value))} onFocus={(e) => e.target.select()} placeholder="1–4" />
-          </div>
-          <div>
-            <label className={lbl}>XP (each time it fires)</label>
-            <input type="number" className={input} value={f.xp ?? ""} onChange={(e) => set("xp", num(e.target.value))} onFocus={(e) => e.target.select()} />
           </div>
           <div className="flex items-end pb-2">
             <label className="flex cursor-pointer items-center gap-2 text-sm text-text-muted">
