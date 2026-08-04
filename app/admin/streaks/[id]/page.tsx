@@ -23,7 +23,7 @@ export default async function EditStreakPage({ params }: { params: Promise<{ id:
   const [{ data: streak }, { data: rule }] = await Promise.all([
     supabase
       .from("streak_definitions")
-      .select("id, name, description, badge_url, xp, points, is_active")
+      .select("id, name, description, badge_url, xp, points, tier, is_active")
       .eq("id", id)
       .maybeSingle(),
     supabase

@@ -22,6 +22,7 @@ export type StreakRecord = {
   badge_url: string | null;
   xp: number | null;
   points: number | null;
+  tier: number | null;
   is_active: boolean | null;
 };
 
@@ -71,6 +72,7 @@ export function StreakEditor({
       badge_url: f.badge_url,
       xp: f.xp ?? 0,
       points: f.points ?? 0,
+      tier: f.tier,
       is_active: f.is_active ?? true,
     };
 
@@ -138,6 +140,10 @@ export function StreakEditor({
             />
           </div>
 
+          <div>
+            <label className={lbl}>Tier</label>
+            <input type="number" min="1" className={input} value={f.tier ?? ""} onChange={(e) => set("tier", num(e.target.value))} onFocus={(e) => e.target.select()} placeholder="1–4" />
+          </div>
           <div>
             <label className={lbl}>XP (each time it fires)</label>
             <input type="number" className={input} value={f.xp ?? ""} onChange={(e) => set("xp", num(e.target.value))} onFocus={(e) => e.target.select()} />

@@ -16,6 +16,7 @@ type Row = {
   badge_url: string | null;
   xp: number | null;
   points: number | null;
+  tier: number | null;
   is_active: boolean | null;
 };
 
@@ -23,7 +24,8 @@ export default async function AdminStreaksPage() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("streak_definitions")
-    .select("id, name, description, badge_url, xp, points, is_active")
+    .select("id, name, description, badge_url, xp, points, tier, is_active")
+    .order("tier")
     .order("name");
   const rows = (data ?? []) as Row[];
 
@@ -57,6 +59,7 @@ export default async function AdminStreaksPage() {
               <tr className="border-b border-border bg-bg-elevated text-[0.6rem] uppercase tracking-[0.14em] text-text-muted">
                 <th className="px-4 py-3 font-semibold">Streak</th>
                 <th className="px-4 py-3 font-semibold">Earned for</th>
+                <th className="px-4 py-3 text-center font-semibold">Tier</th>
                 <th className="px-4 py-3 text-right font-semibold">Points</th>
                 <th className="px-4 py-3 text-right font-semibold">XP</th>
                 <th className="px-4 py-3 text-center font-semibold">Active</th>
@@ -78,6 +81,7 @@ export default async function AdminStreaksPage() {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-text-muted">{s.description}</td>
+                  <td className="px-4 py-3 text-center font-mono tabular-nums text-text-muted">{s.tier ?? "—"}</td>
                   <td className="px-4 py-3 text-right font-mono tabular-nums text-text">{s.points ?? 0}</td>
                   <td className="px-4 py-3 text-right font-mono tabular-nums text-text-muted">{s.xp ?? 0}</td>
                   <td className="px-4 py-3 text-center">

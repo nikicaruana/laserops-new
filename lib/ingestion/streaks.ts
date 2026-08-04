@@ -39,7 +39,8 @@ export const STREAK_NAMES: Record<string, string> = {
   captures_5: "5 Captures",
   captures_10: "10 Captures",
   burner_1: "Burner",
-  burner_2: "Burner ×2",
+  burner_2: "2x Burner",
+  shadow: "Shadow",
 };
 
 function toEpoch(t: string): number {
@@ -198,6 +199,14 @@ export function detectStreaks(round: Round): StreakAward[] {
       s.add(c.base_id);
       if (before < 2 && s.size === 2) add(pid, "ptfo", c.time);
       if (before < 3 && s.size === 3) add(pid, "map_domination", c.time);
+    }
+  }
+
+  // --- Shadow: survive the whole round (0 deaths) with >=5 kills ------------
+  for (const pid of playerIds) {
+    const myKills = kills.filter((k) => k.actor_id === pid);
+    if ((deaths.get(pid)?.length ?? 0) === 0 && myKills.length >= 5) {
+      add(pid, "shadow", myKills[myKills.length - 1].time);
     }
   }
 

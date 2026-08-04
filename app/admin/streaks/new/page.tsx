@@ -17,6 +17,7 @@ export default function NewStreakPage() {
     badge_url: "",
     xp: 0,
     points: 0,
+    tier: null,
     is_active: true,
   };
 
