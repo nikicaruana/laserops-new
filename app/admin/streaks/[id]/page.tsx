@@ -7,7 +7,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { StreakEditor, type StreakRecord } from "@/components/admin/StreakEditor";
-import { StreakRuleEditor, type StreakRule } from "@/components/admin/StreakRuleEditor";
+import { StreakRuleBuilder } from "@/components/admin/StreakRuleBuilder";
+import type { StreakRuleConfig } from "@/lib/ingestion/streak-engine";
 import { AdminDeleteButton } from "@/components/admin/AdminDeleteButton";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
@@ -20,20 +21,11 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 export default async function EditStreakPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
-  const [{ data: streak }, { data: rule }] = await Promise.all([
-    supabase
-      .from("streak_definitions")
-      .select("id, name, description, badge_url, xp, points, tier, is_active, streak_key")
-      .eq("id", id)
-      .maybeSingle(),
-    supabase
-      .from("streak_rules")
-      .select("id, rule_type, event_type, event_types, breaks_on, min_length, window_seconds, min_count, state_condition, params")
-      .eq("streak_definition_id", id)
-      .order("created_at")
-      .limit(1)
-      .maybeSingle(),
-  ]);
+  const { data: streak } = await supabase
+    .from("streak_definitions")
+    .select("id, name, description, badge_url, xp, points, tier, is_active, streak_key, rule")
+    .eq("id", id)
+    .maybeSingle();
   if (!streak) notFound();
 
   return (
@@ -55,20 +47,13 @@ export default async function EditStreakPage({ params }: { params: Promise<{ id:
 
       <StreakEditor streak={streak as StreakRecord} />
 
-      {streak.streak_key ? (
-        <div className="mt-6 max-w-2xl border-l-2 border-accent bg-bg-elevated px-5 py-4">
-          <p className="text-[0.65rem] font-bold uppercase tracking-[0.16em] text-accent">Built-in streak</p>
-          <p className="mt-2 text-sm text-text-muted">
-            This streak is detected automatically from the match data by the ingestion engine (
-            <span className="font-mono text-xs">{streak.streak_key}</span>) — there&apos;s no firing
-            rule to configure. Adjust its name, tier, and points above; the rest is computed for you.
-          </p>
-        </div>
-      ) : (
-        <div className="mt-6">
-          <StreakRuleEditor streakId={streak.id} initialRule={(rule ?? null) as StreakRule | null} />
-        </div>
-      )}
+      <div className="mt-6">
+        <StreakRuleBuilder
+          streakId={streak.id}
+          initialRule={(streak.rule ?? null) as StreakRuleConfig | null}
+          isBuiltin={Boolean(streak.streak_key)}
+        />
+      </div>
 
       <div className="mt-6 max-w-2xl">
         <AdminDeleteButton
