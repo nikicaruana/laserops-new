@@ -13,6 +13,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { parseRound, type Round } from "@/lib/ingestion/round-parser";
 import { laserOpsScores } from "@/lib/ingestion/score";
+import { detectStreaks } from "@/lib/ingestion/streaks";
 import type { ScoreFormula } from "@/lib/scoring/formula";
 import { createClient } from "@/lib/supabase/client";
 
@@ -144,6 +145,18 @@ function RoundPreview({
   onRemove: () => void;
 }) {
   const scores = laserOpsScores(r, formula, voidSpawn);
+  // Streaks grouped by player, with a per-player count of each streak type.
+  const streaks = detectStreaks(r);
+  const streaksByPlayer = new Map<number, Map<string, number>>();
+  for (const s of streaks) {
+    if (!streaksByPlayer.has(s.player_id)) streaksByPlayer.set(s.player_id, new Map());
+    const m = streaksByPlayer.get(s.player_id)!;
+    m.set(s.name, (m.get(s.name) ?? 0) + 1);
+  }
+  const playerLabel = (pid: number): string => {
+    const p = r.players.find((x) => x.in_game_player_id === pid);
+    return (p?.headband_no != null && headbandLabels[p.headband_no]) || p?.name || `#${pid}`;
+  };
   const kills = r.events.kills.length;
   const hits = r.events.damage.length;
   const captures = r.events.captures.length;
@@ -234,6 +247,27 @@ function RoundPreview({
           </tbody>
         </table>
       </div>
+
+      {streaksByPlayer.size > 0 && (
+        <div className="border-t border-border px-4 py-3">
+          <p className="mb-2 text-[0.55rem] font-semibold uppercase tracking-[0.12em] text-text-subtle">
+            Streaks ({streaks.length})
+          </p>
+          <div className="space-y-1.5">
+            {[...streaksByPlayer.entries()].map(([pid, m]) => (
+              <div key={pid} className="flex flex-wrap items-center gap-1.5 text-xs">
+                <span className="w-24 shrink-0 font-semibold text-text">{playerLabel(pid)}</span>
+                {[...m.entries()].map(([name, count]) => (
+                  <span key={name} className="border border-accent/40 bg-accent/10 px-2 py-0.5 text-[0.65rem] text-accent">
+                    {name}
+                    {count > 1 ? ` ×${count}` : ""}
+                  </span>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {r.ingestion_flags.length > 0 && (
         <div className="border-t border-border px-4 py-2.5">

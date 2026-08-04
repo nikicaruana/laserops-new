@@ -44,6 +44,8 @@ export type KillEvent = {
   actor_id: number;
   victim_id: number;
   is_spawn_kill: boolean;
+  /** The killer's HP at the moment of the kill (for the Survivor streak). */
+  actor_hp: number | null;
 };
 export type RespawnEvent = { time: string; player_id: number };
 export type CaptureEvent = {
@@ -254,6 +256,7 @@ export function parseRound(text: string): Round {
     actor_id: num(e.item.PlayerId) ?? -1,
     victim_id: num(e.item.VictimPlayerId) ?? -1,
     is_spawn_kill: false,
+    actor_hp: null,
   }));
 
   // Per-player time-sorted PlayerEvents (stable) for respawns, captures, counters.
@@ -265,6 +268,21 @@ export function parseRound(text: string): Round {
     byPlayer.get(pid)!.push(ev);
   }
   for (const arr of byPlayer.values()) arr.sort((a, b) => a.epoch - b.epoch);
+
+  // Killer HP at each kill (last known HP at/before the kill time) — for Survivor.
+  const hpAt = (pid: number, epoch: number): number | null => {
+    const evs = byPlayer.get(pid);
+    if (!evs) return null;
+    let hp: number | null = null;
+    for (const ev of evs) {
+      if (ev.epoch <= epoch) {
+        const h = num(ev.item.HP);
+        if (h != null) hp = h;
+      } else break;
+    }
+    return hp;
+  };
+  for (const k of kills) k.actor_hp = hpAt(k.actor_id, toEpoch(k.time));
 
   // 8. Respawns: Revivals increments to a NEW value AND HP == max. Dedup on
   // (player, Revivals). Not the initial spawn.
