@@ -13,7 +13,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { parseRound, type Round } from "@/lib/ingestion/round-parser";
 import { laserOpsScores } from "@/lib/ingestion/score";
-import { detectStreaks } from "@/lib/ingestion/streaks";
+import { evaluateStreaks, type StreakDef } from "@/lib/ingestion/streak-engine";
 import type { ScoreFormula } from "@/lib/scoring/formula";
 import { createClient } from "@/lib/supabase/client";
 
@@ -37,12 +37,14 @@ export function IngestPanel({
   headbandLabels = {},
   formula,
   voidSpawn,
+  streakDefs,
 }: {
   matchId: string;
   rounds: SavedRound[];
   headbandLabels?: Record<number, string>;
   formula: ScoreFormula;
   voidSpawn: boolean;
+  streakDefs: StreakDef[];
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -120,6 +122,7 @@ export function IngestPanel({
           headbandLabels={headbandLabels}
           formula={formula}
           voidSpawn={voidSpawn}
+          streakDefs={streakDefs}
           onRemove={() => remove(sr.id)}
         />
       ))}
@@ -134,6 +137,7 @@ function RoundPreview({
   headbandLabels,
   formula,
   voidSpawn,
+  streakDefs,
   onRemove,
 }: {
   name: string;
@@ -142,11 +146,12 @@ function RoundPreview({
   headbandLabels: Record<number, string>;
   formula: ScoreFormula;
   voidSpawn: boolean;
+  streakDefs: StreakDef[];
   onRemove: () => void;
 }) {
   const scores = laserOpsScores(r, formula, voidSpawn);
   // Streaks grouped by player, with a per-player count of each streak type.
-  const streaks = detectStreaks(r);
+  const streaks = evaluateStreaks(r, streakDefs);
   const streaksByPlayer = new Map<number, Map<string, number>>();
   for (const s of streaks) {
     if (!streaksByPlayer.has(s.player_id)) streaksByPlayer.set(s.player_id, new Map());
