@@ -18,13 +18,13 @@
  *
  *   match_top:
  *     - Filter Game_Data_Lookup by season window
- *     - Do not aggregate — keep per-match rows
+ *     - Do not aggregate – keep per-match rows
  *     - Sort descending by metric, apply tie-breaks
  *     - Take top N
  *     - Profile pic and badge come straight from the row
  *     - Single player can appear multiple times for different matches
  *
- * The output is a unified ChallengeEntry shape regardless of source —
+ * The output is a unified ChallengeEntry shape regardless of source –
  * differences (presence of matchId, etc.) are nullable fields so the
  * rendering layer can adapt per challenge.
  */
@@ -65,6 +65,11 @@ export type ChallengeEntry = {
   level: number;
   /** The primary metric value as displayed (e.g. summed XP, raw kill count). */
   metricValue: number;
+  /**
+   * For gun-threshold challenges: the names of the guns this player cleared the
+   * threshold with (the ones the metric count is made of), best gun first.
+   */
+  qualifyingGuns?: string[];
   /** Human label for the metric (e.g. "Total XP", "Kills"). Filled by render layer or here from challenge. */
   matchId?: string;
   /**
@@ -75,7 +80,7 @@ export type ChallengeEntry = {
 };
 
 /**
- * The complete dataset for a challenge — challenge config + ranked
+ * The complete dataset for a challenge – challenge config + ranked
  * entries. This is what the rendering layer consumes.
  */
 export type ChallengeWithEntries = {
@@ -206,14 +211,14 @@ function computePeriodAggregatedEntries(
     const existing = aggregates.get(key);
 
     const primary = parseNumericOr(row.raw[challenge.metric], 0);
-    // Period stats column names — verified from existing leaderboard code:
-    //   Rounds_Won, Rounds_Lost — for round win rate tie-break
-    //   Matches_Won, Matches_Played — for matches-played gating + tie-breaks
-    //   Total_Points — for points-based tie-break
+    // Period stats column names – verified from existing leaderboard code:
+    //   Rounds_Won, Rounds_Lost – for round win rate tie-break
+    //   Matches_Won, Matches_Played – for matches-played gating + tie-breaks
+    //   Total_Points – for points-based tie-break
     // Kills/Deaths/Score totals may or may not exist in the period sheet;
     // we read them defensively (parseNumericOr defaults to 0) so any
     // future tie-break that needs them won't crash if the column is
-    // absent — it'll just always evaluate to 0 and fall through.
+    // absent – it'll just always evaluate to 0 and fall through.
     const roundsWon = parseNumericOr(row.raw.Rounds_Won, 0);
     const roundsLost = parseNumericOr(row.raw.Rounds_Lost, 0);
     const matchesWon = parseNumericOr(row.raw.Matches_Won, 0);
@@ -241,7 +246,7 @@ function computePeriodAggregatedEntries(
         ? Math.max(existing.primaryMetric, primary)
         : existing.primaryMetric + primary;
       existing.rowCount += 1;
-      // Secondary metrics are always summed across the window — they
+      // Secondary metrics are always summed across the window – they
       // exist to support tie-breaks like "highest win rate this season",
       // which is inherently a season-wide ratio regardless of whether
       // the primary is summed or maxed.
@@ -334,7 +339,7 @@ function computePeriodAggregatedEntries(
 
 /**
  * Filter game data rows to season window, sort by metric, take top N.
- * No aggregation — single player can appear multiple times (different
+ * No aggregation – single player can appear multiple times (different
  * matches).
  */
 function computeMatchTopEntries(
@@ -346,13 +351,13 @@ function computeMatchTopEntries(
 ): ChallengeEntry[] {
   const filtered = filterGameDataByMonths(gameRows, season.monthsInWindow);
 
-  // Build comparables. Each row is independent — its tie-break inputs
+  // Build comparables. Each row is independent – its tie-break inputs
   // come from the row's own match-level fields.
   // Exclude prize-ineligible players up-front, before sorting, so they
   // don't take a top-N slot. Note: "match_top" can show the SAME player
   // multiple times for different matches; excluding by nickname removes
   // ALL their match performances from the table, which is the right
-  // semantic — they're ineligible across the board.
+  // semantic – they're ineligible across the board.
   type Comparable = {
     row: GameDataRow;
     primaryMetric: number;
@@ -406,7 +411,7 @@ function computeMatchTopEntries(
 
   // One place per player: keep only each player's single best match. The
   // list is already sorted best-first (metric desc + tie-breaks), so the
-  // first row seen for a nickname is that player's best — drop the rest.
+  // first row seen for a nickname is that player's best – drop the rest.
   const seenNicknames = new Set<string>();
   const deduped = comparables.filter((c) => {
     const key = c.row.nickname.toLowerCase();
@@ -459,6 +464,7 @@ function computeMatchTopEntries(
  * the same pass so the named tie-breaks (e.g. round_win_rate_descending)
  * work. Final fallback when still tied: more total season kills wins.
  */
+// Ranks by distinct guns clearing the kill threshold; also surfaces the gun names.
 function computeGunThresholdCountEntries(
   challenge: Challenge,
   season: Season,
@@ -473,6 +479,8 @@ function computeGunThresholdCountEntries(
     nickname: string;
     profilePicUrl: string;
     killsByGun: Map<string, number>;
+    /** lowercase gun key -> the gun's original display name (first seen). */
+    gunDisplay: Map<string, string>;
     seasonRoundsWon: number;
     seasonRoundsLost: number;
     seasonMatchesWon: number;
@@ -494,6 +502,7 @@ function computeGunThresholdCountEntries(
         nickname: row.nickname,
         profilePicUrl: row.profilePicUrl,
         killsByGun: new Map(),
+        gunDisplay: new Map(),
         seasonRoundsWon: 0,
         seasonRoundsLost: 0,
         seasonMatchesWon: 0,
@@ -505,10 +514,12 @@ function computeGunThresholdCountEntries(
       aggregates.set(key, agg);
     }
 
-    const gun = (row.raw.LaserOps_Gun_Used ?? "").trim().toLowerCase();
+    const gunRaw = (row.raw.LaserOps_Gun_Used ?? "").trim();
+    const gun = gunRaw.toLowerCase();
     const kills = readGameDataNumeric(row, "PlayerFragsCount");
     if (gun !== "" && gun !== "unknown gun") {
       agg.killsByGun.set(gun, (agg.killsByGun.get(gun) ?? 0) + kills);
+      if (!agg.gunDisplay.has(gun)) agg.gunDisplay.set(gun, gunRaw);
     }
 
     agg.seasonRoundsWon += readGameDataNumeric(row, "LaserOps_Rounds_Won");
@@ -524,19 +535,23 @@ function computeGunThresholdCountEntries(
   type Comparable = {
     aggregate: Aggregate;
     count: number;
+    qualifyingGuns: string[];
     tiebreakInput: TiebreakInput;
   };
 
   const comparables: Comparable[] = [];
   for (const agg of aggregates.values()) {
-    let count = 0;
-    for (const k of agg.killsByGun.values()) {
-      if (k >= threshold) count += 1;
-    }
+    // Guns that cleared the threshold, best (most kills) first.
+    const qualifying = [...agg.killsByGun.entries()]
+      .filter(([, k]) => k >= threshold)
+      .sort((a, b) => b[1] - a[1])
+      .map(([g]) => agg.gunDisplay.get(g) ?? g);
+    const count = qualifying.length;
     if (count <= 0) continue;
     comparables.push({
       aggregate: agg,
       count,
+      qualifyingGuns: qualifying,
       tiebreakInput: {
         primaryMetric: count,
         seasonRoundsWon: agg.seasonRoundsWon,
@@ -588,6 +603,7 @@ function computeGunThresholdCountEntries(
       rankBadgeUrl,
       level,
       metricValue: c.count,
+      qualifyingGuns: c.qualifyingGuns,
       isPrizeWinning: idx + 1 <= challenge.prizeCutoff,
     };
   });
