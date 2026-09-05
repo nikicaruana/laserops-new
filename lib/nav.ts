@@ -56,6 +56,7 @@ export const primaryNav: NavLink[] = [
       { label: "Leaderboards", href: "/player-portal/leaderboards", highlight: true },
       { label: "Player Stats", href: "/player-portal/player-stats", highlight: true },
       { label: "Match Report", href: "/match-report", redHighlight: true },
+      { label: "Match Report v2 (Beta)", href: "/match-report-v2", redHighlight: true },
     ],
   },
   {
