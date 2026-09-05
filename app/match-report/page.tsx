@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Container } from "@/components/ui/Container";
 import { createClient } from "@/lib/supabase/server";
+import { getPlayerHistory } from "@/lib/player-history/supabase-engine";
+import { MatchSummariesTable } from "@/components/portal/player-history/MatchSummariesTable";
 import { findPlayerInReport } from "@/lib/match-report/engine";
 import {
   fetchMatchReportSupabase,
@@ -11,6 +13,10 @@ import { MatchSearch } from "@/components/match-report/MatchSearch";
 import { MatchOverview } from "@/components/match-report/MatchOverview";
 import { PlayersTable } from "@/components/match-report/PlayersTable";
 import { PlayerStatsCard } from "@/components/match-report/PlayerStatsCard";
+import { MatchImages } from "@/components/match-report/MatchImages";
+import { PlayerNavProvider, PlayerCardArea } from "@/components/match-report/PlayerNav";
+import { fetchMatchPhotosByCode } from "@/lib/match-photos";
+import { buildOverlayData } from "@/lib/story/meta";
 import { MatchReportEmptyState } from "@/components/match-report/EmptyState";
 import { MatchReportErrorState } from "@/components/match-report/ErrorState";
 
@@ -26,10 +32,10 @@ export const metadata: Metadata = {
  *
  * Top-level layout:
  *   1. Yellow search card (Match ID input with autocomplete).
- *   2. Match overview card (rounds, team scores, badges) — when match selected.
- *   3. Players table — when match selected. Each row is clickable and updates
+ *   2. Match overview card (rounds, team scores, badges) – when match selected.
+ *   3. Players table – when match selected. Each row is clickable and updates
  *      the ?player= URL param.
- *   4. Player stats card — when both match AND player selected. Shows that
+ *   4. Player stats card – when both match AND player selected. Shows that
  *      player's match-scoped stats, accolades, XP card.
  *
  * URL state model:
@@ -40,6 +46,25 @@ export const metadata: Metadata = {
  * the rendered HTML.
  */
 type SearchParams = Promise<{ match?: string; player?: string }>;
+
+/** The signed-in player's own match history (reuses the player-history engine),
+ *  rendered as the same table as the History tab. Empty when signed out / no games. */
+async function MyMatchReports({ supabase }: { supabase: Awaited<ReturnType<typeof createClient>> }) {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data: account } = await supabase.from("accounts").select("ops_tag").eq("auth_user_id", user.id).maybeSingle();
+  const ops = account?.ops_tag ?? "";
+  if (!ops) return null;
+  const result = await getPlayerHistory(supabase, ops);
+  if (!result.ok || result.history.matches.length === 0) return null;
+  return (
+    <div className="mb-8">
+      <MatchSummariesTable matches={result.history.matches} ops={ops} title="Your Match Reports" />
+    </div>
+  );
+}
 
 export default async function MatchReportPage({
   searchParams,
@@ -62,7 +87,7 @@ export default async function MatchReportPage({
           Match Report
         </h1>
 
-        {/* Search card — always visible, renders at the top regardless of
+        {/* Search card – always visible, renders at the top regardless of
             whether a match is selected. Yellow background visually
             separates it from the report content below. */}
         <Suspense fallback={null}>
@@ -75,6 +100,7 @@ export default async function MatchReportPage({
         {/* Conditional content based on URL state */}
         {matchId === "" ? (
           <div className="mt-8">
+            <MyMatchReports supabase={supabase} />
             <MatchReportEmptyState />
           </div>
         ) : (
@@ -115,8 +141,30 @@ async function MatchContent({
 
   const { report } = result;
   const player = selectedPlayer ? findPlayerInReport(report, selectedPlayer) : undefined;
+  const photos = await fetchMatchPhotosByCode(supabase, matchId);
+
+  // A player may only share their OWN stats: resolve the signed-in account's
+  // ops tag so the share button only appears on their own card. Admins can tag
+  // any player in a photo.
+  let myOps = "";
+  let isAdmin = false;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user) {
+    const { data: account } = await supabase.from("accounts").select("ops_tag").eq("auth_user_id", user.id).maybeSingle();
+    myOps = (account?.ops_tag ?? "").trim();
+    const { data: adm } = await supabase.rpc("is_admin");
+    isAdmin = Boolean(adm);
+  }
+  const myOpsLc = myOps.toLowerCase();
+  const isOwnCard = !!player && !!myOpsLc && player.nickname.trim().toLowerCase() === myOpsLc;
+  // Overlay data for the viewer's own stats (live band in the share composer).
+  const viewerPlayer = myOpsLc ? findPlayerInReport(report, myOps) : undefined;
+  const overlayData = viewerPlayer ? buildOverlayData(report, viewerPlayer) : undefined;
 
   return (
+    <PlayerNavProvider>
     <div className="mt-8 flex flex-col gap-6 sm:gap-8">
       <MatchOverview game={report.game} matchDate={report.matchDate} />
       <PlayersTable
@@ -124,10 +172,21 @@ async function MatchContent({
         matchId={matchId}
         selectedPlayer={selectedPlayer}
       />
-      {player && (
-        <PlayerStatsCard player={player} ranks={report.ranks} />
-      )}
+      <PlayerCardArea>
+        {player && (
+          <PlayerStatsCard player={player} ranks={report.ranks} matchId={matchId} canShare={isOwnCard} />
+        )}
+      </PlayerCardArea>
+      <MatchImages
+        photos={photos}
+        matchId={matchId}
+        viewerOps={myOps}
+        isAdmin={isAdmin}
+        roster={report.players.map((pl) => pl.nickname)}
+        overlayData={overlayData}
+      />
     </div>
+    </PlayerNavProvider>
   );
 }
 

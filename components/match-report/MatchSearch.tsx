@@ -57,7 +57,7 @@ export function MatchSearch({ allMatchIds, initialValue }: Props) {
   function navigateToMatch(matchId: string) {
     const trimmed = matchId.trim();
     if (trimmed === "") return;
-    // Reset player param when changing match — the previously-selected
+    // Reset player param when changing match – the previously-selected
     // player is unlikely to be in the new match.
     router.push(`${pathname}?match=${encodeURIComponent(trimmed)}`);
     setShowSuggestions(false);
@@ -134,7 +134,7 @@ export function MatchSearch({ allMatchIds, initialValue }: Props) {
                     idx === highlightedIndex && "bg-bg-overlay",
                   )}
                   onMouseDown={(e) => {
-                    // mousedown rather than click — so it fires before
+                    // mousedown rather than click – so it fires before
                     // the input's blur handler hides the dropdown.
                     e.preventDefault();
                     navigateToMatch(id);

@@ -34,12 +34,12 @@ const COPY_BY_REASON: Record<
   "match-not-found": {
     title: "Match Not Found",
     body: (matchId) =>
-      `No match with ID "${matchId}" exists in the records yet. Double-check the ID — recent matches appear in the search dropdown above.`,
+      `No match with ID "${matchId}" exists in the records yet. Double-check the ID – recent matches appear in the search dropdown above.`,
   },
   "no-players": {
     title: "Match Has No Player Data",
     body: (matchId) =>
-      `Match "${matchId}" exists but has no player records. The data may not have synced yet — try again in a few minutes.`,
+      `Match "${matchId}" exists but has no player records. The data may not have synced yet – try again in a few minutes.`,
   },
   "data-fetch-failed": {
     title: "Couldn't Load Match Data",

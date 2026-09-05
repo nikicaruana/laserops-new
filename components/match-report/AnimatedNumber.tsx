@@ -13,7 +13,7 @@ import { useEffect, useState } from "react";
  * new value, it animates from 0 to the new value. To restart on a
  * different player selection (where you want the animation to play
  * again even if the value coincidentally matches), pass a `key` that
- * changes — React will unmount and remount, triggering a fresh start.
+ * changes – React will unmount and remount, triggering a fresh start.
  *
  * Honors prefers-reduced-motion: skips the animation entirely if the
  * user has it set, jumping straight to the final value.
@@ -53,7 +53,7 @@ export function AnimatedNumber({
     function tick(now: number) {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      // Ease-out cubic — fast at the start, slowing as it reaches
+      // Ease-out cubic – fast at the start, slowing as it reaches
       // the target. Reads more "satisfying" than linear.
       const eased = 1 - Math.pow(1 - progress, 3);
       setDisplayValue(startValue + (endValue - startValue) * eased);
@@ -68,7 +68,7 @@ export function AnimatedNumber({
     return () => {
       if (rafId !== null) window.cancelAnimationFrame(rafId);
     };
-    // Intentionally NOT including `duration` — changing duration mid-
+    // Intentionally NOT including `duration` – changing duration mid-
     // animation isn't a use case we need to support.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
@@ -84,7 +84,7 @@ function formatNumber(n: number, format: Format): string {
       // Round during animation so partial values aren't shown
       return Math.round(n).toString();
     case "float":
-      // Two decimal places throughout — animates smoothly through
+      // Two decimal places throughout – animates smoothly through
       // 0.00 → 1.23 → 2.49 etc.
       return n.toFixed(2);
     case "comma":

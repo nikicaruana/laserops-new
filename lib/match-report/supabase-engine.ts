@@ -5,7 +5,7 @@
  * Sheets engine (lib/match-report/engine.ts) from matches +
  * match_player_aggregate (+ config joins + match_awards), so the Match Report
  * and Last Match pages render unchanged. All XP-card fields are read straight
- * from the now-migrated aggregate columns — no recomputation.
+ * from the now-migrated aggregate columns – no recomputation.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { GameInfo } from "@/lib/cms/game-id-map";
@@ -19,6 +19,7 @@ import type {
 } from "@/lib/match-report/engine";
 import type { GameDataRow, GameDataRaw } from "@/lib/game-data/lookup";
 import { DEFAULT_AVATAR_URL } from "@/lib/avatar";
+import { ladderDisplayName } from "@/lib/ladders";
 
 const n = (v: number | null | undefined) => v ?? 0;
 
@@ -113,7 +114,7 @@ export async function fetchMatchReportSupabase(
 ): Promise<MatchReportResult> {
   const { data: match } = await supabase
     .from("matches")
-    .select("id, match_code, year, sequence_no, source_game_id, is_private, is_double_xp, winning_team_colour, net_result_summary, played_on")
+    .select("id, match_code, year, sequence_no, source_game_id, is_private, is_double_xp, winning_team_colour, net_result_summary, played_on, ladder_id, home_squad_id, away_squad_id, home_squad_colour, away_squad_colour")
     .eq("match_code", matchId)
     .maybeSingle<{
       id: string;
@@ -126,6 +127,11 @@ export async function fetchMatchReportSupabase(
       winning_team_colour: string | null;
       net_result_summary: Summary | null;
       played_on: string | null;
+      ladder_id: string | null;
+      home_squad_id: string | null;
+      away_squad_id: string | null;
+      home_squad_colour: string | null;
+      away_squad_colour: string | null;
     }>();
 
   if (!match) return { ok: false, reason: "match-not-found" };
@@ -234,10 +240,39 @@ export async function fetchMatchReportSupabase(
 
   players.sort((a, b) => b.score - a.score);
 
-  const game = buildGameInfo(match, teamBadge);
+  // Squad-vs-squad context: colour -> squad {name, badge} + a match-kind label.
+  let squadCtx: SquadCtx | null = null;
+  if (match.home_squad_id && match.away_squad_id) {
+    const [{ data: sqRows }, ladderRes] = await Promise.all([
+      supabase.from("squads").select("id, name, badge_url").in("id", [match.home_squad_id, match.away_squad_id]),
+      match.ladder_id
+        ? supabase.from("ladders").select("key, sponsor_name").eq("id", match.ladder_id).maybeSingle()
+        : Promise.resolve({ data: null as { key: string; sponsor_name: string | null } | null }),
+    ]);
+    const byId = new Map(((sqRows ?? []) as { id: string; name: string; badge_url: string | null }[]).map((s) => [s.id, s]));
+    const byColour = new Map<string, { name: string; badgeUrl: string }>();
+    const home = byId.get(match.home_squad_id);
+    const away = byId.get(match.away_squad_id);
+    if (home && match.home_squad_colour) byColour.set(match.home_squad_colour.toLowerCase(), { name: home.name, badgeUrl: home.badge_url ?? "" });
+    if (away && match.away_squad_colour) byColour.set(match.away_squad_colour.toLowerCase(), { name: away.name, badgeUrl: away.badge_url ?? "" });
+    const ladder = ladderRes.data as { key: string; sponsor_name: string | null } | null;
+    squadCtx = {
+      matchKind: match.ladder_id ? "ladder" : "squad",
+      ladderName: ladder ? ladderDisplayName(ladder.key, ladder.sponsor_name) : null,
+      byColour,
+    };
+  }
+
+  const game = buildGameInfo(match, teamBadge, squadCtx);
   const report: MatchReport = { game, players, ranks: ranksList, matchDate: match.played_on ?? "" };
   return { ok: true, report };
 }
+
+type SquadCtx = {
+  matchKind: "ladder" | "squad";
+  ladderName: string | null;
+  byColour: Map<string, { name: string; badgeUrl: string }>;
+};
 
 function buildGameInfo(
   match: {
@@ -251,12 +286,15 @@ function buildGameInfo(
     net_result_summary: Summary | null;
   },
   teamBadge: Map<string, string>,
+  squadCtx: SquadCtx | null,
 ): GameInfo {
   const s = match.net_result_summary ?? {};
   const rw = s.round_wins ?? {};
   const tr = s.team_ratings ?? {};
   const winning = (s.winning_team ?? match.winning_team_colour ?? "").trim();
   const losing = (s.losing_team ?? "").trim();
+  const wSquad = squadCtx?.byColour.get(winning.toLowerCase());
+  const lSquad = squadCtx?.byColour.get(losing.toLowerCase());
   const ratingFor = (colour: string) => {
     const k = colour.charAt(0).toUpperCase() + colour.slice(1).toLowerCase();
     return (tr as Record<string, number | undefined>)[k] ?? 0;
@@ -279,7 +317,11 @@ function buildGameInfo(
     losingTeamRounds: s.losing_rounds ?? 0,
     winningTeamRating: ratingFor(winning),
     losingTeamRating: ratingFor(losing),
-    winningTeamBadge: teamBadge.get(winning.toLowerCase()) ?? "",
-    losingTeamBadge: teamBadge.get(losing.toLowerCase()) ?? "",
+    winningTeamBadge: wSquad?.badgeUrl || teamBadge.get(winning.toLowerCase()) || "",
+    losingTeamBadge: lSquad?.badgeUrl || teamBadge.get(losing.toLowerCase()) || "",
+    matchKind: squadCtx?.matchKind ?? null,
+    ladderName: squadCtx?.ladderName ?? null,
+    winningTeamName: wSquad?.name ?? null,
+    losingTeamName: lSquad?.name ?? null,
   };
 }

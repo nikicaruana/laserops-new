@@ -22,8 +22,8 @@ import { AnimatedNumber } from "./AnimatedNumber";
  *                baseline
  *   - If they leveled up: bar fills to 100% (Color B reaches end),
  *     then resets to 0 in the next level's frame, with Color A also
- *     resetting (no baseline at the new level — they entered at 0).
- *   - Multi-level jumps are handled — each level boundary is a slice.
+ *     resetting (no baseline at the new level – they entered at 0).
+ *   - Multi-level jumps are handled – each level boundary is a slice.
  *
  *   - Total animation duration is ~3 seconds, distributed proportionally
  *     across slices by their XP delta.
@@ -160,7 +160,7 @@ function computeSlices(
   if (totalSliceEarned > 0) {
     for (const s of slices) {
       s.durationMs = Math.max(
-        300, // floor — every slice gets at least 0.3s so the user can see it
+        300, // floor – every slice gets at least 0.3s so the user can see it
         (s.earnedXp / totalSliceEarned) * TOTAL_ANIMATION_DURATION_MS,
       );
     }
@@ -194,7 +194,7 @@ export function XpCard({ player, ranks }: Props) {
   const afterBadgeUrl = afterRank?.badgeUrl || player.xpLevelBadgeImage || beforeBadgeUrl;
 
   // Derive level-up directly from the level numbers rather than relying
-  // on the XP_Level_Up_In_Match boolean column. This is more reliable —
+  // on the XP_Level_Up_In_Match boolean column. This is more reliable –
   // the column might be inconsistently populated, but if the after-level
   // is genuinely greater than the before-level, the player leveled up.
   const leveledUp =
@@ -221,7 +221,7 @@ export function XpCard({ player, ranks }: Props) {
     }
 
     if (prefersReducedMotion) {
-      // Skip directly to final state — last slice fully animated.
+      // Skip directly to final state – last slice fully animated.
       setCurrentSliceIdx(slices.length - 1);
       setSliceProgress(1);
       return;
@@ -265,7 +265,7 @@ export function XpCard({ player, ranks }: Props) {
   }, [player.nickname]);
 
   const currentSlice = slicesRef.current[currentSliceIdx];
-  // Compute current "earned fill" — from baselineFill animating toward endFill
+  // Compute current "earned fill" – from baselineFill animating toward endFill
   const earnedFillCurrent = currentSlice
     ? currentSlice.baselineFill +
       (currentSlice.endFill - currentSlice.baselineFill) * sliceProgress
@@ -274,7 +274,7 @@ export function XpCard({ player, ranks }: Props) {
   const displayedLevel = currentSlice?.level ?? player.xpCurrentLevelBeforeMatch;
 
   return (
-    <div className="rounded-sm bg-accent px-5 py-5 text-bg sm:px-6 sm:py-6">
+    <div className="flex h-full flex-col justify-center rounded-sm bg-accent px-5 py-5 text-bg sm:px-6 sm:py-6">
       <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-6">
         {/* Badge area:
             - No level-up: single dark inset box with the player's
@@ -305,17 +305,16 @@ export function XpCard({ player, ranks }: Props) {
         {/* Level + total + progress bar */}
         <div className="flex flex-1 flex-col gap-2 min-w-0">
           {/* Level row.
-              MOBILE: smaller text (text-xl) so "Level 7 ▶ 9" fits
-                      cleanly on a 375px iPhone SE. The "+ N Total XP"
-                      sits on its own line below, also smaller, so the
-                      animated count-up doesn't trigger line-wrapping.
-              DESKTOP: bumps back up to text-3xl and lets level + Total
-                       XP sit inline. */}
-          <div className="flex flex-col gap-y-0.5 sm:flex-row sm:flex-wrap sm:items-baseline sm:gap-x-3 sm:gap-y-0">
+              The "+ N Total XP" ALWAYS sits on its own line below the
+              Level (both mobile and desktop). Keeping it stacked stops the
+              animated count-up from jumping between lines as its width
+              changes during the fill – inline + flex-wrap made the whole
+              card look like it was glitching mid-animation. */}
+          <div className="flex flex-col gap-y-0.5">
             {leveledUp ? (
-              // "Level 1 ▶ 2" — only the "▶ 2" portion in muted red.
+              // "Level 1 ▶ 2" – only the "▶ 2" portion in muted red.
               // Smaller on mobile (text-xl) so it can't wrap onto two
-              // lines on narrow phones — the previous text-2xl
+              // lines on narrow phones – the previous text-2xl
               // version was wrapping the "▶ Y" portion below
               // "Level X" on iPhone SE.
               <span className="text-xl font-extrabold sm:text-3xl">
@@ -330,7 +329,7 @@ export function XpCard({ player, ranks }: Props) {
                 Level {displayedLevel}
               </span>
             )}
-            <span className="text-xs font-bold sm:text-base">
+            <span className="text-xs font-bold tabular-nums sm:text-base">
               +{" "}
               <AnimatedNumber
                 key={`${player.nickname}-earned-xp`}
@@ -342,15 +341,15 @@ export function XpCard({ player, ranks }: Props) {
             </span>
           </div>
 
-          {/* Progress bar — two stacked colour layers, side by side:
-              1. Track (very subtle dark) — the empty portion
-              2. Baseline (BLACK) — the XP the player entered the match
+          {/* Progress bar – two stacked colour layers, side by side:
+              1. Track (very subtle dark) – the empty portion
+              2. Baseline (BLACK) – the XP the player entered the match
                  with, within this level. Sits at the left, fixed width.
-              3. Earned (muted RED) — the XP gained IN this match. Sits
+              3. Earned (muted RED) – the XP gained IN this match. Sits
                  IMMEDIATELY to the right of the baseline. Both colours
                  are visible: black shows what they had, red shows what
                  they gained.
-              The red is `red-800` (deep / muted red, oklch(0.444 0.177)) —
+              The red is `red-800` (deep / muted red, oklch(0.444 0.177)) –
               chosen over the more saturated red-600 to reduce eye strain
               on the bright yellow card background. Same red used for the
               ▶ marker in the badges row and the Level X ▶ Y text. */}
@@ -375,7 +374,7 @@ export function XpCard({ player, ranks }: Props) {
             />
           </div>
 
-          {/* Mobile breakdown — runs horizontally below the progress
+          {/* Mobile breakdown – runs horizontally below the progress
               bar as a wrap-row of three short labels. Labels are
               shortened ("from points" → "points") so all three fit
               on one line on most phones; on the very narrowest viewports
@@ -401,7 +400,7 @@ export function XpCard({ player, ranks }: Props) {
           </div>
         </div>
 
-        {/* Desktop breakdown — hidden on mobile (the compact mobile
+        {/* Desktop breakdown – hidden on mobile (the compact mobile
             version sits below the bar instead). */}
         <div className="hidden flex-col items-end gap-0.5 sm:flex">
           <BreakdownLine
@@ -502,7 +501,7 @@ function BreakdownLine({ label, value }: { label: string; value: number }) {
 }
 
 /**
- * CompactBreakdown — mobile-only horizontal variant of BreakdownLine.
+ * CompactBreakdown – mobile-only horizontal variant of BreakdownLine.
  * Used in the wrap-row below the progress bar where the three
  * breakdown items run side-by-side instead of stacked. Shorter label
  * (just "points" not "from points") + drops the trailing " XP" so

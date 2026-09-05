@@ -7,20 +7,23 @@ import type { RankLevel } from "@/lib/cms/ranking-system";
 import { XpCard } from "./XpCard";
 import { AnimatedNumber } from "./AnimatedNumber";
 import { AccoladeTile } from "./AccoladeTile";
+import { StreakTile } from "./StreakTile";
 import { BracketFrame } from "@/components/portal/BracketFrame";
+import { FollowButton } from "@/components/portal/FollowButton";
+import { ShareStoryButton } from "./ShareStoryButton";
 import { cn } from "@/lib/cn";
 
 /**
  * PlayerStatsCard
  * --------------------------------------------------------------------
  * The expanded view that appears below the players table when a player
- * is clicked. Match-scoped (NOT lifetime) — these are all stats for
+ * is clicked. Match-scoped (NOT lifetime) – these are all stats for
  * THIS match only.
  *
  * Client component for two reasons:
  *   - On mount, scrolls itself into view smoothly. Without this, when
  *     a user clicks a row in the players table, the URL changes and
- *     the card renders below — but the user is still scrolled at the
+ *     the card renders below – but the user is still scrolled at the
  *     top, and might not realise the card appeared further down.
  *   - The stat tiles use AnimatedNumber for a "count up from 0" effect
  *     when the player changes.
@@ -35,9 +38,16 @@ import { cn } from "@/lib/cn";
 type Props = {
   player: MatchPlayer;
   ranks: RankLevel[];
+  /** When set, enables the "Share to Story" button (needs the match id to
+   *  build the story-image URL). Use "PREVIEW" for the sample report. */
+  matchId?: string;
+  /** Whether this card belongs to the signed-in user. Only they may share
+   *  their own stats, so the button is hidden on other players' cards.
+   *  Defaults true (the admin preview always shows it). */
+  canShare?: boolean;
 };
 
-export function PlayerStatsCard({ player, ranks }: Props) {
+export function PlayerStatsCard({ player, ranks, matchId, canShare = true }: Props) {
   const sectionRef = useRef<HTMLElement>(null);
 
   // Scroll into view when the player changes. Smooth scroll so it
@@ -99,9 +109,10 @@ export function PlayerStatsCard({ player, ranks }: Props) {
           <h2 className="text-2xl font-extrabold leading-tight text-text [overflow-wrap:anywhere] sm:text-3xl">
             {player.nickname}
           </h2>
+          <FollowButton opsTag={player.nickname} size="sm" className="mt-1" />
           <div className="mt-1 flex flex-wrap items-center justify-center gap-2 text-[0.65rem] font-semibold uppercase tracking-[0.14em]">
             <TeamPill team={player.teamColor} />
-            {/* Go-to-profile CTA — links to the player's full lifetime
+            {/* Go-to-profile CTA – links to the player's full lifetime
                 summary page. The Match Overview card already shows
                 outcome via the winning team highlight, so we use this
                 slot for an action instead of a redundant Winner/Loser
@@ -119,6 +130,9 @@ export function PlayerStatsCard({ player, ranks }: Props) {
               <span aria-hidden className="text-xs">→</span>
             </Link>
           </div>
+          {matchId && canShare && (
+            <ShareStoryButton matchId={matchId} ops={player.nickname} className="mt-3" />
+          )}
         </div>
       </header>
 
@@ -128,10 +142,11 @@ export function PlayerStatsCard({ player, ranks }: Props) {
           gun card fixed at 280px on the right. The shorter XP card width
           means the progress bar is naturally shorter, which the user
           asked for.
-          `items-start` so each card sits at its natural height — without
-          this, the grid would stretch the shorter card to match the
-          taller one, leaving awkward empty space below. */}
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-start lg:gap-5">
+          `items-stretch` so both cards share the same height (the taller
+          one drives it) – the XP card's content is vertically centered, so
+          it fills cleanly rather than leaving the box looking short next to
+          the weapon card. */}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-stretch lg:gap-5">
         <XpCard player={player} ranks={ranks} />
         <GunUsedCard
           weaponName={player.gunUsed}
@@ -139,12 +154,12 @@ export function PlayerStatsCard({ player, ranks }: Props) {
         />
       </div>
 
-      {/* Stat grid — match-scoped values + per-match ranks. AnimatedNumber
+      {/* Stat grid – match-scoped values + per-match ranks. AnimatedNumber
           counts up from 0 to final value on player change. The `key` on
           each tile uses the player's nickname so React unmounts/remounts
           the AnimatedNumber when the player changes, restarting the
           animation. */}
-      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-6">
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4 lg:grid-cols-4">
         <StatTile
           key={`${player.nickname}-score`}
           label="Score"
@@ -187,19 +202,47 @@ export function PlayerStatsCard({ player, ranks }: Props) {
           format="percent"
           rank={player.accuracyRank}
         />
+        <StatTile
+          key={`${player.nickname}-objcaps`}
+          label="Obj Caps"
+          value={player.objCaps ?? 0}
+          format="int"
+          rank={player.objCapsRank ?? 0}
+        />
+        <StatTile
+          key={`${player.nickname}-captime`}
+          label="Cap Time"
+          value={player.capTime ?? 0}
+          format="int"
+          suffix="s"
+          rank={player.capTimeRank ?? 0}
+        />
       </div>
+
+      {/* Streaks earned in this match. Tap a badge for its description. */}
+      {(player.matchStreaks?.length ?? 0) > 0 && (
+        <div className="mt-6 rounded-sm border border-border bg-bg-elevated px-5 py-5 text-text sm:mt-8 sm:px-6 sm:py-6">
+          <h3 className="text-center text-base font-extrabold uppercase tracking-[0.16em] sm:text-lg">Streaks Obtained</h3>
+          <div className="mt-5 flex flex-wrap justify-center gap-x-4 gap-y-4 sm:gap-6">
+            {player.matchStreaks!.map((s) => (
+              <StreakTile key={s.key} streak={s} />
+            ))}
+          </div>
+          <p className="mt-5 text-center text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-text-muted">Tap a streak to see what it means</p>
+        </div>
+      )}
 
       {/* Accolades earned. Dark backdrop (was yellow): the badge
           artwork is yellow-themed so it pops on black. The dark inset
           boxes that used to wrap each badge for contrast on yellow
-          aren't needed anymore — black-on-yellow-art reads cleanly
+          aren't needed anymore – black-on-yellow-art reads cleanly
           without any wrapper. */}
       {player.earnedAccolades.length > 0 && (
         <div className="mt-6 rounded-sm border border-border bg-bg-elevated px-5 py-5 text-text sm:mt-8 sm:px-6 sm:py-6">
           <h3 className="text-center text-base font-extrabold uppercase tracking-[0.16em] sm:text-lg">
             Accolades Earned
           </h3>
-          <div className="mt-5 grid grid-cols-3 gap-x-4 gap-y-2 sm:grid-cols-4 sm:gap-5 lg:grid-cols-5">
+          <div className="mt-5 flex flex-wrap justify-center gap-x-4 gap-y-2 sm:gap-6">
             {player.earnedAccolades.map(({ accolade }) => (
               <AccoladeTile key={accolade.key} accolade={accolade} />
             ))}
@@ -209,21 +252,80 @@ export function PlayerStatsCard({ player, ranks }: Props) {
           </p>
         </div>
       )}
+
+      {/* Nemesis: the opponent this player clashed with most. */}
+      {player.nemesis && (
+        <div className="mt-6 rounded-sm border border-border bg-bg-elevated px-5 py-5 sm:mt-8 sm:px-6 sm:py-6">
+          <h3 className="mb-4 text-center text-base font-extrabold uppercase tracking-[0.16em] text-text sm:text-lg">Nemesis</h3>
+          <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-5 sm:gap-x-14">
+            <div className="flex items-center gap-4">
+              <img
+                src={player.nemesis.profilePicUrl}
+                alt={`${player.nemesis.nickname} profile photo`}
+                loading="lazy"
+                className="block aspect-square w-16 shrink-0 rounded-sm border border-border-strong object-cover sm:w-20"
+              />
+              <div>
+                <p className="text-xl font-extrabold uppercase tracking-tight text-accent sm:text-2xl">{player.nemesis.nickname}</p>
+                <p className="mt-0.5 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-text-muted">Level {player.nemesis.level}</p>
+              </div>
+            </div>
+            <div className="flex gap-6 text-center">
+              <div>
+                <p className="font-mono text-2xl font-extrabold text-text sm:text-3xl">{player.nemesis.killsFor}</p>
+                <p className="text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-text-subtle">You killed</p>
+              </div>
+              <div>
+                <p className="font-mono text-2xl font-extrabold text-text sm:text-3xl">{player.nemesis.killsAgainst}</p>
+                <p className="text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-text-subtle">Killed you</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Head to head: who this player killed, and who killed them. */}
+      {((player.killed?.length ?? 0) > 0 || (player.killedBy?.length ?? 0) > 0) && (
+        <div className="mt-6 grid gap-4 sm:mt-8 sm:grid-cols-2">
+          <KillList title={`Players ${player.nickname} killed`} rows={player.killed ?? []} tone="accent" />
+          <KillList title={`Players who killed ${player.nickname}`} rows={player.killedBy ?? []} tone="red" />
+        </div>
+      )}
     </section>
+  );
+}
+
+function KillList({ title, rows, tone }: { title: string; rows: { nickname: string; count: number }[]; tone: "accent" | "red" }) {
+  return (
+    <div className="rounded-sm border border-border bg-bg-elevated p-4">
+      <p className="mb-3 text-[0.6rem] font-bold uppercase tracking-[0.14em] text-text-muted">{title}</p>
+      {rows.length === 0 ? (
+        <p className="text-sm text-text-subtle">{tone === "red" ? "Untouchable this match." : "No kills this match."}</p>
+      ) : (
+        <ul className="space-y-1.5">
+          {rows.map((r) => (
+            <li key={r.nickname} className="flex items-center justify-between text-sm">
+              <span className="text-text">{r.nickname}</span>
+              <span className={cn("font-mono font-bold", tone === "red" ? "text-red-400" : "text-accent")}>{r.count}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
 /* ---------- Gun used card ---------- */
 
 /**
- * GunUsedCard — at this point a single yellow tile holding the gun
+ * GunUsedCard – at this point a single yellow tile holding the gun
  * silhouette + weapon name. The dark "GUN USED" eyebrow + wrapper
  * card was dropped after iterations because:
  *   - At 280px column width sitting next to the XP card, the eyebrow
  *     strip + wrapper padding pushed the card noticeably taller than
  *     the XP card, leaving awkward empty space below the XP card.
  *   - The card identity ("this is the gun used") is communicated by
- *     the visual itself — a yellow tile with a gun image is
+ *     the visual itself – a yellow tile with a gun image is
  *     recognisable. The eyebrow text was redundant.
  * If we ever need the eyebrow back (e.g. when this card is used in
  * a different context with less surrounding context), wrap this in a
@@ -269,11 +371,13 @@ function StatTile({
   value,
   format,
   rank,
+  suffix,
 }: {
   label: string;
   value: number;
   format: FormatKind;
   rank: number;
+  suffix?: string;
 }) {
   return (
     // Vertical layout: label + value centered as a unit, then rank
@@ -285,7 +389,7 @@ function StatTile({
         {label}
       </p>
       <p className="mt-1 text-center font-mono text-2xl font-bold tabular-nums sm:text-3xl">
-        <AnimatedNumber value={value} format={format} />
+        <AnimatedNumber value={value} format={format} />{suffix}
       </p>
       {rank > 0 && (
         <p className="mt-auto pt-2 text-left text-[0.6rem] font-semibold uppercase tracking-[0.14em]">
@@ -308,7 +412,7 @@ function TeamPill({ team }: { team: string }) {
         !["blue", "red", "yellow"].includes(colorLower) && "border-border-strong text-text-muted",
       )}
     >
-      {team || "—"}
+      {team || "–"}
     </span>
   );
 }

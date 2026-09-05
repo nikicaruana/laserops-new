@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { MatchPlayer } from "@/lib/match-report/engine";
+import { usePlayerNav } from "./PlayerNav";
 import { cn } from "@/lib/cn";
 
 /**
@@ -18,7 +19,7 @@ import { cn } from "@/lib/cn";
  *   - Best-in-row highlighting: the row with the best value in each
  *     metric column gets that cell tinted yellow. "Best" means highest
  *     for most metrics, lowest for Deaths.
- *   - Compact cells (no profile pic) — the page already has a lot of
+ *   - Compact cells (no profile pic) – the page already has a lot of
  *     visual content; the table is meant to be scannable, not pretty.
  *
  * Native <table> with `position: sticky; left: 0;` on the # / Ops Tag
@@ -41,7 +42,7 @@ type Props = {
 };
 
 /**
- * Per-metric "best value" — used to tint the winning cell yellow.
+ * Per-metric "best value" – used to tint the winning cell yellow.
  * For Deaths, lower is better. For everything else, higher.
  *
  * Pre-compute once per render rather than recomputing per cell.
@@ -61,13 +62,15 @@ type BestValues = {
   accuracy: number;
   damage: number;
   totalXp: number;
+  objCaps: number;
+  capTime: number;
   scoreByGun: Map<string, number>;
 };
 
 function computeBestValues(players: MatchPlayer[]): BestValues {
   if (players.length === 0) {
     return {
-      score: 0, kills: 0, deaths: 0, kd: 0, accuracy: 0, damage: 0, totalXp: 0,
+      score: 0, kills: 0, deaths: 0, kd: 0, accuracy: 0, damage: 0, totalXp: 0, objCaps: 0, capTime: 0,
       scoreByGun: new Map(),
     };
   }
@@ -88,6 +91,8 @@ function computeBestValues(players: MatchPlayer[]): BestValues {
     accuracy: Math.max(...players.map((p) => p.accuracy)),
     damage: Math.max(...players.map((p) => p.damage)),
     totalXp: Math.max(...players.map((p) => p.totalXp)),
+    objCaps: Math.max(...players.map((p) => p.objCaps ?? 0)),
+    capTime: Math.max(...players.map((p) => p.capTime ?? 0)),
     scoreByGun,
   };
 }
@@ -99,20 +104,23 @@ export function PlayersTable({ players, matchId, selectedPlayer, linkNamesToProf
 
   return (
     <div className="border border-border bg-bg-elevated">
-      {/* Yellow accent strip at top — matches LeaderboardTable styling */}
+      {/* Yellow accent strip at top – matches LeaderboardTable styling */}
       <div aria-hidden className="h-1 w-full bg-accent" />
 
       <div
-        className="overflow-x-auto"
-        // Custom scrollbar styling for an "intentional" feel — fine to
+        // Scroll only on smaller screens. On desktop (lg+) the table is
+        // compacted enough to fit the container, so we drop the scroll and
+        // the min-width and let every column show at once.
+        className="overflow-x-auto lg:overflow-x-visible"
+        // Custom scrollbar styling for an "intentional" feel – fine to
         // leave default if you'd rather; this is just a polish touch.
         style={{ scrollbarWidth: "thin" }}
       >
-        <table className="w-full min-w-[640px] border-collapse text-left">
+        <table className="w-full min-w-[760px] border-collapse text-left lg:min-w-0">
           <thead>
             <tr className="border-b border-border-strong bg-bg-overlay">
               {/* Rank column. Explicit width so it matches the
-                  Ops Tag column's sticky `left` offset exactly — no gap
+                  Ops Tag column's sticky `left` offset exactly – no gap
                   between them when scrolling. */}
               <Th align="center" sticky="rank">
                 #
@@ -124,7 +132,7 @@ export function PlayersTable({ players, matchId, selectedPlayer, linkNamesToProf
               <Th align="center">Team</Th>
               <Th align="left">Gun</Th>
               <Th align="right">Score</Th>
-              {/* Compact mobile labels — single letters maximise the
+              {/* Compact mobile labels – single letters maximise the
                   number of stat columns visible without horizontal
                   scroll on phones. Full words on desktop where width
                   isn't precious. */}
@@ -138,7 +146,9 @@ export function PlayersTable({ players, matchId, selectedPlayer, linkNamesToProf
               </Th>
               <Th align="right">K/D</Th>
               <Th align="right">Acc</Th>
-              <Th align="right">Damage</Th>
+              <Th align="right">Dmg</Th>
+              <Th align="right" tight>Caps</Th>
+              <Th align="right">Cap Time</Th>
               <Th align="right">Total XP</Th>
             </tr>
           </thead>
@@ -173,10 +183,12 @@ function Th({
   children,
   align,
   sticky,
+  tight,
 }: {
   children: React.ReactNode;
   align: "left" | "center" | "right";
   sticky?: "rank" | "ops";
+  tight?: boolean;
 }) {
   return (
     <th
@@ -186,10 +198,14 @@ function Th({
         align === "left" && "text-left",
         align === "center" && "text-center",
         align === "right" && "text-right",
-        // Default padding for non-sticky cells
-        !sticky && "px-3",
+        // Default padding for non-sticky cells (tighter on desktop so all
+        // columns fit without horizontal scroll). `tight` squeezes a column
+        // down to almost nothing (used for the single-digit Caps column) so
+        // the freed space goes to Ops Tag / Gun.
+        !sticky && !tight && "px-3 lg:px-1.5 xl:px-2",
+        !sticky && tight && "w-px whitespace-nowrap px-1",
         // Sticky: explicit widths matching the left-offsets used below.
-        // Rank column is narrower on mobile (28px) than desktop (48px) —
+        // Rank column is narrower on mobile (28px) than desktop (48px) –
         // pulls the Ops Tag column closer on small screens to fit more
         // content in the visible viewport. The ops column's `left-7` and
         // `left-12` MUST match the rank column's `w-7` and `w-12`.
@@ -232,12 +248,12 @@ function PlayerRow({
       className={cn(
         "border-b border-border/60 last:border-b-0",
         rowBg,
-        // Hover treatment — applies via the Link inside, but we add a
+        // Hover treatment – applies via the Link inside, but we add a
         // row-level class so the hover state on any cell triggers it.
         "transition-colors hover:bg-bg-overlay/40",
       )}
     >
-      {/* Rank — clickable, sticky. Explicit width matching the ops
+      {/* Rank – clickable, sticky. Explicit width matching the ops
           column's left-offset so the two sit flush, no gap. */}
       <td
         className={cn(
@@ -257,7 +273,7 @@ function PlayerRow({
         </RowLink>
       </td>
 
-      {/* Ops Tag — sticky so the player's identity stays visible while
+      {/* Ops Tag – sticky so the player's identity stays visible while
           scrolling the stats. On the Last Match page (linkNamesToProfiles)
           the name navigates to the player's all-time profile. On the
           match report page it uses RowLink to expand the stats card. */}
@@ -275,7 +291,7 @@ function PlayerRow({
           >
             <span
               className={cn(
-                "mx-auto block min-w-[5.5rem] max-w-[8rem] break-words text-xs font-semibold leading-tight transition-colors sm:min-w-[7rem] sm:max-w-[10rem] sm:text-sm",
+                "mx-auto block min-w-[5.5rem] max-w-[8rem] break-words text-xs font-semibold leading-tight transition-colors sm:min-w-[7rem] sm:max-w-[10rem] sm:text-sm lg:min-w-[6.5rem] lg:max-w-[10rem]",
                 isSelected ? "text-accent" : "text-text hover:text-accent",
               )}
             >
@@ -286,7 +302,7 @@ function PlayerRow({
           <RowLink href={href} ariaLabel={`View ${player.nickname}'s match stats`}>
             <span
               className={cn(
-                "mx-auto block min-w-[5.5rem] max-w-[8rem] break-words text-xs font-semibold leading-tight transition-colors sm:min-w-[7rem] sm:max-w-[10rem] sm:text-sm",
+                "mx-auto block min-w-[5.5rem] max-w-[8rem] break-words text-xs font-semibold leading-tight transition-colors sm:min-w-[7rem] sm:max-w-[10rem] sm:text-sm lg:min-w-[6.5rem] lg:max-w-[10rem]",
                 isSelected ? "text-accent" : "text-text hover:text-accent",
               )}
             >
@@ -297,9 +313,9 @@ function PlayerRow({
       </td>
 
       {/* Scrollable content cells. Each is wrapped in a RowLink so the
-          entire row is one big tap target — clicking anywhere navigates. */}
+          entire row is one big tap target – clicking anywhere navigates. */}
       <Td align="center">
-        <RowLink href={href}>{player.level || "—"}</RowLink>
+        <RowLink href={href}>{player.level || "–"}</RowLink>
       </Td>
 
       <Td align="center">
@@ -312,7 +328,7 @@ function PlayerRow({
               player.teamColorLower === "yellow" && "text-accent",
             )}
           >
-            {player.teamColor || "—"}
+            {player.teamColor || "–"}
           </span>
         </RowLink>
       </Td>
@@ -321,18 +337,18 @@ function PlayerRow({
         <RowLink href={href}>
           {/* Highlight the gun name yellow when this player is the
               top scorer with that specific gun. Reads as "specialist
-              with this weapon" — surfaces gun-class winners alongside
+              with this weapon" – surfaces gun-class winners alongside
               the overall stat winners in their own respective columns. */}
           <span
             className={cn(
-              "block max-w-[7rem] truncate text-[0.65rem] sm:max-w-[10rem] sm:text-xs",
+              "block max-w-[7rem] truncate text-[0.65rem] sm:max-w-[10rem] sm:text-xs lg:max-w-[9.5rem]",
               player.gunUsed !== "" &&
                 best.scoreByGun.get(player.gunUsed) === player.score
                 ? "font-bold text-accent"
                 : "text-text-muted",
             )}
           >
-            {player.gunUsed || "—"}
+            {player.gunUsed || "–"}
           </span>
         </RowLink>
       </Td>
@@ -361,6 +377,14 @@ function PlayerRow({
         <RowLink href={href}>{player.damage.toLocaleString("en-US")}</RowLink>
       </BestTd>
 
+      <BestTd value={player.objCaps ?? 0} best={best.objCaps} format="number" tight>
+        <RowLink href={href}>{player.objCaps ?? 0}</RowLink>
+      </BestTd>
+
+      <BestTd value={player.capTime ?? 0} best={best.capTime} format="number">
+        <RowLink href={href}>{`${player.capTime ?? 0}s`}</RowLink>
+      </BestTd>
+
       <BestTd value={player.totalXp} best={best.totalXp} format="number">
         <RowLink href={href}>{player.totalXp.toLocaleString("en-US")}</RowLink>
       </BestTd>
@@ -380,7 +404,7 @@ function Td({
   return (
     <td
       className={cn(
-        "px-3 py-3 text-xs sm:text-sm",
+        "px-3 py-3 text-xs sm:text-sm lg:px-1.5 xl:px-2",
         align === "left" && "text-left",
         align === "center" && "text-center",
         align === "right" && "text-right font-mono tabular-nums",
@@ -395,11 +419,11 @@ function Td({
  * Td with "best value" highlighting. If this cell's value matches the
  * computed best for the column, the cell tints yellow.
  *
- * `extraHighlight` is an OR — if true, the cell highlights even if the
+ * `extraHighlight` is an OR – if true, the cell highlights even if the
  * value doesn't match `best`. Used by the Score column to also flag
  * each "gun specialist" (top scorer per gun).
  *
- * Edge case: ties — multiple players could have the same best value.
+ * Edge case: ties – multiple players could have the same best value.
  * Both rows get highlighted. Acceptable UX.
  *
  * Edge case: best is 0 (no one had any kills, etc.). We DON'T
@@ -412,12 +436,14 @@ function BestTd({
   best,
   format,
   extraHighlight = false,
+  tight = false,
 }: {
   children: React.ReactNode;
   value: number;
   best: number;
   format: "number" | "kd" | "percent";
   extraHighlight?: boolean;
+  tight?: boolean;
 }) {
   const isMatchBest = Math.abs(value - best) < 1e-9 && best > 0;
   const isBest = isMatchBest || extraHighlight;
@@ -425,7 +451,8 @@ function BestTd({
   return (
     <td
       className={cn(
-        "px-3 py-3 text-right font-mono text-xs tabular-nums sm:text-sm",
+        "py-3 text-right font-mono text-xs tabular-nums sm:text-sm",
+        tight ? "w-px whitespace-nowrap px-1" : "px-3 lg:px-1.5 xl:px-2",
         isBest ? "font-bold text-accent" : "text-text",
       )}
     >
@@ -442,7 +469,7 @@ function BestTd({
  * inherits the cell's display so layout is unaffected.
  *
  * Using replace={false} (default) preserves the back-button history
- * — if a user clicks several rows in succession, they can back-button
+ * – if a user clicks several rows in succession, they can back-button
  * through them.
  */
 function RowLink({
@@ -454,14 +481,28 @@ function RowLink({
   href: string;
   ariaLabel?: string;
 }) {
+  const { navigate } = usePlayerNav();
+  // Stays a real <Link> (preserves the cell's alignment + middle/ctrl-click to
+  // open). Inside a PlayerNavProvider, intercept a plain left-click to navigate
+  // through a transition so the loading spinner can show; modified clicks and
+  // no-provider contexts (e.g. Last Match) keep the default Link behaviour.
   return (
     <Link
       href={href}
       // Scroll false because we manage scroll-into-view ourselves on
-      // the player stats card mount — letting the browser scroll to top
+      // the player stats card mount – letting the browser scroll to top
       // would defeat that.
       scroll={false}
       aria-label={ariaLabel}
+      onClick={
+        navigate
+          ? (e) => {
+              if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+              e.preventDefault();
+              navigate(href);
+            }
+          : undefined
+      }
       className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
     >
       {children}

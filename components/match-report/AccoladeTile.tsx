@@ -9,11 +9,11 @@ import { cn } from "@/lib/cn";
  * --------------------------------------------------------------------
  * One earned accolade in the match-report player stats card. The badge
  * image already includes the accolade name graphically, so we don't
- * render the name as redundant text — just the image and the XP label
+ * render the name as redundant text – just the image and the XP label
  * (e.g. "+75 XP").
  *
  * Click/tap reveals a description popup. We use the native HTML <dialog>
- * element via showModal() — handles backdrop, focus management, ESC
+ * element via showModal() – handles backdrop, focus management, ESC
  * dismiss, and accessibility for free.
  *
  * The tile is a button so keyboard navigation works (Enter/Space opens
@@ -48,7 +48,7 @@ export function AccoladeTile({ accolade }: { accolade: Accolade }) {
 
   // Click-outside handling: clicking on the dialog backdrop (the dialog
   // element itself, vs its content) closes the dialog. Native <dialog>
-  // doesn't do this by default — we wire it up explicitly.
+  // doesn't do this by default – we wire it up explicitly.
   useEffect(() => {
     const d = dialogRef.current;
     if (!d) return;
@@ -80,8 +80,8 @@ export function AccoladeTile({ accolade }: { accolade: Accolade }) {
       <button
         type="button"
         onClick={handleOpen}
-        aria-label={`${accolade.name} — tap for description`}
-        // Bare button (no visible chrome) — the badge image is the
+        aria-label={`${accolade.name} – tap for description`}
+        // Bare button (no visible chrome) – the badge image is the
         // visual centerpiece. Active scale + ring on focus give
         // tactile/keyboard feedback. Ring uses an accent tint since
         // the surrounding container is dark. Mobile uses gap-0 (the
@@ -96,7 +96,7 @@ export function AccoladeTile({ accolade }: { accolade: Accolade }) {
         )}
       >
         {/* Badge artwork sits directly on the dark section background.
-            No wrapper box — the yellow-themed icon has natural
+            No wrapper box – the yellow-themed icon has natural
             contrast on black, so the previous inset-box treatment
             became redundant after we flipped the section to dark. */}
         {accolade.badgeUrl !== "" ? (
@@ -138,7 +138,7 @@ export function AccoladeTile({ accolade }: { accolade: Accolade }) {
           "backdrop:bg-bg/80 backdrop:backdrop-blur-sm",
         )}
       >
-        {/* Inner content — header + body. Padding inside the inner
+        {/* Inner content – header + body. Padding inside the inner
             container, NOT on the dialog itself, so the backdrop fills
             the whole element. */}
         <div className="p-5 sm:p-6">
@@ -200,7 +200,7 @@ export function AccoladeTile({ accolade }: { accolade: Accolade }) {
         </div>
       </dialog>
 
-      {/* Suppress unused-state warning — isOpen is tracked for future
+      {/* Suppress unused-state warning – isOpen is tracked for future
           use (e.g. analytics on dialog opens). */}
       {isOpen && <span className="hidden" aria-hidden />}
     </>

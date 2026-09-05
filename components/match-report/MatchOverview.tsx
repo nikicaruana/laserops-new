@@ -6,8 +6,8 @@ import { cn } from "@/lib/cn";
  * --------------------------------------------------------------------
  * Top card of a match report. Shows:
  *   - Match ID + date (top row)
- *   - Round wins per team — large central display, winner highlighted yellow
- *   - Team rating scores — winner highlighted yellow
+ *   - Round wins per team – large central display, winner highlighted yellow
+ *   - Team rating scores – winner highlighted yellow
  *   - Winning + losing team badges (the badges already include team
  *     color labels, so we don't repeat them as text)
  *
@@ -27,7 +27,7 @@ export function MatchOverview({ game, matchDate }: Props) {
   return (
     <div className="rounded-sm border border-border bg-bg-elevated p-5 sm:p-7">
       {/* Top meta row: match id + date + flags. Match ID and date
-          stack vertically under a single MATCH label — the date is
+          stack vertically under a single MATCH label – the date is
           obviously match-related so a separate "Date" label was
           redundant. */}
       <div className="mb-5 flex flex-wrap items-baseline justify-between gap-3 border-b border-border pb-4 sm:mb-6 sm:pb-5">
@@ -45,6 +45,8 @@ export function MatchOverview({ game, matchDate }: Props) {
           )}
         </div>
         <div className="flex flex-wrap gap-2">
+          {game.matchKind === "ladder" && <Flag label={game.ladderName ? `Ladder · ${game.ladderName}` : "Ladder match"} tone="accent" />}
+          {game.matchKind === "squad" && <Flag label="Squad vs Squad" tone="accent" />}
           {game.isDoubleXp && <Flag label="Double XP" tone="accent" />}
           {game.isPrivate && <Flag label="Private" tone="muted" />}
         </div>
@@ -74,6 +76,7 @@ function TwoTeamLayout({ game }: { game: GameInfo }) {
           rounds={game.winningTeamRounds}
           rating={game.winningTeamRating}
           badgeUrl={game.winningTeamBadge}
+          name={game.winningTeamName ?? null}
           isWinner
         />
         <ScoreDivider />
@@ -81,6 +84,7 @@ function TwoTeamLayout({ game }: { game: GameInfo }) {
           rounds={game.losingTeamRounds}
           rating={game.losingTeamRating}
           badgeUrl={game.losingTeamBadge}
+          name={game.losingTeamName ?? null}
         />
       </div>
     );
@@ -107,7 +111,7 @@ function TwoTeamLayout({ game }: { game: GameInfo }) {
 
 /**
  * Just a colon between the two team columns. Replaces the previous
- * "ROUNDS" label + colon — the colon alone is enough to read as a
+ * "ROUNDS" label + colon – the colon alone is enough to read as a
  * versus indicator and the surrounding context (rounds being the
  * primary number) makes it obvious what's being divided.
  */
@@ -125,29 +129,38 @@ function TeamColumn({
   rounds,
   rating,
   badgeUrl,
+  name = null,
   isWinner = false,
 }: {
   rounds: number;
   rating: number;
   badgeUrl: string;
+  name?: string | null;
   isWinner?: boolean;
 }) {
   return (
     <div className="flex flex-col items-center gap-2 sm:gap-3">
-      {/* Badge — already includes the team color label graphically, so
+      {/* Badge – already includes the team color label graphically, so
           we don't render a redundant text label below it.
           Desktop badge size doubled per design feedback (h-20 → h-40)
           for more visual presence in the match overview hero. Mobile
-          unchanged since the smaller hero card is space-constrained. */}
+          unchanged since the smaller hero card is space-constrained.
+          For squad matches this is the squad badge, with the squad name
+          shown under it (the badge no longer implies the colour). */}
       {badgeUrl !== "" && (
         <img
           src={badgeUrl}
-          alt={isWinner ? "Winning team badge" : "Losing team badge"}
+          alt={name ?? (isWinner ? "Winning team badge" : "Losing team badge")}
           loading="lazy"
           className="block h-16 w-auto sm:h-40"
         />
       )}
-      {/* Rounds number — yellow when this team is the winner. */}
+      {name && (
+        <p className={cn("text-center text-xs font-bold uppercase tracking-[0.1em] sm:text-sm", isWinner ? "text-accent" : "text-text")}>
+          {name}
+        </p>
+      )}
+      {/* Rounds number – yellow when this team is the winner. */}
       <p
         className={cn(
           "font-mono text-4xl font-bold tabular-nums sm:text-5xl",
@@ -156,7 +169,7 @@ function TeamColumn({
       >
         {rounds}
       </p>
-      {/* Score (the team's rating points) — yellow on the winner. */}
+      {/* Score (the team's rating points) – yellow on the winner. */}
       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-subtle sm:text-sm">
         Score:{" "}
         <span

@@ -12,7 +12,7 @@ export function MatchReportEmptyState() {
         Enter a Match ID to begin
       </p>
       <p className="mx-auto mt-3 max-w-md text-sm text-text-muted sm:text-base">
-        Type or pick a Match ID above to pull up its full report —
+        Type or pick a Match ID above to pull up its full report –
         team scores, player breakdown, accolades, and more.
       </p>
       <p className="mx-auto mt-3 max-w-md text-xs text-text-subtle">

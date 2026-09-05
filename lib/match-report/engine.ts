@@ -12,7 +12,7 @@
  *   - Accolades CMS       → accolade definitions / images / XP values
  *   - Ranking_System      → level → badge for XP card animations
  *
- * The ranking system + accolades are CMS data and pretty stable —
+ * The ranking system + accolades are CMS data and pretty stable –
  * fetched once per match request and used for the lookups below.
  */
 
@@ -44,13 +44,13 @@ import { parseNumericOr } from "@/lib/sheets";
  * for rendering.
  */
 export type MatchPlayer = {
-  /** The raw GameDataRow — escape hatch for any column not surfaced
+  /** The raw GameDataRow – escape hatch for any column not surfaced
    *  here explicitly (e.g. accolade columns). */
   row: GameDataRow;
   // Identity
   nickname: string;
   profilePicUrl: string;
-  // Match performance — pre-extracted for table display
+  // Match performance – pre-extracted for table display
   teamColor: string;
   teamColorLower: string; // lowercase for CSS class lookup
   level: number;
@@ -100,12 +100,50 @@ export type MatchPlayer = {
   xpLevelProgressEnd: number;
   xpLevelUpInMatch: boolean;
   xpLevelBadgeImage: string;
-  // Earned accolades — already joined to CMS metadata
+  // Earned accolades – already joined to CMS metadata
   earnedAccolades: EarnedAccolade[];
+  // --- Objective scoring + streaks + nemesis (from ingestion; optional until
+  // the ingestion commit populates them). objCaps = score for capturing bases;
+  // capTime = score for holding them.
+  objCaps?: number;
+  objCapsRank?: number;
+  capTime?: number;
+  capTimeRank?: number;
+  matchStreaks?: MatchStreak[];
+  nemesis?: Nemesis | null;
+  killed?: KillTally[]; // opponents this player killed, with counts
+  killedBy?: KillTally[]; // opponents who killed this player, with counts
 };
 
 export type EarnedAccolade = {
   accolade: Accolade;
+};
+
+/** A streak a player earned in this match, joined to its definition. */
+export type MatchStreak = {
+  key: string;
+  name: string;
+  description: string;
+  badgeUrl: string;
+  points: number;
+  count: number; // how many times earned this match
+};
+
+/** One head-to-head tally (a player killed / was killed by another). */
+export type KillTally = {
+  nickname: string;
+  count: number;
+};
+
+/** The opponent a player clashed with most this match (kills for + against). */
+export type Nemesis = {
+  nickname: string;
+  profilePicUrl: string;
+  level: number;
+  killsFor: number; // times you killed them
+  killsAgainst: number; // times they killed you
+  damageFor: number; // damage you dealt to them
+  damageAgainst: number; // damage they dealt to you
 };
 
 export type MatchReport = {
@@ -129,7 +167,7 @@ export type MatchReportResult =
  * The exact column names in Game_Data_Lookup are `Accolade_${suffix}`
  * where suffix is the value below. The Accolades CMS sheet's
  * `Accolade_Name` column holds canonical display names, matched to
- * these via accoladeKey() — so these don't need to match CMS exactly,
+ * these via accoladeKey() – so these don't need to match CMS exactly,
  * just normalised forms must overlap.
  */
 const ACCOLADE_COLUMN_SUFFIXES = [
@@ -189,7 +227,7 @@ export async function fetchMatchReport(matchId: string): Promise<MatchReportResu
   const accoladesByKey = indexAccoladesByKey(accolades);
   const players = matchRows.map((row) => buildPlayer(row, accoladesByKey));
 
-  // Sort by score descending — natural default for the table.
+  // Sort by score descending – natural default for the table.
   players.sort((a, b) => b.score - a.score);
 
   // Match date: take from any player row (they all share the same match
@@ -204,7 +242,7 @@ export async function fetchMatchReport(matchId: string): Promise<MatchReportResu
 }
 
 /**
- * Fetch just the list of all known match IDs — used by the search
+ * Fetch just the list of all known match IDs – used by the search
  * autocomplete. Lighter than fetchMatchReport since it only hits the
  * Game_ID_map sheet.
  */
@@ -247,7 +285,7 @@ function buildPlayer(
     }
   }
 
-  // Match score: prefer LaserOps_Score (computed) — falls back to raw points.
+  // Match score: prefer LaserOps_Score (computed) – falls back to raw points.
   const score = parseNumericOr(
     row.raw.LaserOps_Score ?? row.raw.PlayerRatePoints,
     0,
@@ -261,7 +299,7 @@ function buildPlayer(
     profilePicUrl: row.profilePicUrl,
     teamColor,
     teamColorLower: teamColor.toLowerCase(),
-    // Display the level the player ENTERED the match at — that's what
+    // Display the level the player ENTERED the match at – that's what
     // gives the per-match performance its context ("Glenn was at level 6
     // in this match"). The after-match level is still tracked separately
     // (xpCurrentLevelAfterMatch) for the XP card animation.
@@ -337,7 +375,7 @@ export function findPlayerInReport(
 /**
  * Parse a CSV cell as a boolean, accepting common spreadsheet
  * representations: "TRUE"/"FALSE", "1"/"0", "yes"/"no". Returns false
- * for empty strings or anything unrecognised — defensive default.
+ * for empty strings or anything unrecognised – defensive default.
  */
 function parseFlexBool(value: string | undefined): boolean {
   const v = (value ?? "").trim().toLowerCase();
