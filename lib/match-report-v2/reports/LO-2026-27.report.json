@@ -32,19 +32,19 @@
   "players": [
     {
       "row": {},
-      "nickname": "Head 39",
-      "profilePicUrl": "/images/default-avatar.png",
+      "nickname": "Jinnies",
+      "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1779048945/Jinnies_hatp0q.jpg",
       "teamColor": "Yellow",
       "teamColorLower": "yellow",
-      "level": 1,
-      "rankBadgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783964/Rank_Badges-Recruit_Badge-1_hx1bpc.png",
+      "level": 11,
+      "rankBadgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783959/Rank_Badges-Ranger_Badge-1_kvoucc.png",
       "score": 16676,
       "kills": 74,
       "deaths": 65,
       "kd": 1.14,
       "accuracy": 0.149,
       "damage": 11290,
-      "totalXp": 0,
+      "totalXp": 74007,
       "gunUsed": "AK-25 Predator",
       "gunUsedImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1777991355/Gun_Used-AK25_Predator_w3rppv.png",
       "scoreRank": 1,
@@ -73,7 +73,7 @@
       "xpLevelProgressStart": 0,
       "xpLevelProgressEnd": 0,
       "xpLevelUpInMatch": false,
-      "xpLevelBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783964/Rank_Badges-Recruit_Badge-1_hx1bpc.png",
+      "xpLevelBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783959/Rank_Badges-Ranger_Badge-1_kvoucc.png",
       "earnedAccolades": [
         {
           "accolade": {
@@ -239,9 +239,9 @@
         }
       ],
       "nemesis": {
-        "nickname": "Head 42",
-        "profilePicUrl": "/images/default-avatar.png",
-        "level": 1,
+        "nickname": "Tompa",
+        "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1782885927/Tompa_knxxp1.jpg",
+        "level": 13,
         "killsFor": 11,
         "killsAgainst": 23,
         "damageFor": 1990,
@@ -249,64 +249,64 @@
       },
       "killed": [
         {
-          "nickname": "Head 45",
+          "nickname": "aximus",
           "count": 25
         },
         {
-          "nickname": "Head 01",
+          "nickname": "Snaaaaaaake",
           "count": 21
         },
         {
-          "nickname": "Head 40",
+          "nickname": "TheHolySpirit",
           "count": 14
         },
         {
-          "nickname": "Head 42",
+          "nickname": "Tompa",
           "count": 11
         },
         {
-          "nickname": "Head 06",
+          "nickname": "Jens",
           "count": 3
         }
       ],
       "killedBy": [
         {
-          "nickname": "Head 42",
+          "nickname": "Tompa",
           "count": 23
         },
         {
-          "nickname": "Head 40",
+          "nickname": "TheHolySpirit",
           "count": 15
         },
         {
-          "nickname": "Head 01",
+          "nickname": "Snaaaaaaake",
           "count": 12
         },
         {
-          "nickname": "Head 06",
+          "nickname": "Jens",
           "count": 11
         },
         {
-          "nickname": "Head 45",
+          "nickname": "aximus",
           "count": 4
         }
       ]
     },
     {
       "row": {},
-      "nickname": "Head 42",
-      "profilePicUrl": "/images/default-avatar.png",
+      "nickname": "Tompa",
+      "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1782885927/Tompa_knxxp1.jpg",
       "teamColor": "Blue",
       "teamColorLower": "blue",
-      "level": 1,
-      "rankBadgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783964/Rank_Badges-Recruit_Badge-1_hx1bpc.png",
+      "level": 13,
+      "rankBadgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783961/Rank_Badges-Ranger_Badge-3_nq4orq.png",
       "score": 13986,
       "kills": 72,
       "deaths": 59,
       "kd": 1.22,
       "accuracy": 0.197,
       "damage": 10930,
-      "totalXp": 0,
+      "totalXp": 117234,
       "gunUsed": "AK-25 Predator",
       "gunUsedImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1777991355/Gun_Used-AK25_Predator_w3rppv.png",
       "scoreRank": 2,
@@ -335,7 +335,7 @@
       "xpLevelProgressStart": 0,
       "xpLevelProgressEnd": 0,
       "xpLevelUpInMatch": false,
-      "xpLevelBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783964/Rank_Badges-Recruit_Badge-1_hx1bpc.png",
+      "xpLevelBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783961/Rank_Badges-Ranger_Badge-3_nq4orq.png",
       "earnedAccolades": [],
       "objCaps": 18,
       "objCapsRank": 1,
@@ -456,9 +456,9 @@
         }
       ],
       "nemesis": {
-        "nickname": "Head 02",
+        "nickname": "Buwdha",
         "profilePicUrl": "/images/default-avatar.png",
-        "level": 1,
+        "level": 9,
         "killsFor": 15,
         "killsAgainst": 22,
         "damageFor": 2230,
@@ -466,64 +466,64 @@
       },
       "killed": [
         {
-          "nickname": "Head 39",
+          "nickname": "Jinnies",
           "count": 23
         },
         {
-          "nickname": "Head 02",
+          "nickname": "Buwdha",
           "count": 15
         },
         {
-          "nickname": "Head 41",
+          "nickname": "Glenn",
           "count": 15
         },
         {
-          "nickname": "Head 04",
+          "nickname": "Sina",
           "count": 12
         },
         {
-          "nickname": "Head 37",
+          "nickname": "BSoD",
           "count": 7
         }
       ],
       "killedBy": [
         {
-          "nickname": "Head 02",
+          "nickname": "Buwdha",
           "count": 22
         },
         {
-          "nickname": "Head 04",
+          "nickname": "Sina",
           "count": 12
         },
         {
-          "nickname": "Head 39",
+          "nickname": "Jinnies",
           "count": 11
         },
         {
-          "nickname": "Head 41",
+          "nickname": "Glenn",
           "count": 11
         },
         {
-          "nickname": "Head 37",
+          "nickname": "BSoD",
           "count": 3
         }
       ]
     },
     {
       "row": {},
-      "nickname": "Head 06",
-      "profilePicUrl": "/images/default-avatar.png",
+      "nickname": "Jens",
+      "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1779048943/Jens_gwfrb1.png",
       "teamColor": "Blue",
       "teamColorLower": "blue",
-      "level": 1,
-      "rankBadgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783964/Rank_Badges-Recruit_Badge-1_hx1bpc.png",
+      "level": 12,
+      "rankBadgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783960/Rank_Badges-Ranger_Badge-2_jinrca.png",
       "score": 12825,
       "kills": 51,
       "deaths": 18,
       "kd": 2.83,
       "accuracy": 0.109,
       "damage": 7175,
-      "totalXp": 0,
+      "totalXp": 98349,
       "gunUsed": "AK-25 Predator",
       "gunUsedImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1777991355/Gun_Used-AK25_Predator_w3rppv.png",
       "scoreRank": 3,
@@ -552,7 +552,7 @@
       "xpLevelProgressStart": 0,
       "xpLevelProgressEnd": 0,
       "xpLevelUpInMatch": false,
-      "xpLevelBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783964/Rank_Badges-Recruit_Badge-1_hx1bpc.png",
+      "xpLevelBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783960/Rank_Badges-Ranger_Badge-2_jinrca.png",
       "earnedAccolades": [
         {
           "accolade": {
@@ -677,9 +677,9 @@
         }
       ],
       "nemesis": {
-        "nickname": "Head 41",
-        "profilePicUrl": "/images/default-avatar.png",
-        "level": 1,
+        "nickname": "Glenn",
+        "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1779048938/Glenn_rvkjfc.png",
+        "level": 19,
         "killsFor": 15,
         "killsAgainst": 11,
         "damageFor": 1965,
@@ -687,56 +687,56 @@
       },
       "killed": [
         {
-          "nickname": "Head 37",
+          "nickname": "BSoD",
           "count": 22
         },
         {
-          "nickname": "Head 41",
+          "nickname": "Glenn",
           "count": 15
         },
         {
-          "nickname": "Head 39",
+          "nickname": "Jinnies",
           "count": 11
         },
         {
-          "nickname": "Head 02",
+          "nickname": "Buwdha",
           "count": 3
         }
       ],
       "killedBy": [
         {
-          "nickname": "Head 41",
+          "nickname": "Glenn",
           "count": 11
         },
         {
-          "nickname": "Head 37",
+          "nickname": "BSoD",
           "count": 3
         },
         {
-          "nickname": "Head 39",
+          "nickname": "Jinnies",
           "count": 3
         },
         {
-          "nickname": "Head 02",
+          "nickname": "Buwdha",
           "count": 1
         }
       ]
     },
     {
       "row": {},
-      "nickname": "Head 41",
-      "profilePicUrl": "/images/default-avatar.png",
+      "nickname": "Glenn",
+      "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1779048938/Glenn_rvkjfc.png",
       "teamColor": "Yellow",
       "teamColorLower": "yellow",
-      "level": 1,
-      "rankBadgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783964/Rank_Badges-Recruit_Badge-1_hx1bpc.png",
+      "level": 19,
+      "rankBadgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783975/Rank_Badges-Specialist_Badge-4_o9ervi.png",
       "score": 11717,
       "kills": 74,
       "deaths": 50,
       "kd": 1.48,
       "accuracy": 0.143,
       "damage": 11720,
-      "totalXp": 0,
+      "totalXp": 219778,
       "gunUsed": "MP9LT Phoenix",
       "gunUsedImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1777991365/Gun_Used-MP9LT_Phoenix_kmnscb.png",
       "scoreRank": 4,
@@ -765,7 +765,7 @@
       "xpLevelProgressStart": 0,
       "xpLevelProgressEnd": 0,
       "xpLevelUpInMatch": false,
-      "xpLevelBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783964/Rank_Badges-Recruit_Badge-1_hx1bpc.png",
+      "xpLevelBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783975/Rank_Badges-Specialist_Badge-4_o9ervi.png",
       "earnedAccolades": [
         {
           "accolade": {
@@ -897,9 +897,9 @@
         }
       ],
       "nemesis": {
-        "nickname": "Head 06",
-        "profilePicUrl": "/images/default-avatar.png",
-        "level": 1,
+        "nickname": "Jens",
+        "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1779048943/Jens_gwfrb1.png",
+        "level": 12,
         "killsFor": 11,
         "killsAgainst": 15,
         "damageFor": 1900,
@@ -907,64 +907,64 @@
       },
       "killed": [
         {
-          "nickname": "Head 40",
+          "nickname": "TheHolySpirit",
           "count": 21
         },
         {
-          "nickname": "Head 01",
+          "nickname": "Snaaaaaaake",
           "count": 20
         },
         {
-          "nickname": "Head 42",
+          "nickname": "Tompa",
           "count": 11
         },
         {
-          "nickname": "Head 06",
+          "nickname": "Jens",
           "count": 11
         },
         {
-          "nickname": "Head 45",
+          "nickname": "aximus",
           "count": 11
         }
       ],
       "killedBy": [
         {
-          "nickname": "Head 06",
+          "nickname": "Jens",
           "count": 15
         },
         {
-          "nickname": "Head 40",
+          "nickname": "TheHolySpirit",
           "count": 15
         },
         {
-          "nickname": "Head 42",
+          "nickname": "Tompa",
           "count": 15
         },
         {
-          "nickname": "Head 01",
+          "nickname": "Snaaaaaaake",
           "count": 4
         },
         {
-          "nickname": "Head 45",
+          "nickname": "aximus",
           "count": 1
         }
       ]
     },
     {
       "row": {},
-      "nickname": "Head 40",
-      "profilePicUrl": "/images/default-avatar.png",
+      "nickname": "TheHolySpirit",
+      "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1779048929/TheHolySpirit_puwqqw.png",
       "teamColor": "Blue",
       "teamColorLower": "blue",
-      "level": 1,
-      "rankBadgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783964/Rank_Badges-Recruit_Badge-1_hx1bpc.png",
+      "level": 14,
+      "rankBadgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783961/Rank_Badges-Ranger_Badge-3_nq4orq.png",
       "score": 10629,
       "kills": 60,
       "deaths": 52,
       "kd": 1.15,
       "accuracy": 0.085,
       "damage": 7725,
-      "totalXp": 0,
+      "totalXp": 123227,
       "gunUsed": "AK-25 Predator",
       "gunUsedImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1777991355/Gun_Used-AK25_Predator_w3rppv.png",
       "scoreRank": 5,
@@ -993,7 +993,7 @@
       "xpLevelProgressStart": 0,
       "xpLevelProgressEnd": 0,
       "xpLevelUpInMatch": false,
-      "xpLevelBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783964/Rank_Badges-Recruit_Badge-1_hx1bpc.png",
+      "xpLevelBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783961/Rank_Badges-Ranger_Badge-3_nq4orq.png",
       "earnedAccolades": [],
       "objCaps": 15,
       "objCapsRank": 3,
@@ -1106,9 +1106,9 @@
         }
       ],
       "nemesis": {
-        "nickname": "Head 41",
-        "profilePicUrl": "/images/default-avatar.png",
-        "level": 1,
+        "nickname": "Glenn",
+        "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1779048938/Glenn_rvkjfc.png",
+        "level": 19,
         "killsFor": 15,
         "killsAgainst": 21,
         "damageFor": 1885,
@@ -1116,64 +1116,64 @@
       },
       "killed": [
         {
-          "nickname": "Head 39",
+          "nickname": "Jinnies",
           "count": 15
         },
         {
-          "nickname": "Head 41",
+          "nickname": "Glenn",
           "count": 15
         },
         {
-          "nickname": "Head 02",
+          "nickname": "Buwdha",
           "count": 14
         },
         {
-          "nickname": "Head 37",
+          "nickname": "BSoD",
           "count": 8
         },
         {
-          "nickname": "Head 04",
+          "nickname": "Sina",
           "count": 8
         }
       ],
       "killedBy": [
         {
-          "nickname": "Head 41",
+          "nickname": "Glenn",
           "count": 21
         },
         {
-          "nickname": "Head 39",
+          "nickname": "Jinnies",
           "count": 14
         },
         {
-          "nickname": "Head 04",
+          "nickname": "Sina",
           "count": 8
         },
         {
-          "nickname": "Head 02",
+          "nickname": "Buwdha",
           "count": 7
         },
         {
-          "nickname": "Head 37",
+          "nickname": "BSoD",
           "count": 2
         }
       ]
     },
     {
       "row": {},
-      "nickname": "Head 04",
-      "profilePicUrl": "/images/default-avatar.png",
+      "nickname": "Sina",
+      "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778738930/Sina_vnj0wh.jpg",
       "teamColor": "Yellow",
       "teamColorLower": "yellow",
-      "level": 1,
-      "rankBadgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783964/Rank_Badges-Recruit_Badge-1_hx1bpc.png",
+      "level": 12,
+      "rankBadgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783960/Rank_Badges-Ranger_Badge-2_jinrca.png",
       "score": 10357,
       "kills": 38,
       "deaths": 27,
       "kd": 1.41,
       "accuracy": 0.175,
       "damage": 6550,
-      "totalXp": 0,
+      "totalXp": 89305,
       "gunUsed": "MP9LT Phoenix",
       "gunUsedImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1777991365/Gun_Used-MP9LT_Phoenix_kmnscb.png",
       "scoreRank": 6,
@@ -1202,7 +1202,7 @@
       "xpLevelProgressStart": 0,
       "xpLevelProgressEnd": 0,
       "xpLevelUpInMatch": false,
-      "xpLevelBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783964/Rank_Badges-Recruit_Badge-1_hx1bpc.png",
+      "xpLevelBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783960/Rank_Badges-Ranger_Badge-2_jinrca.png",
       "earnedAccolades": [],
       "objCaps": 14,
       "objCapsRank": 4,
@@ -1275,9 +1275,9 @@
         }
       ],
       "nemesis": {
-        "nickname": "Head 42",
-        "profilePicUrl": "/images/default-avatar.png",
-        "level": 1,
+        "nickname": "Tompa",
+        "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1782885927/Tompa_knxxp1.jpg",
+        "level": 13,
         "killsFor": 12,
         "killsAgainst": 12,
         "damageFor": 2210,
@@ -1285,56 +1285,56 @@
       },
       "killed": [
         {
-          "nickname": "Head 42",
+          "nickname": "Tompa",
           "count": 12
         },
         {
-          "nickname": "Head 45",
+          "nickname": "aximus",
           "count": 12
         },
         {
-          "nickname": "Head 40",
+          "nickname": "TheHolySpirit",
           "count": 8
         },
         {
-          "nickname": "Head 01",
+          "nickname": "Snaaaaaaake",
           "count": 6
         }
       ],
       "killedBy": [
         {
-          "nickname": "Head 42",
+          "nickname": "Tompa",
           "count": 12
         },
         {
-          "nickname": "Head 40",
+          "nickname": "TheHolySpirit",
           "count": 8
         },
         {
-          "nickname": "Head 01",
+          "nickname": "Snaaaaaaake",
           "count": 5
         },
         {
-          "nickname": "Head 45",
+          "nickname": "aximus",
           "count": 2
         }
       ]
     },
     {
       "row": {},
-      "nickname": "Head 02",
+      "nickname": "Buwdha",
       "profilePicUrl": "/images/default-avatar.png",
       "teamColor": "Yellow",
       "teamColorLower": "yellow",
-      "level": 1,
-      "rankBadgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783964/Rank_Badges-Recruit_Badge-1_hx1bpc.png",
+      "level": 9,
+      "rankBadgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783957/Rank_Badges-Operative_Badge-4_nk5llb.png",
       "score": 8042,
       "kills": 55,
       "deaths": 41,
       "kd": 1.34,
       "accuracy": 0.225,
       "damage": 7950,
-      "totalXp": 0,
+      "totalXp": 58609,
       "gunUsed": "AK-25 Predator",
       "gunUsedImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1777991355/Gun_Used-AK25_Predator_w3rppv.png",
       "scoreRank": 7,
@@ -1363,7 +1363,7 @@
       "xpLevelProgressStart": 0,
       "xpLevelProgressEnd": 0,
       "xpLevelUpInMatch": false,
-      "xpLevelBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783964/Rank_Badges-Recruit_Badge-1_hx1bpc.png",
+      "xpLevelBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783957/Rank_Badges-Operative_Badge-4_nk5llb.png",
       "earnedAccolades": [
         {
           "accolade": {
@@ -1438,9 +1438,9 @@
         }
       ],
       "nemesis": {
-        "nickname": "Head 42",
-        "profilePicUrl": "/images/default-avatar.png",
-        "level": 1,
+        "nickname": "Tompa",
+        "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1782885927/Tompa_knxxp1.jpg",
+        "level": 13,
         "killsFor": 22,
         "killsAgainst": 15,
         "damageFor": 3210,
@@ -1448,64 +1448,64 @@
       },
       "killed": [
         {
-          "nickname": "Head 42",
+          "nickname": "Tompa",
           "count": 22
         },
         {
-          "nickname": "Head 45",
+          "nickname": "aximus",
           "count": 15
         },
         {
-          "nickname": "Head 01",
+          "nickname": "Snaaaaaaake",
           "count": 10
         },
         {
-          "nickname": "Head 40",
+          "nickname": "TheHolySpirit",
           "count": 7
         },
         {
-          "nickname": "Head 06",
+          "nickname": "Jens",
           "count": 1
         }
       ],
       "killedBy": [
         {
-          "nickname": "Head 42",
+          "nickname": "Tompa",
           "count": 15
         },
         {
-          "nickname": "Head 40",
+          "nickname": "TheHolySpirit",
           "count": 14
         },
         {
-          "nickname": "Head 01",
+          "nickname": "Snaaaaaaake",
           "count": 8
         },
         {
-          "nickname": "Head 06",
+          "nickname": "Jens",
           "count": 3
         },
         {
-          "nickname": "Head 45",
+          "nickname": "aximus",
           "count": 1
         }
       ]
     },
     {
       "row": {},
-      "nickname": "Head 01",
-      "profilePicUrl": "/images/default-avatar.png",
+      "nickname": "Snaaaaaaake",
+      "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1779048927/Snaaaaaake_puhjyp.jpg",
       "teamColor": "Blue",
       "teamColorLower": "blue",
-      "level": 1,
-      "rankBadgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783964/Rank_Badges-Recruit_Badge-1_hx1bpc.png",
+      "level": 11,
+      "rankBadgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783959/Rank_Badges-Ranger_Badge-1_kvoucc.png",
       "score": 7943,
       "kills": 38,
       "deaths": 57,
       "kd": 0.65,
       "accuracy": 0.085,
       "damage": 7145,
-      "totalXp": 0,
+      "totalXp": 79126,
       "gunUsed": "MP9LT Phoenix",
       "gunUsedImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1777991365/Gun_Used-MP9LT_Phoenix_kmnscb.png",
       "scoreRank": 8,
@@ -1534,7 +1534,7 @@
       "xpLevelProgressStart": 0,
       "xpLevelProgressEnd": 0,
       "xpLevelUpInMatch": false,
-      "xpLevelBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783964/Rank_Badges-Recruit_Badge-1_hx1bpc.png",
+      "xpLevelBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783959/Rank_Badges-Ranger_Badge-1_kvoucc.png",
       "earnedAccolades": [
         {
           "accolade": {
@@ -1625,9 +1625,9 @@
         }
       ],
       "nemesis": {
-        "nickname": "Head 39",
-        "profilePicUrl": "/images/default-avatar.png",
-        "level": 1,
+        "nickname": "Jinnies",
+        "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1779048945/Jinnies_hatp0q.jpg",
+        "level": 11,
         "killsFor": 12,
         "killsAgainst": 21,
         "damageFor": 2645,
@@ -1635,60 +1635,60 @@
       },
       "killed": [
         {
-          "nickname": "Head 39",
+          "nickname": "Jinnies",
           "count": 12
         },
         {
-          "nickname": "Head 37",
+          "nickname": "BSoD",
           "count": 9
         },
         {
-          "nickname": "Head 02",
+          "nickname": "Buwdha",
           "count": 8
         },
         {
-          "nickname": "Head 04",
+          "nickname": "Sina",
           "count": 5
         },
         {
-          "nickname": "Head 41",
+          "nickname": "Glenn",
           "count": 4
         }
       ],
       "killedBy": [
         {
-          "nickname": "Head 39",
+          "nickname": "Jinnies",
           "count": 21
         },
         {
-          "nickname": "Head 41",
+          "nickname": "Glenn",
           "count": 20
         },
         {
-          "nickname": "Head 02",
+          "nickname": "Buwdha",
           "count": 10
         },
         {
-          "nickname": "Head 04",
+          "nickname": "Sina",
           "count": 6
         }
       ]
     },
     {
       "row": {},
-      "nickname": "Head 37",
+      "nickname": "BSoD",
       "profilePicUrl": "/images/default-avatar.png",
       "teamColor": "Yellow",
       "teamColorLower": "yellow",
-      "level": 1,
-      "rankBadgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783964/Rank_Badges-Recruit_Badge-1_hx1bpc.png",
+      "level": 3,
+      "rankBadgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783968/Rank_Badges-Recruit_Badge-3_pkxleg.png",
       "score": 4953,
       "kills": 9,
       "deaths": 55,
       "kd": 0.16,
       "accuracy": 0.06,
       "damage": 1380,
-      "totalXp": 0,
+      "totalXp": 6886,
       "gunUsed": "AK-25 Predator",
       "gunUsedImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1777991355/Gun_Used-AK25_Predator_w3rppv.png",
       "scoreRank": 9,
@@ -1717,7 +1717,7 @@
       "xpLevelProgressStart": 0,
       "xpLevelProgressEnd": 0,
       "xpLevelUpInMatch": false,
-      "xpLevelBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783964/Rank_Badges-Recruit_Badge-1_hx1bpc.png",
+      "xpLevelBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783968/Rank_Badges-Recruit_Badge-3_pkxleg.png",
       "earnedAccolades": [
         {
           "accolade": {
@@ -1786,9 +1786,9 @@
         }
       ],
       "nemesis": {
-        "nickname": "Head 06",
-        "profilePicUrl": "/images/default-avatar.png",
-        "level": 1,
+        "nickname": "Jens",
+        "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1779048943/Jens_gwfrb1.png",
+        "level": 12,
         "killsFor": 3,
         "killsAgainst": 22,
         "damageFor": 450,
@@ -1796,60 +1796,60 @@
       },
       "killed": [
         {
-          "nickname": "Head 06",
+          "nickname": "Jens",
           "count": 3
         },
         {
-          "nickname": "Head 42",
+          "nickname": "Tompa",
           "count": 3
         },
         {
-          "nickname": "Head 40",
+          "nickname": "TheHolySpirit",
           "count": 2
         },
         {
-          "nickname": "Head 45",
+          "nickname": "aximus",
           "count": 1
         }
       ],
       "killedBy": [
         {
-          "nickname": "Head 06",
+          "nickname": "Jens",
           "count": 22
         },
         {
-          "nickname": "Head 01",
+          "nickname": "Snaaaaaaake",
           "count": 9
         },
         {
-          "nickname": "Head 45",
+          "nickname": "aximus",
           "count": 9
         },
         {
-          "nickname": "Head 40",
+          "nickname": "TheHolySpirit",
           "count": 8
         },
         {
-          "nickname": "Head 42",
+          "nickname": "Tompa",
           "count": 7
         }
       ]
     },
     {
       "row": {},
-      "nickname": "Head 45",
+      "nickname": "aximus",
       "profilePicUrl": "/images/default-avatar.png",
       "teamColor": "Blue",
       "teamColorLower": "blue",
-      "level": 1,
-      "rankBadgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783964/Rank_Badges-Recruit_Badge-1_hx1bpc.png",
+      "level": 3,
+      "rankBadgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783968/Rank_Badges-Recruit_Badge-3_pkxleg.png",
       "score": 2734,
       "kills": 17,
       "deaths": 64,
       "kd": 0.27,
       "accuracy": 0.073,
       "damage": 3760,
-      "totalXp": 0,
+      "totalXp": 4722,
       "gunUsed": "AR-15 Ranger",
       "gunUsedImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1777991357/Gun_Used-AR15_Ranger_doxnys.png",
       "scoreRank": 10,
@@ -1878,7 +1878,7 @@
       "xpLevelProgressStart": 0,
       "xpLevelProgressEnd": 0,
       "xpLevelUpInMatch": false,
-      "xpLevelBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783964/Rank_Badges-Recruit_Badge-1_hx1bpc.png",
+      "xpLevelBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783968/Rank_Badges-Recruit_Badge-3_pkxleg.png",
       "earnedAccolades": [],
       "objCaps": 5,
       "objCapsRank": 10,
@@ -1895,9 +1895,9 @@
         }
       ],
       "nemesis": {
-        "nickname": "Head 39",
-        "profilePicUrl": "/images/default-avatar.png",
-        "level": 1,
+        "nickname": "Jinnies",
+        "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1779048945/Jinnies_hatp0q.jpg",
+        "level": 11,
         "killsFor": 4,
         "killsAgainst": 25,
         "damageFor": 690,
@@ -1905,45 +1905,45 @@
       },
       "killed": [
         {
-          "nickname": "Head 37",
+          "nickname": "BSoD",
           "count": 9
         },
         {
-          "nickname": "Head 39",
+          "nickname": "Jinnies",
           "count": 4
         },
         {
-          "nickname": "Head 04",
+          "nickname": "Sina",
           "count": 2
         },
         {
-          "nickname": "Head 41",
+          "nickname": "Glenn",
           "count": 1
         },
         {
-          "nickname": "Head 02",
+          "nickname": "Buwdha",
           "count": 1
         }
       ],
       "killedBy": [
         {
-          "nickname": "Head 39",
+          "nickname": "Jinnies",
           "count": 25
         },
         {
-          "nickname": "Head 02",
+          "nickname": "Buwdha",
           "count": 15
         },
         {
-          "nickname": "Head 04",
+          "nickname": "Sina",
           "count": 12
         },
         {
-          "nickname": "Head 41",
+          "nickname": "Glenn",
           "count": 11
         },
         {
-          "nickname": "Head 37",
+          "nickname": "BSoD",
           "count": 1
         }
       ]
@@ -2303,5 +2303,5 @@
   ],
   "matchDate": "2026.09.05 03:09:17",
   "label": "LO-2026-27 · 5v5 Online Domination",
-  "generatedAt": "2026-09-05T23:16:12.800Z"
+  "generatedAt": "2026-09-05T23:29:48.081Z"
 }
