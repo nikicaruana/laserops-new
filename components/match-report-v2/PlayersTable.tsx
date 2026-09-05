@@ -1,0 +1,511 @@
+"use client";
+
+import { useMemo } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import type { MatchPlayer } from "@/lib/match-report-v2/report-types";
+import { usePlayerNav } from "./PlayerNav";
+import { cn } from "@/lib/cn";
+
+/**
+ * PlayersTable
+ * --------------------------------------------------------------------
+ * Match-specific player table. Bespoke (not LeaderboardTable) because
+ * it has different ergonomics requirements:
+ *
+ *   - Horizontal scroll on mobile, with the # + Ops Tag columns
+ *     frozen on the left so the player's identity stays visible while
+ *     they scroll through the metrics.
+ *   - Best-in-row highlighting: the row with the best value in each
+ *     metric column gets that cell tinted yellow. "Best" means highest
+ *     for most metrics, lowest for Deaths.
+ *   - Compact cells (no profile pic) – the page already has a lot of
+ *     visual content; the table is meant to be scannable, not pretty.
+ *
+ * Native <table> with `position: sticky; left: 0;` on the # / Ops Tag
+ * cells is the tidiest way to do sticky columns. The wrapping div
+ * has overflow-x: auto for the scroll, and the table sets a min-width
+ * so it always exceeds the container width on small viewports.
+ */
+
+type Props = {
+  players: MatchPlayer[];
+  matchId: string;
+  selectedPlayer: string;
+  /**
+   * When true, the Ops Tag cell links to the player's all-time profile
+   * page instead of expanding their match stats card. Used on the
+   * Last Match page where navigating away is the intended action.
+   * Defaults to false (match report behaviour: click → expand stats card).
+   */
+  linkNamesToProfiles?: boolean;
+};
+
+/**
+ * Per-metric "best value" – used to tint the winning cell yellow.
+ * For Deaths, lower is better. For everything else, higher.
+ *
+ * Pre-compute once per render rather than recomputing per cell.
+ *
+ * `scoreByGun` is a separate per-gun-best Score map so the table
+ * can highlight EVERY gun's specialist (the highest scorer with that
+ * particular weapon), not just the absolute top scorer. This adds
+ * extra "yellow" cells for the Score column without affecting other
+ * columns. Empty/blank gun strings are excluded (no point grouping
+ * unknowns).
+ */
+type BestValues = {
+  score: number;
+  kills: number;
+  deaths: number;
+  kd: number;
+  accuracy: number;
+  damage: number;
+  totalXp: number;
+  objCaps: number;
+  capTime: number;
+  scoreByGun: Map<string, number>;
+};
+
+function computeBestValues(players: MatchPlayer[]): BestValues {
+  if (players.length === 0) {
+    return {
+      score: 0, kills: 0, deaths: 0, kd: 0, accuracy: 0, damage: 0, totalXp: 0, objCaps: 0, capTime: 0,
+      scoreByGun: new Map(),
+    };
+  }
+
+  const scoreByGun = new Map<string, number>();
+  for (const p of players) {
+    const gun = p.gunUsed.trim();
+    if (gun === "") continue;
+    const prev = scoreByGun.get(gun) ?? -Infinity;
+    if (p.score > prev) scoreByGun.set(gun, p.score);
+  }
+
+  return {
+    score: Math.max(...players.map((p) => p.score)),
+    kills: Math.max(...players.map((p) => p.kills)),
+    deaths: Math.min(...players.map((p) => p.deaths)),
+    kd: Math.max(...players.map((p) => p.kd)),
+    accuracy: Math.max(...players.map((p) => p.accuracy)),
+    damage: Math.max(...players.map((p) => p.damage)),
+    totalXp: Math.max(...players.map((p) => p.totalXp)),
+    objCaps: Math.max(...players.map((p) => p.objCaps ?? 0)),
+    capTime: Math.max(...players.map((p) => p.capTime ?? 0)),
+    scoreByGun,
+  };
+}
+
+export function PlayersTable({ players, matchId, selectedPlayer, linkNamesToProfiles = false }: Props) {
+  const pathname = usePathname();
+  const best = useMemo(() => computeBestValues(players), [players]);
+  const selectedLower = selectedPlayer.toLowerCase();
+
+  return (
+    <div className="border border-border bg-bg-elevated">
+      {/* Yellow accent strip at top – matches LeaderboardTable styling */}
+      <div aria-hidden className="h-1 w-full bg-accent" />
+
+      <div
+        // Scroll only on smaller screens. On desktop (lg+) the table is
+        // compacted enough to fit the container, so we drop the scroll and
+        // the min-width and let every column show at once.
+        className="overflow-x-auto lg:overflow-x-visible"
+        // Custom scrollbar styling for an "intentional" feel – fine to
+        // leave default if you'd rather; this is just a polish touch.
+        style={{ scrollbarWidth: "thin" }}
+      >
+        <table className="w-full min-w-[760px] border-collapse text-left lg:min-w-0">
+          <thead>
+            <tr className="border-b border-border-strong bg-bg-overlay">
+              {/* Rank column. Explicit width so it matches the
+                  Ops Tag column's sticky `left` offset exactly – no gap
+                  between them when scrolling. */}
+              <Th align="center" sticky="rank">
+                #
+              </Th>
+              <Th align="center" sticky="ops">
+                Ops Tag
+              </Th>
+              <Th align="center">Lvl</Th>
+              <Th align="center">Team</Th>
+              <Th align="left">Gun</Th>
+              <Th align="right">Score</Th>
+              {/* Compact mobile labels – single letters maximise the
+                  number of stat columns visible without horizontal
+                  scroll on phones. Full words on desktop where width
+                  isn't precious. */}
+              <Th align="right">
+                <span className="sm:hidden">K</span>
+                <span className="hidden sm:inline">Kills</span>
+              </Th>
+              <Th align="right">
+                <span className="sm:hidden">D</span>
+                <span className="hidden sm:inline">Deaths</span>
+              </Th>
+              <Th align="right">K/D</Th>
+              <Th align="right">Acc</Th>
+              <Th align="right">Dmg</Th>
+              <Th align="right" tight>Caps</Th>
+              <Th align="right">Cap Time</Th>
+              <Th align="right">Total XP</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {players.map((p, idx) => {
+              const isSelected = p.nickname.toLowerCase() === selectedLower;
+              const href = `${pathname}?match=${encodeURIComponent(
+                matchId,
+              )}&player=${encodeURIComponent(p.nickname)}`;
+              return (
+                <PlayerRow
+                  key={p.nickname}
+                  player={p}
+                  rank={idx + 1}
+                  isSelected={isSelected}
+                  href={href}
+                  best={best}
+                  linkNamesToProfiles={linkNamesToProfiles}
+                />
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Header cell ---------- */
+
+function Th({
+  children,
+  align,
+  sticky,
+  tight,
+}: {
+  children: React.ReactNode;
+  align: "left" | "center" | "right";
+  sticky?: "rank" | "ops";
+  tight?: boolean;
+}) {
+  return (
+    <th
+      className={cn(
+        // Base typography for column headers
+        "py-2.5 text-[0.55rem] font-bold uppercase tracking-[0.12em] text-text-muted sm:text-[0.65rem] sm:tracking-[0.16em]",
+        align === "left" && "text-left",
+        align === "center" && "text-center",
+        align === "right" && "text-right",
+        // Default padding for non-sticky cells (tighter on desktop so all
+        // columns fit without horizontal scroll). `tight` squeezes a column
+        // down to almost nothing (used for the single-digit Caps column) so
+        // the freed space goes to Ops Tag / Gun.
+        !sticky && !tight && "px-3 lg:px-1.5 xl:px-2",
+        !sticky && tight && "w-px whitespace-nowrap px-1",
+        // Sticky: explicit widths matching the left-offsets used below.
+        // Rank column is narrower on mobile (28px) than desktop (48px) –
+        // pulls the Ops Tag column closer on small screens to fit more
+        // content in the visible viewport. The ops column's `left-7` and
+        // `left-12` MUST match the rank column's `w-7` and `w-12`.
+        sticky === "rank" &&
+          "sticky left-0 z-10 w-7 min-w-7 bg-bg-overlay sm:w-12 sm:min-w-12",
+        sticky === "ops" &&
+          "sticky left-7 z-10 bg-bg-overlay px-2 sm:left-12 sm:px-3",
+      )}
+    >
+      {children}
+    </th>
+  );
+}
+
+/* ---------- Player row ---------- */
+
+function PlayerRow({
+  player,
+  rank,
+  isSelected,
+  href,
+  best,
+  linkNamesToProfiles,
+}: {
+  player: MatchPlayer;
+  rank: number;
+  isSelected: boolean;
+  href: string;
+  best: BestValues;
+  linkNamesToProfiles: boolean;
+}) {
+  const rowBg = isSelected ? "bg-accent/[0.06]" : "bg-bg-elevated";
+  const stickyBg = isSelected ? "bg-bg-elevated" : "bg-bg-elevated";
+  // ^ even when row is "selected" (subtle yellow tint), the sticky
+  //   columns need to be FULLY opaque or other cells will bleed through
+  //   when scrolled. So sticky bg uses solid bg-bg-elevated regardless.
+
+  return (
+    <tr
+      className={cn(
+        "border-b border-border/60 last:border-b-0",
+        rowBg,
+        // Hover treatment – applies via the Link inside, but we add a
+        // row-level class so the hover state on any cell triggers it.
+        "transition-colors hover:bg-bg-overlay/40",
+      )}
+    >
+      {/* Rank – clickable, sticky. Explicit width matching the ops
+          column's left-offset so the two sit flush, no gap. */}
+      <td
+        className={cn(
+          "sticky left-0 z-[1] w-7 min-w-7 py-3 text-center sm:w-12 sm:min-w-12",
+          stickyBg,
+        )}
+      >
+        <RowLink href={href} ariaLabel={`View ${player.nickname}'s match stats`}>
+          <span
+            className={cn(
+              "block font-mono text-[0.6rem] font-bold sm:text-xs",
+              rank === 1 ? "text-accent" : "text-text-subtle",
+            )}
+          >
+            {String(rank).padStart(2, "0")}
+          </span>
+        </RowLink>
+      </td>
+
+      {/* Ops Tag – sticky so the player's identity stays visible while
+          scrolling the stats. On the Last Match page (linkNamesToProfiles)
+          the name navigates to the player's all-time profile. On the
+          match report page it uses RowLink to expand the stats card. */}
+      <td
+        className={cn(
+          "sticky left-7 z-[1] py-3 px-2 text-center sm:left-12 sm:px-3",
+          stickyBg,
+        )}
+      >
+        {linkNamesToProfiles ? (
+          <Link
+            href={`/player-portal/player-stats/summary?ops=${encodeURIComponent(player.nickname)}`}
+            aria-label={`View ${player.nickname}'s player profile`}
+            className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            <span
+              className={cn(
+                "mx-auto block min-w-[5.5rem] max-w-[8rem] break-words text-xs font-semibold leading-tight transition-colors sm:min-w-[7rem] sm:max-w-[10rem] sm:text-sm lg:min-w-[6.5rem] lg:max-w-[10rem]",
+                isSelected ? "text-accent" : "text-text hover:text-accent",
+              )}
+            >
+              {player.nickname}
+            </span>
+          </Link>
+        ) : (
+          <RowLink href={href} ariaLabel={`View ${player.nickname}'s match stats`}>
+            <span
+              className={cn(
+                "mx-auto block min-w-[5.5rem] max-w-[8rem] break-words text-xs font-semibold leading-tight transition-colors sm:min-w-[7rem] sm:max-w-[10rem] sm:text-sm lg:min-w-[6.5rem] lg:max-w-[10rem]",
+                isSelected ? "text-accent" : "text-text hover:text-accent",
+              )}
+            >
+              {player.nickname}
+            </span>
+          </RowLink>
+        )}
+      </td>
+
+      {/* Scrollable content cells. Each is wrapped in a RowLink so the
+          entire row is one big tap target – clicking anywhere navigates. */}
+      <Td align="center">
+        <RowLink href={href}>{player.level || "–"}</RowLink>
+      </Td>
+
+      <Td align="center">
+        <RowLink href={href}>
+          <span
+            className={cn(
+              "text-[0.6rem] font-bold uppercase tracking-[0.1em]",
+              player.teamColorLower === "blue" && "text-blue-400",
+              player.teamColorLower === "red" && "text-red-400",
+              player.teamColorLower === "yellow" && "text-accent",
+            )}
+          >
+            {player.teamColor || "–"}
+          </span>
+        </RowLink>
+      </Td>
+
+      <Td align="left">
+        <RowLink href={href}>
+          {/* Highlight the gun name yellow when this player is the
+              top scorer with that specific gun. Reads as "specialist
+              with this weapon" – surfaces gun-class winners alongside
+              the overall stat winners in their own respective columns. */}
+          <span
+            className={cn(
+              "block max-w-[7rem] truncate text-[0.65rem] sm:max-w-[10rem] sm:text-xs lg:max-w-[9.5rem]",
+              player.gunUsed !== "" &&
+                best.scoreByGun.get(player.gunUsed) === player.score
+                ? "font-bold text-accent"
+                : "text-text-muted",
+            )}
+          >
+            {player.gunUsed || "–"}
+          </span>
+        </RowLink>
+      </Td>
+
+      <BestTd value={player.score} best={best.score} format="number">
+        <RowLink href={href}>{player.score.toLocaleString("en-US")}</RowLink>
+      </BestTd>
+
+      <BestTd value={player.kills} best={best.kills} format="number">
+        <RowLink href={href}>{player.kills}</RowLink>
+      </BestTd>
+
+      <BestTd value={player.deaths} best={best.deaths} format="number">
+        <RowLink href={href}>{player.deaths}</RowLink>
+      </BestTd>
+
+      <BestTd value={player.kd} best={best.kd} format="kd">
+        <RowLink href={href}>{player.kd.toFixed(2)}</RowLink>
+      </BestTd>
+
+      <BestTd value={player.accuracy} best={best.accuracy} format="percent">
+        <RowLink href={href}>{`${Math.round(player.accuracy * 100)}%`}</RowLink>
+      </BestTd>
+
+      <BestTd value={player.damage} best={best.damage} format="number">
+        <RowLink href={href}>{player.damage.toLocaleString("en-US")}</RowLink>
+      </BestTd>
+
+      <BestTd value={player.objCaps ?? 0} best={best.objCaps} format="number" tight>
+        <RowLink href={href}>{player.objCaps ?? 0}</RowLink>
+      </BestTd>
+
+      <BestTd value={player.capTime ?? 0} best={best.capTime} format="number">
+        <RowLink href={href}>{`${player.capTime ?? 0}s`}</RowLink>
+      </BestTd>
+
+      <BestTd value={player.totalXp} best={best.totalXp} format="number">
+        <RowLink href={href}>{player.totalXp.toLocaleString("en-US")}</RowLink>
+      </BestTd>
+    </tr>
+  );
+}
+
+/* ---------- Td variants ---------- */
+
+function Td({
+  children,
+  align,
+}: {
+  children: React.ReactNode;
+  align: "left" | "center" | "right";
+}) {
+  return (
+    <td
+      className={cn(
+        "px-3 py-3 text-xs sm:text-sm lg:px-1.5 xl:px-2",
+        align === "left" && "text-left",
+        align === "center" && "text-center",
+        align === "right" && "text-right font-mono tabular-nums",
+      )}
+    >
+      {children}
+    </td>
+  );
+}
+
+/**
+ * Td with "best value" highlighting. If this cell's value matches the
+ * computed best for the column, the cell tints yellow.
+ *
+ * `extraHighlight` is an OR – if true, the cell highlights even if the
+ * value doesn't match `best`. Used by the Score column to also flag
+ * each "gun specialist" (top scorer per gun).
+ *
+ * Edge case: ties – multiple players could have the same best value.
+ * Both rows get highlighted. Acceptable UX.
+ *
+ * Edge case: best is 0 (no one had any kills, etc.). We DON'T
+ * highlight rows with 0 in that case (best > 0 guard); avoids visual
+ * clutter when no one has a non-zero value.
+ */
+function BestTd({
+  children,
+  value,
+  best,
+  format,
+  extraHighlight = false,
+  tight = false,
+}: {
+  children: React.ReactNode;
+  value: number;
+  best: number;
+  format: "number" | "kd" | "percent";
+  extraHighlight?: boolean;
+  tight?: boolean;
+}) {
+  const isMatchBest = Math.abs(value - best) < 1e-9 && best > 0;
+  const isBest = isMatchBest || extraHighlight;
+  void format;
+  return (
+    <td
+      className={cn(
+        "py-3 text-right font-mono text-xs tabular-nums sm:text-sm",
+        tight ? "w-px whitespace-nowrap px-1" : "px-3 lg:px-1.5 xl:px-2",
+        isBest ? "font-bold text-accent" : "text-text",
+      )}
+    >
+      {children}
+    </td>
+  );
+}
+
+/* ---------- Cell-level link ---------- */
+
+/**
+ * RowLink: every cell in the row wraps its content in a Link to the
+ * same href, so clicking anywhere in the row navigates. The Link
+ * inherits the cell's display so layout is unaffected.
+ *
+ * Using replace={false} (default) preserves the back-button history
+ * – if a user clicks several rows in succession, they can back-button
+ * through them.
+ */
+function RowLink({
+  children,
+  href,
+  ariaLabel,
+}: {
+  children: React.ReactNode;
+  href: string;
+  ariaLabel?: string;
+}) {
+  const { navigate } = usePlayerNav();
+  // Stays a real <Link> (preserves the cell's alignment + middle/ctrl-click to
+  // open). Inside a PlayerNavProvider, intercept a plain left-click to navigate
+  // through a transition so the loading spinner can show; modified clicks and
+  // no-provider contexts (e.g. Last Match) keep the default Link behaviour.
+  return (
+    <Link
+      href={href}
+      // Scroll false because we manage scroll-into-view ourselves on
+      // the player stats card mount – letting the browser scroll to top
+      // would defeat that.
+      scroll={false}
+      aria-label={ariaLabel}
+      onClick={
+        navigate
+          ? (e) => {
+              if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+              e.preventDefault();
+              navigate(href);
+            }
+          : undefined
+      }
+      className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+    >
+      {children}
+    </Link>
+  );
+}
