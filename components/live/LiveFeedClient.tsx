@@ -29,10 +29,32 @@ export function LiveFeedClient({
   const [roundNo, setRoundNo] = useState<number | null>(null);
   const [t, setT] = useState(0);
   const [connected, setConnected] = useState(false);
+  const [taunts, setTaunts] = useState<{ from: string; id: string }[]>([]);
   // Base for local clock extrapolation: elapsed at the last snapshot + when we got it.
   const base = useRef<{ elapsed: number; recvMs: number }>({ elapsed: 0, recvMs: Date.now() });
+  // Broadcast channel for live taunts (ephemeral — no DB writes/egress).
+  const tauntCh = useRef<ReturnType<ReturnType<typeof createClient>["channel"]> | null>(null);
 
   useWakeLock(mode === "player");
+
+  // Taunts: player mode only. Subscribe to the match's broadcast channel and
+  // collect the ones aimed at me; expose a sender for the 🖕 button.
+  useEffect(() => {
+    if (mode !== "player" || !me) return;
+    const supabase = createClient();
+    const ch = supabase.channel(`taunt:${matchId}`, { config: { broadcast: { self: false } } });
+    ch.on("broadcast", { event: "taunt" }, ({ payload }) => {
+      const p = payload as { from?: string; to?: string };
+      if (p?.to === me && p.from) setTaunts((prev) => [...prev, { from: p.from!, id: `${Date.now()}-${Math.random()}` }].slice(-20));
+    }).subscribe();
+    tauntCh.current = ch;
+    return () => { supabase.removeChannel(ch); tauntCh.current = null; };
+  }, [mode, me, matchId]);
+
+  const sendTaunt = (to: string) => {
+    if (!me || !tauntCh.current) return;
+    tauntCh.current.send({ type: "broadcast", event: "taunt", payload: { from: me, to } });
+  };
 
   useEffect(() => {
     const supabase = createClient();
@@ -86,7 +108,7 @@ export function LiveFeedClient({
   return (
     <div className="px-3 py-3">
       {title && <p className="mb-2 text-center text-[0.6rem] font-semibold uppercase tracking-[0.16em] text-text-subtle">{title}</p>}
-      <LiveRoundView snap={data} t={t} mode={mode} me={me} roundLabel={roundNo ? `Round ${roundNo}` : undefined} />
+      <LiveRoundView snap={data} t={t} mode={mode} me={me} roundLabel={roundNo ? `Round ${roundNo}` : undefined} onTaunt={sendTaunt} incomingTaunts={taunts} />
     </div>
   );
 }

@@ -24,7 +24,7 @@ function BaseEmblem({ color, size = 40 }: { color: string; size?: number }) {
 }
 
 export function LiveRoundView({
-  snap, t, mode, me = null, roundLabel, live = true,
+  snap, t, mode, me = null, roundLabel, live = true, onTaunt, incomingTaunts = [],
 }: {
   snap: LiveSnapshot;
   t: number;
@@ -32,6 +32,10 @@ export function LiveRoundView({
   me?: string | null;
   roundLabel?: string;
   live?: boolean;
+  /** Player mode: send a 🖕 to an opponent who killed you. */
+  onTaunt?: (to: string) => void;
+  /** Player mode: taunts received from others (newest last). */
+  incomingTaunts?: { from: string; id: string }[];
 }) {
   const [sentTaunts, setSentTaunts] = useState<Set<string>>(new Set());
   const bases = useMemo(() => baseStateAt(snap, t), [snap, t]);
@@ -115,7 +119,12 @@ export function LiveRoundView({
           <div className="flex min-h-0 flex-1 flex-col">
             <div className="mb-1 shrink-0 px-1 text-[0.55rem] font-semibold uppercase tracking-[0.14em] text-text-subtle">Your kill feed</div>
             <ul className="ls-scroll min-h-0 flex-1 space-y-1 overflow-y-auto pr-0.5">
-              {pFeed.length === 0 && <li className="px-1 text-xs text-text-subtle">Nothing involving you yet…</li>}
+              {incomingTaunts.slice().reverse().map((tw) => (
+                <li key={tw.id} className="flex items-center justify-between gap-2 rounded-md bg-bg-elevated px-2 py-1 text-xs text-text-muted">
+                  <span>🖕 from <span className="font-semibold text-text">{tw.from}</span></span>
+                </li>
+              ))}
+              {pFeed.length === 0 && incomingTaunts.length === 0 && <li className="px-1 text-xs text-text-subtle">Nothing involving you yet…</li>}
               {pFeed.map((f, i) => {
                 const isKill = f.actor === me;
                 const other = isKill ? f.victim : f.actor;
@@ -125,7 +134,7 @@ export function LiveRoundView({
                   <li key={i} className="flex items-center gap-1.5 rounded-md bg-emerald-950/30 px-2 py-1 text-xs"><span className="font-semibold text-emerald-300">You</span>{gunOf.get(me!)?.gunImage ? <img src={cldImage(gunOf.get(me!)!.gunImage, { w: 64 })} alt="" className="h-3.5 w-auto opacity-90" /> : <span>›</span>}<span className="truncate" style={{ color: teamHex(otherTeam) }}>{other}</span>{f.spawn && <span className="ml-auto rounded bg-red-900/60 px-1 text-[0.5rem] font-bold uppercase text-red-300">spawn</span>}</li>
                 );
                 return (
-                  <li key={i} className="flex items-center gap-1.5 rounded-md bg-red-950/30 px-2 py-1 text-xs"><span className="truncate font-semibold" style={{ color: teamHex(otherTeam) }}>{other}</span>{gunOf.get(other)?.gunImage ? <img src={cldImage(gunOf.get(other)!.gunImage, { w: 64 })} alt="" className="h-3.5 w-auto opacity-90" /> : <span>›</span>}<span className="text-red-300">You</span>{sentTaunts.has(tid) ? <span className="ml-auto text-text-subtle">🖕 sent</span> : <button type="button" onClick={() => setSentTaunts((p) => new Set(p).add(tid))} className="ml-auto shrink-0 rounded border border-border-strong px-1.5 py-0.5 text-[0.6rem] hover:border-accent" title={`Send ${other} a 🖕`}>🖕</button>}</li>
+                  <li key={i} className="flex items-center gap-1.5 rounded-md bg-red-950/30 px-2 py-1 text-xs"><span className="truncate font-semibold" style={{ color: teamHex(otherTeam) }}>{other}</span>{gunOf.get(other)?.gunImage ? <img src={cldImage(gunOf.get(other)!.gunImage, { w: 64 })} alt="" className="h-3.5 w-auto opacity-90" /> : <span>›</span>}<span className="text-red-300">You</span>{sentTaunts.has(tid) ? <span className="ml-auto text-text-subtle">🖕 sent</span> : <button type="button" onClick={() => { onTaunt?.(other); setSentTaunts((p) => new Set(p).add(tid)); }} className="ml-auto shrink-0 rounded border border-border-strong px-1.5 py-0.5 text-[0.6rem] hover:border-accent" title={`Send ${other} a 🖕`}>🖕</button>}</li>
                 );
               })}
             </ul>
