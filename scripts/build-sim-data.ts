@@ -21,6 +21,27 @@ const WEAPON: Record<string, string> = {
 const ep = (t: string) => { const m = t.match(/(\d+)\.(\d+)\.(\d+) (\d+):(\d+):(\d+)/); return m ? Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]) / 1000 : NaN; };
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
+/** Recompute burn times on the SIM clock (from hold durations, which are
+ *  clock-agnostic) — the parser's burn_epoch is on the drifted device clock. */
+function computeBurns(ownership: { base_id: number; team: string; from_time: string; held_seconds: number }[], baseName: Record<number, string>, start: number, threshold: number) {
+  const byBase = new Map<number, typeof ownership>();
+  for (const p of ownership) { if (!byBase.has(p.base_id)) byBase.set(p.base_id, []); byBase.get(p.base_id)!.push(p); }
+  const burns: { base: string; team: string; t: number }[] = [];
+  for (const [bid, periods] of byBase) {
+    const sorted = [...periods].sort((a, b) => ep(a.from_time) - ep(b.from_time));
+    const cum: Record<string, number> = {};
+    for (const p of sorted) {
+      const before = cum[p.team] ?? 0;
+      if (before + p.held_seconds >= threshold) {
+        burns.push({ base: baseName[bid], team: p.team, t: Math.max(0, Math.round(ep(p.from_time) - start + (threshold - before))) });
+        break;
+      }
+      cum[p.team] = before + p.held_seconds;
+    }
+  }
+  return burns.sort((a, b) => a.t - b.t);
+}
+
 async function main() {
   // Gun images from the DB (anon, public-read).
   const env = readFileSync(".env.local", "utf8");
@@ -62,6 +83,8 @@ async function main() {
     players: r.players.map((p) => { const g = gunImage(WEAPON[p.name] ?? ""); return { name: name[p.in_game_player_id], team: p.team, gunName: g.name, gunImage: g.image }; }),
     bases: baseNames,
     baseFlips: flips,
+    burns: computeBurns(r.base_ownership, baseName, start, r.result.burn_threshold_seconds),
+    burnThresholdSeconds: r.result.burn_threshold_seconds,
     events,
   };
   mkdirSync("lib/live-sim", { recursive: true });
