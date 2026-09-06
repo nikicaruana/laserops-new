@@ -12,8 +12,22 @@
 # =============================================================================
 $ApiBase = "https://YOUR-SITE-URL"                                  # e.g. https://laseropsmalta.com
 $Token   = "PASTE-YOUR-TOKEN-HERE"                                  # from the match page > Live feed
-$Folder  = "$env:LOCALAPPDATA\Laserwar\Alphatag\Localfiles"        # adjust if your path differs
 $IntervalSeconds = 2
+
+Add-Type -AssemblyName System.Windows.Forms | Out-Null
+
+# Pick the folder to watch on first run; remembered next time in watcher-folder.txt
+# (delete that file to be asked again).
+$ConfigFile = Join-Path $PSScriptRoot 'watcher-folder.txt'
+$Folder = $null
+if (Test-Path $ConfigFile) { $saved = (Get-Content $ConfigFile -Raw).Trim(); if ($saved -and (Test-Path $saved)) { $Folder = $saved } }
+if (-not $Folder) {
+  $dlg = New-Object System.Windows.Forms.FolderBrowserDialog
+  $dlg.Description = 'Select the AlphaTag Localfiles folder to watch'
+  $dlg.ShowNewFolderButton = $false
+  if ($dlg.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { $Folder = $dlg.SelectedPath; Set-Content -Path $ConfigFile -Value $Folder -Encoding UTF8 }
+  else { Write-Host 'No folder selected. Exiting.' -ForegroundColor Yellow; exit 1 }
+}
 
 function Read-Shared([string]$path) {
   # Read a file even while AlphaTag has it open for writing (shared read).

@@ -14,12 +14,25 @@ import { createClient } from "@/lib/supabase/client";
 function buildScript(apiBase: string, token: string): string {
   return [
     "# LaserOps Malta - live feed watcher (venue tablet).",
-    "# Run:  powershell -ExecutionPolicy Bypass -File live-watcher.ps1",
-    "# Leave the window open during the game (it can be minimised).",
+    "# Double-click run-live-watcher.bat to start. Leave the window open during the game.",
+    "# It asks for the folder on first run and remembers it (delete watcher-folder.txt to change).",
     `$ApiBase = "${apiBase}"`,
     `$Token   = "${token}"`,
-    '$Folder  = "$env:LOCALAPPDATA\\Laserwar\\Alphatag\\Localfiles"   # adjust if your path differs',
     "$IntervalSeconds = 2",
+    "",
+    "Add-Type -AssemblyName System.Windows.Forms | Out-Null",
+    "",
+    "# Pick the folder to watch (remembered next time in watcher-folder.txt).",
+    "$ConfigFile = Join-Path $PSScriptRoot 'watcher-folder.txt'",
+    "$Folder = $null",
+    "if (Test-Path $ConfigFile) { $saved = (Get-Content $ConfigFile -Raw).Trim(); if ($saved -and (Test-Path $saved)) { $Folder = $saved } }",
+    "if (-not $Folder) {",
+    "  $dlg = New-Object System.Windows.Forms.FolderBrowserDialog",
+    "  $dlg.Description = 'Select the AlphaTag Localfiles folder to watch'",
+    "  $dlg.ShowNewFolderButton = $false",
+    "  if ($dlg.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { $Folder = $dlg.SelectedPath; Set-Content -Path $ConfigFile -Value $Folder -Encoding UTF8 }",
+    "  else { Write-Host 'No folder selected. Exiting.' -ForegroundColor Yellow; exit 1 }",
+    "}",
     "",
     "function Read-Shared([string]$path) {",
     "  try {",
@@ -79,7 +92,7 @@ export function NativeWatcherSetup({ token: initialToken }: { token: string }) {
   function downloadBat() {
     downloadBlob(
       "run-live-watcher.bat",
-      ["@echo off", 'cd /d "%~dp0"', 'powershell -ExecutionPolicy Bypass -File "%~dp0live-watcher.ps1"', "pause"].join("\r\n"),
+      ["@echo off", 'cd /d "%~dp0"', 'powershell -NoProfile -STA -ExecutionPolicy Bypass -File "%~dp0live-watcher.ps1"', "pause"].join("\r\n"),
     );
   }
 
@@ -122,8 +135,9 @@ export function NativeWatcherSetup({ token: initialToken }: { token: string }) {
 
       <ol className="ml-4 list-decimal space-y-1 text-[0.7rem] text-text-muted">
         <li>Download <strong>both</strong> files into the <strong>same folder</strong> on the tablet (e.g. the Desktop).</li>
-        <li>Double-click <code className="rounded bg-bg px-1 font-mono">run-live-watcher.bat</code> — a window opens and starts streaming. (Double-clicking the .ps1 just opens Notepad; use the .bat.)</li>
-        <li>Leave that window open during the game (minimising is fine). Close it to stop.</li>
+        <li>Double-click <code className="rounded bg-bg px-1 font-mono">run-live-watcher.bat</code> (double-clicking the .ps1 just opens Notepad — use the .bat).</li>
+        <li>First run: a <strong>folder picker</strong> opens — choose your AlphaTag <code className="rounded bg-bg px-1 font-mono">Localfiles</code> folder. It&apos;s remembered next time (delete <code className="rounded bg-bg px-1 font-mono">watcher-folder.txt</code> to change it).</li>
+        <li>Leave the window open during the game (minimising is fine). Close it to stop.</li>
         <li>First run may warn &quot;Windows protected your PC&quot; → <strong>More info → Run anyway</strong>.</li>
       </ol>
 
