@@ -62,8 +62,8 @@
       "teamBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778784565/Team_Badges-Yellow-2_wzyt3t.png",
       "xpFromPoints": 16676,
       "xpFromWins": 2750,
-      "xpFromAccolades": 300,
-      "xpEarnedThisMatch": 19726,
+      "xpFromAccolades": 400,
+      "xpEarnedThisMatch": 19826,
       "xpTotalBeforeMatch": 0,
       "xpTotalAfterMatch": 0,
       "xpCurrentLevelBeforeMatch": 1,
@@ -109,6 +109,15 @@
             "description": "The Most Hits Taken",
             "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1777889561/LaserOps-Accolades-Swiss_Cheese_oz63ir.png",
             "xp": 50
+          }
+        },
+        {
+          "accolade": {
+            "name": "Fortress",
+            "key": "fortress",
+            "description": "The Most Capture Time",
+            "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1788638338/LaserOps-Accolade-Fortress_wzx9jb.png",
+            "xp": 100
           }
         }
       ],
@@ -324,8 +333,8 @@
       "teamBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778784566/Team_Badges-Blue-2_xgdmsr.png",
       "xpFromPoints": 13986,
       "xpFromWins": 1500,
-      "xpFromAccolades": 0,
-      "xpEarnedThisMatch": 15486,
+      "xpFromAccolades": 100,
+      "xpEarnedThisMatch": 15586,
       "xpTotalBeforeMatch": 0,
       "xpTotalAfterMatch": 0,
       "xpCurrentLevelBeforeMatch": 1,
@@ -336,7 +345,17 @@
       "xpLevelProgressEnd": 0,
       "xpLevelUpInMatch": false,
       "xpLevelBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783961/Rank_Badges-Ranger_Badge-3_nq4orq.png",
-      "earnedAccolades": [],
+      "earnedAccolades": [
+        {
+          "accolade": {
+            "name": "CAP-Tain",
+            "key": "captain",
+            "description": "The Most Base Captures",
+            "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1788638338/LaserOps-Accolade-CAPTain_zhxukh.png",
+            "xp": 100
+          }
+        }
+      ],
       "objCaps": 18,
       "objCapsRank": 1,
       "capTime": 1985,
@@ -2303,5 +2322,5 @@
   ],
   "matchDate": "2026.09.05",
   "label": "LO-2026-27 · 5v5 Online Domination",
-  "generatedAt": "2026-09-06T08:36:03.127Z"
+  "generatedAt": "2026-09-06T08:51:05.129Z"
 }
