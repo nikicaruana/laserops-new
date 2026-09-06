@@ -65,13 +65,22 @@ export function NativeWatcherSetup({ token: initialToken }: { token: string }) {
   const [copied, setCopied] = useState(false);
   const apiBase = typeof window !== "undefined" ? window.location.origin : "";
 
-  function download() {
-    const blob = new Blob([buildScript(apiBase, token)], { type: "text/plain" });
+  const isLocal = /localhost|127\.0\.0\.1/.test(apiBase);
+
+  function downloadBlob(name: string, text: string) {
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "live-watcher.ps1";
+    a.href = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
+    a.download = name;
     a.click();
     URL.revokeObjectURL(a.href);
+  }
+  function download() { downloadBlob("live-watcher.ps1", buildScript(apiBase, token)); }
+  // A double-clickable launcher that runs the .ps1 sitting next to it.
+  function downloadBat() {
+    downloadBlob(
+      "run-live-watcher.bat",
+      ["@echo off", 'cd /d "%~dp0"', 'powershell -ExecutionPolicy Bypass -File "%~dp0live-watcher.ps1"', "pause"].join("\r\n"),
+    );
   }
 
   async function copyToken() {
@@ -92,16 +101,31 @@ export function NativeWatcherSetup({ token: initialToken }: { token: string }) {
     <div className="space-y-3">
       <p className="text-xs text-text-muted">
         <strong className="text-text">Recommended for real games.</strong> A small script runs on the venue tablet and keeps
-        streaming even when Chrome is minimised. Download it (pre-filled), then on the tablet run it once:
-        <code className="ml-1 rounded bg-bg px-1 py-0.5 font-mono text-[0.65rem]">powershell -ExecutionPolicy Bypass -File live-watcher.ps1</code>
+        streaming even when Chrome is minimised.
       </p>
+
+      {isLocal && (
+        <p className="border border-amber-700 bg-amber-950/30 px-3 py-2 text-xs text-amber-300">
+          You&apos;re on <span className="font-mono">localhost</span>, so this download points at your own machine — fine for a
+          local test, but the venue tablet can&apos;t reach it. For real games, download this from the <strong>live website</strong>.
+        </p>
+      )}
 
       <div className="flex flex-wrap items-center gap-3">
         <button type="button" onClick={download} className="border border-accent bg-accent px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-bg transition-transform active:scale-[0.98]">
-          Download watcher script
+          Download watcher (.ps1)
         </button>
-        <span className="text-[0.65rem] text-text-subtle">Pre-filled with this site + your token.</span>
+        <button type="button" onClick={downloadBat} className="border border-border-strong px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-text-muted hover:text-accent">
+          Download launcher (.bat)
+        </button>
       </div>
+
+      <ol className="ml-4 list-decimal space-y-1 text-[0.7rem] text-text-muted">
+        <li>Download <strong>both</strong> files into the <strong>same folder</strong> on the tablet (e.g. the Desktop).</li>
+        <li>Double-click <code className="rounded bg-bg px-1 font-mono">run-live-watcher.bat</code> — a window opens and starts streaming. (Double-clicking the .ps1 just opens Notepad; use the .bat.)</li>
+        <li>Leave that window open during the game (minimising is fine). Close it to stop.</li>
+        <li>First run may warn &quot;Windows protected your PC&quot; → <strong>More info → Run anyway</strong>.</li>
+      </ol>
 
       <div className="flex flex-wrap items-center gap-2 text-xs">
         <span className="font-semibold uppercase tracking-[0.12em] text-text-muted">Token</span>
