@@ -1,12 +1,13 @@
 import { XpProgressBar } from "@/components/portal/player-summary/XpProgressBar";
+import { cldImage } from "@/lib/cld";
 
 /**
- * LevelCard — the rank/level/XP card that sits in the top-right of the
+ * LevelCard – the rank/level/XP card that sits in the top-right of the
  * Player Summary above the Favourite Weapon card.
  *
  * Layout:
  *   Row 1: rank badge image (left) + level display (right of badge)
- *   Row 2: two-up — Matches Played | Total XP, each labelled
+ *   Row 2: two-up – Matches Played | Total XP, each labelled
  *   Row 3: animated XP progress bar (fills 0→target on mount)
  *
  * The badge image renders against the card's dark background (no extra
@@ -15,7 +16,7 @@ import { XpProgressBar } from "@/components/portal/player-summary/XpProgressBar"
 
 type LevelCardProps = {
   rankBadgeUrl: string;
-  /** e.g. "Level 8" — displayed verbatim. */
+  /** e.g. "Level 8" – displayed verbatim. */
   levelDisplay: string;
   matchesPlayed: number;
   totalXp: number;
@@ -36,7 +37,7 @@ export function LevelCard({
       <div className="flex items-center justify-center gap-4">
         {rankBadgeUrl !== "" && (
           <img
-            src={rankBadgeUrl}
+            src={cldImage(rankBadgeUrl, { h: 200 })}
             alt=""
             aria-hidden
             loading="lazy"

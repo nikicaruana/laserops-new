@@ -1,5 +1,6 @@
 import type { GameInfo } from "@/lib/cms/game-id-map";
 import { cn } from "@/lib/cn";
+import { cldImage } from "@/lib/cld";
 
 /**
  * MatchOverview
@@ -149,7 +150,7 @@ function TeamColumn({
           shown under it (the badge no longer implies the colour). */}
       {badgeUrl !== "" && (
         <img
-          src={badgeUrl}
+          src={cldImage(badgeUrl, { h: 320 })}
           alt={name ?? (isWinner ? "Winning team badge" : "Losing team badge")}
           loading="lazy"
           className="block h-16 w-auto sm:h-40"

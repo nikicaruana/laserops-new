@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Weapon } from "@/lib/cms/weapons";
 import { WeaponStatsPanel, type StatWinners } from "./WeaponStatsPanel";
 import { WeaponDetailDialog } from "./WeaponDetailDialog";
+import { cldImage } from "@/lib/cld";
 
 /**
  * WeaponGallery
@@ -11,7 +12,7 @@ import { WeaponDetailDialog } from "./WeaponDetailDialog";
  * Self-contained gallery: gun-tree dropdown filter + horizontal
  * scroll-snap row of weapons + stats panel for the centred gun.
  *
- * Each instance owns its own selectedTree state — so in compare mode
+ * Each instance owns its own selectedTree state – so in compare mode
  * the two galleries can show different trees independently.
  *
  * --------------------------------------------------------------------
@@ -21,7 +22,7 @@ import { WeaponDetailDialog } from "./WeaponDetailDialog";
  *    a single continuous yellow band stretched across the full
  *    scrollable content width. Gun images sit on top of it without
  *    their own card chrome. As the user scrolls, the entire strip
- *    moves — like a film reel passing under a fixed window. The
+ *    moves – like a film reel passing under a fixed window. The
  *    centred gun is highlighted by a centred "viewer" overlay
  *    (subtle dark inset) that stays put while the strip moves.
  *
@@ -89,7 +90,7 @@ export function WeaponGallery({
     weapons[0]?.name ?? null,
   );
 
-  // Dialog state — when non-null, the WeaponDetailDialog renders open
+  // Dialog state – when non-null, the WeaponDetailDialog renders open
   // for that weapon. Cleared when the user closes the dialog (via X,
   // ESC, or click-outside).
   //
@@ -170,7 +171,7 @@ export function WeaponGallery({
   const handleCardClick = useCallback(
     (name: string) => {
       if (name === centeredName) {
-        // Second-tap: open the dialog. Look up the weapon — this
+        // Second-tap: open the dialog. Look up the weapon – this
         // handler closes over `weapons` via the dependency array,
         // so the lookup will always reflect the current filtered list.
         const w = weapons.find((x) => x.name === name) ?? null;
@@ -233,7 +234,7 @@ export function WeaponGallery({
       // Wrapper provides the centred-slot indicator overlay. The
       // overlay sits absolutely positioned over the centre of the
       // scroll container, providing the "viewer window" of the film
-      // reel — a thin outline that frames whatever gun is currently
+      // reel – a thin outline that frames whatever gun is currently
       // centred. The strip (the yellow band with guns) scrolls
       // beneath it.
       <div className="relative">
@@ -249,12 +250,12 @@ export function WeaponGallery({
           aria-label={ariaLabel}
           tabIndex={0}
           onKeyDown={handleKeyDown}
-          // overflow-x-auto with snap — same scrolling behaviour as
+          // overflow-x-auto with snap – same scrolling behaviour as
           // before. py removed; the strip itself provides vertical
           // height now. touch-pan-x for native horizontal panning.
           className="scrollbar-none flex w-full snap-x snap-mandatory items-stretch overflow-x-auto touch-pan-x [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >
-          {/* Leading spacer — pushes first slot to centre on scroll=0. */}
+          {/* Leading spacer – pushes first slot to centre on scroll=0. */}
           <div aria-hidden className="shrink-0" style={{ width: "50%" }} />
 
           {/* Film strip wrapper. THIS element provides the continuous
@@ -293,7 +294,7 @@ export function WeaponGallery({
                   aria-label={`View ${weapon.name} stats`}
                   aria-pressed={isCentered}
                   // Each slot is fixed-width, snap-aligned to centre.
-                  // No background colour on the button — the parent
+                  // No background colour on the button – the parent
                   // strip provides the yellow.
                   // py-3 sm:py-4 lg:py-5 gives vertical breathing
                   // room around the gun image. The image itself
@@ -304,18 +305,18 @@ export function WeaponGallery({
                     // scale down + dim slightly. The dim is gentler
                     // than before (0.6 vs 0.5) because on a yellow
                     // bg, a heavily dimmed image becomes hard to
-                    // see — the gun silhouette gets washed out.
+                    // see – the gun silhouette gets washed out.
                     opacity: isCentered ? 1 : 0.6,
                     transform: isCentered ? "scale(1)" : "scale(0.85)",
                   }}
                 >
-                  {/* Slot inner — fixed dimensions for the gun image
+                  {/* Slot inner – fixed dimensions for the gun image
                       only. The yellow card chrome is gone (provided
                       by the strip); only the image remains. */}
                   <div className="flex h-20 w-32 items-center justify-center sm:h-28 sm:w-44 lg:h-32 lg:w-56">
                     {weapon.imageUrl !== "" ? (
                       <img
-                        src={weapon.imageUrl}
+                        src={cldImage(weapon.imageUrl, { w: 480 })}
                         alt={weapon.name}
                         loading="lazy"
                         draggable={false}
@@ -332,7 +333,7 @@ export function WeaponGallery({
             })}
           </div>
 
-          {/* Trailing spacer — lets the last slot reach the centre. */}
+          {/* Trailing spacer – lets the last slot reach the centre. */}
           <div aria-hidden className="shrink-0" style={{ width: "50%" }} />
         </div>
       </div>
@@ -359,7 +360,7 @@ export function WeaponGallery({
   // `inverted` prop (tiles before name) so the names sit symmetrically
   // adjacent to the centre divider when both galleries are stacked.
   //
-  // Detail dialog is rendered alongside both layouts — it's a
+  // Detail dialog is rendered alongside both layouts – it's a
   // top-layer modal anyway (via showModal()), so its position in
   // the DOM is irrelevant visually.
   if (inverted) {
@@ -401,7 +402,7 @@ export function WeaponGallery({
  * evoking a film-projector gate or slot-machine reel viewer.
  *
  * Width matches the slot width inside the strip (h-20 w-32 mobile,
- * h-28 w-44 sm, h-32 w-56 lg) — kept in sync via the same Tailwind
+ * h-28 w-44 sm, h-32 w-56 lg) – kept in sync via the same Tailwind
  * size classes.
  *
  * Pointer-events-none so the user's swipes pass through to the

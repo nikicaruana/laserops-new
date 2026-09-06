@@ -5,6 +5,7 @@ import type { MatchPlayer } from "@/lib/match-report/engine";
 import type { RankLevel } from "@/lib/cms/ranking-system";
 import { getRankByLevel } from "@/lib/cms/ranking-system";
 import { AnimatedNumber } from "./AnimatedNumber";
+import { cldImage } from "@/lib/cld";
 
 /**
  * XpCard
@@ -449,7 +450,7 @@ function BadgeBox({
   return (
     <div className="flex h-20 w-20 items-center justify-center rounded-sm bg-bg p-2 sm:h-24 sm:w-24">
       <img
-        src={imageUrl}
+        src={cldImage(imageUrl, { w: 200 })}
         alt={`Level ${altLevel} badge`}
         loading="lazy"
         className="block h-full w-full object-contain"
@@ -481,7 +482,7 @@ function BadgeImage({
   }
   return (
     <img
-      src={imageUrl}
+      src={cldImage(imageUrl, { w: 200 })}
       alt={`Level ${altLevel} badge`}
       loading="lazy"
       className="block h-16 w-16 object-contain sm:h-20 sm:w-20"

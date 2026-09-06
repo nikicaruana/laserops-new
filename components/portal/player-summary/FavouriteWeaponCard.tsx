@@ -1,14 +1,15 @@
 import { cn } from "@/lib/cn";
+import { cldImage } from "@/lib/cld";
 
 /**
- * FavouriteWeaponCard — bottom card of the top section's right column.
+ * FavouriteWeaponCard – bottom card of the top section's right column.
  *
  * Visual: yellow tile holds the weapon silhouette image (gun art is dark/
- * black so needs a light backdrop to "pop" — same treatment used in the
+ * black so needs a light backdrop to "pop" – same treatment used in the
  * Looker reference design). Below the tile, the weapon's name centered.
  *
  * Renders a placeholder hint if the player has no Favourite_Gun set yet
- * — better than showing an empty yellow box.
+ * – better than showing an empty yellow box.
  */
 
 type FavouriteWeaponCardProps = {
@@ -31,21 +32,21 @@ export function FavouriteWeaponCard({
       </div>
 
       {/* Yellow tile housing the weapon image. The dark silhouette art needs
-          a light backdrop to read clearly — yellow aligns with brand and
+          a light backdrop to read clearly – yellow aligns with brand and
           matches the Looker reference. */}
       <div
         className={cn(
           "flex items-center justify-center bg-accent",
           // Generous interior padding so the silhouette doesn't crowd the edges.
           "px-4 py-6 sm:px-6 sm:py-8",
-          // Tile height bumped — gives the gun art more presence and matches
+          // Tile height bumped – gives the gun art more presence and matches
           // the importance of the weapon as the visual centerpiece of this card.
           "min-h-[180px] sm:min-h-[220px]",
         )}
       >
         {hasWeapon ? (
           <img
-            src={imageUrl}
+            src={cldImage(imageUrl, { w: 640 })}
             alt={weaponName}
             loading="lazy"
             decoding="async"

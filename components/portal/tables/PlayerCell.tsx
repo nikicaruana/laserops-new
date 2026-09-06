@@ -1,15 +1,16 @@
 import { cn } from "@/lib/cn";
+import { cldImage } from "@/lib/cld";
 
 /**
- * PlayerCell — profile picture + nickname pairing used across leaderboards.
+ * PlayerCell – profile picture + nickname pairing used across leaderboards.
  *
  * Responsive image sizing:
- *   - Mobile: 40px square — fits the cramped 6-column mobile layout
+ *   - Mobile: 40px square – fits the cramped 6-column mobile layout
  *   - sm+: 60px square (50% bigger), comfortable on tablet/desktop
  *
  * The image uses a plain <img> rather than next/image because:
  *   - Source URLs are external and may change as the source sheet updates
- *   - These are small decorative thumbnails — Next/Image's optimization
+ *   - These are small decorative thumbnails – Next/Image's optimization
  *     overhead isn't worth it for sub-2KB rendered sizes
  *   - Lazy loading via the loading="lazy" attribute is sufficient
  *
@@ -36,7 +37,7 @@ export function PlayerCell({ profilePicUrl, nickname, centered = true }: PlayerC
       )}
     >
       <img
-        src={profilePicUrl}
+        src={cldImage(profilePicUrl, { w: 128 })}
         alt=""
         loading="lazy"
         decoding="async"

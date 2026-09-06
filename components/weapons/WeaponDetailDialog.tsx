@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import type { Weapon } from "@/lib/cms/weapons";
 import { formatFireRate } from "@/lib/cms/weapons";
+import { cldImage } from "@/lib/cld";
 
 /**
  * WeaponDetailDialog
@@ -13,19 +14,19 @@ import { formatFireRate } from "@/lib/cms/weapons";
  *
  * Pattern mirrors the existing AccoladeTile dialog in the Match Report:
  *   - Native showModal() for proper top-layer modal behaviour, focus
- *     trapping, and ESC dismissal — all for free, no library needed.
+ *     trapping, and ESC dismissal – all for free, no library needed.
  *   - click-outside-to-close wired explicitly via a click handler on
  *     the dialog element (native <dialog> doesn't do this by default).
  *   - Close button in the corner for explicit dismissal.
  *
  * The component takes the currently-displayed weapon as a prop and an
- * `onClose` callback. The PARENT controls when the dialog is open —
+ * `onClose` callback. The PARENT controls when the dialog is open –
  * we don't store an `isOpen` state here. This keeps the dialog "owned"
  * by the parent's gallery state (which already knows which gun was
  * second-tapped) and avoids divergent state.
  *
  * When `weapon` is null, the dialog is unmounted entirely. This is
- * fine because <dialog> elements survive being unmounted/remounted —
+ * fine because <dialog> elements survive being unmounted/remounted –
  * the alternative (keeping it mounted always and toggling .close())
  * would mean carrying around a "last opened weapon" so the dialog
  * has content during its closing transition. Simpler to just mount
@@ -57,7 +58,7 @@ export function WeaponDetailDialog({ weapon, onClose }: Props) {
     };
   }, [weapon]);
 
-  // Click-outside handling — clicking the dialog backdrop (the
+  // Click-outside handling – clicking the dialog backdrop (the
   // <dialog> element itself, vs its content) closes. Native dialog
   // doesn't do this for free; we wire it up.
   useEffect(() => {
@@ -145,7 +146,7 @@ export function WeaponDetailDialog({ weapon, onClose }: Props) {
         </div>
 
         {/* Image. Yellow band background to match the gallery strip
-            styling — gives the dialog brand continuity. py-4 inset so
+            styling – gives the dialog brand continuity. py-4 inset so
             the gun has breathing room within the band. */}
         {weapon.imageUrl !== "" && (
           <div
@@ -153,7 +154,7 @@ export function WeaponDetailDialog({ weapon, onClose }: Props) {
             style={{ backgroundColor: "#ffde00" }}
           >
             <img
-              src={weapon.imageUrl}
+              src={cldImage(weapon.imageUrl, { h: 320 })}
               alt={weapon.name}
               className="block h-24 w-auto select-none object-contain sm:h-32"
               draggable={false}
@@ -164,7 +165,7 @@ export function WeaponDetailDialog({ weapon, onClose }: Props) {
         {/* Description body. Falls back to a soft "no description"
             placeholder if the sheet hasn't been filled in yet. We
             still render the dialog in that case so the user gets
-            confirmed feedback that they tapped — better UX than
+            confirmed feedback that they tapped – better UX than
             silently doing nothing. */}
         {weapon.description !== "" ? (
           <p className="mt-4 text-sm leading-relaxed text-text-muted sm:text-base">
@@ -187,7 +188,7 @@ export function WeaponDetailDialog({ weapon, onClose }: Props) {
             value={
               weapon.reloadSeconds > 0
                 ? `${formatNumberShort(weapon.reloadSeconds)}s`
-                : "—"
+                : "–"
             }
           />
           <DialogStat label="Rate" value={formatFireRate(weapon.fireRate)} />
@@ -217,15 +218,15 @@ function DialogStat({ label, value }: { label: string; value: string }) {
 }
 
 /* ---------- Number formatting (duplicated from stats panel for
-   self-containment — small enough to not warrant a shared util) ---- */
+   self-containment – small enough to not warrant a shared util) ---- */
 
 function fmtNum(value: number): string {
-  if (value === 0) return "—";
+  if (value === 0) return "–";
   return formatNumberShort(value);
 }
 
 function formatNumberShort(value: number): string {
-  if (!Number.isFinite(value)) return "—";
+  if (!Number.isFinite(value)) return "–";
   if (Number.isInteger(value)) return value.toString();
   return value.toFixed(1).replace(/\.0$/, "");
 }

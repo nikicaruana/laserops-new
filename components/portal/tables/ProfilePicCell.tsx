@@ -1,27 +1,29 @@
 /**
- * ProfilePicCell — dedicated column for the player's profile photo.
+ * ProfilePicCell – dedicated column for the player's profile photo.
  *
  * Lives in its own column (between # and Ops Tag) so all the photos line up
  * vertically as a uniform stack. Centered within its cell.
  *
  * Responsive sizing:
- *   - Mobile: 36px square — small but readable in the dense 7-column layout
+ *   - Mobile: 36px square – small but readable in the dense 7-column layout
  *   - sm+: 60px square (50% bigger), comfortable on tablet/desktop
  *
- * Plain <img> rather than next/image — sources are external URLs that may
+ * Plain <img> rather than next/image – sources are external URLs that may
  * change, and these are tiny decorative thumbnails where Next/Image's
  * optimization isn't worth the remote-host config burden.
  */
+import { cldImage } from "@/lib/cld";
+
 type ProfilePicCellProps = {
   url: string;
-  /** Player's nickname — used as the alt text for screen readers. */
+  /** Player's nickname – used as the alt text for screen readers. */
   nickname: string;
 };
 
 export function ProfilePicCell({ url, nickname }: ProfilePicCellProps) {
   return (
     <img
-      src={url}
+      src={cldImage(url, { w: 128 })}
       alt={`${nickname} profile photo`}
       loading="lazy"
       decoding="async"
