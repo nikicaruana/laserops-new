@@ -23,6 +23,7 @@ import { PublishedPlayersEditor } from "@/components/admin/PublishedPlayersEdito
 import { RecomputeResults } from "@/components/admin/RecomputeResults";
 import { LiveIngestWatcher } from "@/components/admin/LiveIngestWatcher";
 import { LiveFeedToggle } from "@/components/admin/LiveFeedToggle";
+import { NativeWatcherSetup } from "@/components/admin/NativeWatcherSetup";
 import { HeadbandIdentityPanel, type HeadbandRow } from "@/components/admin/HeadbandIdentityPanel";
 import { CollapsibleSection } from "@/components/admin/CollapsibleSection";
 import { RealtimeMatchRefresh } from "@/components/admin/RealtimeMatchRefresh";
@@ -136,6 +137,12 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   const { data: tradeRows } = await supabase
     .from("base_trading_config")
     .select("min_hold_seconds, recapture_window_seconds, recapture_same_player_points, mode_slug");
+
+  // Live-feed watcher token (admin-only read) — shown in the Live feed section.
+  const { data: ingestCfg } = match.live_feed_enabled
+    ? await supabase.from("live_ingest_config").select("token").maybeSingle()
+    : { data: null as { token: string } | null };
+  const ingestToken = (ingestCfg?.token as string | undefined) ?? null;
 
   // Photos linked to this match (Cloudinary + match_photos).
   const matchPhotos = await fetchMatchPhotos(supabase, match.id as string);
@@ -605,14 +612,29 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
       >
         <LiveFeedToggle matchId={match.id} enabled={!!match.live_feed_enabled} />
         {match.live_feed_enabled && (
-          <div className="mt-5 border-t border-border pt-5">
-            <LiveIngestWatcher matchId={match.id} isLive={match.status === "live"} />
-            <div className="mt-3">
+          <div className="mt-5 space-y-5 border-t border-border pt-5">
+            <div>
               <Link href={`/admin/matches/${match.id}/live`} className="text-xs font-semibold uppercase tracking-[0.12em] text-accent hover:text-accent-soft">
                 Open global live view →
               </Link>
               <span className="ml-2 text-[0.65rem] text-text-subtle">Bases, global kill feed &amp; leaderboard — for a venue screen. Players get their own view in the portal.</span>
             </div>
+
+            {/* Native background watcher — the robust path (keeps running when Chrome is minimised). */}
+            {ingestToken && <NativeWatcherSetup token={ingestToken} />}
+
+            {/* Browser watcher — quick test / no install; needs the tab open + in front. */}
+            <details className="rounded border border-border bg-bg-elevated">
+              <summary className="cursor-pointer px-4 py-2.5 text-xs font-bold uppercase tracking-[0.12em] text-text-muted">
+                Quick test in the browser (no install)
+              </summary>
+              <div className="border-t border-border p-4">
+                <p className="mb-3 text-[0.65rem] text-text-subtle">
+                  For a quick test only — this needs the tab left open <strong>and in front</strong> (a minimised tab stalls). Use the native watcher above for real games.
+                </p>
+                <LiveIngestWatcher matchId={match.id} isLive={match.status === "live"} />
+              </div>
+            </details>
           </div>
         )}
       </CollapsibleSection>
