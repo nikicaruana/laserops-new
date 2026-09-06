@@ -8,6 +8,7 @@
  * read other players' signups).
  */
 import type { Metadata } from "next";
+import { cldImage } from "@/lib/cld";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Container } from "@/components/ui/Container";
@@ -232,7 +233,7 @@ export default async function GameDetailPage({
                   <span className="block w-full truncate text-center text-sm font-bold uppercase tracking-[0.06em] text-text">{name}</span>
                   <span className="flex h-20 w-20 shrink-0 overflow-hidden rounded-sm border border-border bg-bg-overlay">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={avatarOrDefault(s.profile_pic_url)} alt={name} className="h-full w-full object-cover" />
+                    <img src={cldImage(avatarOrDefault(s.profile_pic_url), { w: 384 })} alt={name} className="h-full w-full object-cover" />
                   </span>
                   {waitlisted ? (
                     <span className="text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-amber-300">Waitlist</span>
@@ -240,7 +241,7 @@ export default async function GameDetailPage({
                     <span className="flex items-center gap-1.5">
                       {s.rank_badge_url && (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={s.rank_badge_url} alt="" className="h-5 w-5 object-contain" />
+                        <img src={cldImage(s.rank_badge_url, { w: 384 })} alt="" className="h-5 w-5 object-contain" />
                       )}
                       <span className="text-[0.65rem] font-semibold uppercase tracking-[0.1em] text-text-muted">Lvl. {s.level}</span>
                     </span>

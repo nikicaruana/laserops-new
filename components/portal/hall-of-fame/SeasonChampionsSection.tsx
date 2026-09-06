@@ -2,9 +2,10 @@ import type {
   ChampionEntry,
   SeasonChampions,
 } from "@/lib/leaderboards/hall-of-fame";
+import { cldImage } from "@/lib/cld";
 
 /**
- * Season Champions — the top 2 finishers of every challenge in each
+ * Season Champions – the top 2 finishers of every challenge in each
  * completed season, with the stat that won it.
  */
 export function SeasonChampionsSection({
@@ -81,7 +82,7 @@ function ChampionCard({
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={entry.profilePicUrl}
+        src={cldImage(entry.profilePicUrl, { w: 384 })}
         alt=""
         loading="lazy"
         decoding="async"

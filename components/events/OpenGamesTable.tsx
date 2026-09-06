@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { cldImage } from "@/lib/cld";
 import type { OpenGame } from "@/lib/cms/open-games";
 import { formatGameDate } from "@/lib/cms/open-games";
 
 /**
  * OpenGamesTable
  * --------------------------------------------------------------------
- * Client component — renders a status toggle, the schedule table, and
+ * Client component – renders a status toggle, the schedule table, and
  * the More Info modal. All data is passed from the server page as props;
  * no fetching here.
  *
@@ -80,7 +81,7 @@ function MoreInfoModal({
         <div className="flex items-center justify-between border-b border-border bg-accent px-5 py-3">
           <h2 className="text-base font-extrabold uppercase tracking-tight text-bg">
             {game
-              ? `${game.type || "Open Game"} — ${formatGameDate(game.date)}`
+              ? `${game.type || "Open Game"} – ${formatGameDate(game.date)}`
               : ""}
           </h2>
           <button
@@ -95,14 +96,14 @@ function MoreInfoModal({
         {/* Body */}
         <div className="overflow-y-auto p-5">
           {hasImage ? (
-            /* Poster image — fills the modal width, preserves aspect ratio */
+            /* Poster image – fills the modal width, preserves aspect ratio */
             <img
-              src={game!.moreInfoImage}
-              alt={`${game!.type} match poster — ${formatGameDate(game!.date)}`}
+              src={cldImage(game!.moreInfoImage, { w: 384 })}
+              alt={`${game!.type} match poster – ${formatGameDate(game!.date)}`}
               className="mx-auto block max-h-[70vh] w-full rounded-sm object-contain"
             />
           ) : hasText ? (
-            /* Text body — pre-line so sheet newlines are preserved */
+            /* Text body – pre-line so sheet newlines are preserved */
             <p className="whitespace-pre-line text-sm leading-relaxed text-text-muted">
               {game!.moreInfoText}
             </p>
@@ -219,21 +220,21 @@ export function OpenGamesTable({ games }: Props) {
                       {formatGameDate(game.date)}
                     </td>
 
-                    {/* Time — nowrap on desktop; wraps fine on mobile */}
+                    {/* Time – nowrap on desktop; wraps fine on mobile */}
                     <td className="px-2 py-2 font-mono text-[0.65rem] text-text sm:whitespace-nowrap sm:px-4 sm:py-3 sm:text-xs">
-                      {game.time || "—"}
+                      {game.time || "–"}
                     </td>
 
-                    {/* Type — yellow for Double XP rows */}
+                    {/* Type – yellow for Double XP rows */}
                     <td
                       className={`px-2 py-2 text-[0.65rem] font-semibold sm:px-4 sm:py-3 sm:text-xs ${
                         game.isDoubleXP ? "text-accent" : "text-text"
                       }`}
                     >
-                      {game.type || "—"}
+                      {game.type || "–"}
                     </td>
 
-                    {/* Action — Sign Up (open view) or Match Report (completed view) */}
+                    {/* Action – Sign Up (open view) or Match Report (completed view) */}
                     {view === "open" ? (
                       <td className="px-2 py-2 sm:px-4 sm:py-3">
                         {game.signupLink ? (
@@ -246,7 +247,7 @@ export function OpenGamesTable({ games }: Props) {
                             Sign Up →
                           </a>
                         ) : (
-                          <span className="text-xs text-text-muted">—</span>
+                          <span className="text-xs text-text-muted">–</span>
                         )}
                       </td>
                     ) : (
@@ -259,7 +260,7 @@ export function OpenGamesTable({ games }: Props) {
                             View Report
                           </a>
                         ) : (
-                          <span className="text-xs text-text-muted">—</span>
+                          <span className="text-xs text-text-muted">–</span>
                         )}
                       </td>
                     )}
@@ -274,7 +275,7 @@ export function OpenGamesTable({ games }: Props) {
                           More Info
                         </button>
                       ) : (
-                        <span className="text-xs text-text-muted">—</span>
+                        <span className="text-xs text-text-muted">–</span>
                       )}
                     </td>
                   </tr>
@@ -285,7 +286,7 @@ export function OpenGamesTable({ games }: Props) {
         </div>
       )}
 
-      {/* Modal — always mounted, shown/hidden via native <dialog> API */}
+      {/* Modal – always mounted, shown/hidden via native <dialog> API */}
       <MoreInfoModal game={activeGame} onClose={() => setActiveGame(null)} />
     </>
   );

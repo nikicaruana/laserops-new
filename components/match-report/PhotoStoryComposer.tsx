@@ -10,6 +10,7 @@
  * route, so the output matches the preview exactly.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
+import { cldImage } from "@/lib/cld";
 import { Modal } from "@/components/ui/Modal";
 import { PHOTO_OVERLAYS, type PhotoOverlay, type OverlayData } from "@/lib/story/meta";
 import { canShareFile, downloadFile, fetchStoryFile, shareFile } from "@/lib/story/share";
@@ -47,7 +48,7 @@ function CropBand({ overlay, data }: { overlay: PhotoOverlay; data: OverlayData 
   // eslint-disable-next-line @next/next/no-img-element
   const Badge = ({ b }: { b: OverlayData["accolades"][number] }) => (
     <div className="relative flex">
-      <img src={b.badgeUrl} alt={b.name} className="h-14 w-14 object-contain" />
+      <img src={cldImage(b.badgeUrl, { w: 384 })} alt={b.name} className="h-14 w-14 object-contain" />
       {typeof b.count === "number" && b.count > 1 && (
         <span className="absolute -right-1 -top-1 rounded-full border border-black bg-accent px-1 text-[8px] font-extrabold text-black">×{b.count}</span>
       )}
@@ -108,7 +109,7 @@ function CropBand({ overlay, data }: { overlay: PhotoOverlay; data: OverlayData 
       <div className="flex flex-col items-center">
         <span className="text-[20px] font-extrabold text-accent">{data.nickname}</span>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        {data.rankBadgeUrl && <img src={data.rankBadgeUrl} alt="" className="mt-1 h-11 w-11 object-contain" />}
+        {data.rankBadgeUrl && <img src={cldImage(data.rankBadgeUrl, { w: 384 })} alt="" className="mt-1 h-11 w-11 object-contain" />}
         <span className="mt-0.5 text-[10px] font-bold text-white/70">Lvl {data.level}</span>
       </div>
     );

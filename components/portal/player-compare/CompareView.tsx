@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useRef, useState, useEffect, useMemo } from "react";
+import { cldImage } from "@/lib/cld";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/cn";
 import {
@@ -192,7 +193,7 @@ export function CompareView({ allRows, uniqueGunsMap }: Props) {
               secondary: `Win Rate ${Math.round(playerB.matchWinRatePct)}%`,
               ratingUrl: playerB.matchWinRatingUrl,
             }}
-            // Compare by win rate — that's the rated metric, same as StatCard
+            // Compare by win rate – that's the rated metric, same as StatCard
             winner={winners.matchWinRate}
           />
 
@@ -333,7 +334,7 @@ export function CompareView({ allRows, uniqueGunsMap }: Props) {
 }
 
 /* ============================================================
-   Compare search (secondary — targets ?compare= param)
+   Compare search (secondary – targets ?compare= param)
    ============================================================ */
 
 function CompareSearch({
@@ -472,9 +473,9 @@ function cellHighlight(side: "a" | "b", winner: StatWinner): string {
 function ProfileCell({ data }: { data: ComparePlayerData }) {
   return (
     <div className="flex flex-col items-center gap-2 border border-border bg-bg-elevated p-3 sm:p-4">
-      {/* Profile photo — square, fills cell width */}
+      {/* Profile photo – square, fills cell width */}
       <img
-        src={data.profilePicUrl}
+        src={cldImage(data.profilePicUrl, { w: 384 })}
         alt={`${data.nickname} profile photo`}
         loading="lazy"
         decoding="async"
@@ -486,7 +487,7 @@ function ProfileCell({ data }: { data: ComparePlayerData }) {
         {data.nickname}
       </p>
 
-      {/* Rating — inline (not overhanging) in the compare layout */}
+      {/* Rating – inline (not overhanging) in the compare layout */}
       {data.overallRatingImageUrl !== "" && (
         <RatingPill
           ratingImageUrl={data.overallRatingImageUrl}
@@ -508,7 +509,7 @@ function LevelCell({ data }: { data: ComparePlayerData }) {
     <div className="flex flex-col items-center justify-center gap-2 border border-border bg-bg-elevated p-3 sm:p-4">
       {data.rankBadgeUrl !== "" && (
         <img
-          src={data.rankBadgeUrl}
+          src={cldImage(data.rankBadgeUrl, { w: 384 })}
           alt=""
           aria-hidden
           loading="lazy"
@@ -524,7 +525,7 @@ function LevelCell({ data }: { data: ComparePlayerData }) {
 }
 
 /* ============================================================
-   Stat row — two cells, one per player, with winner highlight
+   Stat row – two cells, one per player, with winner highlight
    ============================================================ */
 
 type StatCellDef = {
@@ -573,7 +574,7 @@ function StatCell({
         {label}
       </span>
 
-      {/* Primary value — accent yellow, monospace */}
+      {/* Primary value – accent yellow, monospace */}
       <AnimatedValue
         value={cell.primary}
         className="font-mono text-xl font-extrabold leading-none tabular-nums text-accent sm:text-2xl"
@@ -586,7 +587,7 @@ function StatCell({
         </span>
       )}
 
-      {/* Inline rating icons — compact, no overhang */}
+      {/* Inline rating icons – compact, no overhang */}
       {cell.ratingUrl && cell.ratingUrl !== "" && (
         <RatingPill
           ratingImageUrl={cell.ratingUrl}

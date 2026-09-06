@@ -1,7 +1,8 @@
 import type { AccoladeLeaders } from "@/lib/leaderboards/hall-of-fame";
+import { cldImage } from "@/lib/cld";
 
 /**
- * Accolade Leaders — for every accolade, the top 3 players who have earned
+ * Accolade Leaders – for every accolade, the top 3 players who have earned
  * it the most, alongside the accolade's badge and what it's awarded for.
  * The catalog is already ordered by tier (100 → 75 → 50 XP).
  */
@@ -29,7 +30,7 @@ export function AccoladeLeadersSection({
             key={acc.name}
             className="border border-border bg-bg-elevated p-4 sm:p-5"
           >
-            {/* Accolade header — badge + name + what it's for */}
+            {/* Accolade header – badge + name + what it's for */}
             <div className="flex items-center gap-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -67,7 +68,7 @@ export function AccoladeLeadersSection({
                     </span>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={e.profilePicUrl}
+                      src={cldImage(e.profilePicUrl, { w: 384 })}
                       alt=""
                       loading="lazy"
                       decoding="async"

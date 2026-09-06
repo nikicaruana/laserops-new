@@ -15,6 +15,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { PhotoStoryComposer } from "./PhotoStoryComposer";
 import type { OverlayData } from "@/lib/story/meta";
 import { cn } from "@/lib/cn";
+import { cldImage } from "@/lib/cld";
 
 export type ReportPhoto = {
   id: string;
@@ -126,7 +127,7 @@ export function MatchImages({ photos, matchId, viewerOps = "", isAdmin = false, 
             {photos.map((p, i) => (
               <button key={p.id} type="button" onClick={() => setActive(i)} className="mb-3 block w-full overflow-hidden rounded-sm border border-border focus:outline-none focus-visible:ring-2 focus-visible:ring-accent">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p.url} alt={p.caption ?? "Match photo"} loading="lazy" className="block w-full transition-transform hover:scale-[1.02]" />
+                <img src={cldImage(p.url, { w: 800 })} alt={p.caption ?? "Match photo"} loading="lazy" className="block w-full transition-transform hover:scale-[1.02]" />
               </button>
             ))}
           </div>
@@ -209,7 +210,7 @@ function Lightbox(props: {
       )}
 
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={p.url} alt={p.caption ?? "Match photo"} onClick={(e) => e.stopPropagation()} className="max-h-[62vh] w-auto max-w-full rounded-sm border border-border-strong" />
+      <img src={cldImage(p.url, { w: 1600 })} alt={p.caption ?? "Match photo"} onClick={(e) => e.stopPropagation()} className="max-h-[62vh] w-auto max-w-full rounded-sm border border-border-strong" />
 
       <div onClick={(e) => e.stopPropagation()} className="flex w-full max-w-md flex-col items-center gap-2.5">
         {p.caption && <p className="text-center text-sm text-text">{p.caption}</p>}

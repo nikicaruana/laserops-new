@@ -5,6 +5,7 @@
  * edit. Read here; writes happen on the edit page (RLS admin-write).
  */
 import Link from "next/link";
+import { cldImage } from "@/lib/cld";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Guns" };
@@ -79,7 +80,7 @@ export default async function AdminGunsPage() {
                     {g.image_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
-                        src={g.image_url}
+                        src={cldImage(g.image_url, { w: 384 })}
                         alt=""
                         className="h-8 w-14 shrink-0 object-contain"
                       />
@@ -92,7 +93,7 @@ export default async function AdminGunsPage() {
                 <td className="px-4 py-3 text-text-muted">{g.class}</td>
                 <td className="px-4 py-3 text-text-muted">{g.tree_branch}</td>
                 <td className="px-4 py-3 text-right font-mono tabular-nums text-text">
-                  {g.damage ?? "—"}
+                  {g.damage ?? "–"}
                 </td>
                 <td className="px-4 py-3 text-center">
                   {g.is_visible ? (

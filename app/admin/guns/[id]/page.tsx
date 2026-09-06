@@ -7,6 +7,7 @@
  * the admin's authenticated session (RLS + set_gun_damage).
  */
 import Link from "next/link";
+import { cldImage } from "@/lib/cld";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { GunEditor, type GunRecord } from "@/components/admin/GunEditor";
@@ -59,7 +60,7 @@ export default async function EditGunPage({
       <header className="mb-8 flex items-center gap-4 border-b border-border pb-6">
         {gun.image_url && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={gun.image_url} alt="" className="h-12 w-20 shrink-0 object-contain" />
+          <img src={cldImage(gun.image_url, { w: 384 })} alt="" className="h-12 w-20 shrink-0 object-contain" />
         )}
         <div>
           <h1 className="text-2xl font-extrabold uppercase tracking-tight text-text sm:text-3xl">

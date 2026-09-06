@@ -1,4 +1,5 @@
 import type { RecordEntry } from "@/lib/leaderboards/hall-of-fame";
+import { cldImage } from "@/lib/cld";
 
 /**
  * RecordList
@@ -58,7 +59,7 @@ export function RecordList({ label, note, entries }: Props) {
                 </span>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={e.profilePicUrl}
+                  src={cldImage(e.profilePicUrl, { w: 384 })}
                   alt=""
                   loading="lazy"
                   decoding="async"

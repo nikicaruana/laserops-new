@@ -1,4 +1,5 @@
 import { BracketFrame } from "@/components/portal/BracketFrame";
+import { cldImage } from "@/lib/cld";
 
 /**
  * HistoryProfileCard
@@ -15,7 +16,7 @@ import { BracketFrame } from "@/components/portal/BracketFrame";
  * SIZING (post pass-10)
  *
  * Badge & photo were originally h-32 sm:h-40 (128 / 160px). On mobile
- * the badge looks oversized — it dominates the card and pushes the
+ * the badge looks oversized – it dominates the card and pushes the
  * Personal Records below the fold. Reduced to h-24 sm:h-32 (96 /
  * 128px) on mobile, keeping the larger sm: size for desktop where
  * the badge has more breathing room. Photo follows in lockstep so
@@ -28,7 +29,7 @@ type Props = {
   profilePicUrl: string;
   rankBadgeUrl: string;
   rankName: string;
-  /** Most recent level — rendered as "Level N" under the badge. */
+  /** Most recent level – rendered as "Level N" under the badge. */
   currentLevel: number;
 };
 
@@ -48,7 +49,7 @@ export function HistoryProfileCard({
         <div className="flex items-center justify-center gap-6 sm:gap-10">
           {profilePicUrl !== "" && (
             <img
-              src={profilePicUrl}
+              src={cldImage(profilePicUrl, { w: 384 })}
               alt={`${nickname} profile photo`}
               loading="lazy"
               // 96px / 128px (mobile / desktop). Photo is square so
@@ -59,8 +60,8 @@ export function HistoryProfileCard({
           {rankBadgeUrl !== "" && (
             <div className="flex flex-col items-center gap-2">
               <img
-                src={rankBadgeUrl}
-                // alt still uses the rank name for screen readers — they
+                src={cldImage(rankBadgeUrl, { w: 384 })}
+                // alt still uses the rank name for screen readers – they
                 // get the semantic info even though sighted users see
                 // the level number below.
                 alt={rankName}

@@ -4,6 +4,7 @@
  * Admin accolade list. Badge + name + tier + scope; click through to edit.
  */
 import Link from "next/link";
+import { cldImage } from "@/lib/cld";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Accolades" };
@@ -22,7 +23,7 @@ function tier(xp: number | null): string {
   if (xp === 100) return "T1";
   if (xp === 75) return "T2";
   if (xp === 50) return "T3";
-  return "—";
+  return "–";
 }
 
 export default async function AdminAccoladesPage() {
@@ -73,7 +74,7 @@ export default async function AdminAccoladesPage() {
                   <div className="flex items-center gap-3">
                     {a.badge_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={a.badge_url} alt="" className="h-9 w-9 shrink-0 object-contain" />
+                      <img src={cldImage(a.badge_url, { w: 384 })} alt="" className="h-9 w-9 shrink-0 object-contain" />
                     ) : (
                       <div className="h-9 w-9 shrink-0 border border-dashed border-border" />
                     )}
@@ -82,7 +83,7 @@ export default async function AdminAccoladesPage() {
                 </td>
                 <td className="px-4 py-3 text-text-muted">{a.description}</td>
                 <td className="px-4 py-3 text-center font-mono text-text-muted">{tier(a.xp)}</td>
-                <td className="px-4 py-3 text-right font-mono tabular-nums text-text">{a.xp ?? "—"}</td>
+                <td className="px-4 py-3 text-right font-mono tabular-nums text-text">{a.xp ?? "–"}</td>
                 <td className="px-4 py-3 text-center text-text-muted">{a.scope}</td>
                 <td className="px-4 py-3 text-center">
                   {a.is_active ? <span className="text-accent">●</span> : <span className="text-text-subtle/50">○</span>}

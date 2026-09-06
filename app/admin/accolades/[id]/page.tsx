@@ -4,6 +4,7 @@
  * Edit one accolade definition + delete.
  */
 import Link from "next/link";
+import { cldImage } from "@/lib/cld";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AccoladeEditor, type AccoladeRecord } from "@/components/admin/AccoladeEditor";
@@ -46,7 +47,7 @@ export default async function EditAccoladePage({ params }: { params: Promise<{ i
       <header className="mb-8 flex items-center gap-4 border-b border-border pb-6">
         {accolade.badge_url && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={accolade.badge_url} alt="" className="h-12 w-12 shrink-0 object-contain" />
+          <img src={cldImage(accolade.badge_url, { w: 384 })} alt="" className="h-12 w-12 shrink-0 object-contain" />
         )}
         <h1 className="text-2xl font-extrabold uppercase tracking-tight text-text sm:text-3xl">
           {accolade.name}

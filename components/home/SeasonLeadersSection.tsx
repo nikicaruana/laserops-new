@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cldImage } from "@/lib/cld";
 import { Container } from "@/components/ui/Container";
 import { getActiveSeason } from "@/lib/cms/seasons";
 import { createClient } from "@/lib/supabase/server";
@@ -22,12 +23,12 @@ import { cn } from "@/lib/cn";
  *
  *   - Mobile: cards stack vertically, each card uses a horizontal
  *     INNER layout (photo on left, stats on right). Works because
- *     narrow viewports naturally constrain horizontal space — no voids.
+ *     narrow viewports naturally constrain horizontal space – no voids.
  *
  *   - Desktop (lg+): cards sit SIDE-BY-SIDE in a single row, leader
  *     wider than supporting (~60/40 split). Each card uses a vertical
  *     INNER layout (photo on top, stats below). This sidesteps the
- *     "wide card with sparse horizontal content" problem — content
+ *     "wide card with sparse horizontal content" problem – content
  *     stacks naturally without trying to fill arbitrary horizontal
  *     space.
  *
@@ -67,7 +68,7 @@ export async function SeasonLeadersSection() {
           section above), less at bottom (Gallery is conceptually a
           continuation, so keep the gap to the next section tight). */}
       <Container className="pb-10 pt-16 sm:pb-14 sm:pt-24">
-        {/* Section header. CMS description is intentionally NOT used —
+        {/* Section header. CMS description is intentionally NOT used –
             see homepageSubtitleFor() for the rationale. */}
         <div className="text-center">
           <p className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-accent">
@@ -101,7 +102,7 @@ export async function SeasonLeadersSection() {
           <LeaderCard entry={leader} metricLabel={metricLabel} />
 
           {supporting.length > 0 && (
-            // Supporting cards container — single column on mobile (already
+            // Supporting cards container – single column on mobile (already
             // stacked from parent grid), still single column on desktop
             // because they sit BESIDE the leader card and stack vertically
             // within their own narrower column.
@@ -143,7 +144,7 @@ type CardProps = {
 };
 
 /**
- * LeaderCard — the rank-1 player.
+ * LeaderCard – the rank-1 player.
  *
  * Mobile: horizontal inner layout (photo on left, stats on right).
  * Desktop (lg+): vertical inner layout (photo on top, stats below,
@@ -153,7 +154,7 @@ type CardProps = {
 function LeaderCard({ entry, metricLabel }: CardProps) {
   return (
     <div className="relative h-full border border-accent bg-bg-elevated p-5 sm:p-6 lg:p-7">
-      {/* Yellow corner accent — sm+ only (too noisy on phones). */}
+      {/* Yellow corner accent – sm+ only (too noisy on phones). */}
       <span aria-hidden className="absolute left-0 top-0 hidden h-6 w-6 border-l-[3px] border-t-[3px] border-accent sm:block" />
       <span aria-hidden className="absolute right-0 top-0 hidden h-6 w-6 border-r-[3px] border-t-[3px] border-accent sm:block" />
       <span aria-hidden className="absolute bottom-0 left-0 hidden h-6 w-6 border-b-[3px] border-l-[3px] border-accent sm:block" />
@@ -163,10 +164,10 @@ function LeaderCard({ entry, metricLabel }: CardProps) {
           Mobile/tablet: flex-row, photo on left, stats on right.
           Desktop (lg+): flex-col, everything centered vertically. */}
       <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-center sm:gap-7 lg:flex-col lg:gap-6">
-        {/* Photo — fixed sizes per breakpoint. On desktop it gets bigger
+        {/* Photo – fixed sizes per breakpoint. On desktop it gets bigger
             since it's now the visual centerpiece of a vertical layout. */}
         <img
-          src={entry.profilePicUrl}
+          src={cldImage(entry.profilePicUrl, { w: 384 })}
           alt={`${entry.nickname} profile photo`}
           loading="lazy"
           decoding="async"
@@ -187,7 +188,7 @@ function LeaderCard({ entry, metricLabel }: CardProps) {
           <div className="flex items-center gap-3">
             {entry.rankBadgeUrl !== "" && (
               <img
-                src={entry.rankBadgeUrl}
+                src={cldImage(entry.rankBadgeUrl, { w: 384 })}
                 alt=""
                 loading="lazy"
                 decoding="async"
@@ -220,11 +221,11 @@ function LeaderCard({ entry, metricLabel }: CardProps) {
    ============================================================ */
 
 /**
- * SupportingCard — rank-2-and-beyond players.
+ * SupportingCard – rank-2-and-beyond players.
  *
- * Mobile: horizontal inner layout — photo on left, name+stats in middle,
+ * Mobile: horizontal inner layout – photo on left, name+stats in middle,
  *   badge on the right. Compact, single-line summary feel.
- * Desktop (lg+): vertical inner layout — photo on top, then name + rank,
+ * Desktop (lg+): vertical inner layout – photo on top, then name + rank,
  *   stats, badge below. Same vertical motif as the leader card so they
  *   visually rhyme, just at smaller scale.
  */
@@ -233,12 +234,12 @@ function SupportingCard({ entry, metricLabel }: CardProps) {
     // h-full lets this card stretch to match the leader card's height
     // on desktop. The two layouts (mobile row, desktop column) are
     // rendered as separate sub-trees rather than reflowed via flex
-    // direction switches — clearer, less fragile.
+    // direction switches – clearer, less fragile.
     <div className="border border-border bg-bg-elevated p-3 sm:p-4 lg:h-full lg:p-5">
       {/* === Mobile / tablet layout: horizontal row ============== */}
       <div className="flex items-center gap-3 lg:hidden">
         <img
-          src={entry.profilePicUrl}
+          src={cldImage(entry.profilePicUrl, { w: 384 })}
           alt={`${entry.nickname} profile photo`}
           loading="lazy"
           decoding="async"
@@ -262,7 +263,7 @@ function SupportingCard({ entry, metricLabel }: CardProps) {
 
         {entry.rankBadgeUrl !== "" && (
           <img
-            src={entry.rankBadgeUrl}
+            src={cldImage(entry.rankBadgeUrl, { w: 384 })}
             alt=""
             loading="lazy"
             decoding="async"
@@ -275,13 +276,13 @@ function SupportingCard({ entry, metricLabel }: CardProps) {
             justify-center keeps the content cluster in the middle of
             the card with empty space distributed equally above and below.
             Earlier iteration used justify-between which produced large
-            voids between groups when content was sparse — center
+            voids between groups when content was sparse – center
             distribution looks calmer for a card that's intentionally
             shorter on content than the leader. */}
       <div className="hidden h-full flex-col items-center justify-center gap-6 lg:flex">
         <div className="flex flex-col items-center gap-3">
           <img
-            src={entry.profilePicUrl}
+            src={cldImage(entry.profilePicUrl, { w: 384 })}
             alt={`${entry.nickname} profile photo`}
             loading="lazy"
             decoding="async"
@@ -300,7 +301,7 @@ function SupportingCard({ entry, metricLabel }: CardProps) {
         <div className="flex flex-col items-center gap-3">
           {entry.rankBadgeUrl !== "" && (
             <img
-              src={entry.rankBadgeUrl}
+              src={cldImage(entry.rankBadgeUrl, { w: 384 })}
               alt=""
               loading="lazy"
               decoding="async"

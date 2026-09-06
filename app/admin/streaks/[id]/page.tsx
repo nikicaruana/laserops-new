@@ -4,6 +4,7 @@
  * Edit one streak definition + its firing rule + delete.
  */
 import Link from "next/link";
+import { cldImage } from "@/lib/cld";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { StreakEditor, type StreakRecord } from "@/components/admin/StreakEditor";
@@ -38,7 +39,7 @@ export default async function EditStreakPage({ params }: { params: Promise<{ id:
       <header className="mb-8 flex items-center gap-4 border-b border-border pb-6">
         {streak.badge_url && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={streak.badge_url} alt="" className="h-12 w-12 shrink-0 object-contain" />
+          <img src={cldImage(streak.badge_url, { w: 384 })} alt="" className="h-12 w-12 shrink-0 object-contain" />
         )}
         <h1 className="text-2xl font-extrabold uppercase tracking-tight text-text sm:text-3xl">
           {streak.name}

@@ -1,4 +1,5 @@
 import { BracketFrame } from "@/components/portal/BracketFrame";
+import { cldImage } from "@/lib/cld";
 import {
   RATING_UNLOCK_MIN_MATCHES,
   RATING_UNLOCK_MIN_LEVEL,
@@ -6,12 +7,12 @@ import {
 import { RatingPill } from "./RatingPill";
 
 /**
- * ProfileCard — top-left card of the Player Summary.
+ * ProfileCard – top-left card of the Player Summary.
  *
  * Layout (vertical):
  *   - Player nickname (top, centered)
  *   - Profile photo with yellow corner-bracket frame.
- *   - Rating image straddling the photo's bottom edge — its midpoint
+ *   - Rating image straddling the photo's bottom edge – its midpoint
  *     sits exactly on the edge so the top half overlaps the photo and the
  *     bottom half hangs into the card's space below.
  *   - Bottom band:
@@ -19,7 +20,7 @@ import { RatingPill } from "./RatingPill";
  *         overhanging rating image room to breathe.
  *       - When the rating is locked: an explainer line telling the user
  *         how to unlock their rating. The 0-stars image (with a lock
- *         symbol) still renders normally — the text is supporting copy,
+ *         symbol) still renders normally – the text is supporting copy,
  *         not a replacement.
  *
  * Whether the rating is unlocked is computed in the projection layer
@@ -35,10 +36,12 @@ type ProfileCardProps = {
   overallRatingImageUrl: string;
   /**
    * True when the player has met the rating unlock criteria. The rating
-   * image is shown either way — the source already provides a "locked"
-   * variant — but we add explainer copy underneath when locked.
+   * image is shown either way – the source already provides a "locked"
+   * variant – but we add explainer copy underneath when locked.
    */
   ratingUnlocked: boolean;
+  /** Small clickable line under the nickname (e.g. the follower count). */
+  followersSlot?: React.ReactNode;
 };
 
 export function ProfileCard({
@@ -46,14 +49,18 @@ export function ProfileCard({
   profilePicUrl,
   overallRatingImageUrl,
   ratingUnlocked,
+  followersSlot,
 }: ProfileCardProps) {
   return (
     <div className="flex h-full flex-col items-center gap-4 border border-border bg-bg-elevated p-4 sm:p-6">
-      <h3 className="break-words text-center text-xl font-extrabold leading-tight text-text [overflow-wrap:anywhere] sm:text-2xl">
-        {nickname}
-      </h3>
+      <div className="flex flex-col items-center gap-1">
+        <h3 className="break-words text-center text-xl font-extrabold leading-tight text-text [overflow-wrap:anywhere] sm:text-2xl">
+          {nickname}
+        </h3>
+        {followersSlot}
+      </div>
 
-      {/* Photo wrapper — flex-1 means "absorb available height" so this
+      {/* Photo wrapper – flex-1 means "absorb available height" so this
           card matches the height of a taller right column on desktop.
           On mobile (no right neighbour), the photo sizes naturally. */}
       <div className="relative flex w-full flex-1 items-center justify-center">
@@ -64,7 +71,7 @@ export function ProfileCard({
           className="w-full max-w-[320px]"
         >
           <img
-            src={profilePicUrl}
+            src={cldImage(profilePicUrl, { w: 384 })}
             alt={`${nickname} profile photo`}
             loading="lazy"
             decoding="async"
@@ -79,7 +86,7 @@ export function ProfileCard({
 
               Visual treatment is tight on purpose:
                 - No border (was reading as a separate UI element)
-                - bg-bg/85 — partially translucent dark, integrates with the
+                - bg-bg/85 – partially translucent dark, integrates with the
                   photo where it overlaps rather than blocking it entirely
                 - Tight padding so the rating image itself fills the pill
                 - Subtle backdrop blur for legibility against busy photos */}

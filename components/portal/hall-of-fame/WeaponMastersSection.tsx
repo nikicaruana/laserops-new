@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { cldImage } from "@/lib/cld";
 import type { WeaponRecords } from "@/lib/leaderboards/hall-of-fame";
 import { RecordList } from "./RecordList";
 
 /**
- * Weapon Masters — a grid of weapon thumbnails. Tapping one opens a
+ * Weapon Masters – a grid of weapon thumbnails. Tapping one opens a
  * detail panel below the grid showing the current Weapon Master
  * (highest career score with the gun) and its single-game records.
  */
@@ -58,7 +59,7 @@ export function WeaponMastersSection({
                 {w.imageUrl ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
                   <img
-                    src={w.imageUrl}
+                    src={cldImage(w.imageUrl, { w: 384 })}
                     alt={w.weaponName}
                     loading="lazy"
                     decoding="async"
@@ -87,7 +88,7 @@ export function WeaponMastersSection({
             <div className="mt-3 flex items-center gap-4 border border-accent bg-accent/[0.06] p-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={current.master.profilePicUrl}
+                src={cldImage(current.master.profilePicUrl, { w: 384 })}
                 alt=""
                 loading="lazy"
                 decoding="async"
