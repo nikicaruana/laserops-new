@@ -1,18 +1,19 @@
 /**
  * app/admin/matches/page.tsx
  * --------------------------------------------------------------------
- * Admin Match Manager — every game, past and upcoming, with its lifecycle
- * status and processing state. Columns: code, date/time, status, player count,
- * file type, rounds, XP-distributed + ELO-calculated. Status filter tabs.
- * Read view for now; per-match management (entries, ingestion) is the detail
- * page + later phases.
+ * Admin Match Manager – every game, past and upcoming, with its lifecycle
+ * status and processing state. Status tabs + a date-range filter. Tightened to
+ * fit one screen (players and processing are merged columns). Read view; per
+ * match management (entries, ingestion, invite link) lives on the detail page.
  */
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { MatchStatusBadge } from "@/components/admin/MatchStatusBadge";
-import { CopyInviteLink } from "@/components/portal/CopyInviteLink";
+import { MatchDateFilter } from "@/components/admin/MatchDateFilter";
 
 export const metadata = { title: "Match Manager" };
+
+const EMPTY = <span className="text-text-subtle">–</span>;
 
 type Row = {
   id: string;
@@ -25,10 +26,10 @@ type Row = {
   source_file_type: string | null;
   xp_distributed_at: string | null;
   elo_calculated_at: string | null;
+  results_stale_at: string | null;
   registered_count: number | null;
   paid_count: number | null;
   on_day_count: number | null;
-  invite_code: string | null;
   match_player_aggregate: { count: number }[] | null;
 };
 
@@ -42,44 +43,40 @@ const TABS: { key: string; label: string }[] = [
   { key: "cancelled", label: "Cancelled" },
 ];
 
-function fmtDateTime(iso: string | null, dateOnly: string | null): string {
+/** The date a match happens on, as YYYY-MM-DD (scheduled first, else played). */
+function effectiveDate(m: Row): string | null {
+  if (m.scheduled_at) return m.scheduled_at.slice(0, 10);
+  if (m.played_on) return m.played_on.slice(0, 10);
+  return null;
+}
+
+function fmtDateTime(iso: string | null, dateOnly: string | null): React.ReactNode {
   const src = iso ?? (dateOnly ? `${dateOnly}T00:00:00Z` : null);
-  if (!src) return "—";
+  if (!src) return EMPTY;
   const d = new Date(src);
-  if (Number.isNaN(d.getTime())) return "—";
-  const hasTime = Boolean(iso);
+  if (Number.isNaN(d.getTime())) return EMPTY;
   return d.toLocaleString("en-GB", {
     timeZone: "Europe/Malta",
     day: "2-digit",
     month: "short",
     year: "numeric",
-    ...(hasTime ? { hour: "2-digit", minute: "2-digit" } : {}),
+    ...(iso ? { hour: "2-digit", minute: "2-digit" } : {}),
   });
-}
-
-function Done({ at, doneLabel, pendingLabel }: { at: string | null; doneLabel: string; pendingLabel: string }) {
-  return at ? (
-    <span className="inline-flex items-center gap-1 text-xs text-accent">
-      <span aria-hidden>✓</span> {doneLabel}
-    </span>
-  ) : (
-    <span className="text-xs text-text-subtle">{pendingLabel}</span>
-  );
 }
 
 export default async function AdminMatchesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; from?: string; to?: string }>;
 }) {
-  const { status } = await searchParams;
+  const { status, from, to } = await searchParams;
   const active = TABS.find((t) => t.key === status)?.key ?? "all";
 
   const supabase = await createClient();
   let query = supabase
     .from("matches")
     .select(
-      "id, match_code, title, status, scheduled_at, played_on, round_count, source_file_type, xp_distributed_at, elo_calculated_at, registered_count, paid_count, on_day_count, invite_code, match_player_aggregate(count)",
+      "id, match_code, title, status, scheduled_at, played_on, round_count, source_file_type, xp_distributed_at, elo_calculated_at, results_stale_at, registered_count, paid_count, on_day_count, match_player_aggregate(count)",
     )
     .order("scheduled_at", { ascending: false, nullsFirst: false })
     .order("played_on", { ascending: false, nullsFirst: false })
@@ -87,7 +84,10 @@ export default async function AdminMatchesPage({
   if (active !== "all") query = query.eq("status", active);
 
   const { data } = await query;
-  const rows = (data ?? []) as Row[];
+  let rows = (data ?? []) as Row[];
+  // Date-range filter on each match's effective date (inclusive).
+  if (from) rows = rows.filter((m) => { const d = effectiveDate(m); return d != null && d >= from; });
+  if (to) rows = rows.filter((m) => { const d = effectiveDate(m); return d != null && d <= to; });
 
   return (
     <div>
@@ -108,43 +108,51 @@ export default async function AdminMatchesPage({
         </Link>
       </header>
 
-      <div className="mb-6 flex flex-wrap items-center gap-2">
-        {TABS.map((t) => (
-          <Link
-            key={t.key}
-            href={t.key === "all" ? "/admin/matches" : `/admin/matches?status=${t.key}`}
-            className={`border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] ${
-              t.key === active
-                ? "border-accent bg-bg-elevated text-accent"
-                : "border-border-strong text-text-muted hover:border-accent hover:text-accent"
-            }`}
-          >
-            {t.label}
-          </Link>
-        ))}
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          {TABS.map((t) => {
+            const params = new URLSearchParams();
+            if (t.key !== "all") params.set("status", t.key);
+            if (from) params.set("from", from);
+            if (to) params.set("to", to);
+            const qs = params.toString();
+            return (
+              <Link
+                key={t.key}
+                href={qs ? `/admin/matches?${qs}` : "/admin/matches"}
+                className={`border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] ${
+                  t.key === active
+                    ? "border-accent bg-bg-elevated text-accent"
+                    : "border-border-strong text-text-muted hover:border-accent hover:text-accent"
+                }`}
+              >
+                {t.label}
+              </Link>
+            );
+          })}
+        </div>
+        <MatchDateFilter />
       </div>
 
       {rows.length === 0 ? (
         <p className="border border-dashed border-border px-4 py-10 text-center text-sm text-text-muted">
-          No matches{active === "all" ? " yet" : ` with status "${active}"`}.
+          No matches{active === "all" ? "" : ` with status "${active}"`}
+          {from || to ? " in that date range" : ""}.
         </p>
       ) : (
         <div className="overflow-x-auto border border-border">
-          <table className="w-full min-w-[1080px] text-left text-sm">
+          <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-border bg-bg-elevated text-[0.6rem] uppercase tracking-[0.14em] text-text-muted">
-                <th className="px-4 py-3 font-semibold">Match ID</th>
-                <th className="px-4 py-3 font-semibold">Title</th>
-                <th className="px-4 py-3 font-semibold">Date / time</th>
-                <th className="px-4 py-3 font-semibold">Status</th>
-                <th className="px-4 py-3 text-right font-semibold">Reg</th>
-                <th className="px-4 py-3 text-right font-semibold">Paid</th>
-                <th className="px-4 py-3 text-right font-semibold">On day</th>
-                <th className="px-4 py-3 text-center font-semibold">File</th>
-                <th className="px-4 py-3 text-right font-semibold">Rounds</th>
-                <th className="px-4 py-3 font-semibold">XP</th>
-                <th className="px-4 py-3 font-semibold">ELO</th>
-                <th className="px-4 py-3 text-right font-semibold">Actions</th>
+              <tr className="border-b border-border bg-bg-elevated text-[0.58rem] uppercase tracking-[0.12em] text-text-muted">
+                <th className="px-3 py-2.5 font-semibold">Match ID</th>
+                <th className="px-3 py-2.5 font-semibold">Title</th>
+                <th className="px-3 py-2.5 font-semibold">Date / time</th>
+                <th className="px-3 py-2.5 font-semibold">Status</th>
+                <th className="px-3 py-2.5 text-right font-semibold">Players</th>
+                <th className="px-3 py-2.5 text-center font-semibold">File</th>
+                <th className="px-3 py-2.5 text-right font-semibold">Rds</th>
+                <th className="px-3 py-2.5 font-semibold">Processed</th>
+                <th className="px-3 py-2.5 text-right font-semibold" />
               </tr>
             </thead>
             <tbody>
@@ -153,40 +161,43 @@ export default async function AdminMatchesPage({
                 const entriesCount = m.match_player_aggregate?.[0]?.count ?? 0;
                 const reg = played ? entriesCount : m.registered_count ?? 0;
                 return (
-                  <tr key={m.id} className="border-b border-border last:border-0 hover:bg-bg-elevated/50">
-                    <td className="px-4 py-3 font-mono font-semibold text-text">{m.match_code ?? "—"}</td>
-                    <td className="px-4 py-3 text-text-muted">{m.title ?? "—"}</td>
-                    <td className="px-4 py-3 text-text-muted">{fmtDateTime(m.scheduled_at, m.played_on)}</td>
-                    <td className="px-4 py-3"><MatchStatusBadge status={m.status} /></td>
-                    <td className="px-4 py-3 text-right font-mono tabular-nums text-text">{reg}</td>
-                    <td className="px-4 py-3 text-right font-mono tabular-nums text-text-muted">
-                      {played ? "—" : m.paid_count ?? 0}
+                  <tr key={m.id} className="border-b border-border last:border-0 align-middle hover:bg-bg-elevated/50">
+                    <td className="whitespace-nowrap px-3 py-2.5 font-mono font-semibold text-text">{m.match_code ?? EMPTY}</td>
+                    <td className="max-w-[15rem] truncate px-3 py-2.5 text-text-muted" title={m.title ?? m.match_code ?? ""}>
+                      {m.title ?? m.match_code ?? EMPTY}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono tabular-nums text-text-muted">
-                      {played ? "—" : m.on_day_count ?? 0}
+                    <td className="whitespace-nowrap px-3 py-2.5 text-text-muted">{fmtDateTime(m.scheduled_at, m.played_on)}</td>
+                    <td className="px-3 py-2.5"><MatchStatusBadge status={m.status} /></td>
+                    <td className="px-3 py-2.5 text-right">
+                      <span className="font-mono tabular-nums text-text">{reg}</span>
+                      {!played && (
+                        <span className="ml-1 text-[0.65rem] text-text-subtle">
+                          ({m.paid_count ?? 0} paid, {m.on_day_count ?? 0} on day)
+                        </span>
+                      )}
                     </td>
-                    <td className="px-4 py-3 text-center text-xs uppercase text-text-muted">
-                      {m.source_file_type ?? "—"}
+                    <td className="px-3 py-2.5 text-center text-xs uppercase text-text-muted">{m.source_file_type ?? EMPTY}</td>
+                    <td className="px-3 py-2.5 text-right font-mono tabular-nums text-text-muted">{m.round_count ?? EMPTY}</td>
+                    <td className="px-3 py-2.5 text-[0.65rem] leading-tight">
+                      <span className={`block ${m.xp_distributed_at ? "text-accent" : "text-text-subtle"}`}>
+                        {m.xp_distributed_at ? "✓ XP" : "XP pending"}
+                      </span>
+                      <span className={`block ${m.results_stale_at ? "text-amber-300" : m.elo_calculated_at ? "text-accent" : "text-text-subtle"}`}>
+                        {m.results_stale_at ? "⟳ ELO stale" : m.elo_calculated_at ? "✓ ELO" : "ELO pending"}
+                      </span>
+                      {m.results_stale_at && (
+                        <span className="mt-0.5 inline-block bg-amber-500/15 px-1.5 py-0.5 text-[0.55rem] font-bold uppercase tracking-[0.1em] text-amber-300">
+                          Recompute
+                        </span>
+                      )}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono tabular-nums text-text-muted">
-                      {m.round_count ?? "—"}
-                    </td>
-                    <td className="px-4 py-3">
-                      <Done at={m.xp_distributed_at} doneLabel="Distributed" pendingLabel="Pending" />
-                    </td>
-                    <td className="px-4 py-3">
-                      <Done at={m.elo_calculated_at} doneLabel="Calculated" pendingLabel="Pending" />
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-5">
-                        {!played && m.status !== "cancelled" && <CopyInviteLink code={m.invite_code} compact />}
-                        <Link
-                          href={`/admin/matches/${m.id}`}
-                          className="text-xs font-bold uppercase tracking-[0.12em] text-accent hover:text-accent-soft"
-                        >
-                          Manage
-                        </Link>
-                      </div>
+                    <td className="whitespace-nowrap px-3 py-2.5 text-right">
+                      <Link
+                        href={`/admin/matches/${m.id}`}
+                        className="text-xs font-bold uppercase tracking-[0.12em] text-accent hover:text-accent-soft"
+                      >
+                        Manage
+                      </Link>
                     </td>
                   </tr>
                 );
