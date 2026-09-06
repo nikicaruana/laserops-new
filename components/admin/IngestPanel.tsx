@@ -202,6 +202,7 @@ function RoundPreview({
   const tradesConfigured = !!tradeMinHoldSeconds && tradeMinHoldSeconds > 0;
   const ambiguities = r.ambiguous_captures ?? [];
   const unreviewed = unreviewedCount(r, resolutions);
+  const [open, setOpen] = useState(true);
   // Streaks grouped by player, with a per-player count of each streak type.
   const streaks = evaluateStreaks(rr, streakDefs);
   const streaksByPlayer = new Map<number, Map<string, number>>();
@@ -239,7 +240,10 @@ function RoundPreview({
   return (
     <div className="border border-border bg-bg-elevated">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-2.5">
-        <span className="font-mono text-xs text-text-muted">{name}</span>
+        <button type="button" onClick={() => setOpen((o) => !o)} className="flex items-center gap-2 font-mono text-xs text-text-muted hover:text-text" aria-expanded={open}>
+          <span className="inline-block w-3 text-text-subtle">{open ? "▾" : "▸"}</span>
+          {name}
+        </button>
         <div className="flex items-center gap-3">
           {unreviewed > 0 && (
             <span className="rounded-sm bg-red-600 px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-[0.1em] text-white">
@@ -298,9 +302,8 @@ function RoundPreview({
                         </span>
                         <select
                           value={String(cur[String(h.base_id)] ?? "")}
-                          onChange={(e) => update({ ...cur, [String(h.base_id)]: Number(e.target.value) }, true, split)}
-                          disabled={split}
-                          className="border border-border-strong bg-bg px-2 py-1 text-xs text-text disabled:opacity-50"
+                          onChange={(e) => update({ ...cur, [String(h.base_id)]: Number(e.target.value) }, reviewed, split)}
+                          className="border border-border-strong bg-bg px-2 py-1 text-xs text-text"
                         >
                           {g.player_ids.map((pid) => (
                             <option key={pid} value={String(pid)}>{playerLabel(pid)}</option>
@@ -310,7 +313,7 @@ function RoundPreview({
                     ))}
                   </div>
                   <label className="mt-2 flex items-center gap-2 text-xs text-text-muted">
-                    <input type="checkbox" checked={split} onChange={(e) => update(cur, true, e.target.checked)} className="accent-accent" />
+                    <input type="checkbox" checked={split} onChange={(e) => update(cur, reviewed, e.target.checked)} className="accent-accent" />
                     Split capture time evenly between {g.player_ids.map((p) => playerLabel(p)).join(" & ")}
                     {split ? <span className="text-text-subtle">({fmtHold(Math.floor(totalHold / g.player_ids.length))} each)</span> : null}
                   </label>
@@ -328,6 +331,7 @@ function RoundPreview({
         </div>
       )}
 
+      {open && (<>
       <div className="grid grid-cols-2 gap-px border-b border-border bg-border sm:grid-cols-5">
         {facts.map(([k, v]) => (
           <div key={k} className="bg-bg-elevated px-3 py-2">
@@ -426,6 +430,7 @@ function RoundPreview({
           </div>
         </div>
       )}
+      </>)}
     </div>
   );
 }
