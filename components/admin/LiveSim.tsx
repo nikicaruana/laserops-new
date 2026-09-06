@@ -180,9 +180,6 @@ export function LiveSim({ match }: { match: MatchData }) {
         <span className="font-mono text-sm tabular-nums text-text-muted">{mmss(t)} / {mmss(simEnd)}</span>
         <input type="range" min={0} max={simEnd} value={t} onChange={(e) => { setPlaying(false); setT(Number(e.target.value)); }} className="min-w-[160px] flex-1 accent-accent" />
         <select value={sel} onChange={(e) => setSel(e.target.value)} className="border border-border-strong bg-bg px-2 py-1.5 text-sm text-text">{data.players.map((p) => <option key={p.name} value={p.name}>{p.name}</option>)}</select>
-        <button type="button" onClick={() => setKeepAwake((k) => !k)} title="Keep the screen on while the live view is open" className={`ml-auto flex items-center gap-1.5 px-2 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.1em] ${keepAwake ? "text-accent" : "border border-border text-text-subtle"}`}>
-          <span>{keepAwake ? "🔆" : "🌙"}</span> Screen {keepAwake ? "stays on" : "auto-locks"}
-        </button>
       </div>
 
       {/* Round tabs */}
@@ -202,7 +199,10 @@ export function LiveSim({ match }: { match: MatchData }) {
             <div className="flex h-[660px] flex-col gap-2 rounded-[1.4rem] bg-bg p-3">
               <div className="flex shrink-0 items-center justify-between px-1">
                 <span className="flex items-center gap-2 text-sm font-bold"><span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: teamHex(me?.team ?? null) }} />{sel}</span>
-                <span className="text-[0.7rem] font-extrabold uppercase tracking-[0.14em] text-text-muted">Round {data.round}<span className="text-text-subtle"> / {match.rounds.length}</span></span>
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={() => setKeepAwake((k) => !k)} title={keepAwake ? "Screen stays on — tap to allow auto-lock" : "Screen will auto-lock — tap to keep it on"} aria-label="Keep screen on" className={`text-base leading-none ${keepAwake ? "text-accent" : "text-text-subtle"}`}>{keepAwake ? "🔆" : "🌙"}</button>
+                  <span className="text-[0.7rem] font-extrabold uppercase tracking-[0.14em] text-text-muted">Round {data.round}<span className="text-text-subtle"> / {match.rounds.length}</span></span>
+                </div>
               </div>
               <div className="flex shrink-0 items-center justify-end px-1 -mt-1">
                 {winner ? <span className="text-[0.6rem] font-bold uppercase tracking-[0.14em]" style={{ color: teamHex(winner) }}>{winner} wins the round</span> : <span className="flex items-center gap-1 text-[0.6rem] font-bold uppercase tracking-[0.14em] text-red-400"><span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" /> Live</span>}
