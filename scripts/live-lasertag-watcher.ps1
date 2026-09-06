@@ -5,10 +5,9 @@
 # as it is written, so players + the venue screen see the game live. Runs in the
 # background independently of Chrome (leave this window open/minimised).
 #
-# SETUP: fill in the three values below, then run (in PowerShell):
-#     powershell -ExecutionPolicy Bypass -File live-watcher.ps1
-# (Or download the pre-filled script from the match's Live feed section, which
-#  already has the site URL + token in place.)
+# SETUP: fill in the values below, then run via run-live-lasertag-watcher.bat
+# (double-click). Or download both pre-filled from the match's Live feed section,
+# which already has the site URL + token in place.
 # =============================================================================
 $ApiBase = "https://YOUR-SITE-URL"                                  # e.g. https://laseropsmalta.com
 $Token   = "PASTE-YOUR-TOKEN-HERE"                                  # from the match page > Live feed
@@ -22,10 +21,16 @@ $ConfigFile = Join-Path $PSScriptRoot 'watcher-folder.txt'
 $Folder = $null
 if (Test-Path $ConfigFile) { $saved = (Get-Content $ConfigFile -Raw).Trim(); if ($saved -and (Test-Path $saved)) { $Folder = $saved } }
 if (-not $Folder) {
-  $dlg = New-Object System.Windows.Forms.FolderBrowserDialog
-  $dlg.Description = 'Select the AlphaTag Localfiles folder to watch'
-  $dlg.ShowNewFolderButton = $false
-  if ($dlg.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { $Folder = $dlg.SelectedPath; Set-Content -Path $ConfigFile -Value $Folder -Encoding UTF8 }
+  # Standard Explorer dialog (address bar + Quick Access) used to pick a folder:
+  # navigate into the Localfiles folder, then click Open.
+  $dlg = New-Object System.Windows.Forms.OpenFileDialog
+  $dlg.Title = 'Open your AlphaTag Localfiles folder (use the address bar / Quick Access), then click Open'
+  $dlg.Filter = 'Folder|no-files'
+  $dlg.CheckFileExists = $false
+  $dlg.CheckPathExists = $true
+  $dlg.ValidateNames = $false
+  $dlg.FileName = 'Open this folder'
+  if ($dlg.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { $Folder = Split-Path -Parent $dlg.FileName; Set-Content -Path $ConfigFile -Value $Folder -Encoding UTF8 }
   else { Write-Host 'No folder selected. Exiting.' -ForegroundColor Yellow; exit 1 }
 }
 
