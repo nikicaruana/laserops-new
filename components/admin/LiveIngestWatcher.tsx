@@ -25,10 +25,28 @@ import { hbKey } from "@/lib/ingestion/roster";
 type LogEntry = { at: string; text: string; kind: "ok" | "skip" | "err" };
 type FileRec = { roundNo: number; size: number; stable: number; ingested: boolean; pushedSize: number };
 type FsFileHandle = { kind: "file"; name: string; getFile: () => Promise<File> };
-type FsDirHandle = { name: string; values: () => AsyncIterable<FsFileHandle | { kind: "directory"; name: string }> };
+type FsDirHandle = {
+  name: string;
+  values: () => AsyncIterable<FsFileHandle | { kind: "directory"; name: string }>;
+  queryPermission?: (o: { mode: string }) => Promise<PermissionState>;
+  requestPermission?: (o: { mode: string }) => Promise<PermissionState>;
+};
 
 const ROUND_FILE = /\.(json|lwa|txt)$/i;
 const POLL_MS = 2000;
+
+// Tiny IndexedDB store so the picked folder survives a tab reload mid-event.
+const IDB_DB = "laserops-live";
+function idb(): Promise<IDBDatabase> {
+  return new Promise((res, rej) => { const r = indexedDB.open(IDB_DB, 1); r.onupgradeneeded = () => r.result.createObjectStore("h"); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+}
+async function idbGet<T>(k: string): Promise<T | null> {
+  try { const db = await idb(); return await new Promise((res) => { const t = db.transaction("h").objectStore("h").get(k); t.onsuccess = () => res((t.result as T) ?? null); t.onerror = () => res(null); }); } catch { return null; }
+}
+async function idbSet(k: string, v: unknown): Promise<void> {
+  try { const db = await idb(); await new Promise((res) => { const tx = db.transaction("h", "readwrite"); tx.objectStore("h").put(v, k); tx.oncomplete = () => res(null); tx.onerror = () => res(null); }); } catch { /* private mode / blocked — persistence is best-effort */ }
+}
+type Persisted = { handle: FsDirHandle; baseline: string[]; rounds: [string, number][]; counter: number };
 
 export function LiveIngestWatcher({ matchId, isLive }: { matchId: string; isLive: boolean }) {
   const router = useRouter();
@@ -47,10 +65,35 @@ export function LiveIngestWatcher({ matchId, isLive }: { matchId: string; isLive
   const counter = useRef(0);
   const polling = useRef(false);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const savedHandle = useRef<FsDirHandle | null>(null);
+  const [savedName, setSavedName] = useState<string | null>(null);
 
   useWakeLock(watching);
 
   useEffect(() => { setSupported(typeof window !== "undefined" && "showDirectoryPicker" in window); }, []);
+
+  // Restore a previously-picked folder (per match) so a mid-event reload can
+  // resume with one tap instead of navigating the picker again.
+  useEffect(() => {
+    idbGet<Persisted>(`live:${matchId}`).then((p) => {
+      if (!p?.handle) return;
+      savedHandle.current = p.handle;
+      baseline.current = new Set(p.baseline ?? []);
+      rounds.current = new Map((p.rounds ?? []).map(([n, no]) => [n, { roundNo: no, size: -1, stable: 0, ingested: false, pushedSize: -1 }]));
+      counter.current = p.counter ?? rounds.current.size;
+      setSavedName(p.handle.name);
+    });
+  }, [matchId]);
+
+  const persist = useCallback(() => {
+    if (!handleRef.current) return;
+    void idbSet(`live:${matchId}`, {
+      handle: handleRef.current,
+      baseline: [...baseline.current],
+      rounds: [...rounds.current].map(([n, r]) => [n, r.roundNo] as [string, number]),
+      counter: counter.current,
+    } satisfies Persisted);
+  }, [matchId]);
 
   const addLog = useCallback((text: string, kind: LogEntry["kind"]) => {
     setLog((l) => [{ at: new Date().toLocaleTimeString("en-GB"), text, kind }, ...l].slice(0, 50));
@@ -92,6 +135,7 @@ export function LiveIngestWatcher({ matchId, isLive }: { matchId: string; isLive
           rounds.current.set(f.name, { roundNo: ++counter.current, size: -1, stable: 0, ingested: false, pushedSize: -1 });
           setLiveRounds(counter.current);
           addLog(`Round ${counter.current} started (${f.name})`, "ok");
+          persist(); // remember this round across a tab reload
         }
         const rec = rounds.current.get(f.name)!;
         if (f.file.size > 0 && f.file.size === rec.size) rec.stable += 1; else { rec.stable = 0; rec.size = f.file.size; }
@@ -140,7 +184,7 @@ export function LiveIngestWatcher({ matchId, isLive }: { matchId: string; isLive
     } finally {
       polling.current = false;
     }
-  }, [matchId, addLog, router]);
+  }, [matchId, addLog, router, persist]);
 
   function startWatching() {
     if (timer.current) clearInterval(timer.current);
@@ -168,10 +212,32 @@ export function LiveIngestWatcher({ matchId, isLive }: { matchId: string; isLive
       counter.current = 0;
       setLiveRounds(0); setIngested(0);
       for await (const entry of h.values()) if (entry.kind === "file" && ROUND_FILE.test(entry.name)) baseline.current.add(entry.name);
+      savedHandle.current = h; setSavedName(h.name);
+      persist(); // remember the folder for a reload
       startWatching();
     } catch (e) {
       if (e instanceof DOMException && e.name === "AbortError") return;
       setErr(e instanceof Error ? e.message : "Couldn't open the folder.");
+    }
+  }
+
+  // Resume after a tab reload: re-grant permission on the saved handle and pick
+  // up where we left off (baseline + round numbering restored from IndexedDB).
+  async function resume() {
+    const h = savedHandle.current;
+    if (!h) return;
+    setErr(null);
+    try {
+      let perm: PermissionState = (await h.queryPermission?.({ mode: "read" })) ?? "prompt";
+      if (perm !== "granted") perm = (await h.requestPermission?.({ mode: "read" })) ?? "denied";
+      if (perm !== "granted") { setErr("Folder access wasn't granted — reconnect the folder."); return; }
+      handleRef.current = h;
+      setFolderName(h.name);
+      await loadRoster();
+      setLiveRounds(counter.current);
+      startWatching();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Couldn't resume — reconnect the folder.");
     }
   }
 
@@ -195,9 +261,16 @@ export function LiveIngestWatcher({ matchId, isLive }: { matchId: string; isLive
       )}
       <div className="flex flex-wrap items-center gap-3">
         {!folderName ? (
-          <button type="button" onClick={connect} className="border border-accent bg-accent px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-bg transition-transform active:scale-[0.98]">
-            Connect export folder
-          </button>
+          <>
+            {savedName && (
+              <button type="button" onClick={resume} className="border border-accent bg-accent px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-bg transition-transform active:scale-[0.98]">
+                Resume watching <span className="font-mono normal-case">{savedName}</span>
+              </button>
+            )}
+            <button type="button" onClick={connect} className={savedName ? "border border-border-strong px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-text-muted hover:text-accent" : "border border-accent bg-accent px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-bg transition-transform active:scale-[0.98]"}>
+              {savedName ? "Pick a different folder" : "Connect export folder"}
+            </button>
+          </>
         ) : (
           <>
             <span className="inline-flex items-center gap-2 text-xs text-text-muted">

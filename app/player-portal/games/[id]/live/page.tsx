@@ -32,7 +32,7 @@ export default async function LiveGamePage({ params }: { params: Promise<{ id: s
   if (!account) redirect("/player-portal/games");
 
   const [{ data: match }, { data: participant }, { data: rosterRows }] = await Promise.all([
-    supabase.from("matches").select("id, match_code, title, status").eq("id", id).maybeSingle(),
+    supabase.from("matches").select("id, match_code, title, status, live_feed_enabled").eq("id", id).maybeSingle(),
     supabase.from("match_participants").select("headset_label, gun_used").eq("match_id", id).eq("account_id", account.id).maybeSingle(),
     supabase.rpc("live_match_roster", { p_match_id: id }),
   ]);
@@ -56,8 +56,9 @@ export default async function LiveGamePage({ params }: { params: Promise<{ id: s
           </h1>
         </div>
 
-        {/* Live feed – the player's personalised phone view while the game is on */}
-        {isLive && participant && (
+        {/* Live feed – the player's personalised phone view while the game is on
+            (only when the admin has enabled it for this match) */}
+        {isLive && participant && match.live_feed_enabled && (
           <div className="mb-6 border border-border bg-bg-elevated p-2">
             <LiveFeedClient matchId={match.id} mode="player" me={account.ops_tag ?? null} />
           </div>

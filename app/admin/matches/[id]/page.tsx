@@ -22,6 +22,7 @@ import { PublishScores } from "@/components/admin/PublishScores";
 import { PublishedPlayersEditor } from "@/components/admin/PublishedPlayersEditor";
 import { RecomputeResults } from "@/components/admin/RecomputeResults";
 import { LiveIngestWatcher } from "@/components/admin/LiveIngestWatcher";
+import { LiveFeedToggle } from "@/components/admin/LiveFeedToggle";
 import { HeadbandIdentityPanel, type HeadbandRow } from "@/components/admin/HeadbandIdentityPanel";
 import { CollapsibleSection } from "@/components/admin/CollapsibleSection";
 import { RealtimeMatchRefresh } from "@/components/admin/RealtimeMatchRefresh";
@@ -96,7 +97,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
     supabase
       .from("matches")
       .select(
-        "id, match_code, title, status, scheduled_at, played_on, round_count, source_file_type, xp_distributed_at, elo_calculated_at, results_stale_at, winning_team_colour, is_private, is_double_xp, min_players, max_players, price_eur, pricing_mode, deposit_eur, registered_count, paid_count, on_day_count, reached_quorum_at, entry_code, invite_code, ladder_id, home_squad_id, away_squad_id, winner_squad_id, home_squad_colour, away_squad_colour",
+        "id, match_code, title, status, scheduled_at, played_on, round_count, source_file_type, xp_distributed_at, elo_calculated_at, results_stale_at, live_feed_enabled, winning_team_colour, is_private, is_double_xp, min_players, max_players, price_eur, pricing_mode, deposit_eur, registered_count, paid_count, on_day_count, reached_quorum_at, entry_code, invite_code, ladder_id, home_squad_id, away_squad_id, winner_squad_id, home_squad_colour, away_squad_colour",
       )
       .eq("id", id)
       .maybeSingle(),
@@ -597,18 +598,23 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         </CollapsibleSection>
       )}
 
-      {/* Live auto-ingest – watch the AlphaTag export folder on the venue tablet */}
+      {/* Live feed – toggle on to stream; off (default) for private bookings */}
       <CollapsibleSection
-        title="Live auto-ingest"
-        subtitle="On the venue tablet (Chrome/Edge), connect the AlphaTag export folder once. As each round's JSON file is written, it's ingested onto this match automatically — no manual upload. Then review & publish below."
+        title="Live feed"
+        subtitle="Stream the game live to players' phones + a venue screen. Turn it on for public games; leave it off for private bookings (upload JSONs manually instead)."
       >
-        <LiveIngestWatcher matchId={match.id} isLive={match.status === "live"} />
-        <div className="mt-3">
-          <Link href={`/admin/matches/${match.id}/live`} className="text-xs font-semibold uppercase tracking-[0.12em] text-accent hover:text-accent-soft">
-            Open global live view →
-          </Link>
-          <span className="ml-2 text-[0.65rem] text-text-subtle">Bases, global kill feed &amp; leaderboard — for a venue screen. Players get their own view in the portal.</span>
-        </div>
+        <LiveFeedToggle matchId={match.id} enabled={!!match.live_feed_enabled} />
+        {match.live_feed_enabled && (
+          <div className="mt-5 border-t border-border pt-5">
+            <LiveIngestWatcher matchId={match.id} isLive={match.status === "live"} />
+            <div className="mt-3">
+              <Link href={`/admin/matches/${match.id}/live`} className="text-xs font-semibold uppercase tracking-[0.12em] text-accent hover:text-accent-soft">
+                Open global live view →
+              </Link>
+              <span className="ml-2 text-[0.65rem] text-text-subtle">Bases, global kill feed &amp; leaderboard — for a venue screen. Players get their own view in the portal.</span>
+            </div>
+          </div>
+        )}
       </CollapsibleSection>
 
       {/* Ingest data (preview) */}
