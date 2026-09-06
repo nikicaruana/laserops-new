@@ -3,21 +3,21 @@
  * --------------------------------------------------------------------
  * Layer A of the LaserOps round ingestion: turn ONE LaserWar/Alphatag online
  * game JSON file (one round, JSONL) into clean, structured per-player / per-base
- * facts. Pure fact-extraction — NO ELO / XP / score / streak logic (those
+ * facts. Pure fact-extraction – NO ELO / XP / score / streak logic (those
  * consume this output). Built to the ground-truth spec:
  *   docs/ingestion/LaserOps_JSON_Parsing_Pack_2.md
  *
  * Defensive by design (per the spec's hard-won rules):
  *  - JSONL, one object per line; tolerate blanks + a malformed final line.
- *  - GameEnd may have no `Item` — guard everywhere.
- *  - File is NOT globally time-sorted (devices buffer offline) — all timing
+ *  - GameEnd may have no `Item` – guard everywhere.
+ *  - File is NOT globally time-sorted (devices buffer offline) – all timing
  *    logic sorts per player/base by EventTime first; never trust line order.
  *  - Whole-second timestamps.
- *  - FieldDeviceEvent.PlayerId is a BASE id, not a player — separate namespaces,
+ *  - FieldDeviceEvent.PlayerId is a BASE id, not a player – separate namespaces,
  *    classified by GameStart membership (id ranges shift between games).
- *  - PlayerEvents are partial (only changed counters) — final counter = last
+ *  - PlayerEvents are partial (only changed counters) – final counter = last
  *    value seen PER counter per player.
- *  - Don't hardcode team/player/base count or max HP — read from the file.
+ *  - Don't hardcode team/player/base count or max HP – read from the file.
  */
 
 export type IngestionFlag = { code: string; detail?: string };
@@ -63,6 +63,34 @@ export type BaseOwnershipPeriod = {
   held_seconds: number;
 };
 
+/**
+ * A base burn: in domination a base burns (permanently captured) when ONE team's
+ * CUMULATIVE hold time on it reaches the burn threshold. That team is the burner.
+ */
+/**
+ * A same-second capture ambiguity: 2+ players on the SAME team captured 2+
+ * distinct bases in the SAME second, so which player captured which base (and
+ * therefore which base's hold time each is credited with) cannot be proven from
+ * the JSON. Surfaced for mandatory admin review before final scoring.
+ */
+export type AmbiguousCaptureGroup = {
+  id: string; // stable key `${time}|${team}`
+  time: string;
+  team: string;
+  base_ids: number[];
+  player_ids: number[];
+  /** Hold seconds of each base in the group (what's at stake in the pairing). */
+  holds: { base_id: number; held_seconds: number }[];
+};
+
+export type BaseBurn = {
+  base_id: number;
+  team: string;
+  /** Device-clock epoch (seconds) when cumulative hold crossed the threshold. */
+  burn_epoch: number;
+  cumulative_seconds: number;
+};
+
 export type PlayerCounters = {
   shots: number;
   hits: number;
@@ -95,9 +123,22 @@ export type Round = {
     captures: CaptureEvent[];
   };
   base_ownership: BaseOwnershipPeriod[];
+  /**
+   * Domination outcome. A base burns when a team's cumulative hold reaches
+   * `burn_threshold_seconds`; the round is WON by the team that burns a majority
+   * of bases (>= ceil(bases/2)). The game's own points/IsWinner are NOT used.
+   */
+  result: {
+    burn_threshold_seconds: number;
+    burns: BaseBurn[];
+    winner_team: string | null;
+    all_bases_burned: boolean;
+  };
+  /** Same-second same-team capture ambiguities needing admin review. */
+  ambiguous_captures: AmbiguousCaptureGroup[];
   final_player_counters: Record<number, PlayerCounters>;
   /** Real damage dealt per player = Σ actual PlayerHitEvent.Damage (the game
-   *  already reports applied damage, so this caps overkill — unlike hits×gun). */
+   *  already reports applied damage, so this caps overkill – unlike hits×gun). */
   damage_dealt: Record<number, number>;
   /** Capture/hold time per player = Σ seconds the bases they captured were held. */
   hold_seconds: Record<number, number>;
@@ -114,6 +155,7 @@ type Raw = { EventTime?: string; ItemType?: string; Item?: Record<string, unknow
 
 const SPAWN_WINDOW_SECONDS = 3; // config later
 const LATE_MARGIN_SECONDS = 300; // events beyond round end + this are junk
+const DEFAULT_BURN_THRESHOLD_SECONDS = 600; // 10 min cumulative hold burns a base
 
 /** "2026.08.01 02:30:05" -> epoch seconds (local). Returns NaN if unparseable. */
 function toEpoch(t: string | undefined): number {
@@ -141,8 +183,14 @@ const num = (v: unknown): number | undefined => (typeof v === "number" ? v : und
 
 // --- parser ----------------------------------------------------------------
 
-export function parseRound(text: string): Round {
+export function parseRound(
+  text: string,
+  opts?: { burnThresholdSeconds?: number; spawnWindowSeconds?: number },
+): Round {
   const flags: IngestionFlag[] = [];
+  const burnThreshold = opts?.burnThresholdSeconds ?? DEFAULT_BURN_THRESHOLD_SECONDS;
+  // Spawn-protection window from Exploit Control (spawn_camp_config.protection_window_seconds).
+  const spawnWindow = opts?.spawnWindowSeconds ?? SPAWN_WINDOW_SECONDS;
 
   // 1. JSONL -> objects. Skip blanks; tolerate a malformed final line.
   const lines = text.split(/\r?\n/);
@@ -180,7 +228,28 @@ export function parseRound(text: string): Round {
       headband_no: hb,
     };
   });
-  const bases: RoundBase[] = devicesRaw.map((d) => ({ device_id: d.FieldDeviceId ?? -1, nickname: d.Nickname ?? "" }));
+  // Bases (field devices) IN PLAY = the device ids that actually appear in
+  // FieldDeviceEvents (ground truth). GameStart.FieldDevices supplies names, but
+  // its ids can mismatch the event ids (seen in a real R5 file: registered id 102
+  // but events use id 3), so we key on events and back-fill names by id, with a
+  // position-based fallback for a single unmatched device.
+  const gsNameById = new Map<number, string>();
+  for (const d of devicesRaw) if (d.FieldDeviceId != null) gsNameById.set(d.FieldDeviceId, d.Nickname ?? "");
+  const eventDeviceIds = new Set<number>();
+  for (const r of raws) {
+    if (r.ItemType !== "FieldDeviceEvent") continue;
+    const bid = num((r.Item as Record<string, unknown> | undefined)?.PlayerId);
+    if (bid != null) eventDeviceIds.add(bid);
+  }
+  const sortedDeviceIds = [...eventDeviceIds].sort((a, b) => a - b);
+  const unmatchedEventIds = sortedDeviceIds.filter((id) => !gsNameById.has(id));
+  const unmatchedGs = [...gsNameById.entries()].filter(([id]) => !eventDeviceIds.has(id)).sort((a, b) => a[0] - b[0]);
+  const remap = new Map<number, string>();
+  if (unmatchedEventIds.length > 0 && unmatchedEventIds.length === unmatchedGs.length) {
+    unmatchedEventIds.forEach((id, i) => remap.set(id, unmatchedGs[i][1]));
+    flags.push({ code: "device_id_remapped", detail: `${unmatchedEventIds.length} base(s) named by position (GameStart ids differ from event ids)` });
+  }
+  const bases: RoundBase[] = sortedDeviceIds.map((id) => ({ device_id: id, nickname: gsNameById.get(id) ?? remap.get(id) ?? "" }));
 
   // Classify ids by GameStart membership (ranges shift between games).
   const playerIds = new Set(players.map((p) => p.in_game_player_id));
@@ -269,7 +338,7 @@ export function parseRound(text: string): Round {
   }
   for (const arr of byPlayer.values()) arr.sort((a, b) => a.epoch - b.epoch);
 
-  // Killer HP at each kill (last known HP at/before the kill time) — for Survivor.
+  // Killer HP at each kill (last known HP at/before the kill time) – for Survivor.
   const hpAt = (pid: number, epoch: number): number | null => {
     const evs = byPlayer.get(pid);
     if (!evs) return null;
@@ -307,37 +376,54 @@ export function parseRound(text: string): Round {
     }
   }
 
-  // 9. Captures: a PlayerEvent whose Captures counter increments, joined by the
-  // same-second FieldDeviceEvent team flip. Ambiguity guard for same-second
-  // multi-base flips.
-  const deviceFlips: { epoch: number; base_id: number; team: string }[] = [];
+  // 9. Captures: attribute each player's Captures-counter increment to a base
+  // that flipped in the SAME second. A player can only have captured a base that
+  // flipped to THEIR team, so multi-base same-second flips are matched by team.
+  // If several same-team bases flip together, pair them 1:1 (each capturer gets a
+  // distinct base) and flag the exact base as inferred — the count + distinct-set
+  // stay correct even when the precise base can't be proven.
+  const teamOfPlayer = new Map<number, string>();
+  for (const p of players) teamOfPlayer.set(p.in_game_player_id, p.team);
+
+  // Device flips grouped by second (mutable `taken` marks consumed matches).
+  const flipsBySecond = new Map<number, { base_id: number; team: string; taken: boolean }[]>();
   for (const ev of deviceEv) {
     const bid = num(ev.item.PlayerId);
     const team = ev.item.Team;
-    if (bid != null && baseIds.has(bid) && typeof team === "string" && team) {
-      deviceFlips.push({ epoch: ev.epoch, base_id: bid, team });
-    }
+    if (bid == null || !baseIds.has(bid) || typeof team !== "string" || !team) continue;
+    if (!flipsBySecond.has(ev.epoch)) flipsBySecond.set(ev.epoch, []);
+    flipsBySecond.get(ev.epoch)!.push({ base_id: bid, team, taken: false });
   }
-  const captures: CaptureEvent[] = [];
+
+  // Each player's Captures-counter increments, in time order (delta per event).
+  const capIncrements: { epoch: number; time: string; pid: number; team: string; delta: number }[] = [];
   for (const [pid, evs] of byPlayer) {
-    let prevCaptures = 0;
+    let prev = 0;
     for (const ev of evs) {
       const cap = num(ev.item.Captures);
-      if (cap != null && cap > prevCaptures) {
-        prevCaptures = cap;
-        const sameSecond = deviceFlips.filter((f) => f.epoch === ev.epoch);
-        if (sameSecond.length === 1) {
-          captures.push({ time: ev.time, base_id: sameSecond[0].base_id, capturing_player_id: pid, new_owner_team: sameSecond[0].team });
-        } else if (sameSecond.length === 0) {
-          captures.push({ time: ev.time, base_id: -1, capturing_player_id: pid, new_owner_team: "" });
-          flags.push({ code: "capture_no_base_flip", detail: `player ${pid} at ${ev.time}` });
-        } else {
-          // multiple bases flipped this second — record but flag ambiguity
-          for (const f of sameSecond) {
-            captures.push({ time: ev.time, base_id: f.base_id, capturing_player_id: null, new_owner_team: f.team });
-          }
-          flags.push({ code: "capture_ambiguous_same_second", detail: `${ev.time} (${sameSecond.length} bases)` });
-        }
+      if (cap != null && cap > prev) {
+        capIncrements.push({ epoch: ev.epoch, time: ev.time, pid, team: teamOfPlayer.get(pid) ?? "", delta: cap - prev });
+        prev = cap;
+      }
+    }
+  }
+  capIncrements.sort((a, b) => a.epoch - b.epoch);
+
+  const captures: CaptureEvent[] = [];
+  for (const inc of capIncrements) {
+    const flips = flipsBySecond.get(inc.epoch) ?? [];
+    const sameTeamThisSecond = flips.filter((f) => f.team === inc.team).length;
+    for (let n = 0; n < inc.delta; n++) {
+      // Prefer an untaken flip whose new owner is the capturer's team; else any
+      // untaken flip this second (last resort).
+      let flip = flips.find((f) => !f.taken && f.team === inc.team) ?? flips.find((f) => !f.taken);
+      if (flip) {
+        flip.taken = true;
+        captures.push({ time: inc.time, base_id: flip.base_id, capturing_player_id: inc.pid, new_owner_team: flip.team });
+        if (sameTeamThisSecond > 1) flags.push({ code: "capture_base_inferred", detail: `player ${inc.pid} at ${inc.time}` });
+      } else {
+        captures.push({ time: inc.time, base_id: -1, capturing_player_id: inc.pid, new_owner_team: "" });
+        flags.push({ code: "capture_no_base_flip", detail: `player ${inc.pid} at ${inc.time}` });
       }
     }
   }
@@ -368,6 +454,67 @@ export function parseRound(text: string): Round {
       });
     }
   }
+
+  // 10a2. Ambiguous same-second captures: 2+ players on the SAME team capturing
+  // 2+ distinct bases in the SAME second. The base<->player pairing is arbitrary
+  // (the JSON can't prove it), so which base's hold each player gets is unproven.
+  // Surfaced for mandatory admin review before final scoring.
+  const ambiguous_captures: AmbiguousCaptureGroup[] = [];
+  {
+    const capGroups = new Map<string, CaptureEvent[]>();
+    for (const c of captures) {
+      if (c.capturing_player_id == null || c.base_id < 0) continue;
+      const key = `${c.time}|${c.new_owner_team}`;
+      if (!capGroups.has(key)) capGroups.set(key, []);
+      capGroups.get(key)!.push(c);
+    }
+    for (const [key, g] of capGroups) {
+      const bIds = [...new Set(g.map((c) => c.base_id))];
+      const pIds = [...new Set(g.map((c) => c.capturing_player_id as number))];
+      if (bIds.length >= 2 && pIds.length >= 2) {
+        const holds = bIds.map((b) => {
+          const cap = g.find((c) => c.base_id === b)!;
+          const per = base_ownership.find((p) => p.base_id === b && p.from_time === cap.time);
+          return { base_id: b, held_seconds: per?.held_seconds ?? 0 };
+        });
+        ambiguous_captures.push({ id: key, time: g[0].time, team: g[0].new_owner_team, base_ids: bIds, player_ids: pIds, holds });
+      }
+    }
+  }
+
+  // 10b. Burns + round winner. A base burns when ONE team's CUMULATIVE hold
+  // (summed across all its possessions) reaches the threshold; that team is the
+  // burner and the base then locks. The round is won by the team burning a
+  // majority of bases. The game's own points/IsWinner are deliberately ignored.
+  const burns: BaseBurn[] = [];
+  for (const [bid, flips] of flipsByBase) {
+    const sorted = flips.slice().sort((a, b) => a.epoch - b.epoch);
+    const cumByTeam: Record<string, number> = {};
+    for (let i = 0; i < sorted.length; i++) {
+      const cur = sorted[i];
+      const next = sorted[i + 1];
+      const endEpoch = next ? next.epoch : roundEndEpoch;
+      if (Number.isNaN(endEpoch)) break;
+      const periodLen = Math.max(0, endEpoch - cur.epoch);
+      const before = cumByTeam[cur.team] ?? 0;
+      if (before + periodLen >= burnThreshold) {
+        burns.push({ base_id: bid, team: cur.team, burn_epoch: cur.epoch + (burnThreshold - before), cumulative_seconds: burnThreshold });
+        cumByTeam[cur.team] = burnThreshold;
+        break; // base locks on burn
+      }
+      cumByTeam[cur.team] = before + periodLen;
+    }
+  }
+  const burnCounts: Record<string, number> = {};
+  for (const b of burns) burnCounts[b.team] = (burnCounts[b.team] ?? 0) + 1;
+  const majority = Math.floor(bases.length / 2) + 1;
+  let winner_team: string | null = null;
+  for (const [team, n] of Object.entries(burnCounts)) if (n >= majority) winner_team = team;
+  const all_bases_burned = bases.length > 0 && burns.length === bases.length;
+  if (bases.length > 0 && winner_team === null) {
+    flags.push({ code: "no_burn_winner", detail: `burns: ${JSON.stringify(burnCounts)} of ${bases.length} bases` });
+  }
+  const result = { burn_threshold_seconds: burnThreshold, burns, winner_team, all_bases_burned };
 
   // 11. Final per-player counters = last value seen PER counter.
   const final_player_counters: Record<number, PlayerCounters> = {};
@@ -452,8 +599,12 @@ export function parseRound(text: string): Round {
   let spawnDamage = 0;
   let spawnKills = 0;
   for (const d of damage) {
+    // A hit that applied 0 HP (target invulnerable – post-hit i-frames, spawn or
+    // game-start protection, a shield) is a registered tag but not real damage,
+    // so it can never be spawn trapping. Only damaging hits count.
+    if (d.damage <= 0) continue;
     const rs = mostRecentRespawn(d.victim_id, toEpoch(d.time));
-    if (rs != null && toEpoch(d.time) - rs <= SPAWN_WINDOW_SECONDS) {
+    if (rs != null && toEpoch(d.time) - rs <= spawnWindow) {
       d.is_spawn_damage = true;
       spawnDamage++;
       if (spawn_damage_by[d.actor_id] != null) spawn_damage_by[d.actor_id] += d.damage;
@@ -461,7 +612,7 @@ export function parseRound(text: string): Round {
   }
   for (const k of kills) {
     const rs = mostRecentRespawn(k.victim_id, toEpoch(k.time));
-    if (rs != null && toEpoch(k.time) - rs <= SPAWN_WINDOW_SECONDS) {
+    if (rs != null && toEpoch(k.time) - rs <= spawnWindow) {
       k.is_spawn_kill = true;
       spawnKills++;
       if (spawn_kills_by[k.actor_id] != null) spawn_kills_by[k.actor_id]++;
@@ -485,6 +636,8 @@ export function parseRound(text: string): Round {
     bases,
     events: { damage, kills, respawns, captures },
     base_ownership,
+    result,
+    ambiguous_captures,
     final_player_counters,
     damage_dealt,
     hold_seconds,

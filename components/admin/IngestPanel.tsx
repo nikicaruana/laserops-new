@@ -6,7 +6,7 @@
  * Admin ingest PREVIEW + STAGING. Drop one or more round JSON files; each is
  * parsed in the browser, then SAVED to match_ingest_rounds (raw file + parsed
  * jsonb) so it survives a refresh. Renders the persisted rounds as extracted
- * facts. Nothing is written to player stats/XP/ELO yet — committing those is a
+ * facts. Nothing is written to player stats/XP/ELO yet – committing those is a
  * separate, later step gated on real-file validation.
  */
 import { useState } from "react";
@@ -14,18 +14,20 @@ import { useRouter } from "next/navigation";
 import { parseRound, type Round } from "@/lib/ingestion/round-parser";
 import { laserOpsScores } from "@/lib/ingestion/score";
 import { evaluateStreaks, type StreakDef } from "@/lib/ingestion/streak-engine";
+import { effectiveCaptures } from "@/lib/ingestion/effective";
+import { resolveRound, unreviewedCount, type RoundResolutions } from "@/lib/ingestion/resolutions";
 import type { ScoreFormula } from "@/lib/scoring/formula";
 import { createClient } from "@/lib/supabase/client";
 
 const OPERATOR_ID = "00000000-0000-0000-0000-000000000001";
 
-export type SavedRound = { id: string; filename: string | null; parsed: Round };
+export type SavedRound = { id: string; filename: string | null; parsed: Round; resolutions: RoundResolutions };
 
 const th = "px-2 py-2 text-left text-[0.55rem] font-semibold uppercase tracking-[0.1em] text-text-muted";
 const td = "px-2 py-1.5 text-sm";
 
 const fmtHold = (s: number): string => {
-  if (!s) return "—";
+  if (!s) return "–";
   const m = Math.floor(s / 60);
   const sec = s % 60;
   return `${m}:${String(sec).padStart(2, "0")}`;
@@ -38,6 +40,10 @@ export function IngestPanel({
   formula,
   voidSpawn,
   streakDefs,
+  tradeMinHoldSeconds,
+  spawnWindowSeconds,
+  recaptureWindowSeconds,
+  recapturePoints,
 }: {
   matchId: string;
   rounds: SavedRound[];
@@ -45,10 +51,26 @@ export function IngestPanel({
   formula: ScoreFormula;
   voidSpawn: boolean;
   streakDefs: StreakDef[];
+  tradeMinHoldSeconds?: number | null;
+  /** Spawn-protection window from Exploit Control (spawn_camp_config). */
+  spawnWindowSeconds?: number;
+  /** Base-trading recapture window + points from Exploit Control (base_trading_config). */
+  recaptureWindowSeconds?: number | null;
+  recapturePoints?: number | null;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resolutions, setResolutions] = useState<Record<string, RoundResolutions>>(
+    () => Object.fromEntries(rounds.map((r) => [r.id, r.resolutions ?? {}])),
+  );
+
+  async function saveResolutions(roundId: string, next: RoundResolutions) {
+    setResolutions((prev) => ({ ...prev, [roundId]: next }));
+    const supabase = createClient();
+    const { error: err } = await supabase.from("match_ingest_rounds").update({ resolutions: next }).eq("id", roundId);
+    if (err) setError(`Couldn't save resolution: ${err.message}`);
+  }
 
   async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const picked = Array.from(e.target.files ?? []);
@@ -59,7 +81,7 @@ export function IngestPanel({
     for (const f of picked) {
       try {
         const text = await f.text();
-        const parsed = parseRound(text);
+        const parsed = parseRound(text, { spawnWindowSeconds });
         const { error: err } = await supabase.from("match_ingest_rounds").insert({
           operator_id: OPERATOR_ID,
           match_id: matchId,
@@ -99,7 +121,7 @@ export function IngestPanel({
           <input type="file" accept=".json,application/json" multiple onChange={onPick} className="hidden" disabled={busy} />
         </label>
         <p className="text-[0.7rem] text-text-subtle">
-          One JSON file per round. Parsed + saved to this match — preview only, no stats written yet.
+          One JSON file per round. Parsed and saved to this match. Preview only, no stats written yet.
         </p>
       </div>
 
@@ -123,6 +145,11 @@ export function IngestPanel({
           formula={formula}
           voidSpawn={voidSpawn}
           streakDefs={streakDefs}
+          tradeMinHoldSeconds={tradeMinHoldSeconds}
+          recaptureWindowSeconds={recaptureWindowSeconds}
+          recapturePoints={recapturePoints}
+          resolutions={resolutions[sr.id] ?? {}}
+          onChangeResolutions={(next) => saveResolutions(sr.id, next)}
           onRemove={() => remove(sr.id)}
         />
       ))}
@@ -138,6 +165,11 @@ function RoundPreview({
   formula,
   voidSpawn,
   streakDefs,
+  tradeMinHoldSeconds,
+  recaptureWindowSeconds,
+  recapturePoints,
+  resolutions,
+  onChangeResolutions,
   onRemove,
 }: {
   name: string;
@@ -147,11 +179,26 @@ function RoundPreview({
   formula: ScoreFormula;
   voidSpawn: boolean;
   streakDefs: StreakDef[];
+  tradeMinHoldSeconds?: number | null;
+  recaptureWindowSeconds?: number | null;
+  recapturePoints?: number | null;
+  resolutions: RoundResolutions;
+  onChangeResolutions: (next: RoundResolutions) => void;
   onRemove: () => void;
 }) {
-  const scores = laserOpsScores(r, formula, voidSpawn);
+  // Apply admin resolutions (ambiguous same-second captures) before scoring.
+  const rr = resolveRound(r, resolutions);
+  const scores = laserOpsScores(rr, formula, voidSpawn, {
+    minHoldSeconds: tradeMinHoldSeconds,
+    recaptureWindowSeconds,
+    recapturePoints,
+  });
+  const eff = effectiveCaptures(rr, { minHoldSeconds: tradeMinHoldSeconds, recaptureWindowSeconds });
+  const tradesConfigured = !!tradeMinHoldSeconds && tradeMinHoldSeconds > 0;
+  const ambiguities = r.ambiguous_captures ?? [];
+  const unreviewed = unreviewedCount(r, resolutions);
   // Streaks grouped by player, with a per-player count of each streak type.
-  const streaks = evaluateStreaks(r, streakDefs);
+  const streaks = evaluateStreaks(rr, streakDefs);
   const streaksByPlayer = new Map<number, Map<string, number>>();
   for (const s of streaks) {
     if (!streaksByPlayer.has(s.player_id)) streaksByPlayer.set(s.player_id, new Map());
@@ -163,10 +210,13 @@ function RoundPreview({
     return (p?.headband_no != null && headbandLabels[p.headband_no]) || p?.name || `#${pid}`;
   };
   const kills = r.events.kills.length;
-  const hits = r.events.damage.length;
+  // A "hit" = a shot that dealt damage. Tags that applied 0 HP (i-frames / spawn
+  // or start protection) are registered by the hardware but aren't real hits.
+  const effectiveHits = r.events.damage.filter((d) => d.damage > 0).length;
+  const blockedHits = r.events.damage.length - effectiveHits;
   const captures = r.events.captures.length;
   const spawnKills = r.ingestion_flags.find((f) => f.code === "spawn_kills")?.detail ?? "0";
-  const durationMin = r.meta.duration_seconds != null ? Math.round(r.meta.duration_seconds / 60) : "—";
+  const durationMin = r.meta.duration_seconds != null ? Math.round(r.meta.duration_seconds / 60) : "–";
 
   const facts: [string, string][] = [
     ["Round", `#${index}`],
@@ -176,7 +226,7 @@ function RoundPreview({
     ["Bases", String(r.bases.length)],
     ["Duration", `${durationMin} min`],
     ["Kills", String(kills)],
-    ["Hits", String(hits)],
+    ["Hits", blockedHits > 0 ? `${effectiveHits} · ${blockedHits} no-dmg` : String(effectiveHits)],
     ["Captures", String(captures)],
     ["Spawn kills", spawnKills],
   ];
@@ -186,6 +236,11 @@ function RoundPreview({
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-2.5">
         <span className="font-mono text-xs text-text-muted">{name}</span>
         <div className="flex items-center gap-3">
+          {unreviewed > 0 && (
+            <span className="rounded-sm bg-red-600 px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-[0.1em] text-white">
+              ⚠ {unreviewed} to review
+            </span>
+          )}
           {r.ingestion_flags.length > 0 && (
             <span className="text-[0.6rem] font-bold uppercase tracking-[0.1em] text-amber-300">
               {r.ingestion_flags.length} flag{r.ingestion_flags.length === 1 ? "" : "s"}
@@ -201,6 +256,61 @@ function RoundPreview({
         </div>
       </div>
 
+      {ambiguities.length > 0 && (
+        <div className="border-b border-border bg-red-950/30 px-4 py-3">
+          <p className="text-[0.6rem] font-bold uppercase tracking-[0.12em] text-red-300">
+            ⚠ Same-second capture ambiguity — review before final scoring
+          </p>
+          <p className="mt-1 text-[0.7rem] text-text-muted">
+            Two or more players on the same team captured different bases in the same second, so the data can&apos;t prove who captured which base — hold time may be credited to the wrong player. Assign each base to the correct player (or keep the detected pairing), then mark it reviewed.
+          </p>
+          <div className="mt-3 space-y-3">
+            {ambiguities.map((g) => {
+              const def: Record<string, number> = {};
+              for (const b of g.base_ids) {
+                const cap = r.events.captures.find((c) => c.base_id === b && c.time === g.time);
+                if (cap?.capturing_player_id != null) def[String(b)] = cap.capturing_player_id;
+              }
+              const cur = resolutions[g.id]?.assign ?? def;
+              const reviewed = resolutions[g.id]?.reviewed ?? false;
+              const update = (assign: Record<string, number>, rev: boolean) =>
+                onChangeResolutions({ ...resolutions, [g.id]: { assign, reviewed: rev } });
+              return (
+                <div key={g.id} className={`border px-3 py-2 ${reviewed ? "border-emerald-700/60 bg-emerald-950/20" : "border-red-700/60"}`}>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono text-[0.7rem] text-text-muted">{g.time} · {g.team} team</span>
+                    <span className={`text-[0.6rem] font-bold uppercase tracking-[0.1em] ${reviewed ? "text-emerald-300" : "text-red-300"}`}>{reviewed ? "✓ Reviewed" : "Unreviewed"}</span>
+                  </div>
+                  <div className="mt-2 space-y-1.5">
+                    {g.holds.map((h) => (
+                      <div key={h.base_id} className="flex flex-wrap items-center gap-2 text-xs">
+                        <span className="text-text-muted">Base {h.base_id} <span className="text-text-subtle">({fmtHold(h.held_seconds)} held)</span> captured by</span>
+                        <select
+                          value={String(cur[String(h.base_id)] ?? "")}
+                          onChange={(e) => update({ ...cur, [String(h.base_id)]: Number(e.target.value) }, true)}
+                          className="border border-border-strong bg-bg px-2 py-1 text-xs text-text"
+                        >
+                          {g.player_ids.map((pid) => (
+                            <option key={pid} value={String(pid)}>{playerLabel(pid)}</option>
+                          ))}
+                        </select>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-2 flex gap-2">
+                    {!reviewed ? (
+                      <button type="button" onClick={() => update(cur, true)} className="border border-accent bg-accent px-3 py-1 text-[0.6rem] font-bold uppercase tracking-[0.1em] text-bg">Mark reviewed</button>
+                    ) : (
+                      <button type="button" onClick={() => update(cur, false)} className="border border-border px-3 py-1 text-[0.6rem] font-bold uppercase tracking-[0.1em] text-text-subtle hover:text-text">Reopen</button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-px border-b border-border bg-border sm:grid-cols-5">
         {facts.map(([k, v]) => (
           <div key={k} className="bg-bg-elevated px-3 py-2">
@@ -211,7 +321,7 @@ function RoundPreview({
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[760px]">
+        <table className="w-full min-w-[820px]">
           <thead className="border-b border-border">
             <tr>
               <th className={th}>Headband</th>
@@ -224,6 +334,12 @@ function RoundPreview({
               <th className={`${th} text-right`}>D</th>
               <th className={`${th} text-right`}>Dmg</th>
               <th className={`${th} text-right`}>Caps</th>
+              <th
+                className={`${th} text-right`}
+                title={tradesConfigured ? `Captures held < ${tradeMinHoldSeconds}s (not counted; burn-exempt) - from Exploit Control` : "Set a min hold-to-count in Exploit Control"}
+              >
+                Uncounted
+              </th>
               <th className={`${th} text-right`}>Cap time</th>
               <th className={`${th} text-right`} title="Kills within 3s of the victim's respawn">Sp.K</th>
               <th className={`${th} text-right`} title="Damage dealt in spawn windows (voidable amount)">Sp.Dmg</th>
@@ -235,15 +351,21 @@ function RoundPreview({
               const label = (p.headband_no != null && headbandLabels[p.headband_no]) || p.name;
               return (
                 <tr key={p.in_game_player_id} className="border-b border-border/60 last:border-0">
-                  <td className={`${td} font-mono font-semibold text-accent`}>{p.headband_no ?? "—"}</td>
+                  <td className={`${td} font-mono font-semibold text-accent`}>{p.headband_no ?? "–"}</td>
                   <td className={`${td} text-text`}>{label}</td>
                   <td className={`${td} text-text-muted`}>{p.team}</td>
                   <td className={`${td} text-right font-mono tabular-nums font-semibold text-accent`}>{scores[p.in_game_player_id] ?? 0}</td>
                   <td className={`${td} text-right font-mono tabular-nums text-text-muted`}>{c?.frags ?? 0}</td>
                   <td className={`${td} text-right font-mono tabular-nums text-text-muted`}>{c?.deaths ?? 0}</td>
                   <td className={`${td} text-right font-mono tabular-nums text-text-muted`}>{r.damage_dealt?.[p.in_game_player_id] ?? 0}</td>
-                  <td className={`${td} text-right font-mono tabular-nums text-text-muted`}>{c?.captures ?? 0}</td>
-                  <td className={`${td} text-right font-mono tabular-nums text-text-muted`}>{fmtHold(r.hold_seconds?.[p.in_game_player_id] ?? 0)}</td>
+                  <td className={`${td} text-right font-mono tabular-nums text-text-muted`}>
+                    {(eff.captures[p.in_game_player_id] ?? 0) + (eff.recaptures[p.in_game_player_id] ?? 0)}
+                    {(eff.recaptures[p.in_game_player_id] ?? 0) > 0 ? <span className="text-text-subtle"> ({eff.recaptures[p.in_game_player_id]}rc)</span> : null}
+                  </td>
+                  <td className={`${td} text-right font-mono tabular-nums ${!tradesConfigured ? "text-text-subtle" : (eff.excludedCaptures[p.in_game_player_id] ?? 0) > 0 ? "text-amber-300" : "text-text-subtle"}`}>
+                    {tradesConfigured ? (eff.excludedCaptures[p.in_game_player_id] ?? 0) : "–"}
+                  </td>
+                  <td className={`${td} text-right font-mono tabular-nums text-text-muted`}>{fmtHold(eff.holdSeconds[p.in_game_player_id] ?? 0)}</td>
                   <td className={`${td} text-right font-mono tabular-nums ${(r.spawn_kills_by?.[p.in_game_player_id] ?? 0) > 0 ? "text-amber-300" : "text-text-subtle"}`}>{r.spawn_kills_by?.[p.in_game_player_id] ?? 0}</td>
                   <td className={`${td} text-right font-mono tabular-nums ${(r.spawn_damage_by?.[p.in_game_player_id] ?? 0) > 0 ? "text-amber-300" : "text-text-subtle"}`}>{r.spawn_damage_by?.[p.in_game_player_id] ?? 0}</td>
                 </tr>
