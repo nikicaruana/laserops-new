@@ -20,6 +20,12 @@ Add-Type -AssemblyName System.Windows.Forms | Out-Null
 $ConfigFile = Join-Path $PSScriptRoot 'watcher-folder.txt'
 $Folder = $null
 if (Test-Path $ConfigFile) { $saved = (Get-Content $ConfigFile -Raw).Trim(); if ($saved -and (Test-Path $saved)) { $Folder = $saved } }
+if ($Folder) {
+  Write-Host "Remembered folder: $Folder" -ForegroundColor Cyan
+  Write-Host 'Press C in the next 3s to choose a different folder, or wait to continue...'
+  $deadline = (Get-Date).AddSeconds(3)
+  while ((Get-Date) -lt $deadline) { if ([Console]::KeyAvailable) { if ([Console]::ReadKey($true).Key -eq 'C') { $Folder = $null }; break }; Start-Sleep -Milliseconds 100 }
+}
 if (-not $Folder) {
   # Standard Explorer dialog (address bar + Quick Access) used to pick a folder:
   # navigate into the Localfiles folder, then click Open.

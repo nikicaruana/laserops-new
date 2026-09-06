@@ -26,6 +26,12 @@ function buildScript(apiBase: string, token: string): string {
     "$ConfigFile = Join-Path $PSScriptRoot 'watcher-folder.txt'",
     "$Folder = $null",
     "if (Test-Path $ConfigFile) { $saved = (Get-Content $ConfigFile -Raw).Trim(); if ($saved -and (Test-Path $saved)) { $Folder = $saved } }",
+    "if ($Folder) {",
+    '  Write-Host "Remembered folder: $Folder" -ForegroundColor Cyan',
+    "  Write-Host 'Press C in the next 3s to choose a different folder, or wait to continue...'",
+    "  $deadline = (Get-Date).AddSeconds(3)",
+    "  while ((Get-Date) -lt $deadline) { if ([Console]::KeyAvailable) { if ([Console]::ReadKey($true).Key -eq 'C') { $Folder = $null }; break }; Start-Sleep -Milliseconds 100 }",
+    "}",
     "if (-not $Folder) {",
     "  # Standard Explorer dialog (address bar + Quick Access) used to pick a folder:",
     "  # navigate into the Localfiles folder, then click Open.",
@@ -143,9 +149,17 @@ export function NativeWatcherSetup({ token: initialToken }: { token: string }) {
         <li>Download <strong>both</strong> files into the <strong>same folder</strong> on the tablet (e.g. the Desktop).</li>
         <li>Double-click <code className="rounded bg-bg px-1 font-mono">run-live-lasertag-watcher.bat</code> (double-clicking the .ps1 just opens Notepad — use the .bat).</li>
         <li>First run: an <strong>Explorer window</strong> opens (with an address bar + Quick Access) — go into your AlphaTag <code className="rounded bg-bg px-1 font-mono">Localfiles</code> folder and click <strong>Open</strong>. It&apos;s remembered next time (delete <code className="rounded bg-bg px-1 font-mono">watcher-folder.txt</code> to change it).</li>
-        <li>Leave the window open during the game (minimising is fine). Close it to stop.</li>
+        <li>Leave the window open during the game (minimising is fine). Close it to stop. To change the folder later, relaunch and press <strong>C</strong> within 3 seconds.</li>
         <li>First run may warn &quot;Windows protected your PC&quot; → <strong>More info → Run anyway</strong>.</li>
       </ol>
+
+      <details className="rounded border border-border bg-bg-elevated">
+        <summary className="cursor-pointer px-3 py-2 text-[0.7rem] font-bold uppercase tracking-[0.12em] text-text-muted">Optional: start automatically when the tablet boots</summary>
+        <div className="border-t border-border px-3 py-2 text-[0.7rem] text-text-muted">
+          Press <code className="rounded bg-bg px-1 font-mono">Win + R</code>, type <code className="rounded bg-bg px-1 font-mono">shell:startup</code>, Enter. Drop a <strong>shortcut</strong> to
+          <code className="rounded bg-bg px-1 font-mono">run-live-lasertag-watcher.bat</code> into that folder (right-drag the .bat there → &ldquo;Create shortcuts here&rdquo;). It&apos;ll then launch on every boot — you just flip Live feed on in admin.
+        </div>
+      </details>
 
       <div className="flex flex-wrap items-center gap-2 text-xs">
         <span className="font-semibold uppercase tracking-[0.12em] text-text-muted">Token</span>
