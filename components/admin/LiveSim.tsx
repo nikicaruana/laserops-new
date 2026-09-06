@@ -170,7 +170,15 @@ export function LiveSim({ match }: { match: MatchData }) {
 
   return (
     <div className="text-text">
-      <style>{`@keyframes lsSize{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}@keyframes lsGlow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.55)}}`}</style>
+      <style>{`
+        @keyframes lsSize{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
+        @keyframes lsGlow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.55)}}
+        .ls-scroll{scrollbar-width:thin;scrollbar-color:var(--color-accent-dim) transparent;}
+        .ls-scroll::-webkit-scrollbar{width:6px;height:6px;}
+        .ls-scroll::-webkit-scrollbar-track{background:transparent;}
+        .ls-scroll::-webkit-scrollbar-thumb{background:var(--color-accent-dim);border-radius:9999px;}
+        .ls-scroll::-webkit-scrollbar-thumb:hover{background:var(--color-accent);}
+      `}</style>
 
       {/* Controls */}
       <div className="mb-4 flex flex-wrap items-center gap-3 border border-border bg-bg-elevated px-4 py-3">
@@ -247,7 +255,7 @@ export function LiveSim({ match }: { match: MatchData }) {
               {/* Personal kill feed */}
               <div className="flex min-h-0 flex-1 flex-col">
                 <div className="mb-1 shrink-0 px-1 text-[0.55rem] font-semibold uppercase tracking-[0.14em] text-text-subtle">Your kill feed</div>
-                <ul className="min-h-0 flex-1 space-y-1 overflow-y-auto pr-0.5">
+                <ul className="ls-scroll min-h-0 flex-1 space-y-1 overflow-y-auto pr-0.5">
                   {feed.length === 0 && <li className="px-1 text-xs text-text-subtle">Nothing involving you yet…</li>}
                   {feed.map((f, i) => {
                     if (f.kind === "taunt") return <li key={i} className="flex items-center justify-between gap-2 rounded-md bg-bg-elevated px-2 py-1 text-xs text-text-muted"><span>🖕 from <span className="font-semibold text-text">{f.other}</span></span><span className="font-mono text-text-subtle">{mmss(f.t)}</span></li>;
@@ -265,7 +273,7 @@ export function LiveSim({ match }: { match: MatchData }) {
               {/* Streaks */}
               <div className="shrink-0">
                 <div className="mb-1 px-1 text-[0.55rem] font-semibold uppercase tracking-[0.14em] text-text-subtle">Your streaks</div>
-                <div className="flex gap-2 overflow-x-auto pb-1">
+                <div className="ls-scroll flex gap-2 overflow-x-auto pb-1">
                   {streaks.length === 0 && <span className="px-1 text-xs text-text-subtle">None yet — get on a run!</span>}
                   {streaks.map((s, i) => (<div key={i} className="flex shrink-0 flex-col items-center"><img src={sb(s.key)} alt={STREAK_NAMES[s.key] ?? s.key} className="h-11 w-11 object-contain" /><span className="mt-0.5 whitespace-nowrap text-[0.55rem] text-text-muted">{STREAK_NAMES[s.key] ?? s.key}</span></div>))}
                 </div>
