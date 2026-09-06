@@ -163,7 +163,7 @@ export function LiveSim({ match }: { match: MatchData }) {
     const items: Item[] = [];
     data.events.forEach((e, idx) => { if (e.t > t || e.type !== "kill") return; if (e.actor === sel) items.push({ t: e.t, kind: "kill", other: e.victim ?? "", spawn: e.spawn }); else if (e.victim === sel) items.push({ t: e.t, kind: "death", other: e.actor ?? "", killId: idx }); });
     for (const tw of taunts) if (tw.round === roundIdx && tw.to === sel && tw.at <= t) items.push({ t: tw.at, kind: "taunt", other: tw.from });
-    return items.sort((a, b) => b.t - a.t);
+    return items.sort((a, b) => b.t - a.t).slice(0, 15); // keep only the 15 most recent
   }, [data, t, sel, taunts, roundIdx]);
 
   function sendTaunt(to: string, killId: number) { setTaunts((prev) => [...prev, { round: roundIdx, from: sel, to, at: t }]); setSent((prev) => new Set(prev).add(`${roundIdx}:${killId}`)); }
