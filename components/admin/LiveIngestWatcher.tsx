@@ -19,10 +19,11 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useWakeLock } from "@/lib/hooks/use-wake-lock";
 import { buildLiveRound, type RoundResolvers } from "@/lib/live-sim/build-round";
+import { buildSnapshot } from "@/lib/live-sim/engine";
 import { hbKey } from "@/lib/ingestion/roster";
 
 type LogEntry = { at: string; text: string; kind: "ok" | "skip" | "err" };
-type FileRec = { roundNo: number; size: number; stable: number; ingested: boolean };
+type FileRec = { roundNo: number; size: number; stable: number; ingested: boolean; pushedSize: number };
 type FsFileHandle = { kind: "file"; name: string; getFile: () => Promise<File> };
 type FsDirHandle = { name: string; values: () => AsyncIterable<FsFileHandle | { kind: "directory"; name: string }> };
 
@@ -88,7 +89,7 @@ export function LiveIngestWatcher({ matchId, isLive }: { matchId: string; isLive
       const fresh = files.filter((f) => !baseline.current.has(f.name)).sort((a, b) => a.file.lastModified - b.file.lastModified);
       for (const f of fresh) {
         if (!rounds.current.has(f.name)) {
-          rounds.current.set(f.name, { roundNo: ++counter.current, size: -1, stable: 0, ingested: false });
+          rounds.current.set(f.name, { roundNo: ++counter.current, size: -1, stable: 0, ingested: false, pushedSize: -1 });
           setLiveRounds(counter.current);
           addLog(`Round ${counter.current} started (${f.name})`, "ok");
         }
@@ -98,18 +99,24 @@ export function LiveIngestWatcher({ matchId, isLive }: { matchId: string; isLive
       }
 
       // Live stream: the most-recently-modified fresh file is the current round.
+      // Push only when it has grown since the last push (timers still tick locally
+      // on phones between pushes) — no writes/egress during lulls.
       const active = fresh[fresh.length - 1];
       if (active) {
         const rec = rounds.current.get(active.name)!;
-        const built = buildLiveRound(await active.file.text(), rec.roundNo, res);
-        if (built) {
-          const maxEv = built.round.events.reduce((m, e) => Math.max(m, e.t), 0);
-          const elapsed = Math.max(Date.now() / 1000 - built.startEpoch, maxEv);
-          const { error } = await supabase.from("match_live_state").upsert({
-            match_id: matchId, round_no: rec.roundNo, elapsed_seconds: Math.round(elapsed),
-            snapshot: built.round, server_ts: new Date().toISOString(),
-          });
-          if (error) addLog(`live push failed: ${error.message}`, "err");
+        if (active.file.size !== rec.pushedSize) {
+          const built = buildLiveRound(await active.file.text(), rec.roundNo, res);
+          if (built) {
+            const maxEv = built.round.events.reduce((m, e) => Math.max(m, e.t), 0);
+            const elapsed = Math.max(Date.now() / 1000 - built.startEpoch, maxEv);
+            const snapshot = buildSnapshot(built.round, elapsed); // compact — precomputed, ~few KB
+            const { error } = await supabase.from("match_live_state").upsert({
+              match_id: matchId, round_no: rec.roundNo, elapsed_seconds: Math.round(elapsed),
+              snapshot, server_ts: new Date().toISOString(),
+            });
+            if (error) addLog(`live push failed: ${error.message}`, "err");
+            else { rec.pushedSize = active.file.size; rounds.current.set(active.name, rec); }
+          }
         }
       }
 

@@ -603,6 +603,12 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         subtitle="On the venue tablet (Chrome/Edge), connect the AlphaTag export folder once. As each round's JSON file is written, it's ingested onto this match automatically — no manual upload. Then review & publish below."
       >
         <LiveIngestWatcher matchId={match.id} isLive={match.status === "live"} />
+        <div className="mt-3">
+          <Link href={`/admin/matches/${match.id}/live`} className="text-xs font-semibold uppercase tracking-[0.12em] text-accent hover:text-accent-soft">
+            Open global live view →
+          </Link>
+          <span className="ml-2 text-[0.65rem] text-text-subtle">Bases, global kill feed &amp; leaderboard — for a venue screen. Players get their own view in the portal.</span>
+        </div>
       </CollapsibleSection>
 
       {/* Ingest data (preview) */}

@@ -13,9 +13,9 @@ import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useWakeLock } from "@/lib/hooks/use-wake-lock";
 import { LiveRoundView } from "@/components/live/LiveRoundView";
-import type { RoundData } from "@/lib/live-sim/engine";
+import type { LiveSnapshot } from "@/lib/live-sim/engine";
 
-type Snap = { snapshot: RoundData; elapsed_seconds: number | null; round_no: number | null; server_ts: string };
+type Snap = { snapshot: LiveSnapshot; elapsed_seconds: number | null; round_no: number | null; server_ts: string };
 
 export function LiveFeedClient({
   matchId, mode, me = null, title,
@@ -25,7 +25,7 @@ export function LiveFeedClient({
   me?: string | null;
   title?: string;
 }) {
-  const [data, setData] = useState<RoundData | null>(null);
+  const [data, setData] = useState<LiveSnapshot | null>(null);
   const [roundNo, setRoundNo] = useState<number | null>(null);
   const [t, setT] = useState(0);
   const [connected, setConnected] = useState(false);
@@ -86,7 +86,7 @@ export function LiveFeedClient({
   return (
     <div className="px-3 py-3">
       {title && <p className="mb-2 text-center text-[0.6rem] font-semibold uppercase tracking-[0.16em] text-text-subtle">{title}</p>}
-      <LiveRoundView data={data} t={t} mode={mode} me={me} roundLabel={roundNo ? `Round ${roundNo}` : undefined} />
+      <LiveRoundView snap={data} t={t} mode={mode} me={me} roundLabel={roundNo ? `Round ${roundNo}` : undefined} />
     </div>
   );
 }

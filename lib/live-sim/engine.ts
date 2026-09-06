@@ -54,7 +54,10 @@ export function statsAt(data: RoundData, t: number): Map<string, Stat> {
 }
 
 export type BaseState = { owner: string | null; hold: Record<string, number>; burned: boolean; burnTeam: string | null; anim: "none" | "warn" | "crit" | "burned" };
-export function baseStateAt(data: RoundData, t: number): Record<number, BaseState> {
+/** Base timing inputs — satisfied by both RoundData and the compact LiveSnapshot,
+ *  so the phone can compute smooth base timers from a tiny payload. */
+export type BaseTiming = { bases: Base[]; teams: string[]; burnThresholdSeconds: number; baseFlips: { t: number; baseId: number; team: string }[]; burns: { baseId: number; team: string; t: number }[] };
+export function baseStateAt(data: BaseTiming, t: number): Record<number, BaseState> {
   const th = data.burnThresholdSeconds;
   const res: Record<number, BaseState> = {};
   for (const base of data.bases) {
@@ -115,15 +118,48 @@ export function personalFeed(data: RoundData, t: number, me: string, cap = 15): 
   return items.sort((a, b) => b.t - a.t).slice(0, cap);
 }
 
-export type GlobalItem = { t: number; actor: string; victim: string; actorTeam: string | null; victimTeam: string | null; spawn?: boolean };
+export type LiveKill = { t: number; actor: string; victim: string; actorTeam: string | null; victimTeam: string | null; spawn?: boolean };
 /** Every kill in the round (most recent first, capped) for the public/global feed. */
-export function globalFeed(data: RoundData, t: number, cap = 20): GlobalItem[] {
+export function globalFeed(data: RoundData, t: number, cap = 20): LiveKill[] {
   const teamOf = new Map(data.players.map((p) => [p.name, p.team]));
-  const items: GlobalItem[] = [];
+  const items: LiveKill[] = [];
   for (const e of data.events) {
     if (e.t > t) break;
     if (e.type !== "kill" || !e.actor || !e.victim) continue;
     items.push({ t: e.t, actor: e.actor, victim: e.victim, actorTeam: teamOf.get(e.actor) ?? null, victimTeam: teamOf.get(e.victim) ?? null, spawn: e.spawn });
   }
   return items.reverse().slice(0, cap);
+}
+
+/**
+ * The COMPACT snapshot the producer pushes (a few KB, fixed size) instead of the
+ * whole growing round. Precomputes the current leaderboard, recent kills and
+ * streaks; keeps only the small base-timing data so the phone still ticks timers
+ * smoothly. This is the main cost + mobile-data lever.
+ */
+export type LiveSnapshot = {
+  round: number; winner: string | null; teams: string[];
+  bases: Base[]; baseFlips: { t: number; baseId: number; team: string }[]; burns: { baseId: number; team: string; t: number }[]; burnThresholdSeconds: number;
+  players: SimPlayer[];
+  stats: Stat[];                  // leaderboard, precomputed, sorted desc by score
+  recentKills: LiveKill[];        // last N kills (chronological)
+  streaksByPlayer: Record<string, { key: string; t: number }[]>;
+  elapsed: number;
+};
+
+export function buildSnapshot(r: RoundData, elapsed: number, killCap = 25): LiveSnapshot {
+  const stats = [...statsAt(r, elapsed).values()].sort((a, b) => b.score - a.score);
+  const teamOf = new Map(r.players.map((p) => [p.name, p.team]));
+  const kills: LiveKill[] = [];
+  for (const e of r.events) {
+    if (e.t > elapsed) break;
+    if (e.type === "kill" && e.actor && e.victim) kills.push({ t: e.t, actor: e.actor, victim: e.victim, actorTeam: teamOf.get(e.actor) ?? null, victimTeam: teamOf.get(e.victim) ?? null, spawn: e.spawn });
+  }
+  const streaksByPlayer: Record<string, { key: string; t: number }[]> = {};
+  for (const p of r.players) { const s = myStreaks(r, elapsed, p.name); if (s.length) streaksByPlayer[p.name] = s.slice(0, 8); }
+  return {
+    round: r.round, winner: winnerAt(r, elapsed), teams: r.teams,
+    bases: r.bases, baseFlips: r.baseFlips, burns: r.burns, burnThresholdSeconds: r.burnThresholdSeconds,
+    players: r.players, stats, recentKills: kills.slice(-killCap), streaksByPlayer, elapsed,
+  };
 }
