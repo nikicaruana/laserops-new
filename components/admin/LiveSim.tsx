@@ -11,6 +11,7 @@
  * Personal gun kill feed with tap-to-taunt. Prototype for the realtime pipeline.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useWakeLock } from "@/lib/hooks/use-wake-lock";
 
 type Ev = { t: number; type: "kill" | "capture" | "respawn"; actor?: string; victim?: string; spawn?: boolean; pid?: string; base?: string; team?: string };
 type SimPlayer = { name: string; team: string; gunName: string; gunImage: string };
@@ -116,6 +117,8 @@ export function LiveSim({ match }: { match: MatchData }) {
   const [taunts, setTaunts] = useState<Taunt[]>([]);
   const [sent, setSent] = useState<Set<string>>(new Set());
   const [ended, setEnded] = useState(false);
+  const [keepAwake, setKeepAwake] = useState(true);
+  useWakeLock(keepAwake); // keep the phone screen on while the live view is open
   const raf = useRef<number | null>(null);
   const lastNow = useRef<number>(0);
 
@@ -177,6 +180,9 @@ export function LiveSim({ match }: { match: MatchData }) {
         <span className="font-mono text-sm tabular-nums text-text-muted">{mmss(t)} / {mmss(simEnd)}</span>
         <input type="range" min={0} max={simEnd} value={t} onChange={(e) => { setPlaying(false); setT(Number(e.target.value)); }} className="min-w-[160px] flex-1 accent-accent" />
         <select value={sel} onChange={(e) => setSel(e.target.value)} className="border border-border-strong bg-bg px-2 py-1.5 text-sm text-text">{data.players.map((p) => <option key={p.name} value={p.name}>{p.name}</option>)}</select>
+        <button type="button" onClick={() => setKeepAwake((k) => !k)} title="Keep the screen on while the live view is open" className={`ml-auto flex items-center gap-1.5 px-2 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.1em] ${keepAwake ? "text-accent" : "border border-border text-text-subtle"}`}>
+          <span>{keepAwake ? "🔆" : "🌙"}</span> Screen {keepAwake ? "stays on" : "auto-locks"}
+        </button>
       </div>
 
       {/* Round tabs */}
