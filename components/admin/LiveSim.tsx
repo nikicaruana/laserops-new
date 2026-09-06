@@ -118,7 +118,8 @@ export function LiveSim({ match }: { match: MatchData }) {
   const [sent, setSent] = useState<Set<string>>(new Set());
   const [ended, setEnded] = useState(false);
   const [keepAwake, setKeepAwake] = useState(true);
-  useWakeLock(keepAwake); // keep the phone screen on while the live view is open
+  const [exited, setExited] = useState(false);
+  useWakeLock(keepAwake && !exited); // keep the phone screen on while in the live view
   const raf = useRef<number | null>(null);
   const lastNow = useRef<number>(0);
 
@@ -205,15 +206,24 @@ export function LiveSim({ match }: { match: MatchData }) {
         <div className="mx-auto w-full max-w-[360px]">
           <div className="rounded-[2rem] border-4 border-border-strong bg-black p-3 shadow-xl">
             <div className="flex h-[660px] flex-col gap-2 rounded-[1.4rem] bg-bg p-3">
-              <div className="flex shrink-0 items-center justify-between px-1">
-                <span className="flex items-center gap-2 text-sm font-bold"><span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: teamHex(me?.team ?? null) }} />{sel}</span>
-                <div className="flex items-center gap-2">
-                  <button type="button" onClick={() => setKeepAwake((k) => !k)} title={keepAwake ? "Screen stays on — tap to allow auto-lock" : "Screen will auto-lock — tap to keep it on"} aria-label="Keep screen on" className={`text-base leading-none ${keepAwake ? "text-accent" : "text-text-subtle"}`}>{keepAwake ? "🔆" : "🌙"}</button>
-                  <span className="text-[0.7rem] font-extrabold uppercase tracking-[0.14em] text-text-muted">Round {data.round}<span className="text-text-subtle"> / {match.rounds.length}</span></span>
+              {exited ? (
+                <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
+                  <p className="text-sm font-bold uppercase tracking-[0.14em] text-text-muted">You&apos;ve left the live match view</p>
+                  <button type="button" onClick={() => setExited(false)} className="border border-accent bg-accent px-5 py-2 text-xs font-bold uppercase tracking-[0.12em] text-bg">Rejoin match</button>
                 </div>
+              ) : (<>
+              <div className="flex shrink-0 items-center justify-between gap-2 px-1">
+                <button type="button" onClick={() => setExited(true)} title="Exit match view" className="flex shrink-0 items-center gap-1 text-[0.6rem] font-bold uppercase tracking-[0.1em] text-text-muted hover:text-text">← Exit</button>
+                <span className="flex min-w-0 flex-1 items-center justify-center gap-2 text-sm font-bold"><span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: teamHex(me?.team ?? null) }} /><span className="truncate">{sel}</span></span>
+                <button type="button" onClick={() => setKeepAwake((k) => !k)} title={keepAwake ? "Screen stays on — tap to allow auto-lock" : "Screen will auto-lock — tap to keep it on"} aria-label="Keep screen on" className={`shrink-0 text-base leading-none ${keepAwake ? "text-accent" : "text-text-subtle"}`}>{keepAwake ? "🔆" : "🌙"}</button>
               </div>
-              <div className="flex shrink-0 items-center justify-end px-1 -mt-1">
-                {winner ? <span className="text-[0.6rem] font-bold uppercase tracking-[0.14em]" style={{ color: teamHex(winner) }}>{winner} wins the round</span> : <span className="flex items-center gap-1 text-[0.6rem] font-bold uppercase tracking-[0.14em] text-red-400"><span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" /> Live</span>}
+              <div className="flex shrink-0 items-center justify-between px-1">
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={() => goToRound(roundIdx - 1)} disabled={roundIdx === 0} className="px-1 text-sm text-text-muted enabled:hover:text-accent disabled:opacity-30" aria-label="Previous round">◀</button>
+                  <span className="text-[0.7rem] font-extrabold uppercase tracking-[0.14em] text-text-muted">Round {data.round}<span className="text-text-subtle"> / {match.rounds.length}</span></span>
+                  <button type="button" onClick={() => goToRound(roundIdx + 1)} disabled={roundIdx === match.rounds.length - 1} className="px-1 text-sm text-text-muted enabled:hover:text-accent disabled:opacity-30" aria-label="Next round">▶</button>
+                </div>
+                {winner ? <span className="text-[0.6rem] font-bold uppercase tracking-[0.14em]" style={{ color: teamHex(winner) }}>{winner} wins</span> : <span className="flex items-center gap-1 text-[0.6rem] font-bold uppercase tracking-[0.14em] text-red-400"><span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" /> Live</span>}
               </div>
 
               {/* Base capture states */}
@@ -278,6 +288,7 @@ export function LiveSim({ match }: { match: MatchData }) {
                   {streaks.map((s, i) => (<div key={i} className="flex shrink-0 flex-col items-center"><img src={sb(s.key)} alt={STREAK_NAMES[s.key] ?? s.key} className="h-11 w-11 object-contain" /><span className="mt-0.5 whitespace-nowrap text-[0.55rem] text-text-muted">{STREAK_NAMES[s.key] ?? s.key}</span></div>))}
                 </div>
               </div>
+              </>)}
             </div>
           </div>
           <p className="mt-2 text-center text-[0.65rem] text-text-subtle">What {sel} sees on their phone — Round {data.round}.</p>
