@@ -20,6 +20,7 @@ import { MatchParticipantsManager, type Participant, type ParticipantPayment } f
 import { IngestPanel, type SavedRound } from "@/components/admin/IngestPanel";
 import { PublishScores } from "@/components/admin/PublishScores";
 import { PublishedPlayersEditor } from "@/components/admin/PublishedPlayersEditor";
+import { RecomputeResults } from "@/components/admin/RecomputeResults";
 import { HeadbandIdentityPanel, type HeadbandRow } from "@/components/admin/HeadbandIdentityPanel";
 import { CollapsibleSection } from "@/components/admin/CollapsibleSection";
 import { RealtimeMatchRefresh } from "@/components/admin/RealtimeMatchRefresh";
@@ -94,7 +95,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
     supabase
       .from("matches")
       .select(
-        "id, match_code, title, status, scheduled_at, played_on, round_count, source_file_type, xp_distributed_at, elo_calculated_at, winning_team_colour, is_private, is_double_xp, min_players, max_players, price_eur, pricing_mode, deposit_eur, registered_count, paid_count, on_day_count, reached_quorum_at, entry_code, invite_code, ladder_id, home_squad_id, away_squad_id, winner_squad_id, home_squad_colour, away_squad_colour",
+        "id, match_code, title, status, scheduled_at, played_on, round_count, source_file_type, xp_distributed_at, elo_calculated_at, results_stale_at, winning_team_colour, is_private, is_double_xp, min_players, max_players, price_eur, pricing_mode, deposit_eur, registered_count, paid_count, on_day_count, reached_quorum_at, entry_code, invite_code, ladder_id, home_squad_id, away_squad_id, winner_squad_id, home_squad_colour, away_squad_colour",
       )
       .eq("id", id)
       .maybeSingle(),
@@ -323,6 +324,11 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         <RescheduleMatchButton matchId={match.id} status={match.status} scheduledAt={match.scheduled_at} />
       </div>
 
+      {/* Results freshness: scored matches show a recompute control; stale after an edit. */}
+      {match.xp_distributed_at && (
+        <RecomputeResults matchId={match.id} stale={!!match.results_stale_at} />
+      )}
+
       {squadPair?.home && squadPair.away && (
         <div className="mb-8 space-y-4">
           <MatchSquadColours
@@ -427,7 +433,13 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
           {match.xp_distributed_at ? <span className="text-accent">Distributed</span> : <span className="text-text-subtle">Pending</span>}
         </Fact>
         <Fact label="ELO">
-          {match.elo_calculated_at ? <span className="text-accent">Calculated</span> : <span className="text-text-subtle">Pending</span>}
+          {match.results_stale_at ? (
+            <span className="text-amber-300">Out of date</span>
+          ) : match.elo_calculated_at ? (
+            <span className="text-accent">Calculated</span>
+          ) : (
+            <span className="text-text-subtle">Pending</span>
+          )}
         </Fact>
       </div>
 

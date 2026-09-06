@@ -82,10 +82,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     await svc.from("match_awards").update({ account_id: r.accountId, nickname: r.nickname }).eq("match_id", id).eq("headset_label", label);
   }
 
-  // Roll the change into careers (chronological XP/level, lifetime, level rewards).
-  const { error: rollupErr } = await supabase.rpc("rollup_match_careers");
-  if (rollupErr) return NextResponse.json({ error: `Saved, but the career rollup failed: ${rollupErr.message}` }, { status: 500 });
-
+  // The identity/gun change is applied immediately. XP/level/Elo + lifetime are
+  // NOT recomputed here: changing the roster changes Elo for everyone in the
+  // match (and, via each account's chain, other matches), so the match_participants
+  // change trips the results-stale flag (trigger) and the admin recomputes when
+  // ready. That keeps a batch of edits to one recompute.
   const resolved = roster(headset);
-  return NextResponse.json({ ok: true, nickname: resolved.nickname, gun: resolved.gun });
+  return NextResponse.json({ ok: true, nickname: resolved.nickname, gun: resolved.gun, staleFlagged: true });
 }

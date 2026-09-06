@@ -14,6 +14,7 @@ import { parseRound } from "@/lib/ingestion/round-parser";
 import { unreviewedCount, type RoundResolutions } from "@/lib/ingestion/resolutions";
 import { computeMatchCommit } from "@/lib/ingestion/commit";
 import { resolveRoster } from "@/lib/ingestion/roster";
+import { recomputeProgression } from "@/lib/ingestion/progression";
 
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
@@ -82,8 +83,13 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   }).eq("id", id);
   if (mErr) return NextResponse.json({ error: `Match stamp failed: ${mErr.message}` }, { status: 500 });
 
-  // Roll the match into careers: chronological XP/level back-fill on the
-  // aggregates, then rebuild lifetime stats + grant any new level rewards.
+  // Roll the match into careers: chronological XP/level/Elo back-fill across all
+  // matches, then rebuild lifetime stats + grant level rewards + clear stale flags.
+  try {
+    await recomputeProgression(supabase);
+  } catch (e) {
+    return NextResponse.json({ error: `Scores saved, but the XP/Elo recompute failed: ${e instanceof Error ? e.message : "unknown error"}` }, { status: 500 });
+  }
   const { error: rollupErr } = await supabase.rpc("rollup_match_careers");
   if (rollupErr) return NextResponse.json({ error: `Scores saved, but the career rollup failed: ${rollupErr.message}` }, { status: 500 });
 
