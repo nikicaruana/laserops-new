@@ -18,6 +18,7 @@ import { EditableMatchTitle } from "@/components/admin/EditableMatchTitle";
 import { CopyInviteLink } from "@/components/portal/CopyInviteLink";
 import { MatchParticipantsManager, type Participant, type ParticipantPayment } from "@/components/admin/MatchParticipantsManager";
 import { IngestPanel, type SavedRound } from "@/components/admin/IngestPanel";
+import { PublishScores } from "@/components/admin/PublishScores";
 import { HeadbandIdentityPanel, type HeadbandRow } from "@/components/admin/HeadbandIdentityPanel";
 import { CollapsibleSection } from "@/components/admin/CollapsibleSection";
 import { RealtimeMatchRefresh } from "@/components/admin/RealtimeMatchRefresh";
@@ -579,6 +580,16 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
           recapturePoints={recapturePoints}
         />
       </CollapsibleSection>
+
+      {/* Publish scores (commit step) */}
+      {ingestRounds.length > 0 && (
+        <CollapsibleSection
+          title="Publish scores"
+          subtitle="Make the results official: writes each player's score, accolades and XP from the reviewed rounds and marks the match scored. Requires 2FA; blocked while any capture ambiguity is unreviewed. Re-publishing replaces this match's committed rows. (ELO is a later phase.)"
+        >
+          <PublishScores matchId={match.id} alreadyPublished={!!match.xp_distributed_at} />
+        </CollapsibleSection>
+      )}
 
       {/* Match photos – uploaded to Cloudinary + the gallery, shown in the report */}
       <CollapsibleSection

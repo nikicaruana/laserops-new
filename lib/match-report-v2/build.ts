@@ -12,7 +12,7 @@
  *   Streaks add to score; accolades are XP-only (not in score).
  */
 import { parseRound, type Round } from "../ingestion/round-parser";
-import { effectiveCaptures } from "../ingestion/effective";
+import { effectiveWithResolutions, type RoundResolutions } from "../ingestion/resolutions";
 import { detectStreaks, STREAK_NAMES } from "../ingestion/streaks";
 import { buildKillMatrix } from "../ingestion/kill-matrix";
 import { computeAccolades } from "../ingestion/accolades";
@@ -62,7 +62,7 @@ type Acc = {
 };
 
 export function buildMatchReportV2(
-  rawRounds: { raw: string }[],
+  rawRounds: { raw: string; resolutions?: RoundResolutions }[],
   meta: { matchId: string; label: string; date?: string | null },
 ): MatchReportV2 {
   const { spawnWindowSeconds, minHoldSeconds, recaptureWindowSeconds, capturePoints, recapturePoints, holdPerSecond } = V2_SCORING;
@@ -98,8 +98,9 @@ export function buildMatchReportV2(
     for (const k of r.events.kills) { const t = ep(k.time); const rs = lastRes(k.victim_id, t); if (rs != null && t - rs <= spawnWindowSeconds) { const nm = nameOf[k.actor_id]; if (nm) A(k.actor_id, nm, "").spawnKills++; } }
     for (const dm of r.events.damage) { if (dm.damage <= 0) continue; const t = ep(dm.time); const rs = lastRes(dm.victim_id, t); if (rs != null && t - rs <= spawnWindowSeconds) { const nm = nameOf[dm.actor_id]; if (nm) A(dm.actor_id, nm, "").spawnDamage += dm.damage; } }
 
-    // Effective captures/hold (sub-5s excluded, recaptures).
-    const eff = effectiveCaptures(r, { minHoldSeconds, recaptureWindowSeconds });
+    // Effective captures/hold with admin resolutions applied (assign + even
+    // split), sub-5s excluded, recaptures. `rr` is the resolution-adjusted round.
+    const { round: rr, eff } = effectiveWithResolutions(r, { minHoldSeconds, recaptureWindowSeconds }, rawRounds[i].resolutions);
     for (const p of r.players) { const a = acc[p.name]; if (!a) continue;
       a.captures += eff.captures[p.in_game_player_id] ?? 0;
       a.recaptures += eff.recaptures[p.in_game_player_id] ?? 0;
@@ -107,19 +108,19 @@ export function buildMatchReportV2(
       a.hold += eff.holdSeconds[p.in_game_player_id] ?? 0;
     }
 
-    // Streaks — capture-based streaks respect the <5s exclusion.
+    // Streaks — capture-based streaks respect the <5s exclusion + resolutions.
     const excludedKey = new Set<string>();
-    const periodOf = (b: number, f: string) => r.base_ownership.find((pp) => pp.base_id === b && pp.from_time === f);
-    const burnEp: Record<number, number> = {}; for (const b of r.result.burns) burnEp[b.base_id] = b.burn_epoch;
-    for (const cap of r.events.captures) {
+    const periodOf = (b: number, f: string) => rr.base_ownership.find((pp) => pp.base_id === b && pp.from_time === f);
+    const burnEp: Record<number, number> = {}; for (const b of rr.result.burns) burnEp[b.base_id] = b.burn_epoch;
+    for (const cap of rr.events.captures) {
       if (cap.capturing_player_id == null || cap.base_id < 0) continue;
       const per = periodOf(cap.base_id, cap.time); const held = per ? per.held_seconds : 0; const ct = ep(cap.time);
       const toT = per && per.to_time ? ep(per.to_time) : ct + held;
       const burnIn = burnEp[cap.base_id] != null && burnEp[cap.base_id] >= ct - 1 && burnEp[cap.base_id] <= toT + 1;
       if (held < minHoldSeconds && !burnIn) excludedKey.add(`${cap.capturing_player_id}:${cap.base_id}:${cap.time}`);
     }
-    const filtered = r.events.captures.filter((c) => !(c.capturing_player_id != null && c.base_id >= 0 && excludedKey.has(`${c.capturing_player_id}:${c.base_id}:${c.time}`)));
-    const rStreak: Round = { ...r, events: { ...r.events, captures: filtered } };
+    const filtered = rr.events.captures.filter((c) => !(c.capturing_player_id != null && c.base_id >= 0 && excludedKey.has(`${c.capturing_player_id}:${c.base_id}:${c.time}`)));
+    const rStreak: Round = { ...rr, events: { ...rr.events, captures: filtered } };
     for (const aw of detectStreaks(rStreak)) {
       const pts = STREAK_POINTS[aw.key] ?? 0; if (!pts) continue; const nm = nameOf[aw.player_id]; if (!nm) continue;
       const a = acc[nm]; if (!a) continue; a.streakPoints += pts; a.streaks[aw.key] = (a.streaks[aw.key] ?? 0) + 1;
