@@ -38,6 +38,24 @@ export default async function MatchReportV2Page({ searchParams }: { searchParams
         <p className="w-full text-sm text-text-muted">A preview of the new match-report format and scoring, generated from the game data.</p>
       </header>
 
+      {/* Work-in-progress disclaimer */}
+      <div className="mb-5 rounded-md border border-accent bg-bg-elevated px-4 py-3 text-sm text-text">
+        <span className="font-semibold uppercase tracking-[0.1em] text-accent">Work in progress · </span>
+        This is a preview to show the new report format and scoring. Nothing here is final — the scoring model, values and layout are all still being tuned and may change.
+      </div>
+
+      {/* Scoring notes */}
+      <div className="mb-6 rounded-md border border-border bg-bg-elevated px-4 py-3 text-sm text-text-muted">
+        <p className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-text-subtle">How it&apos;s currently scored</p>
+        <ul className="mt-2 list-disc space-y-1 pl-5">
+          <li><span className="text-text">Base capture:</span> 75 points — only if the base is held for at least 5 seconds (shorter captures don&apos;t count).</li>
+          <li><span className="text-text">Recapture:</span> 50 points — retaking the same base within 20 seconds.</li>
+          <li><span className="text-text">Hold:</span> 2 points per second a base is held.</li>
+          <li><span className="text-text">Kills:</span> score also factors in kills, damage, accuracy and K/D; spawn-trap kills are voided. Streaks add points too.</li>
+          <li><span className="text-text">XP (estimated):</span> score + 750 per round won + 500 for the match win + accolade XP. Accolades give XP only, not score.</li>
+        </ul>
+      </div>
+
       <div className="mb-6">
         <MatchPicker matches={matches} current={report.game.matchId} />
       </div>

@@ -62,6 +62,7 @@ type BestValues = {
   accuracy: number;
   damage: number;
   totalXp: number;
+  xpEarnedThisMatch: number;
   objCaps: number;
   capTime: number;
   scoreByGun: Map<string, number>;
@@ -70,7 +71,7 @@ type BestValues = {
 function computeBestValues(players: MatchPlayer[]): BestValues {
   if (players.length === 0) {
     return {
-      score: 0, kills: 0, deaths: 0, kd: 0, accuracy: 0, damage: 0, totalXp: 0, objCaps: 0, capTime: 0,
+      score: 0, kills: 0, deaths: 0, kd: 0, accuracy: 0, damage: 0, totalXp: 0, xpEarnedThisMatch: 0, objCaps: 0, capTime: 0,
       scoreByGun: new Map(),
     };
   }
@@ -91,6 +92,7 @@ function computeBestValues(players: MatchPlayer[]): BestValues {
     accuracy: Math.max(...players.map((p) => p.accuracy)),
     damage: Math.max(...players.map((p) => p.damage)),
     totalXp: Math.max(...players.map((p) => p.totalXp)),
+    xpEarnedThisMatch: Math.max(...players.map((p) => p.xpEarnedThisMatch)),
     objCaps: Math.max(...players.map((p) => p.objCaps ?? 0)),
     capTime: Math.max(...players.map((p) => p.capTime ?? 0)),
     scoreByGun,
@@ -149,6 +151,7 @@ export function PlayersTable({ players, matchId, selectedPlayer, linkNamesToProf
               <Th align="right">Dmg</Th>
               <Th align="right" tight>Caps</Th>
               <Th align="right">Cap Time</Th>
+              <Th align="right">XP</Th>
             </tr>
           </thead>
           <tbody>
@@ -382,6 +385,10 @@ function PlayerRow({
 
       <BestTd value={player.capTime ?? 0} best={best.capTime} format="number">
         <RowLink href={href}>{`${player.capTime ?? 0}s`}</RowLink>
+      </BestTd>
+
+      <BestTd value={player.xpEarnedThisMatch} best={best.xpEarnedThisMatch} format="number">
+        <RowLink href={href}>{player.xpEarnedThisMatch.toLocaleString("en-US")}</RowLink>
       </BestTd>
     </tr>
   );
