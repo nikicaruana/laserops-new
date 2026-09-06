@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Accolade } from "@/lib/cms/accolades";
 import { cn } from "@/lib/cn";
+import { cldImage } from "@/lib/cld";
 
 /**
  * AccoladeTile
@@ -101,7 +102,7 @@ export function AccoladeTile({ accolade }: { accolade: Accolade }) {
             became redundant after we flipped the section to dark. */}
         {accolade.badgeUrl !== "" ? (
           <img
-            src={accolade.badgeUrl}
+            src={cldImage(accolade.badgeUrl, { w: 336 })}
             alt={accolade.name}
             loading="lazy"
             className="block h-32 w-32 object-contain sm:h-40 sm:w-40"
@@ -147,7 +148,7 @@ export function AccoladeTile({ accolade }: { accolade: Accolade }) {
               {accolade.badgeUrl !== "" && (
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center bg-bg-overlay p-1">
                   <img
-                    src={accolade.badgeUrl}
+                    src={cldImage(accolade.badgeUrl, { w: 112 })}
                     alt=""
                     className="block h-full w-full object-contain"
                   />

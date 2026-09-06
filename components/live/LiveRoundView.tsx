@@ -12,6 +12,7 @@
  */
 import { useMemo, useState } from "react";
 import { type LiveSnapshot, teamHex, mmss, sb, BASE_IMAGES, baseStateAt, STREAK_NAMES } from "@/lib/live-sim/engine";
+import { cldImage } from "@/lib/cld";
 
 function BaseEmblem({ color, size = 40 }: { color: string; size?: number }) {
   return (
@@ -85,7 +86,7 @@ export function LiveRoundView({
           const img = owner ? BASE_IMAGES[owner.toLowerCase()] : BASE_IMAGES["neutral"];
           return (
             <div key={base.id} className="rounded-lg p-2 text-center" style={{ borderStyle: burned ? "dotted" : "solid", borderWidth: burned ? 3 : 1, borderColor: burned ? teamHex(st!.burnTeam) : teamHex(owner) + "88", backgroundColor: teamHex(owner) + "14", animation: anim === "crit" ? "lsGlow 0.7s ease-in-out infinite" : undefined }}>
-              <div className="flex justify-center" style={{ animation: sizeAnim }}>{img ? <img src={img} alt={base.name} className="h-10 w-10 object-contain" /> : <BaseEmblem color={teamHex(owner)} />}</div>
+              <div className="flex justify-center" style={{ animation: sizeAnim }}>{img ? <img src={cldImage(img, { w: 96 })} alt={base.name} className="h-10 w-10 object-contain" /> : <BaseEmblem color={teamHex(owner)} />}</div>
               <div className="mt-1 truncate text-[0.65rem] font-extrabold uppercase tracking-[0.06em]" title={base.name} style={{ color: burned ? teamHex(st!.burnTeam) : undefined }}>{base.name}</div>
               <div className="mt-1 space-y-0.5">
                 {snap.teams.map((tm) => { const held = st?.hold[tm] ?? 0; const isOwner = owner === tm; return (
@@ -121,10 +122,10 @@ export function LiveRoundView({
                 const otherTeam = isKill ? f.victimTeam : f.actorTeam;
                 const tid = `${f.t}:${f.actor}:${f.victim}`;
                 if (isKill) return (
-                  <li key={i} className="flex items-center gap-1.5 rounded-md bg-emerald-950/30 px-2 py-1 text-xs"><span className="font-semibold text-emerald-300">You</span>{gunOf.get(me!)?.gunImage ? <img src={gunOf.get(me!)!.gunImage} alt="" className="h-3.5 w-auto opacity-90" /> : <span>›</span>}<span className="truncate" style={{ color: teamHex(otherTeam) }}>{other}</span>{f.spawn && <span className="ml-auto rounded bg-red-900/60 px-1 text-[0.5rem] font-bold uppercase text-red-300">spawn</span>}</li>
+                  <li key={i} className="flex items-center gap-1.5 rounded-md bg-emerald-950/30 px-2 py-1 text-xs"><span className="font-semibold text-emerald-300">You</span>{gunOf.get(me!)?.gunImage ? <img src={cldImage(gunOf.get(me!)!.gunImage, { w: 64 })} alt="" className="h-3.5 w-auto opacity-90" /> : <span>›</span>}<span className="truncate" style={{ color: teamHex(otherTeam) }}>{other}</span>{f.spawn && <span className="ml-auto rounded bg-red-900/60 px-1 text-[0.5rem] font-bold uppercase text-red-300">spawn</span>}</li>
                 );
                 return (
-                  <li key={i} className="flex items-center gap-1.5 rounded-md bg-red-950/30 px-2 py-1 text-xs"><span className="truncate font-semibold" style={{ color: teamHex(otherTeam) }}>{other}</span>{gunOf.get(other)?.gunImage ? <img src={gunOf.get(other)!.gunImage} alt="" className="h-3.5 w-auto opacity-90" /> : <span>›</span>}<span className="text-red-300">You</span>{sentTaunts.has(tid) ? <span className="ml-auto text-text-subtle">🖕 sent</span> : <button type="button" onClick={() => setSentTaunts((p) => new Set(p).add(tid))} className="ml-auto shrink-0 rounded border border-border-strong px-1.5 py-0.5 text-[0.6rem] hover:border-accent" title={`Send ${other} a 🖕`}>🖕</button>}</li>
+                  <li key={i} className="flex items-center gap-1.5 rounded-md bg-red-950/30 px-2 py-1 text-xs"><span className="truncate font-semibold" style={{ color: teamHex(otherTeam) }}>{other}</span>{gunOf.get(other)?.gunImage ? <img src={cldImage(gunOf.get(other)!.gunImage, { w: 64 })} alt="" className="h-3.5 w-auto opacity-90" /> : <span>›</span>}<span className="text-red-300">You</span>{sentTaunts.has(tid) ? <span className="ml-auto text-text-subtle">🖕 sent</span> : <button type="button" onClick={() => setSentTaunts((p) => new Set(p).add(tid))} className="ml-auto shrink-0 rounded border border-border-strong px-1.5 py-0.5 text-[0.6rem] hover:border-accent" title={`Send ${other} a 🖕`}>🖕</button>}</li>
                 );
               })}
             </ul>
@@ -134,7 +135,7 @@ export function LiveRoundView({
             <div className="mb-1 px-1 text-[0.55rem] font-semibold uppercase tracking-[0.14em] text-text-subtle">Your streaks</div>
             <div className="ls-scroll flex gap-2 overflow-x-auto pb-1">
               {myStreaks.length === 0 && <span className="px-1 text-xs text-text-subtle">None yet — get on a run!</span>}
-              {myStreaks.map((s, i) => (<div key={i} className="flex shrink-0 flex-col items-center"><img src={sb(s.key)} alt={STREAK_NAMES[s.key] ?? s.key} className="h-11 w-11 object-contain" /><span className="mt-0.5 whitespace-nowrap text-[0.55rem] text-text-muted">{STREAK_NAMES[s.key] ?? s.key}</span></div>))}
+              {myStreaks.map((s, i) => (<div key={i} className="flex shrink-0 flex-col items-center"><img src={cldImage(sb(s.key), { w: 96 })} alt={STREAK_NAMES[s.key] ?? s.key} className="h-11 w-11 object-contain" /><span className="mt-0.5 whitespace-nowrap text-[0.55rem] text-text-muted">{STREAK_NAMES[s.key] ?? s.key}</span></div>))}
             </div>
           </div>
         </>
@@ -147,7 +148,7 @@ export function LiveRoundView({
               {gFeed.map((f, i) => (
                 <li key={i} className="flex items-center gap-1.5 rounded-md bg-bg-elevated px-2 py-1 text-xs">
                   <span className="truncate font-semibold" style={{ color: teamHex(f.actorTeam) }}>{f.actor}</span>
-                  {gunOf.get(f.actor)?.gunImage ? <img src={gunOf.get(f.actor)!.gunImage} alt="" className="h-3.5 w-auto opacity-90" /> : <span>›</span>}
+                  {gunOf.get(f.actor)?.gunImage ? <img src={cldImage(gunOf.get(f.actor)!.gunImage, { w: 64 })} alt="" className="h-3.5 w-auto opacity-90" /> : <span>›</span>}
                   <span className="truncate" style={{ color: teamHex(f.victimTeam) }}>{f.victim}</span>
                   {f.spawn && <span className="ml-auto rounded bg-red-900/60 px-1 text-[0.5rem] font-bold uppercase text-red-300">spawn</span>}
                 </li>

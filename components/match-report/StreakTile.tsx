@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { MatchStreak } from "@/lib/match-report/engine";
 import { cn } from "@/lib/cn";
+import { cldImage } from "@/lib/cld";
 
 /**
  * StreakTile
@@ -65,7 +66,7 @@ export function StreakTile({ streak }: { streak: MatchStreak }) {
       >
         <span className="relative">
           {streak.badgeUrl !== "" ? (
-            <img src={streak.badgeUrl} alt={streak.name} loading="lazy" className="block h-24 w-24 object-contain sm:h-28 sm:w-28" />
+            <img src={cldImage(streak.badgeUrl, { w: 240 })} alt={streak.name} loading="lazy" className="block h-24 w-24 object-contain sm:h-28 sm:w-28" />
           ) : (
             <span aria-hidden className="flex h-24 w-24 items-center justify-center border border-border text-[0.6rem] uppercase text-text-subtle sm:h-28 sm:w-28">{streak.name}</span>
           )}
@@ -91,7 +92,7 @@ export function StreakTile({ streak }: { streak: MatchStreak }) {
             <div className="flex items-center gap-3">
               {streak.badgeUrl !== "" && (
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center bg-bg-overlay p-1">
-                  <img src={streak.badgeUrl} alt="" className="block h-full w-full object-contain" />
+                  <img src={cldImage(streak.badgeUrl, { w: 112 })} alt="" className="block h-full w-full object-contain" />
                 </div>
               )}
               <div className="flex flex-col">

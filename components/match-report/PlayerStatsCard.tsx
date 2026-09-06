@@ -9,6 +9,7 @@ import { AnimatedNumber } from "./AnimatedNumber";
 import { AccoladeTile } from "./AccoladeTile";
 import { StreakTile } from "./StreakTile";
 import { BracketFrame } from "@/components/portal/BracketFrame";
+import { cldImage } from "@/lib/cld";
 import { FollowButton } from "@/components/portal/FollowButton";
 import { ShareStoryButton } from "./ShareStoryButton";
 import { cn } from "@/lib/cn";
@@ -85,7 +86,7 @@ export function PlayerStatsCard({ player, ranks, matchId, canShare = true }: Pro
         <div className="sm:hidden">
           <BracketFrame cornerSize="0.875rem" thickness="2px" inset="-0.25rem">
             <img
-              src={player.profilePicUrl}
+              src={cldImage(player.profilePicUrl, { w: 224 })}
               alt={`${player.nickname} profile photo`}
               loading="lazy"
               className="block aspect-square w-24 object-cover"
@@ -95,7 +96,7 @@ export function PlayerStatsCard({ player, ranks, matchId, canShare = true }: Pro
         <div className="hidden sm:block">
           <BracketFrame cornerSize="1.5rem" thickness="3px" inset="-0.4rem">
             <img
-              src={player.profilePicUrl}
+              src={cldImage(player.profilePicUrl, { w: 384 })}
               alt={`${player.nickname} profile photo`}
               loading="lazy"
               className="block aspect-square w-48 object-cover"
@@ -260,7 +261,7 @@ export function PlayerStatsCard({ player, ranks, matchId, canShare = true }: Pro
           <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-5 sm:gap-x-14">
             <div className="flex items-center gap-4">
               <img
-                src={player.nemesis.profilePicUrl}
+                src={cldImage(player.nemesis.profilePicUrl, { w: 160 })}
                 alt={`${player.nemesis.nickname} profile photo`}
                 loading="lazy"
                 className="block aspect-square w-16 shrink-0 rounded-sm border border-border-strong object-cover sm:w-20"
@@ -344,7 +345,7 @@ function GunUsedCard({
     <div className="flex flex-col items-center justify-center gap-1 rounded-sm bg-accent px-3 py-3 text-bg sm:px-4 sm:py-4">
       {imageUrl !== "" ? (
         <img
-          src={imageUrl}
+          src={cldImage(imageUrl, { w: 480 })}
           alt={weaponName}
           loading="lazy"
           decoding="async"
