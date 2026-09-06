@@ -35,15 +35,51 @@ export const TABLE_LABELS: Record<string, string> = {
   seasons: "Seasons",
   challenges: "Challenges",
   spawn_camp_config: "Spawn-camp config",
+  base_trading_config: "Base-trading config",
   streak_definitions: "Streaks",
   streak_rules: "Streak rules",
   excluded_players: "Excluded players",
+  match_signups: "Game signup",
+  match_participants: "Roster entry",
 };
 
 export const tableLabel = (t: string): string => TABLE_LABELS[t] ?? t;
 
 export const actionVerb = (a: string): string =>
   a === "INSERT" ? "created" : a === "DELETE" ? "deleted" : "updated";
+
+/** Fields that are noise in a change log (identity / timestamps). */
+const IGNORE_FIELDS = new Set(["id", "operator_id", "created_at", "updated_at", "created_by", "updated_by"]);
+
+export type FieldChange = { field: string; from: unknown; to: unknown };
+
+/** The fields that actually changed between old_data and new_data (before → after). */
+export function changedFields(entry: AuditEntry): FieldChange[] {
+  const oldD = (entry.old_data ?? {}) as Record<string, unknown>;
+  const newD = (entry.new_data ?? {}) as Record<string, unknown>;
+  const keys = new Set([...Object.keys(oldD), ...Object.keys(newD)]);
+  const out: FieldChange[] = [];
+  for (const k of keys) {
+    if (IGNORE_FIELDS.has(k)) continue;
+    if (JSON.stringify(oldD[k]) !== JSON.stringify(newD[k])) out.push({ field: k, from: oldD[k], to: newD[k] });
+  }
+  return out;
+}
+
+/** Human label for a snake_case field name. */
+export const fieldLabel = (f: string): string =>
+  f.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
+/** Compact display of a value (truncates large objects). */
+export function fmtVal(v: unknown): string {
+  if (v == null || v === "") return "—";
+  if (typeof v === "boolean") return v ? "on" : "off";
+  if (typeof v === "object") {
+    const s = JSON.stringify(v);
+    return s.length > 80 ? s.slice(0, 77) + "…" : s;
+  }
+  return String(v);
+}
 
 /** Best-effort human name for the affected row. */
 export function targetName(entry: AuditEntry): string | null {

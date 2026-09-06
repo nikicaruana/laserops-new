@@ -2,12 +2,15 @@
  * components/admin/ChangeLogList.tsx
  * --------------------------------------------------------------------
  * Renders a list of admin_audit_log entries (who / when / what). Server
- * component — display only.
+ * component – display only.
  */
 import {
   actionVerb,
   tableLabel,
   targetName,
+  changedFields,
+  fieldLabel,
+  fmtVal,
   type AuditEntry,
 } from "@/lib/admin/audit";
 
@@ -30,15 +33,32 @@ export function ChangeLogList({ entries }: { entries: AuditEntry[] }) {
     <ul className="divide-y divide-border border border-border">
       {entries.map((e) => {
         const name = targetName(e);
+        const changes = changedFields(e);
         return (
-          <li key={e.id} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-4 py-3">
-            <div className="min-w-0 text-sm">
-              <span className="font-semibold text-accent">{e.actor_ops_tag ?? "System"}</span>{" "}
-              <span className="text-text-muted">{actionVerb(e.action)}</span>{" "}
-              <span className="text-text">{tableLabel(e.table_name)}</span>
-              {name && <span className="text-text-muted"> · {name}</span>}
+          <li key={e.id} className="px-4 py-3">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+              <div className="min-w-0 text-sm">
+                <span className="font-semibold text-accent">{e.actor_ops_tag ?? "System"}</span>{" "}
+                <span className="text-text-muted">{actionVerb(e.action)}</span>{" "}
+                <span className="text-text">{tableLabel(e.table_name)}</span>
+                {name && <span className="text-text-muted"> · {name}</span>}
+              </div>
+              <span className="shrink-0 font-mono text-xs text-text-subtle">{when(e.created_at)}</span>
             </div>
-            <span className="shrink-0 font-mono text-xs text-text-subtle">{when(e.created_at)}</span>
+            {changes.length > 0 && (
+              <ul className="mt-1.5 space-y-0.5">
+                {changes.map((c) => (
+                  <li key={c.field} className="text-xs text-text-muted">
+                    <span className="text-text-subtle">{fieldLabel(c.field)}:</span>{" "}
+                    {e.action === "UPDATE" ? (
+                      <><span className="text-text-subtle line-through">{fmtVal(c.from)}</span> <span className="text-text-subtle">→</span> <span className="font-semibold text-text">{fmtVal(c.to)}</span></>
+                    ) : (
+                      <span className="font-semibold text-text">{fmtVal(e.action === "DELETE" ? c.from : c.to)}</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
           </li>
         );
       })}
