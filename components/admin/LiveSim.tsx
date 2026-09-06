@@ -23,7 +23,7 @@ const BASE_IMAGES: Record<string, string> = {
   blue: "https://res.cloudinary.com/dqud5b7pa/image/upload/v1788695676/Capture-Base-Blue_vgfkcw.png",
   yellow: "https://res.cloudinary.com/dqud5b7pa/image/upload/v1788695676/Capture-Base-Yellow_gs2dzo.png",
   red: "https://res.cloudinary.com/dqud5b7pa/image/upload/v1788695676/Capture-Base-Red_mjgf1b.png",
-  // neutral (uncaptured) falls back to the tinted grey emblem.
+  neutral: "https://res.cloudinary.com/dqud5b7pa/image/upload/v1788702466/Capture-Base-Grey_ssigi0.png",
 };
 
 const TEAM_HEX: Record<string, string> = { Blue: "#3b82f6", Yellow: "#eab308", Red: "#ef4444", Green: "#22c55e" };
