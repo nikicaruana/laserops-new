@@ -149,7 +149,6 @@ export function PlayersTable({ players, matchId, selectedPlayer, linkNamesToProf
               <Th align="right">Dmg</Th>
               <Th align="right" tight>Caps</Th>
               <Th align="right">Cap Time</Th>
-              <Th align="right">Total XP</Th>
             </tr>
           </thead>
           <tbody>
@@ -383,10 +382,6 @@ function PlayerRow({
 
       <BestTd value={player.capTime ?? 0} best={best.capTime} format="number">
         <RowLink href={href}>{`${player.capTime ?? 0}s`}</RowLink>
-      </BestTd>
-
-      <BestTd value={player.totalXp} best={best.totalXp} format="number">
-        <RowLink href={href}>{player.totalXp.toLocaleString("en-US")}</RowLink>
       </BestTd>
     </tr>
   );

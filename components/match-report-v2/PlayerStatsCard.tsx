@@ -213,9 +213,9 @@ export function PlayerStatsCard({ player, ranks, matchId, canShare = true }: Pro
 
       {/* Streaks earned in this match. Tap a badge for its description. */}
       {(player.matchStreaks?.length ?? 0) > 0 && (
-        <div className="mt-6 rounded-sm border border-border bg-bg-elevated px-5 py-5 text-text sm:mt-8 sm:px-6 sm:py-6">
+        <div className="mt-6 rounded-sm border border-border bg-bg-elevated px-2 py-5 text-text sm:mt-8 sm:px-6 sm:py-6">
           <h3 className="text-center text-base font-extrabold uppercase tracking-[0.16em] sm:text-lg">Streaks Obtained</h3>
-          <div className="mt-5 flex flex-wrap justify-center gap-x-4 gap-y-4 sm:gap-6">
+          <div className="mt-5 grid grid-cols-3 justify-items-center gap-x-1 gap-y-4 sm:flex sm:flex-wrap sm:justify-center sm:gap-6">
             {player.matchStreaks!.map((s) => (
               <StreakTile key={s.key} streak={s} />
             ))}
