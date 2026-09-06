@@ -15,20 +15,38 @@ import type { RoundResolutions } from "./resolutions";
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
 export type CommitAggregate = {
-  account_id: string | null; nickname: string; headset_label: string; team_colour: string;
-  frags: number; deaths: number; hits: number; shots: number; wounds: number; captures: number;
+  account_id: string | null; nickname: string; headset_label: string; team_colour: string; profile_pic_url: string | null;
+  frags: number; deaths: number; hits: number; shots: number; wounds: number; captures: number; hold_seconds: number;
   accuracy: number; kd: number; damage: number; score: number;
   score_rank: number; kills_rank: number; deaths_rank: number; kd_rank: number; accuracy_rank: number; damage_rank: number;
   was_winner: boolean; rounds_won: number; rounds_lost: number; team_score: number; opponent_team_score: number;
   xp_from_points: number; xp_from_wins: number; xp_from_accolades: number; xp_total: number;
 };
 export type CommitAward = { account_id: string | null; headset_label: string; nickname: string; accolade_definition_id: string; xp_granted: number };
-export type CommitResult = { aggregates: CommitAggregate[]; awards: CommitAward[]; winnerColour: string | null; roundsWonByTeam: Record<string, number>; roundCount: number };
+
+/** The match-level result summary, in the exact shape the Match Report reads
+ *  (lib/match-report/supabase-engine.ts buildGameInfo). Colour keys are
+ *  capitalised (Red/Blue/Yellow) to match the report's lookups. */
+export type NetResultSummary = {
+  round_wins: Record<string, number>;
+  team_ratings: Record<string, number>;
+  winning_team: string | null;
+  losing_team: string | null;
+  winning_rounds: number;
+  losing_rounds: number;
+};
+
+export type CommitResult = {
+  aggregates: CommitAggregate[]; awards: CommitAward[];
+  winnerColour: string | null; losingColour: string | null;
+  roundsWonByTeam: Record<string, number>; roundCount: number;
+  netResultSummary: NetResultSummary;
+};
 
 export function computeMatchCommit(
   rawRounds: { raw: string; resolutions?: RoundResolutions }[],
   accoladeByKey: Map<string, { id: string; xp: number }>,
-  identity: (headband: string) => { nickname: string; accountId: string | null },
+  identity: (headband: string) => { nickname: string; accountId: string | null; profilePicUrl?: string | null },
   xp = { roundWin: 750, matchWin: 500 },
 ): CommitResult {
   const report = buildMatchReportV2(rawRounds, { matchId: "commit", label: "commit" });
@@ -49,8 +67,8 @@ export function computeMatchCommit(
     const xpWins = xp.roundWin * teamRoundsWon + (isWinner ? xp.matchWin : 0);
     const xpAcc = p.accolades.reduce((s, nm) => s + (accoladeByKey.get(norm(nm))?.xp ?? 0), 0);
     return {
-      account_id: idn.accountId, nickname: idn.nickname, headset_label: p.name, team_colour: p.team,
-      frags: p.frags, deaths: p.deaths, hits: p.hits, shots: p.shots, wounds: p.wounds, captures: p.captures + p.recaptures,
+      account_id: idn.accountId, nickname: idn.nickname, headset_label: p.name, team_colour: p.team, profile_pic_url: idn.profilePicUrl ?? null,
+      frags: p.frags, deaths: p.deaths, hits: p.hits, shots: p.shots, wounds: p.wounds, captures: p.captures + p.recaptures, hold_seconds: Math.round(p.holdSeconds),
       accuracy: Math.round(p.accuracy * 10000) / 10000, kd: p.kd, damage: p.damage, score: p.totalScore,
       score_rank: rankOf(scores, p.totalScore), kills_rank: rankOf(kills, p.frags), deaths_rank: rankOf(deaths, p.deaths, false),
       kd_rank: rankOf(kds, p.kd), accuracy_rank: rankOf(accs, p.accuracy), damage_rank: rankOf(dmgs, p.damage),
@@ -70,5 +88,15 @@ export function computeMatchCommit(
     }
   }
 
-  return { aggregates, awards, winnerColour: winner, roundsWonByTeam: report.roundsWonByTeam, roundCount: report.roundCount };
+  const loser = winner ? Object.keys(teamScore).find((t) => t !== winner) ?? null : null;
+  const netResultSummary: NetResultSummary = {
+    round_wins: { ...report.roundsWonByTeam },
+    team_ratings: { ...teamScore },
+    winning_team: winner,
+    losing_team: loser,
+    winning_rounds: winner ? report.roundsWonByTeam[winner] ?? 0 : 0,
+    losing_rounds: loser ? report.roundsWonByTeam[loser] ?? 0 : 0,
+  };
+
+  return { aggregates, awards, winnerColour: winner, losingColour: loser, roundsWonByTeam: report.roundsWonByTeam, roundCount: report.roundCount, netResultSummary };
 }

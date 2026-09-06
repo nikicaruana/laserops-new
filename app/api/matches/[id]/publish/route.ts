@@ -41,14 +41,36 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   for (const rd of rounds) unreviewed += unreviewedCount(parseRound(rd.raw, { spawnWindowSeconds: 3 }), rd.resolutions);
   if (unreviewed > 0) return NextResponse.json({ error: `${unreviewed} unreviewed capture ambiguity${unreviewed === 1 ? "" : "ies"} — resolve them before publishing.` }, { status: 400 });
 
-  // Accolade id/xp map + roster identity (headset_label -> account + display name).
+  // Accolade id/xp map.
   const { data: accs } = await supabase.from("accolade_definitions").select("id, name, xp").eq("scope", "match");
   const accoladeByKey = new Map((accs ?? []).map((a) => [norm(a.name as string), { id: a.id as string, xp: (a.xp as number) ?? 0 }]));
+
+  // Roster identity: assigned headbands resolve to the player's profile
+  // (ops_tag + avatar); unassigned headbands keep their raw label ("Head 39").
+  // Headbands appear as "Head 39" in the round data but the identity panel
+  // stores just the number ("39"), so match on the numeric part.
+  const hbKey = (s: string) => { const m = String(s).match(/\d+/); return m ? String(parseInt(m[0], 10)) : ""; };
   const { data: parts } = await supabase.from("match_participants").select("headset_label, account_id, display_name").eq("match_id", id);
-  const byLabel = new Map((parts ?? []).map((p) => [String(p.headset_label ?? "").toLowerCase(), p]));
+  const accIds = [...new Set((parts ?? []).map((p) => p.account_id).filter(Boolean) as string[])];
+  const { data: accRows } = accIds.length
+    ? await supabase.from("accounts").select("id, ops_tag, profile_pic_url").in("id", accIds)
+    : { data: [] as { id: string; ops_tag: string | null; profile_pic_url: string | null }[] };
+  const accById = new Map((accRows ?? []).map((a) => [a.id as string, a]));
+  const byHb = new Map<string, { nickname: string; accountId: string | null; profilePicUrl: string | null }>();
+  for (const p of parts ?? []) {
+    const k = hbKey(p.headset_label as string);
+    if (!k) continue;
+    const acc = p.account_id ? accById.get(p.account_id as string) : undefined;
+    byHb.set(k, {
+      nickname: acc?.ops_tag || (p.display_name as string) || "",
+      accountId: (p.account_id as string) ?? null,
+      profilePicUrl: acc?.profile_pic_url ?? null,
+    });
+  }
   const identity = (headband: string) => {
-    const p = byLabel.get(headband.toLowerCase());
-    return { nickname: (p?.display_name as string) || headband, accountId: (p?.account_id as string) ?? null };
+    const hit = byHb.get(hbKey(headband));
+    if (hit && hit.nickname) return hit;
+    return { nickname: headband, accountId: hit?.accountId ?? null, profilePicUrl: hit?.profilePicUrl ?? null };
   };
 
   const result = computeMatchCommit(rounds, accoladeByKey, identity);
@@ -71,7 +93,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   const { error: mErr } = await svc.from("matches").update({
     status: "completed",
     winning_team_colour: result.winnerColour,
-    net_result_summary: { roundsWonByTeam: result.roundsWonByTeam, winner: result.winnerColour },
+    net_result_summary: result.netResultSummary,
     round_count: result.roundCount,
     xp_distributed_at: now,
   }).eq("id", id);

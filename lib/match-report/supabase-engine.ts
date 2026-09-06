@@ -32,6 +32,8 @@ type AggRow = {
   profile_pic_url: string | null;
   frags: number | null;
   deaths: number | null;
+  captures: number | null;
+  hold_seconds: number | null;
   accuracy: number | null;
   kd: number | null;
   damage: number | null;
@@ -235,6 +237,9 @@ export async function fetchMatchReportSupabase(
       xpLevelUpInMatch: r.xp_level_up_in_match === true,
       xpLevelBadgeImage: rankBadge.get(n(r.level_after)) ?? "",
       earnedAccolades: earnedByHeadset.get(r.headset_label ?? "") ?? [],
+      // Objective columns (Caps count + seconds held) from the ingestion commit.
+      objCaps: n(r.captures),
+      capTime: Math.round(n(r.hold_seconds)),
     };
   });
 
