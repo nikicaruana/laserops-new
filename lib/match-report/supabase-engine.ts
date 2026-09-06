@@ -20,8 +20,14 @@ import type {
 import type { GameDataRow, GameDataRaw } from "@/lib/game-data/lookup";
 import { DEFAULT_AVATAR_URL } from "@/lib/avatar";
 import { ladderDisplayName } from "@/lib/ladders";
-
 const n = (v: number | null | undefined) => v ?? 0;
+
+/** 1-based rank of v among vals (higher is better by default). */
+const rankOf = (vals: number[], v: number, higher = true) => 1 + vals.filter((x) => (higher ? x > v : x < v)).length;
+
+type StoredStreak = { key: string; count: number; points: number };
+type StoredNemesis = { nickname: string; profilePicUrl: string | null; level: number; killsFor: number; killsAgainst: number } | null;
+type StoredTally = { nickname: string; count: number };
 
 type AggRow = {
   account_id: string | null;
@@ -34,6 +40,10 @@ type AggRow = {
   deaths: number | null;
   captures: number | null;
   hold_seconds: number | null;
+  streaks: StoredStreak[] | null;
+  nemesis: StoredNemesis;
+  killed: StoredTally[] | null;
+  killed_by: StoredTally[] | null;
   accuracy: number | null;
   kd: number | null;
   damage: number | null;
@@ -138,7 +148,7 @@ export async function fetchMatchReportSupabase(
 
   if (!match) return { ok: false, reason: "match-not-found" };
 
-  const [{ data: aggs }, { data: awards }, { data: defs }, { data: ranks }, { data: guns }, { data: teams }] =
+  const [{ data: aggs }, { data: awards }, { data: defs }, { data: ranks }, { data: guns }, { data: teams }, { data: streakDefs }] =
     await Promise.all([
       supabase.from("match_player_aggregate").select("*").eq("match_id", match.id),
       supabase.from("match_awards").select("headset_label, accolade_definition_id").eq("match_id", match.id),
@@ -146,7 +156,11 @@ export async function fetchMatchReportSupabase(
       supabase.from("rank_levels").select("level, rank_name, score_threshold, est_games, badge_url").order("level"),
       supabase.from("guns").select("name, image_url"),
       supabase.from("teams").select("colour, badge_url"),
+      supabase.from("streak_definitions").select("streak_key, name, description, badge_url"),
     ]);
+
+  const streakByKey = new Map(((streakDefs ?? []) as { streak_key: string; name: string | null; description: string | null; badge_url: string | null }[])
+    .map((d) => [d.streak_key, d]));
 
   const rows = (aggs ?? []) as unknown as AggRow[];
   if (rows.length === 0) return { ok: false, reason: "no-players" };
@@ -240,8 +254,28 @@ export async function fetchMatchReportSupabase(
       // Objective columns (Caps count + seconds held) from the ingestion commit.
       objCaps: n(r.captures),
       capTime: Math.round(n(r.hold_seconds)),
+      // Rich detail persisted by the commit step (streaks, nemesis, kill lists).
+      matchStreaks: (r.streaks ?? []).map((s) => {
+        const def = streakByKey.get(s.key);
+        return { key: s.key, name: def?.name ?? s.key, description: def?.description ?? "", badgeUrl: def?.badge_url ?? "", points: s.points, count: s.count };
+      }),
+      nemesis: r.nemesis
+        ? { nickname: r.nemesis.nickname, profilePicUrl: r.nemesis.profilePicUrl || DEFAULT_AVATAR_URL, level: r.nemesis.level,
+            killsFor: r.nemesis.killsFor, killsAgainst: r.nemesis.killsAgainst, damageFor: 0, damageAgainst: 0 }
+        : null,
+      killed: r.killed ?? [],
+      killedBy: r.killed_by ?? [],
     };
   });
+
+  // Objective-column ranks (Caps count + seconds held), computed here since the
+  // aggregate doesn't store the ranks for these two columns.
+  const capsVals = players.map((p) => p.objCaps ?? 0);
+  const holdVals = players.map((p) => p.capTime ?? 0);
+  for (const p of players) {
+    p.objCapsRank = rankOf(capsVals, p.objCaps ?? 0);
+    p.capTimeRank = rankOf(holdVals, p.capTime ?? 0);
+  }
 
   players.sort((a, b) => b.score - a.score);
 
