@@ -79,8 +79,8 @@ export type AmbiguousCaptureGroup = {
   team: string;
   base_ids: number[];
   player_ids: number[];
-  /** Hold seconds of each base in the group (what's at stake in the pairing). */
-  holds: { base_id: number; held_seconds: number }[];
+  /** Each base in the group: its name (device nickname) + hold seconds at stake. */
+  holds: { base_id: number; nickname: string; held_seconds: number }[];
 };
 
 export type BaseBurn = {
@@ -475,7 +475,8 @@ export function parseRound(
         const holds = bIds.map((b) => {
           const cap = g.find((c) => c.base_id === b)!;
           const per = base_ownership.find((p) => p.base_id === b && p.from_time === cap.time);
-          return { base_id: b, held_seconds: per?.held_seconds ?? 0 };
+          const nickname = bases.find((x) => x.device_id === b)?.nickname ?? "";
+          return { base_id: b, nickname, held_seconds: per?.held_seconds ?? 0 };
         });
         ambiguous_captures.push({ id: key, time: g[0].time, team: g[0].new_owner_team, base_ids: bIds, player_ids: pIds, holds });
       }

@@ -14,8 +14,7 @@ import { useRouter } from "next/navigation";
 import { parseRound, type Round } from "@/lib/ingestion/round-parser";
 import { laserOpsScores } from "@/lib/ingestion/score";
 import { evaluateStreaks, type StreakDef } from "@/lib/ingestion/streak-engine";
-import { effectiveCaptures } from "@/lib/ingestion/effective";
-import { resolveRound, unreviewedCount, type RoundResolutions } from "@/lib/ingestion/resolutions";
+import { effectiveWithResolutions, unreviewedCount, type RoundResolutions } from "@/lib/ingestion/resolutions";
 import type { ScoreFormula } from "@/lib/scoring/formula";
 import { createClient } from "@/lib/supabase/client";
 
@@ -186,14 +185,20 @@ function RoundPreview({
   onChangeResolutions: (next: RoundResolutions) => void;
   onRemove: () => void;
 }) {
-  // Apply admin resolutions (ambiguous same-second captures) before scoring.
-  const rr = resolveRound(r, resolutions);
-  const scores = laserOpsScores(rr, formula, voidSpawn, {
-    minHoldSeconds: tradeMinHoldSeconds,
-    recaptureWindowSeconds,
-    recapturePoints,
-  });
-  const eff = effectiveCaptures(rr, { minHoldSeconds: tradeMinHoldSeconds, recaptureWindowSeconds });
+  // Apply admin resolutions (ambiguous same-second captures) before scoring:
+  // reassignments + optional even hold split, reflected in scores/hold/streaks.
+  const { round: rr, eff } = effectiveWithResolutions(
+    r,
+    { minHoldSeconds: tradeMinHoldSeconds, recaptureWindowSeconds },
+    resolutions,
+  );
+  const scores = laserOpsScores(
+    rr,
+    formula,
+    voidSpawn,
+    { minHoldSeconds: tradeMinHoldSeconds, recaptureWindowSeconds, recapturePoints },
+    eff,
+  );
   const tradesConfigured = !!tradeMinHoldSeconds && tradeMinHoldSeconds > 0;
   const ambiguities = r.ambiguous_captures ?? [];
   const unreviewed = unreviewedCount(r, resolutions);
@@ -262,7 +267,7 @@ function RoundPreview({
             ⚠ Same-second capture ambiguity — review before final scoring
           </p>
           <p className="mt-1 text-[0.7rem] text-text-muted">
-            Two or more players on the same team captured different bases in the same second, so the data can&apos;t prove who captured which base — hold time may be credited to the wrong player. Assign each base to the correct player (or keep the detected pairing), then mark it reviewed.
+            Two or more players on the same team captured different bases in the same second, so the data can&apos;t prove who captured which base — capture time may be credited to the wrong player. Assign each base (shown by name) to the correct player, or split the capture time evenly between them, then mark it reviewed.
           </p>
           <div className="mt-3 space-y-3">
             {ambiguities.map((g) => {
@@ -273,8 +278,10 @@ function RoundPreview({
               }
               const cur = resolutions[g.id]?.assign ?? def;
               const reviewed = resolutions[g.id]?.reviewed ?? false;
-              const update = (assign: Record<string, number>, rev: boolean) =>
-                onChangeResolutions({ ...resolutions, [g.id]: { assign, reviewed: rev } });
+              const split = resolutions[g.id]?.split ?? false;
+              const update = (assign: Record<string, number>, rev: boolean, sp: boolean) =>
+                onChangeResolutions({ ...resolutions, [g.id]: { assign, reviewed: rev, split: sp } });
+              const totalHold = g.holds.reduce((s, h) => s + h.held_seconds, 0);
               return (
                 <div key={g.id} className={`border px-3 py-2 ${reviewed ? "border-emerald-700/60 bg-emerald-950/20" : "border-red-700/60"}`}>
                   <div className="flex items-center justify-between gap-2">
@@ -284,11 +291,16 @@ function RoundPreview({
                   <div className="mt-2 space-y-1.5">
                     {g.holds.map((h) => (
                       <div key={h.base_id} className="flex flex-wrap items-center gap-2 text-xs">
-                        <span className="text-text-muted">Base {h.base_id} <span className="text-text-subtle">({fmtHold(h.held_seconds)} held)</span> captured by</span>
+                        <span className="text-text-muted">
+                          <span className="font-semibold text-text">{h.nickname || `Base #${h.base_id}`}</span>
+                          {h.nickname ? <span className="text-text-subtle"> (#{h.base_id})</span> : null}
+                          <span className="text-text-subtle"> · {fmtHold(h.held_seconds)} held</span> · captured by
+                        </span>
                         <select
                           value={String(cur[String(h.base_id)] ?? "")}
-                          onChange={(e) => update({ ...cur, [String(h.base_id)]: Number(e.target.value) }, true)}
-                          className="border border-border-strong bg-bg px-2 py-1 text-xs text-text"
+                          onChange={(e) => update({ ...cur, [String(h.base_id)]: Number(e.target.value) }, true, split)}
+                          disabled={split}
+                          className="border border-border-strong bg-bg px-2 py-1 text-xs text-text disabled:opacity-50"
                         >
                           {g.player_ids.map((pid) => (
                             <option key={pid} value={String(pid)}>{playerLabel(pid)}</option>
@@ -297,11 +309,16 @@ function RoundPreview({
                       </div>
                     ))}
                   </div>
+                  <label className="mt-2 flex items-center gap-2 text-xs text-text-muted">
+                    <input type="checkbox" checked={split} onChange={(e) => update(cur, true, e.target.checked)} className="accent-accent" />
+                    Split capture time evenly between {g.player_ids.map((p) => playerLabel(p)).join(" & ")}
+                    {split ? <span className="text-text-subtle">({fmtHold(Math.floor(totalHold / g.player_ids.length))} each)</span> : null}
+                  </label>
                   <div className="mt-2 flex gap-2">
                     {!reviewed ? (
-                      <button type="button" onClick={() => update(cur, true)} className="border border-accent bg-accent px-3 py-1 text-[0.6rem] font-bold uppercase tracking-[0.1em] text-bg">Mark reviewed</button>
+                      <button type="button" onClick={() => update(cur, true, split)} className="border border-accent bg-accent px-3 py-1 text-[0.6rem] font-bold uppercase tracking-[0.1em] text-bg">Mark reviewed</button>
                     ) : (
-                      <button type="button" onClick={() => update(cur, false)} className="border border-border px-3 py-1 text-[0.6rem] font-bold uppercase tracking-[0.1em] text-text-subtle hover:text-text">Reopen</button>
+                      <button type="button" onClick={() => update(cur, false, split)} className="border border-border px-3 py-1 text-[0.6rem] font-bold uppercase tracking-[0.1em] text-text-subtle hover:text-text">Reopen</button>
                     )}
                   </div>
                 </div>
