@@ -21,6 +21,7 @@ import { IngestPanel, type SavedRound } from "@/components/admin/IngestPanel";
 import { PublishScores } from "@/components/admin/PublishScores";
 import { PublishedPlayersEditor } from "@/components/admin/PublishedPlayersEditor";
 import { RecomputeResults } from "@/components/admin/RecomputeResults";
+import { LiveIngestWatcher } from "@/components/admin/LiveIngestWatcher";
 import { HeadbandIdentityPanel, type HeadbandRow } from "@/components/admin/HeadbandIdentityPanel";
 import { CollapsibleSection } from "@/components/admin/CollapsibleSection";
 import { RealtimeMatchRefresh } from "@/components/admin/RealtimeMatchRefresh";
@@ -595,6 +596,14 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
           />
         </CollapsibleSection>
       )}
+
+      {/* Live auto-ingest – watch the AlphaTag export folder on the venue tablet */}
+      <CollapsibleSection
+        title="Live auto-ingest"
+        subtitle="On the venue tablet (Chrome/Edge), connect the AlphaTag export folder once. As each round's JSON file is written, it's ingested onto this match automatically — no manual upload. Then review & publish below."
+      >
+        <LiveIngestWatcher matchId={match.id} isLive={match.status === "live"} />
+      </CollapsibleSection>
 
       {/* Ingest data (preview) */}
       <CollapsibleSection
