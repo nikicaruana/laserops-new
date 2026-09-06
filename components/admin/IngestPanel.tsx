@@ -15,6 +15,7 @@ import { parseRound, type Round } from "@/lib/ingestion/round-parser";
 import { laserOpsScores } from "@/lib/ingestion/score";
 import { evaluateStreaks, type StreakDef } from "@/lib/ingestion/streak-engine";
 import { effectiveWithResolutions, unreviewedCount, type RoundResolutions } from "@/lib/ingestion/resolutions";
+import { isLwa, lwaToCsv, lwaPlayerCounters } from "@/lib/ingestion/lwa";
 import type { ScoreFormula } from "@/lib/scoring/formula";
 import { createClient } from "@/lib/supabase/client";
 
@@ -203,41 +204,71 @@ function RoundPreview({
   const ambiguities = r.ambiguous_captures ?? [];
   const unreviewed = unreviewedCount(r, resolutions);
   const [open, setOpen] = useState(true);
-  const [csvResult, setCsvResult] = useState<null | { checked: number; issues: { player: string; field: string; json: number; csv: number }[] }>(null);
+  const [csvResult, setCsvResult] = useState<null | { checked: number; issues: { player: string; field: string; json: number; csv: number }[]; source: string }>(null);
+  const [convertedCsv, setConvertedCsv] = useState<{ name: string; text: string } | null>(null);
 
-  // Cross-check the JSON parse against the round's CSV export (counters must match).
-  async function handleCsv(e: React.ChangeEvent<HTMLInputElement>) {
+  // Cross-check the JSON parse against the round's stats export. Accepts the raw
+  // LaserWar .lwa file (converted to CSV in-browser) or an already-converted CSV.
+  async function handleStatsFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     if (!f) return;
     const text = await f.text();
-    const lines = text.split(/\r?\n/).filter(Boolean);
-    const h = lines[0].split(",");
-    const col = (n: string) => h.indexOf(n);
-    const ni = col("PlayerNickName");
-    const fields: [string, string, string][] = [
-      ["Frags", "PlayerFragsCount", "frags"], ["Deaths", "PlayerDeathsCount", "deaths"],
-      ["Hits", "PlayerHitsCount", "hits"], ["Shots", "PlayerShotsCount", "shots"],
-      ["Wounds", "PlayerWoundsCount", "wounds"], ["Caps", "PlayerDeviceCapturingsCount", "captures"],
-      ["Revivals", "PlayerRevivalsCount", "revivals"],
+    const compareKeys: [string, string][] = [
+      ["Frags", "frags"], ["Deaths", "deaths"], ["Hits", "hits"], ["Shots", "shots"],
+      ["Wounds", "wounds"], ["Caps", "captures"], ["Revivals", "revivals"],
     ];
-    const issues: { player: string; field: string; json: number; csv: number }[] = [];
-    let checked = 0;
-    for (const line of lines.slice(1)) {
-      const cols = line.split(",");
-      const nick = (cols[ni] ?? "").trim();
-      const pl = r.players.find((p) => p.name === nick);
-      if (!pl) continue;
-      const c = r.final_player_counters?.[pl.in_game_player_id];
-      if (!c) continue;
-      checked++;
-      for (const [label, csvCol, jsonKey] of fields) {
-        const csvVal = parseInt(cols[col(csvCol)] ?? "") || 0;
-        const jsonVal = (c as Record<string, number>)[jsonKey] ?? 0;
-        if (csvVal !== jsonVal) issues.push({ player: nick, field: label, json: jsonVal, csv: csvVal });
+    // Build per-nickname counters from either an .lwa file or a CSV.
+    let counters: Record<string, Record<string, number>> = {};
+    let source = "CSV";
+    if (isLwa(text)) {
+      source = "LWA";
+      counters = lwaPlayerCounters(text);
+      setConvertedCsv({ name: f.name.replace(/\.lwa$/i, "") + ".csv", text: lwaToCsv(text) });
+    } else {
+      setConvertedCsv(null);
+      const lines = text.split(/\r?\n/).filter(Boolean);
+      const h = lines[0].split(",");
+      const col = (n: string) => h.indexOf(n);
+      const ni = col("PlayerNickName");
+      const csvCols: Record<string, string> = {
+        frags: "PlayerFragsCount", deaths: "PlayerDeathsCount", hits: "PlayerHitsCount", shots: "PlayerShotsCount",
+        wounds: "PlayerWoundsCount", captures: "PlayerDeviceCapturingsCount", revivals: "PlayerRevivalsCount",
+      };
+      for (const line of lines.slice(1)) {
+        const cols = line.split(",");
+        const nick = (cols[ni] ?? "").trim();
+        if (!nick) continue;
+        const o: Record<string, number> = {};
+        for (const [k, cc] of Object.entries(csvCols)) o[k] = parseInt(cols[col(cc)] ?? "") || 0;
+        counters[nick] = o;
       }
     }
-    setCsvResult({ checked, issues });
+    const issues: { player: string; field: string; json: number; csv: number }[] = [];
+    let checked = 0;
+    for (const pl of r.players) {
+      const cmp = counters[pl.name];
+      const c = r.final_player_counters?.[pl.in_game_player_id];
+      if (!cmp || !c) continue;
+      checked++;
+      for (const [label, key] of compareKeys) {
+        const jsonVal = (c as Record<string, number>)[key] ?? 0;
+        const cmpVal = cmp[key] ?? 0;
+        if (jsonVal !== cmpVal) issues.push({ player: pl.name, field: label, json: jsonVal, csv: cmpVal });
+      }
+    }
+    setCsvResult({ checked, issues, source });
     e.target.value = "";
+  }
+
+  function downloadConverted() {
+    if (!convertedCsv) return;
+    const blob = new Blob([convertedCsv.text], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = convertedCsv.name;
+    a.click();
+    URL.revokeObjectURL(url);
   }
   // Streaks grouped by player, with a per-player count of each streak type.
   const streaks = evaluateStreaks(rr, streakDefs);
@@ -275,10 +306,13 @@ function RoundPreview({
 
   return (
     <div className="border border-border bg-bg-elevated">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-2.5">
-        <button type="button" onClick={() => setOpen((o) => !o)} className="flex items-center gap-2 font-mono text-xs text-text-muted hover:text-text" aria-expanded={open}>
-          <span className="inline-block w-3 text-text-subtle">{open ? "▾" : "▸"}</span>
-          {name}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-border bg-bg-overlay px-4 py-3.5">
+        <button type="button" onClick={() => setOpen((o) => !o)} className="group flex items-center gap-3 text-left hover:opacity-90" aria-expanded={open}>
+          <span className="text-2xl leading-none text-accent transition-transform">{open ? "▾" : "▸"}</span>
+          <span className="flex flex-col">
+            <span className="font-mono text-sm font-bold text-text">{name}</span>
+            <span className="text-[0.6rem] uppercase tracking-[0.12em] text-text-subtle">{open ? "Click to collapse" : "Click to expand"}</span>
+          </span>
         </button>
         <div className="flex items-center gap-3">
           {unreviewed > 0 && (
@@ -432,24 +466,31 @@ function RoundPreview({
         </table>
       </div>
 
-      <div className="border-t border-border px-4 py-3">
+      <div className="border-t-2 border-accent/50 bg-accent/5 px-4 py-4">
         <div className="flex flex-wrap items-center gap-3">
-          <p className="text-[0.55rem] font-semibold uppercase tracking-[0.12em] text-text-subtle">Cross-check vs CSV</p>
-          <label className="inline-flex cursor-pointer items-center gap-2 border border-border px-3 py-1 text-[0.6rem] font-bold uppercase tracking-[0.1em] text-text-muted hover:text-text">
-            Upload round CSV
-            <input type="file" accept=".csv,text/csv" className="hidden" onChange={handleCsv} />
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-accent">Cross-check vs LWA / CSV</p>
+          <label className="inline-flex cursor-pointer items-center gap-2 border border-accent bg-accent px-4 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.1em] text-bg hover:bg-accent-soft">
+            Upload round file (.lwa / .csv)
+            <input type="file" accept=".lwa,.csv,.json,text/csv,application/json" className="hidden" onChange={handleStatsFile} />
           </label>
-          <span className="text-[0.65rem] text-text-subtle">Verifies parsed counters match the LaserWar CSV export for this round.</span>
+          {convertedCsv && (
+            <button type="button" onClick={downloadConverted} className="inline-flex items-center gap-2 border border-border-strong px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.1em] text-text-muted hover:text-text">
+              ↓ Download converted CSV
+            </button>
+          )}
         </div>
+        <p className="mt-1.5 text-[0.7rem] text-text-muted">
+          Upload the round&apos;s <span className="font-semibold text-text">.lwa</span> export straight from the game — it&apos;s converted to CSV here (no external script needed) and its counters are checked against the parsed JSON.
+        </p>
         {csvResult && (
           csvResult.issues.length === 0 ? (
-            <p className="mt-2 text-xs text-emerald-300">✓ {csvResult.checked} players — all counters match the CSV exactly.</p>
+            <p className="mt-2 text-sm font-semibold text-emerald-300">✓ {csvResult.checked} players — all counters match the {csvResult.source} exactly.</p>
           ) : (
             <div className="mt-2 text-xs">
-              <p className="text-amber-300">{csvResult.issues.length} mismatch{csvResult.issues.length === 1 ? "" : "es"} across {csvResult.checked} players:</p>
+              <p className="font-semibold text-amber-300">{csvResult.issues.length} mismatch{csvResult.issues.length === 1 ? "" : "es"} across {csvResult.checked} players (vs {csvResult.source}):</p>
               <ul className="mt-1 space-y-0.5">
                 {csvResult.issues.map((m, i) => (
-                  <li key={i} className="text-text-muted"><span className="font-semibold text-text">{m.player}</span> · {m.field}: JSON <span className="text-amber-300">{m.json}</span> vs CSV <span className="text-amber-300">{m.csv}</span></li>
+                  <li key={i} className="text-text-muted"><span className="font-semibold text-text">{m.player}</span> · {m.field}: JSON <span className="text-amber-300">{m.json}</span> vs file <span className="text-amber-300">{m.csv}</span></li>
                 ))}
               </ul>
             </div>
