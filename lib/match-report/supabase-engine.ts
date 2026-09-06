@@ -26,8 +26,8 @@ const n = (v: number | null | undefined) => v ?? 0;
 const rankOf = (vals: number[], v: number, higher = true) => 1 + vals.filter((x) => (higher ? x > v : x < v)).length;
 
 type StoredStreak = { key: string; count: number; points: number };
-type StoredNemesis = { nickname: string; profilePicUrl: string | null; level: number; killsFor: number; killsAgainst: number } | null;
-type StoredTally = { nickname: string; count: number };
+type StoredNemesis = { headband?: string; nickname: string; profilePicUrl: string | null; level: number; killsFor: number; killsAgainst: number } | null;
+type StoredTally = { headband?: string; nickname: string; count: number };
 
 type AggRow = {
   account_id: string | null;
@@ -263,8 +263,8 @@ export async function fetchMatchReportSupabase(
         ? { nickname: r.nemesis.nickname, profilePicUrl: r.nemesis.profilePicUrl || DEFAULT_AVATAR_URL, level: r.nemesis.level,
             killsFor: r.nemesis.killsFor, killsAgainst: r.nemesis.killsAgainst, damageFor: 0, damageAgainst: 0 }
         : null,
-      killed: r.killed ?? [],
-      killedBy: r.killed_by ?? [],
+      killed: (r.killed ?? []).map((k) => ({ nickname: k.nickname, count: k.count })),
+      killedBy: (r.killed_by ?? []).map((k) => ({ nickname: k.nickname, count: k.count })),
     };
   });
 

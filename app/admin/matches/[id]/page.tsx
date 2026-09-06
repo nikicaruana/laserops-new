@@ -19,6 +19,7 @@ import { CopyInviteLink } from "@/components/portal/CopyInviteLink";
 import { MatchParticipantsManager, type Participant, type ParticipantPayment } from "@/components/admin/MatchParticipantsManager";
 import { IngestPanel, type SavedRound } from "@/components/admin/IngestPanel";
 import { PublishScores } from "@/components/admin/PublishScores";
+import { PublishedPlayersEditor } from "@/components/admin/PublishedPlayersEditor";
 import { HeadbandIdentityPanel, type HeadbandRow } from "@/components/admin/HeadbandIdentityPanel";
 import { CollapsibleSection } from "@/components/admin/CollapsibleSection";
 import { RealtimeMatchRefresh } from "@/components/admin/RealtimeMatchRefresh";
@@ -588,6 +589,27 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
           subtitle="Make the results official: writes each player's score, accolades and XP from the reviewed rounds and marks the match scored. Requires 2FA; blocked while any capture ambiguity is unreviewed. Re-publishing replaces this match's committed rows. (ELO is a later phase.)"
         >
           <PublishScores matchId={match.id} alreadyPublished={!!match.xp_distributed_at} />
+        </CollapsibleSection>
+      )}
+
+      {/* Edit published players – reassign a headband to a profile / set the gun */}
+      {match.xp_distributed_at && entries.length > 0 && (
+        <CollapsibleSection
+          title="Edit players"
+          count={entries.length}
+          subtitle="After publishing, reassign a headband to a profile (e.g. a walk-in who made an account later) or set the gun. Saving re-attributes that player's stats and rolls it into their career — scores and XP amounts aren't recomputed. Requires 2FA."
+        >
+          <PublishedPlayersEditor
+            matchId={match.id}
+            guns={guns}
+            players={entries.map((e) => ({
+              headset_label: e.headset_label ?? "",
+              nickname: e.nickname ?? (e.headset_label ?? ""),
+              team_colour: e.team_colour,
+              gun_used: e.gun_used,
+              account_id: e.account_id,
+            }))}
+          />
         </CollapsibleSection>
       )}
 

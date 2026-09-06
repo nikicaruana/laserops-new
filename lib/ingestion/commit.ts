@@ -15,11 +15,13 @@ import type { RoundResolutions } from "./resolutions";
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
 export type CommitStreak = { key: string; count: number; points: number };
-export type CommitNemesis = { nickname: string; profilePicUrl: string | null; level: number; killsFor: number; killsAgainst: number } | null;
-export type CommitTally = { nickname: string; count: number };
+// `headband` is the raw headset label; the post-publish edit step re-resolves
+// `nickname` from it when an opponent's identity changes.
+export type CommitNemesis = { headband: string; nickname: string; profilePicUrl: string | null; level: number; killsFor: number; killsAgainst: number } | null;
+export type CommitTally = { headband: string; nickname: string; count: number };
 
 export type CommitAggregate = {
-  account_id: string | null; nickname: string; headset_label: string; team_colour: string; profile_pic_url: string | null;
+  account_id: string | null; nickname: string; headset_label: string; team_colour: string; profile_pic_url: string | null; gun_used: string | null;
   frags: number; deaths: number; hits: number; shots: number; wounds: number; captures: number; hold_seconds: number;
   accuracy: number; kd: number; damage: number; score: number;
   score_rank: number; kills_rank: number; deaths_rank: number; kd_rank: number; accuracy_rank: number; damage_rank: number;
@@ -51,7 +53,7 @@ export type CommitResult = {
 export function computeMatchCommit(
   rawRounds: { raw: string; resolutions?: RoundResolutions }[],
   accoladeByKey: Map<string, { id: string; xp: number }>,
-  identity: (headband: string) => { nickname: string; accountId: string | null; profilePicUrl?: string | null },
+  identity: (headband: string) => { nickname: string; accountId: string | null; profilePicUrl?: string | null; gun?: string | null; xpMultiplier?: number },
   xp = { roundWin: 750, matchWin: 500 },
 ): CommitResult {
   const report = buildMatchReportV2(rawRounds, { matchId: "commit", label: "commit" });
@@ -71,14 +73,16 @@ export function computeMatchCommit(
     const teamRoundsWon = report.roundsWonByTeam[p.team] ?? 0;
     const isWinner = p.team === winner;
     const oppTeam = Object.keys(teamScore).find((t) => t !== p.team);
-    const xpPoints = p.totalScore;
-    const xpWins = xp.roundWin * teamRoundsWon + (isWinner ? xp.matchWin : 0);
-    const xpAcc = p.accolades.reduce((s, nm) => s + (accoladeByKey.get(norm(nm))?.xp ?? 0), 0);
+    // Personal XP-boost perk (double / 1.5x), spent at sign-in; 1 when none.
+    const mult = idn.xpMultiplier ?? 1;
+    const xpPoints = Math.round(p.totalScore * mult);
+    const xpWins = Math.round((xp.roundWin * teamRoundsWon + (isWinner ? xp.matchWin : 0)) * mult);
+    const xpAcc = Math.round(p.accolades.reduce((s, nm) => s + (accoladeByKey.get(norm(nm))?.xp ?? 0), 0) * mult);
     const nemesis: CommitNemesis = p.nemesis
-      ? { nickname: nameFor(p.nemesis.name), profilePicUrl: identity(p.nemesis.name).profilePicUrl ?? null, level: 0, killsFor: p.nemesis.killsFor, killsAgainst: p.nemesis.killsAgainst }
+      ? { headband: p.nemesis.name, nickname: nameFor(p.nemesis.name), profilePicUrl: identity(p.nemesis.name).profilePicUrl ?? null, level: 0, killsFor: p.nemesis.killsFor, killsAgainst: p.nemesis.killsAgainst }
       : null;
     return {
-      account_id: idn.accountId, nickname: idn.nickname, headset_label: p.name, team_colour: p.team, profile_pic_url: idn.profilePicUrl ?? null,
+      account_id: idn.accountId, nickname: idn.nickname, headset_label: p.name, team_colour: p.team, profile_pic_url: idn.profilePicUrl ?? null, gun_used: idn.gun ?? null,
       frags: p.frags, deaths: p.deaths, hits: p.hits, shots: p.shots, wounds: p.wounds, captures: p.captures + p.recaptures, hold_seconds: Math.round(p.holdSeconds),
       accuracy: Math.round(p.accuracy * 10000) / 10000, kd: p.kd, damage: p.damage, score: p.totalScore,
       score_rank: rankOf(scores, p.totalScore), kills_rank: rankOf(kills, p.frags), deaths_rank: rankOf(deaths, p.deaths, false),
@@ -88,8 +92,8 @@ export function computeMatchCommit(
       xp_from_points: xpPoints, xp_from_wins: xpWins, xp_from_accolades: xpAcc, xp_total: xpPoints + xpWins + xpAcc,
       streaks: p.streaks.map((s) => ({ key: s.key, count: s.count, points: s.points })),
       nemesis,
-      killed: p.killed.map((k) => ({ nickname: nameFor(k.name), count: k.count })),
-      killed_by: p.killedBy.map((k) => ({ nickname: nameFor(k.name), count: k.count })),
+      killed: p.killed.map((k) => ({ headband: k.name, nickname: nameFor(k.name), count: k.count })),
+      killed_by: p.killedBy.map((k) => ({ headband: k.name, nickname: nameFor(k.name), count: k.count })),
     };
   });
 

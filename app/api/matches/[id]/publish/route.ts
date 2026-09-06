@@ -13,6 +13,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { parseRound } from "@/lib/ingestion/round-parser";
 import { unreviewedCount, type RoundResolutions } from "@/lib/ingestion/resolutions";
 import { computeMatchCommit } from "@/lib/ingestion/commit";
+import { resolveRoster } from "@/lib/ingestion/roster";
 
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
@@ -45,33 +46,10 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   const { data: accs } = await supabase.from("accolade_definitions").select("id, name, xp").eq("scope", "match");
   const accoladeByKey = new Map((accs ?? []).map((a) => [norm(a.name as string), { id: a.id as string, xp: (a.xp as number) ?? 0 }]));
 
-  // Roster identity: assigned headbands resolve to the player's profile
-  // (ops_tag + avatar); unassigned headbands keep their raw label ("Head 39").
-  // Headbands appear as "Head 39" in the round data but the identity panel
-  // stores just the number ("39"), so match on the numeric part.
-  const hbKey = (s: string) => { const m = String(s).match(/\d+/); return m ? String(parseInt(m[0], 10)) : ""; };
-  const { data: parts } = await supabase.from("match_participants").select("headset_label, account_id, display_name").eq("match_id", id);
-  const accIds = [...new Set((parts ?? []).map((p) => p.account_id).filter(Boolean) as string[])];
-  const { data: accRows } = accIds.length
-    ? await supabase.from("accounts").select("id, ops_tag, profile_pic_url").in("id", accIds)
-    : { data: [] as { id: string; ops_tag: string | null; profile_pic_url: string | null }[] };
-  const accById = new Map((accRows ?? []).map((a) => [a.id as string, a]));
-  const byHb = new Map<string, { nickname: string; accountId: string | null; profilePicUrl: string | null }>();
-  for (const p of parts ?? []) {
-    const k = hbKey(p.headset_label as string);
-    if (!k) continue;
-    const acc = p.account_id ? accById.get(p.account_id as string) : undefined;
-    byHb.set(k, {
-      nickname: acc?.ops_tag || (p.display_name as string) || "",
-      accountId: (p.account_id as string) ?? null,
-      profilePicUrl: acc?.profile_pic_url ?? null,
-    });
-  }
-  const identity = (headband: string) => {
-    const hit = byHb.get(hbKey(headband));
-    if (hit && hit.nickname) return hit;
-    return { nickname: headband, accountId: hit?.accountId ?? null, profilePicUrl: hit?.profilePicUrl ?? null };
-  };
+  // Roster identity + gun + XP-boost: assigned headbands resolve to the player's
+  // profile; unassigned ones keep their raw "Head 39" label. Shared with the
+  // post-publish edit step so both attribute stats the same way.
+  const identity = await resolveRoster(supabase, id);
 
   const result = computeMatchCommit(rounds, accoladeByKey, identity);
 
@@ -90,14 +68,24 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     if (awErr) return NextResponse.json({ error: `Awards write failed: ${awErr.message}` }, { status: 500 });
   }
 
+  // Stamp the match scored. Ensure played_on is set (needed for chronological
+  // XP/level/ELO ordering + player history) — keep any existing date.
+  const { data: mRow } = await svc.from("matches").select("played_on, scheduled_at").eq("id", id).maybeSingle();
+  const playedOn = (mRow?.played_on as string | null) || ((mRow?.scheduled_at as string | null)?.slice(0, 10)) || now.slice(0, 10);
   const { error: mErr } = await svc.from("matches").update({
     status: "completed",
     winning_team_colour: result.winnerColour,
     net_result_summary: result.netResultSummary,
     round_count: result.roundCount,
+    played_on: playedOn,
     xp_distributed_at: now,
   }).eq("id", id);
   if (mErr) return NextResponse.json({ error: `Match stamp failed: ${mErr.message}` }, { status: 500 });
+
+  // Roll the match into careers: chronological XP/level back-fill on the
+  // aggregates, then rebuild lifetime stats + grant any new level rewards.
+  const { error: rollupErr } = await supabase.rpc("rollup_match_careers");
+  if (rollupErr) return NextResponse.json({ error: `Scores saved, but the career rollup failed: ${rollupErr.message}` }, { status: 500 });
 
   return NextResponse.json({ ok: true, players: result.aggregates.length, awards: result.awards.length, winner: result.winnerColour });
 }
