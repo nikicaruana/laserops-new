@@ -203,6 +203,42 @@ function RoundPreview({
   const ambiguities = r.ambiguous_captures ?? [];
   const unreviewed = unreviewedCount(r, resolutions);
   const [open, setOpen] = useState(true);
+  const [csvResult, setCsvResult] = useState<null | { checked: number; issues: { player: string; field: string; json: number; csv: number }[] }>(null);
+
+  // Cross-check the JSON parse against the round's CSV export (counters must match).
+  async function handleCsv(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const text = await f.text();
+    const lines = text.split(/\r?\n/).filter(Boolean);
+    const h = lines[0].split(",");
+    const col = (n: string) => h.indexOf(n);
+    const ni = col("PlayerNickName");
+    const fields: [string, string, string][] = [
+      ["Frags", "PlayerFragsCount", "frags"], ["Deaths", "PlayerDeathsCount", "deaths"],
+      ["Hits", "PlayerHitsCount", "hits"], ["Shots", "PlayerShotsCount", "shots"],
+      ["Wounds", "PlayerWoundsCount", "wounds"], ["Caps", "PlayerDeviceCapturingsCount", "captures"],
+      ["Revivals", "PlayerRevivalsCount", "revivals"],
+    ];
+    const issues: { player: string; field: string; json: number; csv: number }[] = [];
+    let checked = 0;
+    for (const line of lines.slice(1)) {
+      const cols = line.split(",");
+      const nick = (cols[ni] ?? "").trim();
+      const pl = r.players.find((p) => p.name === nick);
+      if (!pl) continue;
+      const c = r.final_player_counters?.[pl.in_game_player_id];
+      if (!c) continue;
+      checked++;
+      for (const [label, csvCol, jsonKey] of fields) {
+        const csvVal = parseInt(cols[col(csvCol)] ?? "") || 0;
+        const jsonVal = (c as Record<string, number>)[jsonKey] ?? 0;
+        if (csvVal !== jsonVal) issues.push({ player: nick, field: label, json: jsonVal, csv: csvVal });
+      }
+    }
+    setCsvResult({ checked, issues });
+    e.target.value = "";
+  }
   // Streaks grouped by player, with a per-player count of each streak type.
   const streaks = evaluateStreaks(rr, streakDefs);
   const streaksByPlayer = new Map<number, Map<string, number>>();
@@ -394,6 +430,31 @@ function RoundPreview({
             })}
           </tbody>
         </table>
+      </div>
+
+      <div className="border-t border-border px-4 py-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="text-[0.55rem] font-semibold uppercase tracking-[0.12em] text-text-subtle">Cross-check vs CSV</p>
+          <label className="inline-flex cursor-pointer items-center gap-2 border border-border px-3 py-1 text-[0.6rem] font-bold uppercase tracking-[0.1em] text-text-muted hover:text-text">
+            Upload round CSV
+            <input type="file" accept=".csv,text/csv" className="hidden" onChange={handleCsv} />
+          </label>
+          <span className="text-[0.65rem] text-text-subtle">Verifies parsed counters match the LaserWar CSV export for this round.</span>
+        </div>
+        {csvResult && (
+          csvResult.issues.length === 0 ? (
+            <p className="mt-2 text-xs text-emerald-300">✓ {csvResult.checked} players — all counters match the CSV exactly.</p>
+          ) : (
+            <div className="mt-2 text-xs">
+              <p className="text-amber-300">{csvResult.issues.length} mismatch{csvResult.issues.length === 1 ? "" : "es"} across {csvResult.checked} players:</p>
+              <ul className="mt-1 space-y-0.5">
+                {csvResult.issues.map((m, i) => (
+                  <li key={i} className="text-text-muted"><span className="font-semibold text-text">{m.player}</span> · {m.field}: JSON <span className="text-amber-300">{m.json}</span> vs CSV <span className="text-amber-300">{m.csv}</span></li>
+                ))}
+              </ul>
+            </div>
+          )
+        )}
       </div>
 
       {streaksByPlayer.size > 0 && (
