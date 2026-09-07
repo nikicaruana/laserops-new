@@ -620,6 +620,22 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
               <span className="ml-2 text-[0.65rem] text-text-subtle">Bases, global kill feed &amp; leaderboard — for a venue screen. Players get their own view in the portal.</span>
             </div>
 
+            {/* Game-day checklist */}
+            <details className="rounded border border-accent/40 bg-accent/5">
+              <summary className="cursor-pointer px-4 py-2.5 text-xs font-bold uppercase tracking-[0.12em] text-accent">Game-day checklist</summary>
+              <div className="border-t border-border p-4">
+                <ol className="ml-4 list-decimal space-y-1.5 text-[0.72rem] text-text-muted">
+                  <li><strong className="text-text">Before:</strong> Live feed <strong>on</strong> (above) and headbands assigned to players (Identity resolution) so names show live.</li>
+                  <li>On the tablet, start the <strong>watcher</strong> (run-live-lasertag-watcher.bat) and point it at the AlphaTag folder.</li>
+                  <li>Set the match <strong>Live</strong> (Start match, above) — the watcher auto-attaches to it.</li>
+                  <li>Open the <strong>global live view</strong> on the venue screen (link above). Players open <em>Game Portal → the live game</em> on their phones.</li>
+                  <li>Play. Rounds stream automatically; the feed switches round as each new file starts.</li>
+                  <li><strong className="text-text">After:</strong> stop the watcher, review any capture ambiguities (Ingest data), then <strong>Publish scores</strong> (2FA). Turn Live feed off if you like.</li>
+                </ol>
+                <p className="mt-2 text-[0.65rem] text-text-subtle">Tip: download the watcher from the live site (not localhost) so its URL + token are correct for the tablet.</p>
+              </div>
+            </details>
+
             {/* Native background watcher — the robust path (keeps running when Chrome is minimised). */}
             {ingestToken && <NativeWatcherSetup token={ingestToken} />}
 
