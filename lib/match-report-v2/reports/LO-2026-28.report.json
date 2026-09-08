@@ -21,13 +21,13 @@
       }
     },
     "winningTeam": "Blue",
-    "losingTeam": "",
+    "losingTeam": "Yellow",
     "winningTeamRounds": 2,
     "losingTeamRounds": 0,
     "winningTeamRating": 20802,
-    "losingTeamRating": 0,
+    "losingTeamRating": 11137,
     "winningTeamBadge": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778784566/Team_Badges-Blue-2_xgdmsr.png",
-    "losingTeamBadge": ""
+    "losingTeamBadge": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778784565/Team_Badges-Yellow-2_wzyt3t.png"
   },
   "players": [
     {
@@ -1832,5 +1832,5 @@
   ],
   "matchDate": "2026.09.08",
   "label": "LO-2026-28 · Rounds 1-2 · 5v5 Online Domination",
-  "generatedAt": "2026-09-08T19:56:06.456Z"
+  "generatedAt": "2026-09-08T20:08:30.388Z"
 }
