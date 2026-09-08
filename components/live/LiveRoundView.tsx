@@ -131,10 +131,10 @@ export function LiveRoundView({
                 const otherTeam = isKill ? f.victimTeam : f.actorTeam;
                 const tid = `${f.t}:${f.actor}:${f.victim}`;
                 if (isKill) return (
-                  <li key={i} className="flex items-center gap-1.5 rounded-md bg-emerald-950/30 px-2 py-1 text-xs"><span className="font-semibold text-emerald-300">You</span>{gunOf.get(me!)?.gunImage ? <img src={cldImage(gunOf.get(me!)!.gunImage, { w: 64 })} alt="" className="h-3.5 w-auto opacity-90" /> : <span>›</span>}<span className="truncate" style={{ color: teamHex(otherTeam) }}>{other}</span>{f.spawn && <span className="ml-auto rounded bg-red-900/60 px-1 text-[0.5rem] font-bold uppercase text-red-300">spawn</span>}</li>
+                  <li key={i} className="flex items-center gap-1.5 rounded-md bg-emerald-950/30 px-2 py-1 text-xs"><span className="font-semibold text-emerald-300">You</span>{gunOf.get(me!)?.gunImage ? <img src={cldImage(gunOf.get(me!)!.gunImage, { w: 96 })} alt="" className="h-5 w-auto opacity-90" /> : <span>›</span>}<span className="truncate" style={{ color: teamHex(otherTeam) }}>{other}</span>{f.spawn && <span className="ml-auto rounded bg-red-900/60 px-1 text-[0.5rem] font-bold uppercase text-red-300">spawn</span>}</li>
                 );
                 return (
-                  <li key={i} className="flex items-center gap-1.5 rounded-md bg-red-950/30 px-2 py-1 text-xs"><span className="truncate font-semibold" style={{ color: teamHex(otherTeam) }}>{other}</span>{gunOf.get(other)?.gunImage ? <img src={cldImage(gunOf.get(other)!.gunImage, { w: 64 })} alt="" className="h-3.5 w-auto opacity-90" /> : <span>›</span>}<span className="text-red-300">You</span>{sentTaunts.has(tid) ? <span className="ml-auto text-text-subtle">🖕 sent</span> : <button type="button" onClick={() => { onTaunt?.(other); setSentTaunts((p) => new Set(p).add(tid)); }} className="ml-auto shrink-0 rounded border border-border-strong px-1.5 py-0.5 text-[0.6rem] hover:border-accent" title={`Send ${other} a 🖕`}>🖕</button>}</li>
+                  <li key={i} className="flex items-center gap-1.5 rounded-md bg-red-950/30 px-2 py-1 text-xs"><span className="truncate font-semibold" style={{ color: teamHex(otherTeam) }}>{other}</span>{gunOf.get(other)?.gunImage ? <img src={cldImage(gunOf.get(other)!.gunImage, { w: 96 })} alt="" className="h-5 w-auto opacity-90" /> : <span>›</span>}<span className="text-red-300">You</span>{sentTaunts.has(tid) ? <span className="ml-auto text-text-subtle">🖕 sent</span> : <button type="button" onClick={() => { onTaunt?.(other); setSentTaunts((p) => new Set(p).add(tid)); }} className="ml-auto shrink-0 rounded border border-border-strong px-1.5 py-0.5 text-[0.6rem] hover:border-accent" title={`Send ${other} a 🖕`}>🖕</button>}</li>
                 );
               })}
             </ul>
@@ -157,7 +157,7 @@ export function LiveRoundView({
               {gFeed.map((f, i) => (
                 <li key={i} className="flex items-center gap-1.5 rounded-md bg-bg-elevated px-2 py-1 text-xs">
                   <span className="truncate font-semibold" style={{ color: teamHex(f.actorTeam) }}>{f.actor}</span>
-                  {gunOf.get(f.actor)?.gunImage ? <img src={cldImage(gunOf.get(f.actor)!.gunImage, { w: 64 })} alt="" className="h-3.5 w-auto opacity-90" /> : <span>›</span>}
+                  {gunOf.get(f.actor)?.gunImage ? <img src={cldImage(gunOf.get(f.actor)!.gunImage, { w: 96 })} alt="" className="h-5 w-auto opacity-90" /> : <span>›</span>}
                   <span className="truncate" style={{ color: teamHex(f.victimTeam) }}>{f.victim}</span>
                   {f.spawn && <span className="ml-auto rounded bg-red-900/60 px-1 text-[0.5rem] font-bold uppercase text-red-300">spawn</span>}
                 </li>
