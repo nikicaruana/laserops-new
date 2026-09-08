@@ -123,9 +123,11 @@ export function XPLevelsLeaderboardTable({ rows }: Props) {
         sortable: true,
         numeric: true,
         accessor: (row) => row.totalXp,
-        // 64px on mobile fits 6-digit numbers like "100,000" and gives the
-        // header "Total XP" room to wrap to two lines if needed.
-        width: "64px",
+        // 50px on mobile fits the widest real value ("219,778", ~47px) while
+        // the header "Total XP" wraps to two lines. Trimmed from 64px so the
+        // Ops Tag column (the only flexible track) gets ~14px back — long
+        // single-word tags like "TheHolySpirit" were wrapping on phones.
+        width: "50px",
         widthSm: "110px",
         cell: (row) => row.totalXp.toLocaleString("en-US"),
       },
@@ -139,7 +141,10 @@ export function XPLevelsLeaderboardTable({ rows }: Props) {
         sortable: true,
         numeric: true,
         accessor: (row) => row.xpPerMatch,
-        width: "58px",
+        // 42px on mobile fits the widest real value ("17,686", ~40px); the
+        // header wraps to "XP /" + "Match". Trimmed from 58px to give the
+        // Ops Tag column another ~16px on phones (see Total XP note above).
+        width: "42px",
         widthSm: "100px",
         cell: (row) => Math.round(row.xpPerMatch).toLocaleString("en-US"),
       },
