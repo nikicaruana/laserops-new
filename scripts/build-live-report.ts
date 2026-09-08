@@ -142,7 +142,10 @@ async function main() {
   }).sort((a, b) => a.scoreRank - b.scoreRank);
 
   const teamRating: Record<string, number> = {}; for (const p of P) teamRating[p.team] = (teamRating[p.team] ?? 0) + p.totalScore;
-  const colours = Object.keys(rep.roundsWonByTeam);
+  // Loser = any team that played (has players/rating) other than the winner.
+  // Deriving from roundsWonByTeam alone misses a team swept 0 rounds, which then
+  // blanks its badge + the overview's whole badge row.
+  const colours = Array.from(new Set([...Object.keys(teamRating), ...Object.keys(rep.roundsWonByTeam)]));
   const loser = colours.find((c) => c !== winner) ?? "";
   const slot = (c: string) => ({ roundWins: rep.roundsWonByTeam[c] ?? 0, rating: teamRating[c] ?? 0 });
   const game = {
