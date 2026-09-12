@@ -22,7 +22,7 @@ export type { KillMatrix, PairTally, PlayerStreak, PlayerReport, MatchReportV2 }
 
 export const V2_SCORING = {
   spawnWindowSeconds: 3,
-  minHoldSeconds: 5,
+  minHoldSeconds: 3,
   recaptureWindowSeconds: 20,
   capturePoints: 75,
   recapturePoints: 50,
