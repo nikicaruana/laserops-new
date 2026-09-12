@@ -1,0 +1,2262 @@
+{
+  "game": {
+    "matchId": "LO-2026-29",
+    "rawGameId": "",
+    "gameStartTimeYear": "2026",
+    "gameNo": "1",
+    "isPrivate": false,
+    "isDoubleXp": false,
+    "teams": {
+      "red": {
+        "roundWins": 0,
+        "rating": 0
+      },
+      "blue": {
+        "roundWins": 3,
+        "rating": 45889
+      },
+      "yellow": {
+        "roundWins": 2,
+        "rating": 54354
+      }
+    },
+    "winningTeam": "Blue",
+    "losingTeam": "Yellow",
+    "winningTeamRounds": 3,
+    "losingTeamRounds": 2,
+    "winningTeamRating": 45889,
+    "losingTeamRating": 54354,
+    "winningTeamBadge": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778784566/Team_Badges-Blue-2_xgdmsr.png",
+    "losingTeamBadge": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778784565/Team_Badges-Yellow-2_wzyt3t.png"
+  },
+  "players": [
+    {
+      "row": {},
+      "nickname": "ChrisKyle",
+      "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1785229729/ChrisKyle_ewg0qk.jpg",
+      "teamColor": "Yellow",
+      "teamColorLower": "yellow",
+      "level": 10,
+      "rankBadgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783958/Rank_Badges-Operative_Badge-5_rtctim.png",
+      "score": 21167,
+      "kills": 65,
+      "deaths": 50,
+      "kd": 1.3,
+      "accuracy": 0.178,
+      "damage": 8780,
+      "totalXp": 61166,
+      "gunUsed": "AK-25 Predator",
+      "gunUsedImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1777991355/Gun_Used-AK25_Predator_w3rppv.png",
+      "scoreRank": 1,
+      "killsRank": 2,
+      "deathsRank": 6,
+      "kdRank": 4,
+      "accuracyRank": 1,
+      "damageRank": 4,
+      "matchRating": 0,
+      "averageMatchScore": 0,
+      "scorePerformanceDelta": 0,
+      "teamRoundsWon": 2,
+      "teamRoundsLost": 3,
+      "isWinner": false,
+      "teamBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778784565/Team_Badges-Yellow-2_wzyt3t.png",
+      "xpFromPoints": 21167,
+      "xpFromWins": 1500,
+      "xpFromAccolades": 275,
+      "xpEarnedThisMatch": 22942,
+      "xpTotalBeforeMatch": 0,
+      "xpTotalAfterMatch": 0,
+      "xpCurrentLevelBeforeMatch": 1,
+      "xpCurrentLevelAfterMatch": 1,
+      "xpCurrentLevelMinBeforeMatch": 0,
+      "xpNextLevelMinBeforeMatch": 1,
+      "xpLevelProgressStart": 0,
+      "xpLevelProgressEnd": 0,
+      "xpLevelUpInMatch": false,
+      "xpLevelBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783958/Rank_Badges-Operative_Badge-5_rtctim.png",
+      "earnedAccolades": [
+        {
+          "accolade": {
+            "name": "MVP",
+            "key": "mvp",
+            "description": "The Highest Score",
+            "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1777889561/LaserOps-Accolades-MVP_b9u9ja.png",
+            "xp": 100
+          }
+        },
+        {
+          "accolade": {
+            "name": "Eagle Eye",
+            "key": "eagleeye",
+            "description": "The Highest Accuracy",
+            "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1777889560/LaserOps-Accolades-Eagle_Eye_rwrk8e.png",
+            "xp": 75
+          }
+        },
+        {
+          "accolade": {
+            "name": "Fortress",
+            "key": "fortress",
+            "description": "The Most Capture Time",
+            "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1788638338/LaserOps-Accolade-Fortress_wzx9jb.png",
+            "xp": 100
+          }
+        }
+      ],
+      "objCaps": 16,
+      "objCapsRank": 3,
+      "capTime": 5628,
+      "capTimeRank": 1,
+      "matchStreaks": [
+        {
+          "key": "hold_base_5min",
+          "name": "5 Min Hold",
+          "description": "Holding down a base for 5 minutes without losing it",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/hold_base_5min.png",
+          "points": 100,
+          "count": 6
+        },
+        {
+          "key": "hold_base_10min",
+          "name": "10 Min Hold",
+          "description": "Holding down a base for 10 minutes without losing it",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/hold_base_10min.png",
+          "points": 200,
+          "count": 3
+        },
+        {
+          "key": "hold_base_3min",
+          "name": "3 Min Hold",
+          "description": "Holding down a base for 3 minutes without losing it",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/hold_base_3min.png",
+          "points": 50,
+          "count": 8
+        },
+        {
+          "key": "kill_streak_3",
+          "name": "3-Streak",
+          "description": "3 kills in a row (no dying)",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/kill_streak_3.png",
+          "points": 25,
+          "count": 9
+        },
+        {
+          "key": "burner_1",
+          "name": "Burner",
+          "description": "Burning 1 base in a round (capturing it and taking it to the fully captured state)",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/burner_1.png",
+          "points": 50,
+          "count": 4
+        },
+        {
+          "key": "clean_sweep",
+          "name": "Clean Sweep",
+          "description": "Killing all members of the opposing team at least once in a round",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/clean_sweep.png",
+          "points": 50,
+          "count": 3
+        },
+        {
+          "key": "clutch_move",
+          "name": "Clutch Move",
+          "description": "At least 2 kills and a base capture in under 30 seconds",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/clutch_move.png",
+          "points": 50,
+          "count": 3
+        },
+        {
+          "key": "streak_ender",
+          "name": "Streak Ender",
+          "description": "Killing someone who is on at least a 5-kill streak",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/streak_ender.png",
+          "points": 50,
+          "count": 2
+        },
+        {
+          "key": "ptfo",
+          "name": "PTFO",
+          "description": "Capturing 2 different bases in one life",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/ptfo.png",
+          "points": 50,
+          "count": 2
+        },
+        {
+          "key": "captures_3",
+          "name": "3x Cap",
+          "description": "3 base captures in one round",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/captures_3.png",
+          "points": 25,
+          "count": 3
+        },
+        {
+          "key": "captures_5",
+          "name": "5x Cap",
+          "description": "5 base captures in one round",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/captures_5.png",
+          "points": 50,
+          "count": 1
+        },
+        {
+          "key": "kill_streak_5",
+          "name": "5-Streak",
+          "description": "5 kills in a row (no dying)",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/kill_streak_5.png",
+          "points": 50,
+          "count": 1
+        },
+        {
+          "key": "last_blood",
+          "name": "Last Blood",
+          "description": "Final kill of a round",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/last_blood.png",
+          "points": 25,
+          "count": 1
+        }
+      ],
+      "nemesis": {
+        "nickname": "Hasapardi",
+        "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1779049146/Hasapardi_dvdfv3.jpg",
+        "level": 14,
+        "killsFor": 17,
+        "killsAgainst": 23,
+        "damageFor": 2490,
+        "damageAgainst": 2635
+      },
+      "killed": [
+        {
+          "nickname": "Hasapardi",
+          "count": 17
+        },
+        {
+          "nickname": "Mustafa",
+          "count": 16
+        },
+        {
+          "nickname": "BlueJay",
+          "count": 13
+        },
+        {
+          "nickname": "PourHoneyOnMyBun",
+          "count": 12
+        },
+        {
+          "nickname": "Sina",
+          "count": 7
+        }
+      ],
+      "killedBy": [
+        {
+          "nickname": "Hasapardi",
+          "count": 23
+        },
+        {
+          "nickname": "Sina",
+          "count": 11
+        },
+        {
+          "nickname": "BlueJay",
+          "count": 9
+        },
+        {
+          "nickname": "PourHoneyOnMyBun",
+          "count": 4
+        },
+        {
+          "nickname": "Mustafa",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "row": {},
+      "nickname": "Snaaaaaaake",
+      "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1779048927/Snaaaaaake_puhjyp.jpg",
+      "teamColor": "Yellow",
+      "teamColorLower": "yellow",
+      "level": 12,
+      "rankBadgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783960/Rank_Badges-Ranger_Badge-2_jinrca.png",
+      "score": 16482,
+      "kills": 88,
+      "deaths": 53,
+      "kd": 1.64,
+      "accuracy": 0.108,
+      "damage": 14055,
+      "totalXp": 90037,
+      "gunUsed": "MG25 Berserk",
+      "gunUsedImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1777991363/Gun_Used-MG25_Berserk_zj5rlo.png",
+      "scoreRank": 2,
+      "killsRank": 1,
+      "deathsRank": 7,
+      "kdRank": 3,
+      "accuracyRank": 4,
+      "damageRank": 1,
+      "matchRating": 0,
+      "averageMatchScore": 0,
+      "scorePerformanceDelta": 0,
+      "teamRoundsWon": 2,
+      "teamRoundsLost": 3,
+      "isWinner": false,
+      "teamBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778784565/Team_Badges-Yellow-2_wzyt3t.png",
+      "xpFromPoints": 16482,
+      "xpFromWins": 1500,
+      "xpFromAccolades": 325,
+      "xpEarnedThisMatch": 18307,
+      "xpTotalBeforeMatch": 0,
+      "xpTotalAfterMatch": 0,
+      "xpCurrentLevelBeforeMatch": 1,
+      "xpCurrentLevelAfterMatch": 1,
+      "xpCurrentLevelMinBeforeMatch": 0,
+      "xpNextLevelMinBeforeMatch": 1,
+      "xpLevelProgressStart": 0,
+      "xpLevelProgressEnd": 0,
+      "xpLevelUpInMatch": false,
+      "xpLevelBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783960/Rank_Badges-Ranger_Badge-2_jinrca.png",
+      "earnedAccolades": [
+        {
+          "accolade": {
+            "name": "Reaper",
+            "key": "reaper",
+            "description": "The Most Kills",
+            "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1777889561/LaserOps-Accolades-Reaper_v2nw75.png",
+            "xp": 100
+          }
+        },
+        {
+          "accolade": {
+            "name": "Rambo",
+            "key": "rambo",
+            "description": "The Most Shots Fired",
+            "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1777889561/LaserOps-Accolades-Rambo_zgisll.png",
+            "xp": 50
+          }
+        },
+        {
+          "accolade": {
+            "name": "Punisher",
+            "key": "punisher",
+            "description": "The Most Hits",
+            "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1777889560/LaserOps-Accolades-Punisher_tj5j1m.png",
+            "xp": 75
+          }
+        },
+        {
+          "accolade": {
+            "name": "Heavy Hitter",
+            "key": "heavyhitter",
+            "description": "The Most Damage Done",
+            "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1777889561/LaserOps-Accolades-Heavy_Hitter_avw1cm.png",
+            "xp": 100
+          }
+        }
+      ],
+      "objCaps": 25,
+      "objCapsRank": 1,
+      "capTime": 2114,
+      "capTimeRank": 4,
+      "matchStreaks": [
+        {
+          "key": "bully",
+          "name": "Bully",
+          "description": "Killing the same player 10 times in one round",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/bully.png",
+          "points": 100,
+          "count": 3
+        },
+        {
+          "key": "kill_streak_5",
+          "name": "5-Streak",
+          "description": "5 kills in a row (no dying)",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/kill_streak_5.png",
+          "points": 50,
+          "count": 4
+        },
+        {
+          "key": "hold_base_5min",
+          "name": "5 Min Hold",
+          "description": "Holding down a base for 5 minutes without losing it",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/hold_base_5min.png",
+          "points": 100,
+          "count": 2
+        },
+        {
+          "key": "captures_5",
+          "name": "5x Cap",
+          "description": "5 base captures in one round",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/captures_5.png",
+          "points": 50,
+          "count": 3
+        },
+        {
+          "key": "hold_base_3min",
+          "name": "3 Min Hold",
+          "description": "Holding down a base for 3 minutes without losing it",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/hold_base_3min.png",
+          "points": 50,
+          "count": 3
+        },
+        {
+          "key": "burner_1",
+          "name": "Burner",
+          "description": "Burning 1 base in a round (capturing it and taking it to the fully captured state)",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/burner_1.png",
+          "points": 50,
+          "count": 3
+        },
+        {
+          "key": "clutch_move",
+          "name": "Clutch Move",
+          "description": "At least 2 kills and a base capture in under 30 seconds",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/clutch_move.png",
+          "points": 50,
+          "count": 3
+        },
+        {
+          "key": "kill_streak_3",
+          "name": "3-Streak",
+          "description": "3 kills in a row (no dying)",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/kill_streak_3.png",
+          "points": 25,
+          "count": 5
+        },
+        {
+          "key": "captures_3",
+          "name": "3x Cap",
+          "description": "3 base captures in one round",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/captures_3.png",
+          "points": 25,
+          "count": 5
+        },
+        {
+          "key": "survivor",
+          "name": "Survivor",
+          "description": "3 kills while on 50 health or less",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/survivor.png",
+          "points": 50,
+          "count": 2
+        },
+        {
+          "key": "first_blood",
+          "name": "First Blood",
+          "description": "First kill of a round",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/first_blood.png",
+          "points": 25,
+          "count": 2
+        },
+        {
+          "key": "clean_sweep",
+          "name": "Clean Sweep",
+          "description": "Killing all members of the opposing team at least once in a round",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/clean_sweep.png",
+          "points": 50,
+          "count": 1
+        }
+      ],
+      "nemesis": {
+        "nickname": "Hasapardi",
+        "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1779049146/Hasapardi_dvdfv3.jpg",
+        "level": 14,
+        "killsFor": 19,
+        "killsAgainst": 19,
+        "damageFor": 2945,
+        "damageAgainst": 2900
+      },
+      "killed": [
+        {
+          "nickname": "Mustafa",
+          "count": 50
+        },
+        {
+          "nickname": "Hasapardi",
+          "count": 19
+        },
+        {
+          "nickname": "BlueJay",
+          "count": 10
+        },
+        {
+          "nickname": "PourHoneyOnMyBun",
+          "count": 7
+        },
+        {
+          "nickname": "Sina",
+          "count": 2
+        }
+      ],
+      "killedBy": [
+        {
+          "nickname": "Hasapardi",
+          "count": 19
+        },
+        {
+          "nickname": "Mustafa",
+          "count": 16
+        },
+        {
+          "nickname": "PourHoneyOnMyBun",
+          "count": 11
+        },
+        {
+          "nickname": "Sina",
+          "count": 4
+        },
+        {
+          "nickname": "BlueJay",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "row": {},
+      "nickname": "Sina",
+      "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778738930/Sina_vnj0wh.jpg",
+      "teamColor": "Blue",
+      "teamColorLower": "blue",
+      "level": 13,
+      "rankBadgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783961/Rank_Badges-Ranger_Badge-3_nq4orq.png",
+      "score": 16082,
+      "kills": 60,
+      "deaths": 26,
+      "kd": 2.31,
+      "accuracy": 0.144,
+      "damage": 8995,
+      "totalXp": 105889,
+      "gunUsed": "AR-15 Ranger",
+      "gunUsedImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1777991357/Gun_Used-AR15_Ranger_doxnys.png",
+      "scoreRank": 3,
+      "killsRank": 4,
+      "deathsRank": 2,
+      "kdRank": 2,
+      "accuracyRank": 2,
+      "damageRank": 3,
+      "matchRating": 0,
+      "averageMatchScore": 0,
+      "scorePerformanceDelta": 0,
+      "teamRoundsWon": 3,
+      "teamRoundsLost": 2,
+      "isWinner": true,
+      "teamBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778784566/Team_Badges-Blue-2_xgdmsr.png",
+      "xpFromPoints": 16082,
+      "xpFromWins": 2750,
+      "xpFromAccolades": 0,
+      "xpEarnedThisMatch": 18832,
+      "xpTotalBeforeMatch": 0,
+      "xpTotalAfterMatch": 0,
+      "xpCurrentLevelBeforeMatch": 1,
+      "xpCurrentLevelAfterMatch": 1,
+      "xpCurrentLevelMinBeforeMatch": 0,
+      "xpNextLevelMinBeforeMatch": 1,
+      "xpLevelProgressStart": 0,
+      "xpLevelProgressEnd": 0,
+      "xpLevelUpInMatch": false,
+      "xpLevelBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783961/Rank_Badges-Ranger_Badge-3_nq4orq.png",
+      "earnedAccolades": [],
+      "objCaps": 14,
+      "objCapsRank": 4,
+      "capTime": 3226,
+      "capTimeRank": 2,
+      "matchStreaks": [
+        {
+          "key": "hold_base_5min",
+          "name": "5 Min Hold",
+          "description": "Holding down a base for 5 minutes without losing it",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/hold_base_5min.png",
+          "points": 100,
+          "count": 4
+        },
+        {
+          "key": "hold_base_10min",
+          "name": "10 Min Hold",
+          "description": "Holding down a base for 10 minutes without losing it",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/hold_base_10min.png",
+          "points": 200,
+          "count": 2
+        },
+        {
+          "key": "hold_base_3min",
+          "name": "3 Min Hold",
+          "description": "Holding down a base for 3 minutes without losing it",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/hold_base_3min.png",
+          "points": 50,
+          "count": 6
+        },
+        {
+          "key": "burner_1",
+          "name": "Burner",
+          "description": "Burning 1 base in a round (capturing it and taking it to the fully captured state)",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/burner_1.png",
+          "points": 50,
+          "count": 4
+        },
+        {
+          "key": "grim_reaper",
+          "name": "Grim Reaper",
+          "description": "Killing all the members of the opposing team at least once without dying",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/grim_reaper.png",
+          "points": 100,
+          "count": 2
+        },
+        {
+          "key": "kill_streak_3",
+          "name": "3-Streak",
+          "description": "3 kills in a row (no dying)",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/kill_streak_3.png",
+          "points": 25,
+          "count": 5
+        },
+        {
+          "key": "kill_streak_10",
+          "name": "10-Streak",
+          "description": "10 kills in a row (no dying)",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/kill_streak_10.png",
+          "points": 100,
+          "count": 1
+        },
+        {
+          "key": "kill_streak_5",
+          "name": "5-Streak",
+          "description": "5 kills in a row (no dying)",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/kill_streak_5.png",
+          "points": 50,
+          "count": 2
+        },
+        {
+          "key": "clean_sweep",
+          "name": "Clean Sweep",
+          "description": "Killing all members of the opposing team at least once in a round",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/clean_sweep.png",
+          "points": 50,
+          "count": 2
+        },
+        {
+          "key": "clutch_move",
+          "name": "Clutch Move",
+          "description": "At least 2 kills and a base capture in under 30 seconds",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/clutch_move.png",
+          "points": 50,
+          "count": 2
+        },
+        {
+          "key": "first_blood",
+          "name": "First Blood",
+          "description": "First kill of a round",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/first_blood.png",
+          "points": 25,
+          "count": 2
+        },
+        {
+          "key": "streak_ender",
+          "name": "Streak Ender",
+          "description": "Killing someone who is on at least a 5-kill streak",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/streak_ender.png",
+          "points": 50,
+          "count": 1
+        },
+        {
+          "key": "captures_3",
+          "name": "3x Cap",
+          "description": "3 base captures in one round",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/captures_3.png",
+          "points": 25,
+          "count": 2
+        },
+        {
+          "key": "captures_5",
+          "name": "5x Cap",
+          "description": "5 base captures in one round",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/captures_5.png",
+          "points": 50,
+          "count": 1
+        },
+        {
+          "key": "survivor",
+          "name": "Survivor",
+          "description": "3 kills while on 50 health or less",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/survivor.png",
+          "points": 50,
+          "count": 1
+        }
+      ],
+      "nemesis": {
+        "nickname": "Wugy",
+        "profilePicUrl": "/images/default-avatar.png",
+        "level": 3,
+        "killsFor": 23,
+        "killsAgainst": 10,
+        "damageFor": 3525,
+        "damageAgainst": 1800
+      },
+      "killed": [
+        {
+          "nickname": "Wugy",
+          "count": 23
+        },
+        {
+          "nickname": "Maltese Predator",
+          "count": 20
+        },
+        {
+          "nickname": "ChrisKyle",
+          "count": 11
+        },
+        {
+          "nickname": "Snaaaaaaake",
+          "count": 4
+        },
+        {
+          "nickname": "Jens",
+          "count": 2
+        }
+      ],
+      "killedBy": [
+        {
+          "nickname": "Wugy",
+          "count": 10
+        },
+        {
+          "nickname": "ChrisKyle",
+          "count": 7
+        },
+        {
+          "nickname": "Maltese Predator",
+          "count": 6
+        },
+        {
+          "nickname": "Snaaaaaaake",
+          "count": 2
+        },
+        {
+          "nickname": "Jens",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "row": {},
+      "nickname": "Hasapardi",
+      "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1779049146/Hasapardi_dvdfv3.jpg",
+      "teamColor": "Blue",
+      "teamColorLower": "blue",
+      "level": 14,
+      "rankBadgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783961/Rank_Badges-Ranger_Badge-3_nq4orq.png",
+      "score": 15156,
+      "kills": 64,
+      "deaths": 58,
+      "kd": 1.1,
+      "accuracy": 0.099,
+      "damage": 9265,
+      "totalXp": 133238,
+      "gunUsed": "AR-15 Ranger",
+      "gunUsedImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1777991357/Gun_Used-AR15_Ranger_doxnys.png",
+      "scoreRank": 4,
+      "killsRank": 3,
+      "deathsRank": 8,
+      "kdRank": 5,
+      "accuracyRank": 5,
+      "damageRank": 2,
+      "matchRating": 0,
+      "averageMatchScore": 0,
+      "scorePerformanceDelta": 0,
+      "teamRoundsWon": 3,
+      "teamRoundsLost": 2,
+      "isWinner": true,
+      "teamBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778784566/Team_Badges-Blue-2_xgdmsr.png",
+      "xpFromPoints": 15156,
+      "xpFromWins": 2750,
+      "xpFromAccolades": 100,
+      "xpEarnedThisMatch": 18006,
+      "xpTotalBeforeMatch": 0,
+      "xpTotalAfterMatch": 0,
+      "xpCurrentLevelBeforeMatch": 1,
+      "xpCurrentLevelAfterMatch": 1,
+      "xpCurrentLevelMinBeforeMatch": 0,
+      "xpNextLevelMinBeforeMatch": 1,
+      "xpLevelProgressStart": 0,
+      "xpLevelProgressEnd": 0,
+      "xpLevelUpInMatch": false,
+      "xpLevelBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783961/Rank_Badges-Ranger_Badge-3_nq4orq.png",
+      "earnedAccolades": [
+        {
+          "accolade": {
+            "name": "CAP-Tain",
+            "key": "captain",
+            "description": "The Most Base Captures",
+            "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1788638338/LaserOps-Accolade-CAPTain_zhxukh.png",
+            "xp": 100
+          }
+        }
+      ],
+      "objCaps": 25,
+      "objCapsRank": 1,
+      "capTime": 2873,
+      "capTimeRank": 3,
+      "matchStreaks": [
+        {
+          "key": "hold_base_3min",
+          "name": "3 Min Hold",
+          "description": "Holding down a base for 3 minutes without losing it",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/hold_base_3min.png",
+          "points": 50,
+          "count": 6
+        },
+        {
+          "key": "captures_5",
+          "name": "5x Cap",
+          "description": "5 base captures in one round",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/captures_5.png",
+          "points": 50,
+          "count": 4
+        },
+        {
+          "key": "ptfo",
+          "name": "PTFO",
+          "description": "Capturing 2 different bases in one life",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/ptfo.png",
+          "points": 50,
+          "count": 4
+        },
+        {
+          "key": "hold_base_5min",
+          "name": "5 Min Hold",
+          "description": "Holding down a base for 5 minutes without losing it",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/hold_base_5min.png",
+          "points": 100,
+          "count": 2
+        },
+        {
+          "key": "clutch_move",
+          "name": "Clutch Move",
+          "description": "At least 2 kills and a base capture in under 30 seconds",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/clutch_move.png",
+          "points": 50,
+          "count": 3
+        },
+        {
+          "key": "streak_ender",
+          "name": "Streak Ender",
+          "description": "Killing someone who is on at least a 5-kill streak",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/streak_ender.png",
+          "points": 50,
+          "count": 3
+        },
+        {
+          "key": "kill_streak_3",
+          "name": "3-Streak",
+          "description": "3 kills in a row (no dying)",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/kill_streak_3.png",
+          "points": 25,
+          "count": 5
+        },
+        {
+          "key": "captures_3",
+          "name": "3x Cap",
+          "description": "3 base captures in one round",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/captures_3.png",
+          "points": 25,
+          "count": 5
+        },
+        {
+          "key": "kill_streak_5",
+          "name": "5-Streak",
+          "description": "5 kills in a row (no dying)",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/kill_streak_5.png",
+          "points": 50,
+          "count": 2
+        },
+        {
+          "key": "survivor",
+          "name": "Survivor",
+          "description": "3 kills while on 50 health or less",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/survivor.png",
+          "points": 50,
+          "count": 1
+        },
+        {
+          "key": "burner_1",
+          "name": "Burner",
+          "description": "Burning 1 base in a round (capturing it and taking it to the fully captured state)",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/burner_1.png",
+          "points": 50,
+          "count": 1
+        },
+        {
+          "key": "clean_sweep",
+          "name": "Clean Sweep",
+          "description": "Killing all members of the opposing team at least once in a round",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/clean_sweep.png",
+          "points": 50,
+          "count": 1
+        }
+      ],
+      "nemesis": {
+        "nickname": "Snaaaaaaake",
+        "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1779048927/Snaaaaaake_puhjyp.jpg",
+        "level": 12,
+        "killsFor": 19,
+        "killsAgainst": 19,
+        "damageFor": 2900,
+        "damageAgainst": 2945
+      },
+      "killed": [
+        {
+          "nickname": "ChrisKyle",
+          "count": 23
+        },
+        {
+          "nickname": "Snaaaaaaake",
+          "count": 19
+        },
+        {
+          "nickname": "Maltese Predator",
+          "count": 11
+        },
+        {
+          "nickname": "Wugy",
+          "count": 6
+        },
+        {
+          "nickname": "Jens",
+          "count": 5
+        }
+      ],
+      "killedBy": [
+        {
+          "nickname": "Snaaaaaaake",
+          "count": 19
+        },
+        {
+          "nickname": "ChrisKyle",
+          "count": 17
+        },
+        {
+          "nickname": "Maltese Predator",
+          "count": 8
+        },
+        {
+          "nickname": "Wugy",
+          "count": 7
+        },
+        {
+          "nickname": "Jens",
+          "count": 7
+        }
+      ]
+    },
+    {
+      "row": {},
+      "nickname": "Wugy",
+      "profilePicUrl": "/images/default-avatar.png",
+      "teamColor": "Yellow",
+      "teamColorLower": "yellow",
+      "level": 3,
+      "rankBadgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783968/Rank_Badges-Recruit_Badge-3_pkxleg.png",
+      "score": 5830,
+      "kills": 32,
+      "deaths": 42,
+      "kd": 0.76,
+      "accuracy": 0.081,
+      "damage": 5125,
+      "totalXp": 4434,
+      "gunUsed": "AR-15 Ranger",
+      "gunUsedImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1777991357/Gun_Used-AR15_Ranger_doxnys.png",
+      "scoreRank": 5,
+      "killsRank": 8,
+      "deathsRank": 4,
+      "kdRank": 6,
+      "accuracyRank": 8,
+      "damageRank": 8,
+      "matchRating": 0,
+      "averageMatchScore": 0,
+      "scorePerformanceDelta": 0,
+      "teamRoundsWon": 2,
+      "teamRoundsLost": 3,
+      "isWinner": false,
+      "teamBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778784565/Team_Badges-Yellow-2_wzyt3t.png",
+      "xpFromPoints": 5830,
+      "xpFromWins": 1500,
+      "xpFromAccolades": 0,
+      "xpEarnedThisMatch": 7330,
+      "xpTotalBeforeMatch": 0,
+      "xpTotalAfterMatch": 0,
+      "xpCurrentLevelBeforeMatch": 1,
+      "xpCurrentLevelAfterMatch": 1,
+      "xpCurrentLevelMinBeforeMatch": 0,
+      "xpNextLevelMinBeforeMatch": 1,
+      "xpLevelProgressStart": 0,
+      "xpLevelProgressEnd": 0,
+      "xpLevelUpInMatch": false,
+      "xpLevelBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783968/Rank_Badges-Recruit_Badge-3_pkxleg.png",
+      "earnedAccolades": [],
+      "objCaps": 13,
+      "objCapsRank": 5,
+      "capTime": 798,
+      "capTimeRank": 6,
+      "matchStreaks": [
+        {
+          "key": "kill_streak_3",
+          "name": "3-Streak",
+          "description": "3 kills in a row (no dying)",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/kill_streak_3.png",
+          "points": 25,
+          "count": 4
+        },
+        {
+          "key": "survivor",
+          "name": "Survivor",
+          "description": "3 kills while on 50 health or less",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/survivor.png",
+          "points": 50,
+          "count": 2
+        },
+        {
+          "key": "last_blood",
+          "name": "Last Blood",
+          "description": "Final kill of a round",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/last_blood.png",
+          "points": 25,
+          "count": 2
+        },
+        {
+          "key": "captures_3",
+          "name": "3x Cap",
+          "description": "3 base captures in one round",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/captures_3.png",
+          "points": 25,
+          "count": 2
+        },
+        {
+          "key": "kill_streak_5",
+          "name": "5-Streak",
+          "description": "5 kills in a row (no dying)",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/kill_streak_5.png",
+          "points": 50,
+          "count": 1
+        },
+        {
+          "key": "clean_sweep",
+          "name": "Clean Sweep",
+          "description": "Killing all members of the opposing team at least once in a round",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/clean_sweep.png",
+          "points": 50,
+          "count": 1
+        }
+      ],
+      "nemesis": {
+        "nickname": "Sina",
+        "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778738930/Sina_vnj0wh.jpg",
+        "level": 13,
+        "killsFor": 10,
+        "killsAgainst": 23,
+        "damageFor": 1800,
+        "damageAgainst": 3525
+      },
+      "killed": [
+        {
+          "nickname": "Sina",
+          "count": 10
+        },
+        {
+          "nickname": "Hasapardi",
+          "count": 7
+        },
+        {
+          "nickname": "BlueJay",
+          "count": 6
+        },
+        {
+          "nickname": "Mustafa",
+          "count": 5
+        },
+        {
+          "nickname": "PourHoneyOnMyBun",
+          "count": 4
+        }
+      ],
+      "killedBy": [
+        {
+          "nickname": "Sina",
+          "count": 23
+        },
+        {
+          "nickname": "BlueJay",
+          "count": 8
+        },
+        {
+          "nickname": "Hasapardi",
+          "count": 6
+        },
+        {
+          "nickname": "Mustafa",
+          "count": 3
+        },
+        {
+          "nickname": "PourHoneyOnMyBun",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "row": {},
+      "nickname": "Jens",
+      "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1779048943/Jens_gwfrb1.png",
+      "teamColor": "Yellow",
+      "teamColorLower": "yellow",
+      "level": 13,
+      "rankBadgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783961/Rank_Badges-Ranger_Badge-3_nq4orq.png",
+      "score": 5692,
+      "kills": 43,
+      "deaths": 10,
+      "kd": 4.3,
+      "accuracy": 0.089,
+      "damage": 6070,
+      "totalXp": 105362,
+      "gunUsed": "AK-25 Predator",
+      "gunUsedImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1777991355/Gun_Used-AK25_Predator_w3rppv.png",
+      "scoreRank": 6,
+      "killsRank": 5,
+      "deathsRank": 1,
+      "kdRank": 1,
+      "accuracyRank": 7,
+      "damageRank": 7,
+      "matchRating": 0,
+      "averageMatchScore": 0,
+      "scorePerformanceDelta": 0,
+      "teamRoundsWon": 2,
+      "teamRoundsLost": 3,
+      "isWinner": false,
+      "teamBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778784565/Team_Badges-Yellow-2_wzyt3t.png",
+      "xpFromPoints": 5692,
+      "xpFromWins": 1500,
+      "xpFromAccolades": 250,
+      "xpEarnedThisMatch": 7442,
+      "xpTotalBeforeMatch": 0,
+      "xpTotalAfterMatch": 0,
+      "xpCurrentLevelBeforeMatch": 1,
+      "xpCurrentLevelAfterMatch": 1,
+      "xpCurrentLevelMinBeforeMatch": 0,
+      "xpNextLevelMinBeforeMatch": 1,
+      "xpLevelProgressStart": 0,
+      "xpLevelProgressEnd": 0,
+      "xpLevelUpInMatch": false,
+      "xpLevelBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783961/Rank_Badges-Ranger_Badge-3_nq4orq.png",
+      "earnedAccolades": [
+        {
+          "accolade": {
+            "name": "Tank",
+            "key": "tank",
+            "description": "The Least Deaths",
+            "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1777889562/LaserOps-Accolades-Tank_a7covz.png",
+            "xp": 75
+          }
+        },
+        {
+          "accolade": {
+            "name": "Apex Predator",
+            "key": "apexpredator",
+            "description": "The Best Kill/Death Ratio",
+            "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1777889560/LaserOps-Accolades-Apex_Predator_hggvzw.png",
+            "xp": 100
+          }
+        },
+        {
+          "accolade": {
+            "name": "Ghost",
+            "key": "ghost",
+            "description": "The Least Hits Taken",
+            "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1777889560/LaserOps-Accolades-Ghost_evfmwi.png",
+            "xp": 75
+          }
+        }
+      ],
+      "objCaps": 1,
+      "objCapsRank": 10,
+      "capTime": 13,
+      "capTimeRank": 10,
+      "matchStreaks": [
+        {
+          "key": "kill_streak_10",
+          "name": "10-Streak",
+          "description": "10 kills in a row (no dying)",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/kill_streak_10.png",
+          "points": 100,
+          "count": 2
+        },
+        {
+          "key": "kill_streak_5",
+          "name": "5-Streak",
+          "description": "5 kills in a row (no dying)",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/kill_streak_5.png",
+          "points": 50,
+          "count": 2
+        },
+        {
+          "key": "streak_ender",
+          "name": "Streak Ender",
+          "description": "Killing someone who is on at least a 5-kill streak",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/streak_ender.png",
+          "points": 50,
+          "count": 1
+        },
+        {
+          "key": "clean_sweep",
+          "name": "Clean Sweep",
+          "description": "Killing all members of the opposing team at least once in a round",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/clean_sweep.png",
+          "points": 50,
+          "count": 1
+        }
+      ],
+      "nemesis": {
+        "nickname": "Hasapardi",
+        "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1779049146/Hasapardi_dvdfv3.jpg",
+        "level": 14,
+        "killsFor": 7,
+        "killsAgainst": 5,
+        "damageFor": 840,
+        "damageAgainst": 700
+      },
+      "killed": [
+        {
+          "nickname": "BlueJay",
+          "count": 12
+        },
+        {
+          "nickname": "PourHoneyOnMyBun",
+          "count": 12
+        },
+        {
+          "nickname": "Mustafa",
+          "count": 11
+        },
+        {
+          "nickname": "Hasapardi",
+          "count": 7
+        },
+        {
+          "nickname": "Sina",
+          "count": 1
+        }
+      ],
+      "killedBy": [
+        {
+          "nickname": "Hasapardi",
+          "count": 5
+        },
+        {
+          "nickname": "Sina",
+          "count": 2
+        },
+        {
+          "nickname": "PourHoneyOnMyBun",
+          "count": 2
+        },
+        {
+          "nickname": "Mustafa",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "row": {},
+      "nickname": "PourHoneyOnMyBun",
+      "profilePicUrl": "/images/default-avatar.png",
+      "teamColor": "Blue",
+      "teamColorLower": "blue",
+      "level": 3,
+      "rankBadgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783968/Rank_Badges-Recruit_Badge-3_pkxleg.png",
+      "score": 5433,
+      "kills": 29,
+      "deaths": 39,
+      "kd": 0.74,
+      "accuracy": 0.092,
+      "damage": 4030,
+      "totalXp": 5296,
+      "gunUsed": "AK-25 Predator",
+      "gunUsedImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1777991355/Gun_Used-AK25_Predator_w3rppv.png",
+      "scoreRank": 7,
+      "killsRank": 9,
+      "deathsRank": 3,
+      "kdRank": 7,
+      "accuracyRank": 6,
+      "damageRank": 9,
+      "matchRating": 0,
+      "averageMatchScore": 0,
+      "scorePerformanceDelta": 0,
+      "teamRoundsWon": 3,
+      "teamRoundsLost": 2,
+      "isWinner": true,
+      "teamBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778784566/Team_Badges-Blue-2_xgdmsr.png",
+      "xpFromPoints": 5433,
+      "xpFromWins": 2750,
+      "xpFromAccolades": 0,
+      "xpEarnedThisMatch": 8183,
+      "xpTotalBeforeMatch": 0,
+      "xpTotalAfterMatch": 0,
+      "xpCurrentLevelBeforeMatch": 1,
+      "xpCurrentLevelAfterMatch": 1,
+      "xpCurrentLevelMinBeforeMatch": 0,
+      "xpNextLevelMinBeforeMatch": 1,
+      "xpLevelProgressStart": 0,
+      "xpLevelProgressEnd": 0,
+      "xpLevelUpInMatch": false,
+      "xpLevelBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783968/Rank_Badges-Recruit_Badge-3_pkxleg.png",
+      "earnedAccolades": [],
+      "objCaps": 8,
+      "objCapsRank": 6,
+      "capTime": 965,
+      "capTimeRank": 5,
+      "matchStreaks": [
+        {
+          "key": "hold_base_5min",
+          "name": "5 Min Hold",
+          "description": "Holding down a base for 5 minutes without losing it",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/hold_base_5min.png",
+          "points": 100,
+          "count": 1
+        },
+        {
+          "key": "kill_streak_3",
+          "name": "3-Streak",
+          "description": "3 kills in a row (no dying)",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/kill_streak_3.png",
+          "points": 25,
+          "count": 4
+        },
+        {
+          "key": "hold_base_3min",
+          "name": "3 Min Hold",
+          "description": "Holding down a base for 3 minutes without losing it",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/hold_base_3min.png",
+          "points": 50,
+          "count": 1
+        },
+        {
+          "key": "burner_1",
+          "name": "Burner",
+          "description": "Burning 1 base in a round (capturing it and taking it to the fully captured state)",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/burner_1.png",
+          "points": 50,
+          "count": 1
+        },
+        {
+          "key": "streak_ender",
+          "name": "Streak Ender",
+          "description": "Killing someone who is on at least a 5-kill streak",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/streak_ender.png",
+          "points": 50,
+          "count": 1
+        },
+        {
+          "key": "captures_3",
+          "name": "3x Cap",
+          "description": "3 base captures in one round",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/captures_3.png",
+          "points": 25,
+          "count": 1
+        },
+        {
+          "key": "last_blood",
+          "name": "Last Blood",
+          "description": "Final kill of a round",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/last_blood.png",
+          "points": 25,
+          "count": 1
+        }
+      ],
+      "nemesis": {
+        "nickname": "ChrisKyle",
+        "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1785229729/ChrisKyle_ewg0qk.jpg",
+        "level": 10,
+        "killsFor": 4,
+        "killsAgainst": 12,
+        "damageFor": 900,
+        "damageAgainst": 1690
+      },
+      "killed": [
+        {
+          "nickname": "Snaaaaaaake",
+          "count": 11
+        },
+        {
+          "nickname": "Maltese Predator",
+          "count": 10
+        },
+        {
+          "nickname": "ChrisKyle",
+          "count": 4
+        },
+        {
+          "nickname": "Wugy",
+          "count": 2
+        },
+        {
+          "nickname": "Jens",
+          "count": 2
+        }
+      ],
+      "killedBy": [
+        {
+          "nickname": "ChrisKyle",
+          "count": 12
+        },
+        {
+          "nickname": "Jens",
+          "count": 12
+        },
+        {
+          "nickname": "Snaaaaaaake",
+          "count": 7
+        },
+        {
+          "nickname": "Maltese Predator",
+          "count": 4
+        },
+        {
+          "nickname": "Wugy",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "row": {},
+      "nickname": "Mustafa",
+      "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1779260212/mustafa2_v2ucc3.jpg",
+      "teamColor": "Blue",
+      "teamColorLower": "blue",
+      "level": 11,
+      "rankBadgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783959/Rank_Badges-Ranger_Badge-1_kvoucc.png",
+      "score": 5230,
+      "kills": 42,
+      "deaths": 94,
+      "kd": 0.45,
+      "accuracy": 0.079,
+      "damage": 7885,
+      "totalXp": 79256,
+      "gunUsed": "AR-15 Ranger",
+      "gunUsedImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1777991357/Gun_Used-AR15_Ranger_doxnys.png",
+      "scoreRank": 8,
+      "killsRank": 6,
+      "deathsRank": 10,
+      "kdRank": 10,
+      "accuracyRank": 9,
+      "damageRank": 5,
+      "matchRating": 0,
+      "averageMatchScore": 0,
+      "scorePerformanceDelta": 0,
+      "teamRoundsWon": 3,
+      "teamRoundsLost": 2,
+      "isWinner": true,
+      "teamBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778784566/Team_Badges-Blue-2_xgdmsr.png",
+      "xpFromPoints": 5230,
+      "xpFromWins": 2750,
+      "xpFromAccolades": 100,
+      "xpEarnedThisMatch": 8080,
+      "xpTotalBeforeMatch": 0,
+      "xpTotalAfterMatch": 0,
+      "xpCurrentLevelBeforeMatch": 1,
+      "xpCurrentLevelAfterMatch": 1,
+      "xpCurrentLevelMinBeforeMatch": 0,
+      "xpNextLevelMinBeforeMatch": 1,
+      "xpLevelProgressStart": 0,
+      "xpLevelProgressEnd": 0,
+      "xpLevelUpInMatch": false,
+      "xpLevelBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783959/Rank_Badges-Ranger_Badge-1_kvoucc.png",
+      "earnedAccolades": [
+        {
+          "accolade": {
+            "name": "Kamikaze",
+            "key": "kamikaze",
+            "description": "The Most Deaths",
+            "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1777889561/LaserOps-Accolades-Kamikaze_i1zcgn.png",
+            "xp": 50
+          }
+        },
+        {
+          "accolade": {
+            "name": "Swiss Cheese",
+            "key": "swisscheese",
+            "description": "The Most Hits Taken",
+            "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1777889561/LaserOps-Accolades-Swiss_Cheese_oz63ir.png",
+            "xp": 50
+          }
+        }
+      ],
+      "objCaps": 7,
+      "objCapsRank": 7,
+      "capTime": 266,
+      "capTimeRank": 9,
+      "matchStreaks": [
+        {
+          "key": "streak_ender",
+          "name": "Streak Ender",
+          "description": "Killing someone who is on at least a 5-kill streak",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/streak_ender.png",
+          "points": 50,
+          "count": 3
+        },
+        {
+          "key": "clean_sweep",
+          "name": "Clean Sweep",
+          "description": "Killing all members of the opposing team at least once in a round",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/clean_sweep.png",
+          "points": 50,
+          "count": 1
+        },
+        {
+          "key": "captures_3",
+          "name": "3x Cap",
+          "description": "3 base captures in one round",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/captures_3.png",
+          "points": 25,
+          "count": 1
+        },
+        {
+          "key": "first_blood",
+          "name": "First Blood",
+          "description": "First kill of a round",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/first_blood.png",
+          "points": 25,
+          "count": 1
+        },
+        {
+          "key": "kill_streak_3",
+          "name": "3-Streak",
+          "description": "3 kills in a row (no dying)",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/kill_streak_3.png",
+          "points": 25,
+          "count": 1
+        }
+      ],
+      "nemesis": {
+        "nickname": "Snaaaaaaake",
+        "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1779048927/Snaaaaaake_puhjyp.jpg",
+        "level": 12,
+        "killsFor": 16,
+        "killsAgainst": 50,
+        "damageFor": 2995,
+        "damageAgainst": 7130
+      },
+      "killed": [
+        {
+          "nickname": "Maltese Predator",
+          "count": 19
+        },
+        {
+          "nickname": "Snaaaaaaake",
+          "count": 16
+        },
+        {
+          "nickname": "ChrisKyle",
+          "count": 3
+        },
+        {
+          "nickname": "Wugy",
+          "count": 3
+        },
+        {
+          "nickname": "Jens",
+          "count": 1
+        }
+      ],
+      "killedBy": [
+        {
+          "nickname": "Snaaaaaaake",
+          "count": 50
+        },
+        {
+          "nickname": "ChrisKyle",
+          "count": 16
+        },
+        {
+          "nickname": "Maltese Predator",
+          "count": 12
+        },
+        {
+          "nickname": "Jens",
+          "count": 11
+        },
+        {
+          "nickname": "Wugy",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "row": {},
+      "nickname": "Maltese Predator",
+      "profilePicUrl": "/images/default-avatar.png",
+      "teamColor": "Yellow",
+      "teamColorLower": "yellow",
+      "level": 8,
+      "rankBadgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783955/Rank_Badges-Operative_Badge-3_dd5cl9.png",
+      "score": 5183,
+      "kills": 33,
+      "deaths": 64,
+      "kd": 0.52,
+      "accuracy": 0.06,
+      "damage": 6785,
+      "totalXp": 38255,
+      "gunUsed": "MG25 Berserk",
+      "gunUsedImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1777991363/Gun_Used-MG25_Berserk_zj5rlo.png",
+      "scoreRank": 9,
+      "killsRank": 7,
+      "deathsRank": 9,
+      "kdRank": 9,
+      "accuracyRank": 10,
+      "damageRank": 6,
+      "matchRating": 0,
+      "averageMatchScore": 0,
+      "scorePerformanceDelta": 0,
+      "teamRoundsWon": 2,
+      "teamRoundsLost": 3,
+      "isWinner": false,
+      "teamBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778784565/Team_Badges-Yellow-2_wzyt3t.png",
+      "xpFromPoints": 5183,
+      "xpFromWins": 1500,
+      "xpFromAccolades": 50,
+      "xpEarnedThisMatch": 6733,
+      "xpTotalBeforeMatch": 0,
+      "xpTotalAfterMatch": 0,
+      "xpCurrentLevelBeforeMatch": 1,
+      "xpCurrentLevelAfterMatch": 1,
+      "xpCurrentLevelMinBeforeMatch": 0,
+      "xpNextLevelMinBeforeMatch": 1,
+      "xpLevelProgressStart": 0,
+      "xpLevelProgressEnd": 0,
+      "xpLevelUpInMatch": false,
+      "xpLevelBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783955/Rank_Badges-Operative_Badge-3_dd5cl9.png",
+      "earnedAccolades": [
+        {
+          "accolade": {
+            "name": "Spray n Pray",
+            "key": "spraynpray",
+            "description": "The Lowest Accuracy",
+            "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1777889561/LaserOps-Accolades-Spray_N_Pray_ouaft3.png",
+            "xp": 50
+          }
+        }
+      ],
+      "objCaps": 5,
+      "objCapsRank": 8,
+      "capTime": 641,
+      "capTimeRank": 7,
+      "matchStreaks": [
+        {
+          "key": "kill_streak_3",
+          "name": "3-Streak",
+          "description": "3 kills in a row (no dying)",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/kill_streak_3.png",
+          "points": 25,
+          "count": 3
+        },
+        {
+          "key": "streak_ender",
+          "name": "Streak Ender",
+          "description": "Killing someone who is on at least a 5-kill streak",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/streak_ender.png",
+          "points": 50,
+          "count": 1
+        },
+        {
+          "key": "clean_sweep",
+          "name": "Clean Sweep",
+          "description": "Killing all members of the opposing team at least once in a round",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/clean_sweep.png",
+          "points": 50,
+          "count": 1
+        },
+        {
+          "key": "survivor",
+          "name": "Survivor",
+          "description": "3 kills while on 50 health or less",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/survivor.png",
+          "points": 50,
+          "count": 1
+        },
+        {
+          "key": "hold_base_3min",
+          "name": "3 Min Hold",
+          "description": "Holding down a base for 3 minutes without losing it",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/hold_base_3min.png",
+          "points": 50,
+          "count": 1
+        },
+        {
+          "key": "captures_3",
+          "name": "3x Cap",
+          "description": "3 base captures in one round",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/captures_3.png",
+          "points": 25,
+          "count": 1
+        }
+      ],
+      "nemesis": {
+        "nickname": "Sina",
+        "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778738930/Sina_vnj0wh.jpg",
+        "level": 13,
+        "killsFor": 6,
+        "killsAgainst": 20,
+        "damageFor": 1045,
+        "damageAgainst": 2850
+      },
+      "killed": [
+        {
+          "nickname": "Mustafa",
+          "count": 12
+        },
+        {
+          "nickname": "Hasapardi",
+          "count": 8
+        },
+        {
+          "nickname": "Sina",
+          "count": 6
+        },
+        {
+          "nickname": "PourHoneyOnMyBun",
+          "count": 4
+        },
+        {
+          "nickname": "BlueJay",
+          "count": 3
+        }
+      ],
+      "killedBy": [
+        {
+          "nickname": "Sina",
+          "count": 20
+        },
+        {
+          "nickname": "Mustafa",
+          "count": 19
+        },
+        {
+          "nickname": "Hasapardi",
+          "count": 11
+        },
+        {
+          "nickname": "PourHoneyOnMyBun",
+          "count": 10
+        },
+        {
+          "nickname": "BlueJay",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "row": {},
+      "nickname": "BlueJay",
+      "profilePicUrl": "/images/default-avatar.png",
+      "teamColor": "Blue",
+      "teamColorLower": "blue",
+      "level": 5,
+      "rankBadgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783971/Rank_Badges-Recruit_Badge-5_iwrpgn.png",
+      "score": 3988,
+      "kills": 24,
+      "deaths": 44,
+      "kd": 0.55,
+      "accuracy": 0.116,
+      "damage": 3935,
+      "totalXp": 13911,
+      "gunUsed": "AR-15 Ranger",
+      "gunUsedImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1777991357/Gun_Used-AR15_Ranger_doxnys.png",
+      "scoreRank": 10,
+      "killsRank": 10,
+      "deathsRank": 5,
+      "kdRank": 8,
+      "accuracyRank": 3,
+      "damageRank": 10,
+      "matchRating": 0,
+      "averageMatchScore": 0,
+      "scorePerformanceDelta": 0,
+      "teamRoundsWon": 3,
+      "teamRoundsLost": 2,
+      "isWinner": true,
+      "teamBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778784566/Team_Badges-Blue-2_xgdmsr.png",
+      "xpFromPoints": 3988,
+      "xpFromWins": 2750,
+      "xpFromAccolades": 100,
+      "xpEarnedThisMatch": 6838,
+      "xpTotalBeforeMatch": 0,
+      "xpTotalAfterMatch": 0,
+      "xpCurrentLevelBeforeMatch": 1,
+      "xpCurrentLevelAfterMatch": 1,
+      "xpCurrentLevelMinBeforeMatch": 0,
+      "xpNextLevelMinBeforeMatch": 1,
+      "xpLevelProgressStart": 0,
+      "xpLevelProgressEnd": 0,
+      "xpLevelUpInMatch": false,
+      "xpLevelBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783971/Rank_Badges-Recruit_Badge-5_iwrpgn.png",
+      "earnedAccolades": [
+        {
+          "accolade": {
+            "name": "Ammo Saver",
+            "key": "ammosaver",
+            "description": "The Least Shots Fired",
+            "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1777889560/LaserOps-Accolades-Ammo_Saver_hf23lr.png",
+            "xp": 50
+          }
+        },
+        {
+          "accolade": {
+            "name": "Pacifist",
+            "key": "pacifist",
+            "description": "The Least Damage Done",
+            "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1777889560/LaserOps-Accolades-Pacifist_jdaumq.png",
+            "xp": 50
+          }
+        }
+      ],
+      "objCaps": 4,
+      "objCapsRank": 9,
+      "capTime": 611,
+      "capTimeRank": 8,
+      "matchStreaks": [
+        {
+          "key": "hold_base_3min",
+          "name": "3 Min Hold",
+          "description": "Holding down a base for 3 minutes without losing it",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/hold_base_3min.png",
+          "points": 50,
+          "count": 2
+        },
+        {
+          "key": "kill_streak_3",
+          "name": "3-Streak",
+          "description": "3 kills in a row (no dying)",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/kill_streak_3.png",
+          "points": 25,
+          "count": 3
+        },
+        {
+          "key": "clutch_move",
+          "name": "Clutch Move",
+          "description": "At least 2 kills and a base capture in under 30 seconds",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/clutch_move.png",
+          "points": 50,
+          "count": 1
+        },
+        {
+          "key": "burner_1",
+          "name": "Burner",
+          "description": "Burning 1 base in a round (capturing it and taking it to the fully captured state)",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/burner_1.png",
+          "points": 50,
+          "count": 1
+        },
+        {
+          "key": "last_blood",
+          "name": "Last Blood",
+          "description": "Final kill of a round",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/last_blood.png",
+          "points": 25,
+          "count": 1
+        }
+      ],
+      "nemesis": {
+        "nickname": "ChrisKyle",
+        "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1785229729/ChrisKyle_ewg0qk.jpg",
+        "level": 10,
+        "killsFor": 9,
+        "killsAgainst": 13,
+        "damageFor": 1145,
+        "damageAgainst": 1605
+      },
+      "killed": [
+        {
+          "nickname": "ChrisKyle",
+          "count": 9
+        },
+        {
+          "nickname": "Wugy",
+          "count": 8
+        },
+        {
+          "nickname": "Maltese Predator",
+          "count": 4
+        },
+        {
+          "nickname": "Snaaaaaaake",
+          "count": 3
+        }
+      ],
+      "killedBy": [
+        {
+          "nickname": "ChrisKyle",
+          "count": 13
+        },
+        {
+          "nickname": "Jens",
+          "count": 12
+        },
+        {
+          "nickname": "Snaaaaaaake",
+          "count": 10
+        },
+        {
+          "nickname": "Wugy",
+          "count": 6
+        },
+        {
+          "nickname": "Maltese Predator",
+          "count": 3
+        }
+      ]
+    }
+  ],
+  "ranks": [
+    {
+      "level": 1,
+      "rankName": "Recruit",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783964/Rank_Badges-Recruit_Badge-1_hx1bpc.png"
+    },
+    {
+      "level": 2,
+      "rankName": "Recruit",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783966/Rank_Badges-Recruit_Badge-2_cwmjem.png"
+    },
+    {
+      "level": 3,
+      "rankName": "Recruit",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783968/Rank_Badges-Recruit_Badge-3_pkxleg.png"
+    },
+    {
+      "level": 4,
+      "rankName": "Recruit",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783969/Rank_Badges-Recruit_Badge-4_olqtx0.png"
+    },
+    {
+      "level": 5,
+      "rankName": "Recruit",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783971/Rank_Badges-Recruit_Badge-5_iwrpgn.png"
+    },
+    {
+      "level": 6,
+      "rankName": "Operative",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783954/Rank_Badges-Operative_Badge-1_mvr6gc.png"
+    },
+    {
+      "level": 7,
+      "rankName": "Operative",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783955/Rank_Badges-Operative_Badge-2_g2dabl.png"
+    },
+    {
+      "level": 8,
+      "rankName": "Operative",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783955/Rank_Badges-Operative_Badge-3_dd5cl9.png"
+    },
+    {
+      "level": 9,
+      "rankName": "Operative",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783957/Rank_Badges-Operative_Badge-4_nk5llb.png"
+    },
+    {
+      "level": 10,
+      "rankName": "Operative",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783958/Rank_Badges-Operative_Badge-5_rtctim.png"
+    },
+    {
+      "level": 11,
+      "rankName": "Ranger",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783959/Rank_Badges-Ranger_Badge-1_kvoucc.png"
+    },
+    {
+      "level": 12,
+      "rankName": "Ranger",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783960/Rank_Badges-Ranger_Badge-2_jinrca.png"
+    },
+    {
+      "level": 13,
+      "rankName": "Ranger",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783961/Rank_Badges-Ranger_Badge-3_nq4orq.png"
+    },
+    {
+      "level": 14,
+      "rankName": "Ranger",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783961/Rank_Badges-Ranger_Badge-3_nq4orq.png"
+    },
+    {
+      "level": 15,
+      "rankName": "Ranger",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783964/Rank_Badges-Ranger_Badge-5_lmp4so.png"
+    },
+    {
+      "level": 16,
+      "rankName": "Specialist",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783971/Rank_Badges-Specialist_Badge-1_qlt6uq.png"
+    },
+    {
+      "level": 17,
+      "rankName": "Specialist",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783973/Rank_Badges-Specialist_Badge-2_h9ucan.png"
+    },
+    {
+      "level": 18,
+      "rankName": "Specialist",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783975/Rank_Badges-Specialist_Badge-3_ttx97d.png"
+    },
+    {
+      "level": 19,
+      "rankName": "Specialist",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783975/Rank_Badges-Specialist_Badge-4_o9ervi.png"
+    },
+    {
+      "level": 20,
+      "rankName": "Specialist",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783976/Rank_Badges-Specialist_Badge-5_fh060q.png"
+    },
+    {
+      "level": 21,
+      "rankName": "Veteran",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783979/Rank_Badges-Veteran_Badge-1_hxyeog.png"
+    },
+    {
+      "level": 22,
+      "rankName": "Veteran",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783979/Rank_Badges-Veteran_Badge-2_ormxkb.png"
+    },
+    {
+      "level": 23,
+      "rankName": "Veteran",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783980/Rank_Badges-Veteran_Badge-3_a8almv.png"
+    },
+    {
+      "level": 24,
+      "rankName": "Veteran",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783983/Rank_Badges-Veteran_Badge-4_b3aalz.png"
+    },
+    {
+      "level": 25,
+      "rankName": "Veteran",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783982/Rank_Badges-Veteran_Badge-5_wpyyql.png"
+    },
+    {
+      "level": 26,
+      "rankName": "Elite",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783944/Rank_Badges-Elite_Badge-1_nhhobo.png"
+    },
+    {
+      "level": 27,
+      "rankName": "Elite",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783944/Rank_Badges-Elite_Badge-2_pb09wk.png"
+    },
+    {
+      "level": 28,
+      "rankName": "Elite",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783946/Rank_Badges-Elite_Badge-3_fnid16.png"
+    },
+    {
+      "level": 29,
+      "rankName": "Elite",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783947/Rank_Badges-Elite_Badge-4_wvozkd.png"
+    },
+    {
+      "level": 30,
+      "rankName": "Elite",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783947/Rank_Badges-Elite_Badge-5_zwgmhb.png"
+    },
+    {
+      "level": 31,
+      "rankName": "Commander",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783940/Rank_Badges-Commander_Badge-1_qayp2d.png"
+    },
+    {
+      "level": 32,
+      "rankName": "Commander",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783940/Rank_Badges-Commander_Badge-2_jof5xk.png"
+    },
+    {
+      "level": 33,
+      "rankName": "Commander",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783941/Rank_Badges-Commander_Badge-3_o767io.png"
+    },
+    {
+      "level": 34,
+      "rankName": "Commander",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783942/Rank_Badges-Commander_Badge-4_u5juwu.png"
+    },
+    {
+      "level": 35,
+      "rankName": "Commander",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783943/Rank_Badges-Commander_Badge-5_oaiuff.png"
+    },
+    {
+      "level": 36,
+      "rankName": "Warlord",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783984/Rank_Badges-Warlord_Badge-1_mhtfka.png"
+    },
+    {
+      "level": 37,
+      "rankName": "Warlord",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783986/Rank_Badges-Warlord_Badge-2_ia2qlx.png"
+    },
+    {
+      "level": 38,
+      "rankName": "Warlord",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783988/Rank_Badges-Warlord_Badge-3_kllrkm.png"
+    },
+    {
+      "level": 39,
+      "rankName": "Warlord",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783988/Rank_Badges-Warlord_Badge-4_zoh3s9.png"
+    },
+    {
+      "level": 40,
+      "rankName": "Warlord",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783936/Rank_Badges-Warlord_Badge-5_lxg8tl.png"
+    },
+    {
+      "level": 41,
+      "rankName": "Apex",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783937/Rank_Badges-Apex_Badge-1_avtnqw.png"
+    },
+    {
+      "level": 42,
+      "rankName": "Apex",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783937/Rank_Badges-Apex_Badge-2_gsb9cd.png"
+    },
+    {
+      "level": 43,
+      "rankName": "Apex",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783937/Rank_Badges-Apex_Badge-3_drkehw.png"
+    },
+    {
+      "level": 44,
+      "rankName": "Apex",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783938/Rank_Badges-Apex_Badge-4_ttu3lg.png"
+    },
+    {
+      "level": 45,
+      "rankName": "Apex",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783939/Rank_Badges-Apex_Badge-5_ocd3dw.png"
+    },
+    {
+      "level": 46,
+      "rankName": "Legend",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783949/Rank_Badges-Legend_Badge-1_iranm0.png"
+    },
+    {
+      "level": 47,
+      "rankName": "Legend",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783950/Rank_Badges-Legend_Badge-2_mcirzd.png"
+    },
+    {
+      "level": 48,
+      "rankName": "Legend",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783950/Rank_Badges-Legend_Badge-2_mcirzd.png"
+    },
+    {
+      "level": 49,
+      "rankName": "Legend",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783952/Rank_Badges-Legend_Badge-4_a9smam.png"
+    },
+    {
+      "level": 50,
+      "rankName": "Legend",
+      "scoreThreshold": 0,
+      "estGames": 0,
+      "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783953/Rank_Badges-Legend_Badge-5_d0lw13.png"
+    }
+  ],
+  "matchDate": "2026.09.12",
+  "label": "LO-2026-29 · 5v5 Online Domination",
+  "generatedAt": "2026-09-12T20:06:52.072Z"
+}

@@ -48,7 +48,7 @@ export default async function MatchReportV2Page({ searchParams }: { searchParams
       <div className="mb-6 rounded-md border border-border bg-bg-elevated px-4 py-3 text-sm text-text-muted">
         <p className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-text-subtle">How it&apos;s currently scored</p>
         <ul className="mt-2 list-disc space-y-1 pl-5">
-          <li><span className="text-text">Base capture:</span> 75 points — only if the base is held for at least 5 seconds (shorter captures don&apos;t count).</li>
+          <li><span className="text-text">Base capture:</span> 75 points — only if the base is held for at least 3 seconds (shorter captures don&apos;t count).</li>
           <li><span className="text-text">Recapture:</span> 50 points — retaking the same base within 20 seconds.</li>
           <li><span className="text-text">Hold:</span> 2 points per second a base is held.</li>
           <li><span className="text-text">Kills:</span> score also factors in kills, damage, accuracy and K/D; spawn-trap kills are voided. Streaks add points too.</li>
