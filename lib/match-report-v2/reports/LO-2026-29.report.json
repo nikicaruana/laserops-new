@@ -13,19 +13,19 @@
       },
       "blue": {
         "roundWins": 3,
-        "rating": 45889
+        "rating": 45339
       },
       "yellow": {
         "roundWins": 2,
-        "rating": 54354
+        "rating": 53654
       }
     },
     "winningTeam": "Blue",
     "losingTeam": "Yellow",
     "winningTeamRounds": 3,
     "losingTeamRounds": 2,
-    "winningTeamRating": 45889,
-    "losingTeamRating": 54354,
+    "winningTeamRating": 45339,
+    "losingTeamRating": 53654,
     "winningTeamBadge": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778784566/Team_Badges-Blue-2_xgdmsr.png",
     "losingTeamBadge": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778784565/Team_Badges-Yellow-2_wzyt3t.png"
   },
@@ -38,7 +38,7 @@
       "teamColorLower": "yellow",
       "level": 10,
       "rankBadgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783958/Rank_Badges-Operative_Badge-5_rtctim.png",
-      "score": 21167,
+      "score": 20567,
       "kills": 65,
       "deaths": 50,
       "kd": 1.3,
@@ -60,10 +60,10 @@
       "teamRoundsLost": 3,
       "isWinner": false,
       "teamBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778784565/Team_Badges-Yellow-2_wzyt3t.png",
-      "xpFromPoints": 21167,
+      "xpFromPoints": 20567,
       "xpFromWins": 1500,
       "xpFromAccolades": 275,
-      "xpEarnedThisMatch": 22942,
+      "xpEarnedThisMatch": 22342,
       "xpTotalBeforeMatch": 0,
       "xpTotalAfterMatch": 0,
       "xpCurrentLevelBeforeMatch": 1,
@@ -109,14 +109,6 @@
       "capTimeRank": 1,
       "matchStreaks": [
         {
-          "key": "hold_base_5min",
-          "name": "5 Min Hold",
-          "description": "Holding down a base for 5 minutes without losing it",
-          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/hold_base_5min.png",
-          "points": 100,
-          "count": 6
-        },
-        {
           "key": "hold_base_10min",
           "name": "10 Min Hold",
           "description": "Holding down a base for 10 minutes without losing it",
@@ -125,12 +117,12 @@
           "count": 3
         },
         {
-          "key": "hold_base_3min",
-          "name": "3 Min Hold",
-          "description": "Holding down a base for 3 minutes without losing it",
-          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/hold_base_3min.png",
-          "points": 50,
-          "count": 8
+          "key": "hold_base_5min",
+          "name": "5 Min Hold",
+          "description": "Holding down a base for 5 minutes without losing it",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/hold_base_5min.png",
+          "points": 100,
+          "count": 3
         },
         {
           "key": "kill_streak_3",
@@ -169,6 +161,14 @@
           "name": "Streak Ender",
           "description": "Killing someone who is on at least a 5-kill streak",
           "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/streak_ender.png",
+          "points": 50,
+          "count": 2
+        },
+        {
+          "key": "hold_base_3min",
+          "name": "3 Min Hold",
+          "description": "Holding down a base for 3 minutes without losing it",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/hold_base_3min.png",
           "points": 50,
           "count": 2
         },
@@ -275,7 +275,7 @@
       "teamColorLower": "yellow",
       "level": 12,
       "rankBadgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783960/Rank_Badges-Ranger_Badge-2_jinrca.png",
-      "score": 16482,
+      "score": 16382,
       "kills": 88,
       "deaths": 53,
       "kd": 1.64,
@@ -297,10 +297,10 @@
       "teamRoundsLost": 3,
       "isWinner": false,
       "teamBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778784565/Team_Badges-Yellow-2_wzyt3t.png",
-      "xpFromPoints": 16482,
+      "xpFromPoints": 16382,
       "xpFromWins": 1500,
       "xpFromAccolades": 325,
-      "xpEarnedThisMatch": 18307,
+      "xpEarnedThisMatch": 18207,
       "xpTotalBeforeMatch": 0,
       "xpTotalAfterMatch": 0,
       "xpCurrentLevelBeforeMatch": 1,
@@ -387,14 +387,6 @@
           "count": 3
         },
         {
-          "key": "hold_base_3min",
-          "name": "3 Min Hold",
-          "description": "Holding down a base for 3 minutes without losing it",
-          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/hold_base_3min.png",
-          "points": 50,
-          "count": 3
-        },
-        {
           "key": "burner_1",
           "name": "Burner",
           "description": "Burning 1 base in a round (capturing it and taking it to the fully captured state)",
@@ -443,6 +435,14 @@
           "count": 2
         },
         {
+          "key": "hold_base_3min",
+          "name": "3 Min Hold",
+          "description": "Holding down a base for 3 minutes without losing it",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/hold_base_3min.png",
+          "points": 50,
+          "count": 1
+        },
+        {
           "key": "clean_sweep",
           "name": "Clean Sweep",
           "description": "Killing all members of the opposing team at least once in a round",
@@ -452,13 +452,13 @@
         }
       ],
       "nemesis": {
-        "nickname": "Hasapardi",
-        "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1779049146/Hasapardi_dvdfv3.jpg",
-        "level": 14,
-        "killsFor": 19,
-        "killsAgainst": 19,
-        "damageFor": 2945,
-        "damageAgainst": 2900
+        "nickname": "Mustafa",
+        "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1779260212/mustafa2_v2ucc3.jpg",
+        "level": 11,
+        "killsFor": 50,
+        "killsAgainst": 16,
+        "damageFor": 7130,
+        "damageAgainst": 2995
       },
       "killed": [
         {
@@ -513,7 +513,7 @@
       "teamColorLower": "blue",
       "level": 13,
       "rankBadgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783961/Rank_Badges-Ranger_Badge-3_nq4orq.png",
-      "score": 16082,
+      "score": 15682,
       "kills": 60,
       "deaths": 26,
       "kd": 2.31,
@@ -535,10 +535,10 @@
       "teamRoundsLost": 2,
       "isWinner": true,
       "teamBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778784566/Team_Badges-Blue-2_xgdmsr.png",
-      "xpFromPoints": 16082,
+      "xpFromPoints": 15682,
       "xpFromWins": 2750,
       "xpFromAccolades": 0,
-      "xpEarnedThisMatch": 18832,
+      "xpEarnedThisMatch": 18432,
       "xpTotalBeforeMatch": 0,
       "xpTotalAfterMatch": 0,
       "xpCurrentLevelBeforeMatch": 1,
@@ -556,28 +556,12 @@
       "capTimeRank": 2,
       "matchStreaks": [
         {
-          "key": "hold_base_5min",
-          "name": "5 Min Hold",
-          "description": "Holding down a base for 5 minutes without losing it",
-          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/hold_base_5min.png",
-          "points": 100,
-          "count": 4
-        },
-        {
           "key": "hold_base_10min",
           "name": "10 Min Hold",
           "description": "Holding down a base for 10 minutes without losing it",
           "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/hold_base_10min.png",
           "points": 200,
           "count": 2
-        },
-        {
-          "key": "hold_base_3min",
-          "name": "3 Min Hold",
-          "description": "Holding down a base for 3 minutes without losing it",
-          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/hold_base_3min.png",
-          "points": 50,
-          "count": 6
         },
         {
           "key": "burner_1",
@@ -592,6 +576,14 @@
           "name": "Grim Reaper",
           "description": "Killing all the members of the opposing team at least once without dying",
           "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/grim_reaper.png",
+          "points": 100,
+          "count": 2
+        },
+        {
+          "key": "hold_base_5min",
+          "name": "5 Min Hold",
+          "description": "Holding down a base for 5 minutes without losing it",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/hold_base_5min.png",
           "points": 100,
           "count": 2
         },
@@ -632,6 +624,14 @@
           "name": "Clutch Move",
           "description": "At least 2 kills and a base capture in under 30 seconds",
           "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/clutch_move.png",
+          "points": 50,
+          "count": 2
+        },
+        {
+          "key": "hold_base_3min",
+          "name": "3 Min Hold",
+          "description": "Holding down a base for 3 minutes without losing it",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/hold_base_3min.png",
           "points": 50,
           "count": 2
         },
@@ -738,7 +738,7 @@
       "teamColorLower": "blue",
       "level": 14,
       "rankBadgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783961/Rank_Badges-Ranger_Badge-3_nq4orq.png",
-      "score": 15156,
+      "score": 15056,
       "kills": 64,
       "deaths": 58,
       "kd": 1.1,
@@ -760,10 +760,10 @@
       "teamRoundsLost": 2,
       "isWinner": true,
       "teamBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778784566/Team_Badges-Blue-2_xgdmsr.png",
-      "xpFromPoints": 15156,
+      "xpFromPoints": 15056,
       "xpFromWins": 2750,
       "xpFromAccolades": 100,
-      "xpEarnedThisMatch": 18006,
+      "xpEarnedThisMatch": 17906,
       "xpTotalBeforeMatch": 0,
       "xpTotalAfterMatch": 0,
       "xpCurrentLevelBeforeMatch": 1,
@@ -791,14 +791,6 @@
       "capTimeRank": 3,
       "matchStreaks": [
         {
-          "key": "hold_base_3min",
-          "name": "3 Min Hold",
-          "description": "Holding down a base for 3 minutes without losing it",
-          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/hold_base_3min.png",
-          "points": 50,
-          "count": 6
-        },
-        {
           "key": "captures_5",
           "name": "5x Cap",
           "description": "5 base captures in one round",
@@ -811,6 +803,14 @@
           "name": "PTFO",
           "description": "Capturing 2 different bases in one life",
           "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/ptfo.png",
+          "points": 50,
+          "count": 4
+        },
+        {
+          "key": "hold_base_3min",
+          "name": "3 Min Hold",
+          "description": "Holding down a base for 3 minutes without losing it",
+          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/hold_base_3min.png",
           "points": 50,
           "count": 4
         },
@@ -888,13 +888,13 @@
         }
       ],
       "nemesis": {
-        "nickname": "Snaaaaaaake",
-        "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1779048927/Snaaaaaake_puhjyp.jpg",
-        "level": 12,
-        "killsFor": 19,
-        "killsAgainst": 19,
-        "damageFor": 2900,
-        "damageAgainst": 2945
+        "nickname": "ChrisKyle",
+        "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1785229729/ChrisKyle_ewg0qk.jpg",
+        "level": 10,
+        "killsFor": 23,
+        "killsAgainst": 17,
+        "damageFor": 2635,
+        "damageAgainst": 2490
       },
       "killed": [
         {
@@ -1206,13 +1206,13 @@
         }
       ],
       "nemesis": {
-        "nickname": "Hasapardi",
-        "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1779049146/Hasapardi_dvdfv3.jpg",
-        "level": 14,
-        "killsFor": 7,
-        "killsAgainst": 5,
-        "damageFor": 840,
-        "damageAgainst": 700
+        "nickname": "PourHoneyOnMyBun",
+        "profilePicUrl": "/images/default-avatar.png",
+        "level": 3,
+        "killsFor": 12,
+        "killsAgainst": 2,
+        "damageFor": 1630,
+        "damageAgainst": 315
       },
       "killed": [
         {
@@ -1263,7 +1263,7 @@
       "teamColorLower": "blue",
       "level": 3,
       "rankBadgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778783968/Rank_Badges-Recruit_Badge-3_pkxleg.png",
-      "score": 5433,
+      "score": 5383,
       "kills": 29,
       "deaths": 39,
       "kd": 0.74,
@@ -1285,10 +1285,10 @@
       "teamRoundsLost": 2,
       "isWinner": true,
       "teamBadgeImage": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778784566/Team_Badges-Blue-2_xgdmsr.png",
-      "xpFromPoints": 5433,
+      "xpFromPoints": 5383,
       "xpFromWins": 2750,
       "xpFromAccolades": 0,
-      "xpEarnedThisMatch": 8183,
+      "xpEarnedThisMatch": 8133,
       "xpTotalBeforeMatch": 0,
       "xpTotalAfterMatch": 0,
       "xpCurrentLevelBeforeMatch": 1,
@@ -1320,14 +1320,6 @@
           "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/kill_streak_3.png",
           "points": 25,
           "count": 4
-        },
-        {
-          "key": "hold_base_3min",
-          "name": "3 Min Hold",
-          "description": "Holding down a base for 3 minutes without losing it",
-          "badgeUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/laseropsmalta.com/streak-badges/hold_base_3min.png",
-          "points": 50,
-          "count": 1
         },
         {
           "key": "burner_1",
@@ -1363,13 +1355,13 @@
         }
       ],
       "nemesis": {
-        "nickname": "ChrisKyle",
-        "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1785229729/ChrisKyle_ewg0qk.jpg",
-        "level": 10,
-        "killsFor": 4,
-        "killsAgainst": 12,
-        "damageFor": 900,
-        "damageAgainst": 1690
+        "nickname": "Snaaaaaaake",
+        "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1779048927/Snaaaaaake_puhjyp.jpg",
+        "level": 12,
+        "killsFor": 11,
+        "killsAgainst": 7,
+        "damageFor": 1285,
+        "damageAgainst": 1460
       },
       "killed": [
         {
@@ -1690,13 +1682,13 @@
         }
       ],
       "nemesis": {
-        "nickname": "Sina",
-        "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1778738930/Sina_vnj0wh.jpg",
-        "level": 13,
-        "killsFor": 6,
-        "killsAgainst": 20,
-        "damageFor": 1045,
-        "damageAgainst": 2850
+        "nickname": "Mustafa",
+        "profilePicUrl": "https://res.cloudinary.com/dqud5b7pa/image/upload/v1779260212/mustafa2_v2ucc3.jpg",
+        "level": 11,
+        "killsFor": 12,
+        "killsAgainst": 19,
+        "damageFor": 2510,
+        "damageAgainst": 3120
       },
       "killed": [
         {
@@ -2258,5 +2250,5 @@
   ],
   "matchDate": "2026.09.12",
   "label": "LO-2026-29 · 5v5 Online Domination",
-  "generatedAt": "2026-09-12T20:06:52.072Z"
+  "generatedAt": "2026-09-12T20:32:05.979Z"
 }
