@@ -11,6 +11,7 @@
  */
 import { buildMatchReportV2 } from "../match-report-v2/build";
 import type { RoundResolutions } from "./resolutions";
+import { computeMatchXp, DEFAULT_XP_CONFIG, type XpConfig } from "../scoring/xp";
 
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
@@ -23,7 +24,7 @@ export type CommitTally = { headband: string; nickname: string; count: number };
 export type CommitAggregate = {
   account_id: string | null; nickname: string; headset_label: string; team_colour: string; profile_pic_url: string | null; gun_used: string | null;
   frags: number; deaths: number; hits: number; shots: number; wounds: number; captures: number; hold_seconds: number;
-  accuracy: number; kd: number; damage: number; score: number;
+  accuracy: number; kd: number; damage: number; score: number; match_rating: number; match_average_score: number; score_performance_delta: number; xp_multiplier: number;
   score_rank: number; kills_rank: number; deaths_rank: number; kd_rank: number; accuracy_rank: number; damage_rank: number;
   was_winner: boolean; rounds_won: number; rounds_lost: number; team_score: number; opponent_team_score: number;
   xp_from_points: number; xp_from_wins: number; xp_from_accolades: number; xp_total: number;
@@ -54,7 +55,8 @@ export function computeMatchCommit(
   rawRounds: { raw: string; resolutions?: RoundResolutions }[],
   accoladeByKey: Map<string, { id: string; xp: number }>,
   identity: (headband: string) => { nickname: string; accountId: string | null; profilePicUrl?: string | null; gun?: string | null; xpMultiplier?: number },
-  xp = { roundWin: 750, matchWin: 500 },
+  cfg: XpConfig = DEFAULT_XP_CONFIG,
+  isDoubleXp = false,
 ): CommitResult {
   const report = buildMatchReportV2(rawRounds, { matchId: "commit", label: "commit" });
   const P = report.players;
@@ -64,6 +66,7 @@ export function computeMatchCommit(
   const teamScore: Record<string, number> = {};
   for (const p of P) teamScore[p.team] = (teamScore[p.team] ?? 0) + p.totalScore;
   const winner = report.matchWinner;
+  const matchAvg = scores.length ? scores.reduce((s, v) => s + v, 0) / scores.length : 0;
 
   // Resolve an opponent's headband to their display name (for nemesis + kill lists).
   const nameFor = (headband: string) => identity(headband).nickname;
@@ -73,11 +76,14 @@ export function computeMatchCommit(
     const teamRoundsWon = report.roundsWonByTeam[p.team] ?? 0;
     const isWinner = p.team === winner;
     const oppTeam = Object.keys(teamScore).find((t) => t !== p.team);
-    // Personal XP-boost perk (double / 1.5x), spent at sign-in; 1 when none.
-    const mult = idn.xpMultiplier ?? 1;
-    const xpPoints = Math.round(p.totalScore * mult);
-    const xpWins = Math.round((xp.roundWin * teamRoundsWon + (isWinner ? xp.matchWin : 0)) * mult);
-    const xpAcc = Math.round(p.accolades.reduce((s, nm) => s + (accoladeByKey.get(norm(nm))?.xp ?? 0), 0) * mult);
+    // Effective XP multiplier: the bigger of the player's personal boost token
+    // (double / 1.5x, spent at sign-in) and a match-wide Double XP night (2x).
+    // They don't stack; a player gets whichever is larger.
+    const mult = Math.max(idn.xpMultiplier ?? 1, isDoubleXp ? 2 : 1);
+    const rating = matchAvg > 0 ? p.totalScore / matchAvg : 0;
+    const accoladeBase = p.accolades.reduce((s, nm) => s + (accoladeByKey.get(norm(nm))?.xp ?? 0), 0);
+    const xpb = computeMatchXp({ rating, roundsWon: teamRoundsWon, isWinner, accoladeXp: accoladeBase, multiplier: mult }, cfg);
+    const xpPoints = xpb.xpFromPoints, xpWins = xpb.xpFromWins, xpAcc = xpb.xpFromAccolades;
     const nemesis: CommitNemesis = p.nemesis
       ? { headband: p.nemesis.name, nickname: nameFor(p.nemesis.name), profilePicUrl: identity(p.nemesis.name).profilePicUrl ?? null, level: 0, killsFor: p.nemesis.killsFor, killsAgainst: p.nemesis.killsAgainst }
       : null;
@@ -85,11 +91,12 @@ export function computeMatchCommit(
       account_id: idn.accountId, nickname: idn.nickname, headset_label: p.name, team_colour: p.team, profile_pic_url: idn.profilePicUrl ?? null, gun_used: idn.gun ?? null,
       frags: p.frags, deaths: p.deaths, hits: p.hits, shots: p.shots, wounds: p.wounds, captures: p.captures + p.recaptures, hold_seconds: Math.round(p.holdSeconds),
       accuracy: Math.round(p.accuracy * 10000) / 10000, kd: p.kd, damage: p.damage, score: p.totalScore,
+      match_rating: matchAvg > 0 ? Math.round((p.totalScore / matchAvg) * 100) / 100 : 0, match_average_score: Math.round(matchAvg), score_performance_delta: Math.round(p.totalScore - matchAvg), xp_multiplier: mult,
       score_rank: rankOf(scores, p.totalScore), kills_rank: rankOf(kills, p.frags), deaths_rank: rankOf(deaths, p.deaths, false),
       kd_rank: rankOf(kds, p.kd), accuracy_rank: rankOf(accs, p.accuracy), damage_rank: rankOf(dmgs, p.damage),
       was_winner: isWinner, rounds_won: teamRoundsWon, rounds_lost: report.roundCount - teamRoundsWon,
       team_score: teamScore[p.team] ?? 0, opponent_team_score: oppTeam ? teamScore[oppTeam] ?? 0 : 0,
-      xp_from_points: xpPoints, xp_from_wins: xpWins, xp_from_accolades: xpAcc, xp_total: xpPoints + xpWins + xpAcc,
+      xp_from_points: xpPoints, xp_from_wins: xpWins, xp_from_accolades: xpAcc, xp_total: xpb.xpTotal,
       streaks: p.streaks.map((s) => ({ key: s.key, count: s.count, points: s.points })),
       nemesis,
       killed: p.killed.map((k) => ({ headband: k.name, nickname: nameFor(k.name), count: k.count })),

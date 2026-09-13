@@ -13,6 +13,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { parseRound } from "@/lib/ingestion/round-parser";
 import { unreviewedCount, type RoundResolutions } from "@/lib/ingestion/resolutions";
 import { computeMatchCommit } from "@/lib/ingestion/commit";
+import { parseXpConfig } from "@/lib/scoring/xp";
 import { resolveRoster } from "@/lib/ingestion/roster";
 import { recomputeProgression } from "@/lib/ingestion/progression";
 
@@ -45,6 +46,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
 
   // Accolade id/xp map.
   const { data: accs } = await supabase.from("accolade_definitions").select("id, name, xp").eq("scope", "match");
+  const { data: xpCfg } = await supabase.from("xp_config").select("key, value");
   const accoladeByKey = new Map((accs ?? []).map((a) => [norm(a.name as string), { id: a.id as string, xp: (a.xp as number) ?? 0 }]));
 
   // Roster identity + gun + XP-boost: assigned headbands resolve to the player's
@@ -52,7 +54,8 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   // post-publish edit step so both attribute stats the same way.
   const identity = await resolveRoster(supabase, id);
 
-  const result = computeMatchCommit(rounds, accoladeByKey, identity);
+  const { data: matchFlags } = await supabase.from("matches").select("is_double_xp").eq("id", id).maybeSingle();
+  const result = computeMatchCommit(rounds, accoladeByKey, identity, parseXpConfig((xpCfg ?? []) as { key: string; value: number | null }[]), matchFlags?.is_double_xp === true);
 
   // Write via the service role (RLS-bypassing; grants added in migration).
   const svc = createServiceClient();

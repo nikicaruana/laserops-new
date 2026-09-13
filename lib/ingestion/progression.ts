@@ -13,14 +13,16 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { parseEloConfig, computeMatchElo, type EloRow } from "@/lib/scoring/elo";
+import { computeMatchXp, parseXpConfig } from "@/lib/scoring/xp";
 
 type Rank = { level: number; threshold: number };
 type Agg = {
   id: string; match_id: string; account_id: string | null;
   team_colour: string | null; score: number | null; xp_total: number | null;
   rounds_won: number | null; rounds_lost: number | null;
+  was_winner: boolean | null; xp_from_accolades: number | null; xp_multiplier: number | null;
 };
-type MatchRow = { id: string; played_on: string | null; scheduled_at: string | null; created_at: string | null; sequence_no: number | null };
+type MatchRow = { id: string; played_on: string | null; scheduled_at: string | null; created_at: string | null; sequence_no: number | null; is_double_xp: boolean | null };
 
 const levelForXp = (ranks: Rank[], xp: number) => {
   let lvl = 1;
@@ -30,14 +32,16 @@ const levelForXp = (ranks: Rank[], xp: number) => {
 const thresholdOf = (ranks: Rank[], level: number) => ranks.find((r) => r.level === level)?.threshold ?? null;
 
 export async function recomputeProgression(client: SupabaseClient): Promise<{ matches: number; rows: number }> {
-  const [{ data: cfgRows }, { data: rankRows }, { data: matchRows }, { data: aggRows }] = await Promise.all([
+  const [{ data: cfgRows }, { data: xpCfgRows }, { data: rankRows }, { data: matchRows }, { data: aggRows }] = await Promise.all([
     client.from("elo_config").select("key, value"),
+    client.from("xp_config").select("key, value"),
     client.from("rank_levels").select("level, score_threshold").order("level"),
-    client.from("matches").select("id, played_on, scheduled_at, created_at, sequence_no"),
-    client.from("match_player_aggregate").select("id, match_id, account_id, team_colour, score, xp_total, rounds_won, rounds_lost"),
+    client.from("matches").select("id, played_on, scheduled_at, created_at, sequence_no, is_double_xp"),
+    client.from("match_player_aggregate").select("id, match_id, account_id, team_colour, score, xp_total, rounds_won, rounds_lost, was_winner, xp_from_accolades, xp_multiplier"),
   ]);
 
   const params = parseEloConfig((cfgRows ?? []) as { key: string; value: string | null }[]);
+  const xpCfg = parseXpConfig((xpCfgRows ?? []) as { key: string; value: number | null }[]);
   const ranks: Rank[] = ((rankRows ?? []) as { level: number; score_threshold: number | null }[]).map((r) => ({ level: r.level, threshold: r.score_threshold ?? 0 }));
 
   const byMatch = new Map<string, Agg[]>();
@@ -63,12 +67,15 @@ export async function recomputeProgression(client: SupabaseClient): Promise<{ ma
       roundsWon: a.rounds_won ?? 0, roundsLost: a.rounds_lost ?? 0,
     }));
     const elo = computeMatchElo(params, eloRows);
+    const matchAvg = rows.length ? rows.reduce((s, a) => s + (a.score ?? 0), 0) / rows.length : 0;
 
     for (const a of rows) {
       // XP / level: running total per account (each walk-in row is its own chain).
       const key = a.account_id;
       const xpBefore = key ? (runningXp.get(key) ?? 0) : 0;
-      const xpAfter = xpBefore + (a.xp_total ?? 0);
+      const rating = matchAvg > 0 ? (a.score ?? 0) / matchAvg : 0;
+      const xpb = computeMatchXp({ rating, roundsWon: a.rounds_won ?? 0, isWinner: !!a.was_winner, accoladeXp: a.xp_from_accolades ?? 0, multiplier: Math.max(a.xp_multiplier ?? 1, m.is_double_xp ? 2 : 1) }, xpCfg);
+      const xpAfter = xpBefore + xpb.xpTotal;
       if (key) runningXp.set(key, xpAfter);
       const levelBefore = levelForXp(ranks, xpBefore);
       const levelAfter = levelForXp(ranks, xpAfter);
@@ -82,6 +89,12 @@ export async function recomputeProgression(client: SupabaseClient): Promise<{ ma
 
       updates.push({
         id: a.id,
+        xp_from_points: xpb.xpFromPoints,
+        xp_from_wins: xpb.xpFromWins,
+        xp_from_accolades: xpb.xpFromAccolades,
+        xp_total: xpb.xpTotal,
+        match_rating: matchAvg > 0 ? Math.round(((a.score ?? 0) / matchAvg) * 100) / 100 : 0,
+        match_average_score: Math.round(matchAvg),
         xp_total_before_match: xpBefore,
         xp_total_after_match: xpAfter,
         level_before: levelBefore,
