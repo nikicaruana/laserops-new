@@ -123,6 +123,17 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     if (awErr) return NextResponse.json({ error: `Awards write failed: ${awErr.message}` }, { status: 500 });
   }
 
+  // Squad-vs-squad / ladder matches: auto-derive each squad's team colour from
+  // the committed per-player data (overwrite=false never clobbers a manual
+  // admin choice) BEFORE stamping winning_team_colour below, so the ladder
+  // auto-movement trigger can map the winning colour to a squad and move
+  // positions with zero admin input. No-op for non-squad matches; non-fatal.
+  try {
+    await svc.rpc("derive_match_squad_colours", { p_match_id: id, p_overwrite: false });
+  } catch {
+    /* ladder colour derivation is a convenience, not core scoring */
+  }
+
   // Stamp the match scored. Ensure played_on is set (needed for chronological
   // XP/level/ELO ordering + player history) — keep any existing date.
   const { error: mErr } = await svc.from("matches").update({
