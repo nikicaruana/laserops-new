@@ -36,7 +36,7 @@ const RATING_FIELDS: FieldSpec[] = [
   { key: "KD_Rating", label: "K/D ratio", group: "Component weights (sum to 1)" },
   { key: "Match_Rating_Rating", label: "Match rating", group: "Component weights (sum to 1)" },
   { key: "Accuracy_Rating", label: "Accuracy", group: "Component weights (sum to 1)" },
-  { key: "Kills_Per_Match_Rating", label: "Kills per match", group: "Component weights (sum to 1)" },
+  { key: "Kills_Per_Match_Rating", label: "Kills per round", group: "Component weights (sum to 1)" },
   { key: "Damage_Rating", label: "Damage", group: "Component weights (sum to 1)" },
   { key: "Rounds_WL_Rating", label: "Rounds W/L", group: "Component weights (sum to 1)" },
   { key: "Match_Win_Rating", label: "Match win", group: "Component weights (sum to 1)" },

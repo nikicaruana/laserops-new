@@ -23,11 +23,11 @@ import { ChartCard } from "@/components/portal/player-history/ChartCard";
  * bubble is one gun the viewed player has used, plotted against:
  *   - X: their accuracy with that gun
  *   - Y: their K/D with that gun
- *   - Bubble size: average kills per match with that gun
+ *   - Bubble size: average kills per round with that gun
  *
  * Reads as "where do my favourite guns sit on the lethality map." Same
- * visual recipe as the public chart — same axis colours, same tooltip
- * style, same Z-domain — for consistency across the site.
+ * visual recipe as the public chart – same axis colours, same tooltip
+ * style, same Z-domain – for consistency across the site.
  *
  * No tree-branch filter. The collapsibles below already partition by
  * tree branch; the chart is the cross-tree summary.
@@ -45,7 +45,7 @@ type BubblePoint = {
   gunName: string;
   treeBranch: string;
   totalKills: number;
-  avgKillsPerMatch: number;
+  avgKillsPerRound: number;
   matchCount: number;
 };
 
@@ -67,11 +67,11 @@ export function PlayerWeaponMetaChart({ entries }: Props) {
         // percent axis. Defensive: treat values >1.5 as already-percent.
         x: e.avgAccuracy <= 1.5 ? e.avgAccuracy * 100 : e.avgAccuracy,
         y: e.kdRatio,
-        z: e.avgKills,
+        z: e.killsPerRound,
         gunName: e.gunName,
         treeBranch: e.treeBranch,
         totalKills: e.killsTotal,
-        avgKillsPerMatch: e.avgKills,
+        avgKillsPerRound: e.killsPerRound,
         matchCount: e.matchesUsed,
       }));
   }, [entries]);
@@ -80,11 +80,11 @@ export function PlayerWeaponMetaChart({ entries }: Props) {
     return (
       <ChartCard
         title="Your Weapon Meta"
-        subtitle="Where each of your guns sits in the accuracy vs K/D space, bubble size proportional to your average kills per match."
+        subtitle="Where each of your guns sits in the accuracy vs K/D space, bubble size proportional to your kills per round."
       >
         <div className="flex h-[200px] items-center justify-center sm:h-[280px]">
           <p className="text-sm text-text-muted">
-            No used-weapon data yet — play a match to populate this chart.
+            No used-weapon data yet – play a match to populate this chart.
           </p>
         </div>
       </ChartCard>
@@ -101,7 +101,7 @@ export function PlayerWeaponMetaChart({ entries }: Props) {
   return (
     <ChartCard
       title="Your Weapon Meta"
-      subtitle="Where each of your guns sits in the accuracy vs K/D space — bigger bubbles mean more kills per match on average."
+      subtitle="Where each of your guns sits in the accuracy vs K/D space – bigger bubbles mean more kills per round."
     >
       <div className="h-[340px] w-full sm:h-[420px] lg:h-[480px]">
         <ResponsiveContainer width="100%" height="100%">
@@ -156,7 +156,7 @@ export function PlayerWeaponMetaChart({ entries }: Props) {
               type="number"
               dataKey="z"
               range={[BUBBLE_MIN_R * BUBBLE_MIN_R, BUBBLE_MAX_R * BUBBLE_MAX_R]}
-              name="Kills/Match"
+              name="Kills/Round"
             />
             <Tooltip
               cursor={{ stroke: "#3a3a3a", strokeDasharray: "3 3" }}
@@ -205,8 +205,8 @@ function BubbleTooltip({ active, payload }: TooltipProps<number, string>) {
         K/D: <span className="text-accent">{p.y.toFixed(2)}</span>
       </p>
       <p className="font-mono tabular-nums text-text-muted">
-        Kills/Match:{" "}
-        <span className="text-accent">{p.avgKillsPerMatch.toFixed(2)}</span>
+        Kills/Round:{" "}
+        <span className="text-accent">{p.avgKillsPerRound.toFixed(2)}</span>
       </p>
       <p className="font-mono tabular-nums text-text-muted">
         Total Kills:{" "}

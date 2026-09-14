@@ -6,7 +6,7 @@
  * account, pre-aggregated) joined to rank_levels for the current-level
  * rank badge, so the XP/Levels table renders unchanged.
  *
- * Sort: total_xp desc, tiebreak xp-per-match desc (total_xp / games).
+ * Sort: total_xp desc, tiebreak xp-per-round desc (total_xp / rounds).
  * Top 50, matching the sheet-era DISPLAY_LIMIT.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -22,6 +22,7 @@ type LifetimeRow = {
   current_level: number | null;
   total_xp: number | null;
   games: number | null;
+  rounds: number | null;
 };
 
 type RankRow = { level: number | null; badge_url: string | null };
@@ -32,7 +33,7 @@ export async function getXpLevelsFromSupabase(
   const [lifetimeRes, ranksRes] = await Promise.all([
     supabase
       .from("player_stats_lifetime")
-      .select("nickname, profile_pic_url, current_level, total_xp, games"),
+      .select("nickname, profile_pic_url, current_level, total_xp, games, rounds"),
     supabase.from("rank_levels").select("level, badge_url"),
   ]);
 
@@ -46,7 +47,7 @@ export async function getXpLevelsFromSupabase(
     .map((r) => {
       const nickname = (r.nickname ?? "").trim();
       const totalXp = r.total_xp ?? 0;
-      const games = r.games ?? 0;
+      const rounds = r.rounds ?? 0;
       const level = r.current_level ?? 0;
       return {
         nickname,
@@ -54,13 +55,13 @@ export async function getXpLevelsFromSupabase(
         rankBadgeUrl: badgeByLevel.get(level) ?? "",
         level,
         totalXp,
-        xpPerMatch: games > 0 ? totalXp / games : 0,
+        xpPerRound: rounds > 0 ? totalXp / rounds : 0,
       };
     })
     .filter((r) => r.nickname !== "" && !isUnclaimedNickname(r.nickname))
     .sort((a, b) => {
       if (b.totalXp !== a.totalXp) return b.totalXp - a.totalXp;
-      return b.xpPerMatch - a.xpPerMatch;
+      return b.xpPerRound - a.xpPerRound;
     })
     .slice(0, DISPLAY_LIMIT)
     .map((r, index): XpLevelsRow => ({ rank: index + 1, ...r }));

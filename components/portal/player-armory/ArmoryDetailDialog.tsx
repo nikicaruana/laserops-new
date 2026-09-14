@@ -10,7 +10,7 @@ import { AnimatedProgressBar } from "./AnimatedProgressBar";
  * ArmoryDetailDialog
  * --------------------------------------------------------------------
  * Full-detail modal for a single gun on the Armory page. Sibling to
- * components/weapons/WeaponDetailDialog.tsx — the player-portal variant
+ * components/weapons/WeaponDetailDialog.tsx – the player-portal variant
  * adds:
  *   - Locked-state rendering (blurred image, unlock criteria/progress
  *     instead of weapon body)
@@ -74,7 +74,7 @@ export function ArmoryDetailDialog({ entry, onClose }: Props) {
     else onClose();
   }
 
-  // Render the dialog skeleton even when entry is null — the dialog
+  // Render the dialog skeleton even when entry is null – the dialog
   // stays mounted, just closed. We early-return after the dialog wrapper
   // (see below) to skip rendering body content when there's nothing to
   // show, but keep the <dialog> element itself stable across opens.
@@ -109,7 +109,7 @@ function ArmoryDialogBody({
 
   const fireRateLabel = entry.spec
     ? formatFireRate(entry.spec.fireRate)
-    : entry.gunFireRate || "—";
+    : entry.gunFireRate || "–";
 
   const imageSrc =
     entry.gunPlayerImage ||
@@ -153,7 +153,7 @@ function ArmoryDialogBody({
           </button>
         </div>
 
-        {/* Image — same yellow band treatment as the weapons gallery
+        {/* Image – same yellow band treatment as the weapons gallery
             dialog. Locked guns get a heavy blur to mirror the card. */}
         {imageSrc !== "" && (
           <div
@@ -234,7 +234,7 @@ function ArmoryDialogBody({
           </div>
         )}
 
-        {/* Weapon stats — always shown so locked-gun viewers can see
+        {/* Weapon stats – always shown so locked-gun viewers can see
             what they're working toward. Falls back to PlayerArmoryRow's
             own copies of the four primary stats when the Gun_Damage
             join missed. */}
@@ -251,7 +251,7 @@ function ArmoryDialogBody({
             label="Reload"
             value={(() => {
               const reload = entry.spec?.reloadSeconds ?? entry.gunReload;
-              return reload > 0 ? `${formatNumberShort(reload)}s` : "—";
+              return reload > 0 ? `${formatNumberShort(reload)}s` : "–";
             })()}
           />
           <DialogStat label="Rate" value={fireRateLabel} />
@@ -259,7 +259,7 @@ function ArmoryDialogBody({
 
         {/* Spec extras only available from Gun_Damage join. Skip the
             whole row if the spec didn't match. Range was removed at the
-            user's request — laser tag range numbers from the catalogue
+            user's request – laser tag range numbers from the catalogue
             sheet aren't meaningful enough to display alongside hard
             stats like length/weight/difficulty. */}
         {entry.spec && (
@@ -279,7 +279,7 @@ function ArmoryDialogBody({
           </div>
         )}
 
-        {/* Player stats — only when unlocked AND the player has used the
+        {/* Player stats – only when unlocked AND the player has used the
             gun. Hidden for locked guns and for unlocked-but-unused
             guns (showing all zeros adds noise).
             Layout: five paired stat groups (each pair on a bordered
@@ -301,8 +301,8 @@ function ArmoryDialogBody({
               <StatGroup>
                 <DialogStat label="Kills" value={fmtNum(entry.killsTotal)} />
                 <DialogStat
-                  label="Avg Kills"
-                  value={fmtRoundedInt(entry.avgKills)}
+                  label="Kills / Round"
+                  value={entry.killsPerRound.toFixed(1)}
                 />
               </StatGroup>
               <StatGroup>
@@ -332,10 +332,10 @@ function ArmoryDialogBody({
           </div>
         )}
 
-        {/* Description — always at the bottom when present. Skipped
+        {/* Description – always at the bottom when present. Skipped
             silently when the Gun_Damage row has no description filled
             in (vs the public /weapons dialog which shows a placeholder
-            — here the locked/progress block already gives the user
+            – here the locked/progress block already gives the user
             something to read). */}
         {entry.spec?.description && entry.spec.description !== "" && (
           <p className="mt-4 border-t border-border pt-4 text-sm leading-relaxed text-text-muted sm:text-base">
@@ -375,7 +375,7 @@ function DialogStat({ label, value }: { label: string; value: string }) {
 }
 
 function fmtNum(value: number): string {
-  if (!Number.isFinite(value) || value === 0) return "—";
+  if (!Number.isFinite(value) || value === 0) return "–";
   return formatNumberShort(value);
 }
 
@@ -385,12 +385,12 @@ function fmtNum(value: number): string {
  * rather than "97.67").
  */
 function fmtRoundedInt(value: number): string {
-  if (!Number.isFinite(value) || value === 0) return "—";
+  if (!Number.isFinite(value) || value === 0) return "–";
   return Math.round(value).toLocaleString("en-US");
 }
 
 function fmtFloat(value: number): string {
-  if (!Number.isFinite(value) || value === 0) return "—";
+  if (!Number.isFinite(value) || value === 0) return "–";
   // Strip trailing zeros after the decimal, then reapply locale
   // formatting so the integer portion gets thousands separators
   // ("15060" → "15,060", "97.67" stays "97.67").
@@ -401,26 +401,26 @@ function fmtFloat(value: number): string {
 }
 
 function fmtPct(value: number): string {
-  if (!Number.isFinite(value) || value === 0) return "—";
-  // Sheet stores accuracy as a 0-1 fraction OR 0-100 — accept both.
+  if (!Number.isFinite(value) || value === 0) return "–";
+  // Sheet stores accuracy as a 0-1 fraction OR 0-100 – accept both.
   // We normalise: anything ≤ 1.5 we treat as a fraction.
   const asPct = value <= 1.5 ? value * 100 : value;
   return `${asPct.toFixed(1).replace(/\.0$/, "")}%`;
 }
 
 /**
- * Format a "X out of Y" ratio as a percentage. Returns "—" if the
+ * Format a "X out of Y" ratio as a percentage. Returns "–" if the
  * denominator is zero or non-finite.
  */
 function fmtRate(numerator: number, denominator: number): string {
-  if (!Number.isFinite(denominator) || denominator <= 0) return "—";
-  if (!Number.isFinite(numerator)) return "—";
+  if (!Number.isFinite(denominator) || denominator <= 0) return "–";
+  if (!Number.isFinite(numerator)) return "–";
   const pct = (numerator / denominator) * 100;
   return `${pct.toFixed(1).replace(/\.0$/, "")}%`;
 }
 
 function formatNumberShort(value: number): string {
-  if (!Number.isFinite(value)) return "—";
+  if (!Number.isFinite(value)) return "–";
   if (Number.isInteger(value)) return value.toLocaleString("en-US");
   return value.toFixed(1).replace(/\.0$/, "");
 }

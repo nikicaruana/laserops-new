@@ -23,7 +23,7 @@ export const metadata: Metadata = {
  * renders one collapsible section per branch with ArmoryCard items.
  *
  * The PlayerSearch bar lives in the player-stats layout (PlayerStatsShell),
- * so it appears above the sub-tabs for all player-stats pages — no separate
+ * so it appears above the sub-tabs for all player-stats pages – no separate
  * search bar here.
  */
 
@@ -67,12 +67,21 @@ export default async function PlayerArmoryPage({
 
 async function ArmoryContent({ ops }: { ops: string }) {
   const supabase = await createClient();
-  const [armoryRows, weapons, excludedNicknames, { data: adminRow }] = await Promise.all([
+  const [armoryRowsRaw, weapons, excludedNicknames, { data: adminRow }, { data: gunStatRows }] = await Promise.all([
     getPlayerArmoryRows(supabase, ops),
     getWeaponsFromSupabase(),
     getExcludedNicknamesFromSupabase(),
     supabase.from("accounts").select("is_admin").ilike("ops_tag", ops).maybeSingle(),
+    supabase.from("player_gun_stats").select("gun_name, kills_per_round").ilike("nickname", ops),
   ]);
+
+  // Per-gun kills/round (online rounds) from the gun-stats read-model, merged
+  // onto the armory rows so the meta chart + detail dialog can show per-round.
+  const kprByGun = new Map<string, number>();
+  for (const g of (gunStatRows ?? []) as { gun_name: string | null; kills_per_round: number | null }[]) {
+    if (g.gun_name) kprByGun.set(g.gun_name, g.kills_per_round ?? 0);
+  }
+  const armoryRows = armoryRowsRaw.map((r) => ({ ...r, killsPerRound: kprByGun.get(r.gunName) ?? 0 }));
 
   let filtered = armoryRows;
 
@@ -89,7 +98,7 @@ async function ArmoryContent({ ops }: { ops: string }) {
   const unlockAll = isPrizeIneligible(ops, excludedNicknames) || adminRow?.is_admin === true;
   if (filtered.length > 0 && unlockAll) {
     filtered = filtered.map((row) => {
-      if (row.gunIsUnlocked) return row; // already unlocked — leave as-is
+      if (row.gunIsUnlocked) return row; // already unlocked – leave as-is
       return {
         ...row,
         gunIsUnlocked: true,
@@ -107,7 +116,7 @@ async function ArmoryContent({ ops }: { ops: string }) {
         </p>
         <p className="mx-auto mt-3 max-w-md text-sm text-text-muted sm:text-base">
           No armory data for &ldquo;{ops}&rdquo; yet. Double-check the
-          Ops Tag — recent players appear in the search bar above.
+          Ops Tag – recent players appear in the search bar above.
         </p>
       </div>
     );

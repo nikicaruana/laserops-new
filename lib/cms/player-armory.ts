@@ -5,7 +5,7 @@ import { isFallbackGunName } from "./weapons";
 /**
  * lib/cms/player-armory.ts
  * --------------------------------------------------------------------
- * Player_Armory_Public sheet — one row per (player, gun).
+ * Player_Armory_Public sheet – one row per (player, gun).
  *
  * The sheet does most of the work: per-player aggregates with each gun
  * (matches used, K/D, kills, etc.), unlock state booleans, and unlock
@@ -112,6 +112,8 @@ export type PlayerArmoryRow = {
   matchesUsed: number;
   killsTotal: number;
   avgKills: number;
+  /** Kills per online round with this gun (from player_gun_stats; 0 if none). */
+  killsPerRound: number;
   deathsTotal: number;
   hitsTotal: number;
   shotsTotal: number;
@@ -137,7 +139,7 @@ export type PlayerArmoryRow = {
  * Sheet image cells sometimes contain "#N/A" or other sheet error
  * strings instead of a URL (typical for locked rows where the image
  * lookup formula returns N/A). Treat any value that doesn't look like
- * an http(s) URL as missing — so renderers can apply their own
+ * an http(s) URL as missing – so renderers can apply their own
  * empty-state handling.
  */
 const cleanImageUrl = (value: string | undefined): string => {
@@ -200,6 +202,7 @@ export async function fetchPlayerArmory(): Promise<PlayerArmoryRow[]> {
       matchesUsed: parseNumericOr(row.Matches_Used, 0),
       killsTotal: parseNumericOr(row.Kills_Total, 0),
       avgKills: parseNumericOr(row.Avg_Kills, 0),
+      killsPerRound: 0, // legacy Sheets path has no per-round; merged from gun stats
       deathsTotal: parseNumericOr(row.Deaths_Total, 0),
       hitsTotal: parseNumericOr(row.Hits_Total, 0),
       shotsTotal: parseNumericOr(row.Shots_Total, 0),
@@ -225,7 +228,7 @@ export async function fetchPlayerArmory(): Promise<PlayerArmoryRow[]> {
 
 /**
  * Filter armory rows for a single player. Case-insensitive trimmed match
- * on Player_Nickname — same normalisation as findPlayerByOpsTag in
+ * on Player_Nickname – same normalisation as findPlayerByOpsTag in
  * lib/player-stats/shared.ts so search bar inputs flow through unchanged.
  */
 export function filterPlayerArmoryByOps(

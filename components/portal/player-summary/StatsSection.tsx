@@ -20,10 +20,10 @@ import type { PlayerStatsRaw } from "@/lib/player-stats/shared";
  * Nine cards in this order, grouped by what they communicate:
  *   1. Matches Won + Win Rate     ┐
  *   2. Rounds Won + W/L Ratio     ┘ wins / consistency
- *   3. Kills / Match              ┐
- *   4. Damage / Match             ┘ combat output
- *   5. Captures / Match           ┐
- *   6. Hold Time / Match          ┘ objective play (online only)
+ *   3. Kills / Round              ┐
+ *   4. Damage / Round             ┘ combat output
+ *   5. Captures / Round           ┐
+ *   6. Hold Time / Round          ┘ objective play (online only)
  *   7. Avg Match Rating             performance score
  *   8. Accuracy                   ┐
  *   9. K/D Ratio                  ┘ skill ratios

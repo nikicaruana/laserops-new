@@ -27,7 +27,7 @@ import { cn } from "@/lib/cn";
  * they're filtering "the period I'm looking at," not per-table).
  *
  * Column shape (5 columns, mobile → desktop):
- *   #  |  Profile  |  Ops Tag  |  Total Score  |  Points / Match
+ *   #  |  Profile  |  Ops Tag  |  Total Score  |  Points / Round
  *
  * One fewer column than Match/Round Wins so the Ops Tag column gets
  * even more room – long nicknames should rarely wrap.

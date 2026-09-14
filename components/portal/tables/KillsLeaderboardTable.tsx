@@ -27,12 +27,12 @@ import { cn } from "@/lib/cn";
  * users expect.
  *
  * Columns:
- *   #  |  Profile  |  Ops Tag  |  Total Kills  |  Kills/Match  |  K/D
+ *   #  |  Profile  |  Ops Tag  |  Total Kills  |  Kills/Round  |  K/D
  *
  * Numeric formatting:
  *   - Total Kills: integer with thousands separator (small numbers
  *     usually but supports growth).
- *   - Kills/Match: 1 decimal – kpm values are typically 5-15 so a
+ *   - Kills/Round: 1 decimal – kpm values are typically 5-15 so a
  *     decimal place is informative ("8.4 kpm" reads better than "8").
  *   - K/D: 2 decimals – convention; matches Match Report styling.
  */

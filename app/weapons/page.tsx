@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Container } from "@/components/ui/Container";
 import { listGunTreeBranches } from "@/lib/cms/weapons";
 import { getWeaponsFromSupabase } from "@/lib/cms/supabase-weapons";
+import { createClient } from "@/lib/supabase/server";
 import { fetchWeaponUsageStats } from "@/lib/weapons/usage-stats";
 import { WeaponsPageClient } from "@/components/weapons/WeaponsPageClient";
 import { WeaponMetaChart } from "@/components/weapons/WeaponMetaChart";
@@ -43,7 +44,7 @@ export default async function WeaponsPage() {
   // depends on.
   //
   // We accept the small wall-time hit (sum vs max) of sequencing
-  // because it keeps the data flow straightforward — alternative
+  // because it keeps the data flow straightforward – alternative
   // would be running stats without the lookup and then mutating
   // entries to attach treeBranch after the fact, which is messier
   // and makes the aggregator's contract ambiguous.
@@ -58,7 +59,9 @@ export default async function WeaponsPage() {
   const treeBranchByName = new Map(
     weapons.map((w) => [w.name, w.treeBranch]),
   );
-  const usageStats = await fetchWeaponUsageStats(treeBranchByName);
+  const imageByName = new Map(weapons.map((w) => [w.name, w.imageUrl]));
+  const supabase = await createClient();
+  const usageStats = await fetchWeaponUsageStats(supabase, treeBranchByName, imageByName);
 
   return (
     <main className="min-h-screen bg-bg pb-16 pt-10 sm:pb-24 sm:pt-14 lg:pb-32 lg:pt-20">
@@ -98,7 +101,7 @@ export default async function WeaponsPage() {
         )}
 
         {/* Bubble chart below the gallery. mt-12 / mt-16 / mt-20 gives
-            it clear visual separation from the gallery — without that
+            it clear visual separation from the gallery – without that
             gap it reads as "more chrome about the centred gun" rather
             than its own section. */}
         <section className="mt-12 sm:mt-16 lg:mt-20" aria-label="Weapon meta">
@@ -116,7 +119,7 @@ export default async function WeaponsPage() {
               How the player base performs with each gun.
             </h2>
             <p className="mt-2 max-w-2xl text-xs text-text-muted sm:text-sm">
-              Aggregated across every recorded match. Hover (or tap) a
+              Aggregated across every recorded round. Hover (or tap) a
               bubble to see the gun&apos;s name and stats.
             </p>
           </div>

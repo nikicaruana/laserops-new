@@ -1,5 +1,5 @@
 /**
- * xp-levels.ts — typed shape and fetcher for the All-Time XP / Levels
+ * xp-levels.ts – typed shape and fetcher for the All-Time XP / Levels
  * leaderboard.
  *
  * Pulls from the Player_Stats tab (one row per player, pre-aggregated).
@@ -15,7 +15,7 @@ import {
 } from "@/lib/sheets";
 import { isUnclaimedNickname } from "@/lib/leaderboards/unclaimed";
 
-/** Public, intentionally — anyone with this URL can read the leaderboard tab. */
+/** Public, intentionally – anyone with this URL can read the leaderboard tab. */
 const PLAYER_STATS_CSV_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTLlM4fIfh52DiovbJT2b9A6UyqoiQtoG0c2HoVRCG_OCtLPZvz-uBSC6y1voM8d4jBVCNcpCGctco/pub?gid=746018421&single=true&output=csv";
 
@@ -38,11 +38,12 @@ export type XpLevelsRow = {
   rankBadgeUrl: string;
   level: number;
   totalXp: number;
-  xpPerMatch: number;
+  /** XP earned per round (total XP / rounds played). */
+  xpPerRound: number;
 };
 
 /**
- * Raw shape of a row in Player_Stats — every column we might reference,
+ * Raw shape of a row in Player_Stats – every column we might reference,
  * still as strings (CSV native).
  */
 type PlayerStatsRaw = Record<string, string> & {
@@ -64,9 +65,9 @@ export async function fetchXpLevelsLeaderboard(): Promise<SheetFetchResult<XpLev
 
   const sorted = result.rows
     .filter((row) => {
-      // Drop rows with no nickname — defensive against blank trailing rows
+      // Drop rows with no nickname – defensive against blank trailing rows
       // or accidental empty inserts in the source sheet. Also drop unclaimed
-      // "Head NN" headset scores — they never belong on a leaderboard.
+      // "Head NN" headset scores – they never belong on a leaderboard.
       const nick = row.Player_Stats_Nickname?.trim() ?? "";
       return nick !== "" && !isUnclaimedNickname(nick);
     })
@@ -93,7 +94,7 @@ export async function fetchXpLevelsLeaderboard(): Promise<SheetFetchResult<XpLev
         rankBadgeUrl: row.XP_Current_Rank_Badge_URL?.trim() ?? "",
         level: parseNumericOr(row.XP_Current_Level, 0),
         totalXp: xp,
-        xpPerMatch: xpPerMatch,
+        xpPerRound: xpPerMatch,
       };
     });
 

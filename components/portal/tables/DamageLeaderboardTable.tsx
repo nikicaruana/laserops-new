@@ -23,7 +23,7 @@ import { cn } from "@/lib/cn";
  * Client component for the Damage leaderboard.
  *
  * Columns:
- *   #  |  Profile  |  Ops Tag  |  Total Damage  |  Damage / Match
+ *   #  |  Profile  |  Ops Tag  |  Total Damage  |  Damage / Round
  *
  * Numeric formatting:
  *   - Total Damage: integer with thousands separator (damage values

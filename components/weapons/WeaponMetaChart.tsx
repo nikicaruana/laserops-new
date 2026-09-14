@@ -20,36 +20,36 @@ import { ChartCard } from "@/components/portal/player-history/ChartCard";
  * WeaponMetaChart
  * --------------------------------------------------------------------
  * Bubble chart positioning every gun in the (accuracy, K/D) plane,
- * with bubble size proportional to the gun's AVERAGE kills per match
+ * with bubble size proportional to the gun's AVERAGE kills per round
  * across all recorded matches.
  *
  * Reads as a "weapon meta map":
- *   - Top right: high accuracy AND high K/D — strong, precise picks
- *   - Top left: low accuracy but high K/D — high-damage guns that
+ *   - Top right: high accuracy AND high K/D – strong, precise picks
+ *   - Top left: low accuracy but high K/D – high-damage guns that
  *     don't need many hits
- *   - Bottom right: high accuracy, low K/D — players hit shots but
+ *   - Bottom right: high accuracy, low K/D – players hit shots but
  *     still die a lot
- *   - Bottom left: low accuracy + low K/D — niche or troll picks
+ *   - Bottom left: low accuracy + low K/D – niche or troll picks
  *
- * Bubble size: the more kills per match a gun produces on average,
+ * Bubble size: the more kills per round a gun produces on average,
  * the bigger its bubble. We use the AVERAGE rather than the TOTAL so
  * a great-but-rarely-played gun shows up larger than a mediocre-but-
  * heavily-played one. Total kills would be a popularity metric; kills
- * per match is an effectiveness metric.
+ * per round is an effectiveness metric.
  *
  * --------------------------------------------------------------------
  * NEW IN PASS 22
  *
  * Mobile labels removed (reverting the pass 21 mobile-label
  * workaround). Pass 21 added them as a fix for unreliable mobile
- * tooltip taps — the bubbles were too small to hit, and even when
+ * tooltip taps – the bubbles were too small to hit, and even when
  * hit the tooltip flickered and died. Pass 21 also bumped
  * BUBBLE_MIN_R from 8 → 12 (24px diameter floor), which turns out
  * to be the actual fix: with the larger tap targets, mobile
  * tooltips now work well enough that labels become visual clutter
  * rather than a useful workaround.
  *
- * Desktop keeps labels — at >=1024px viewport width there's plenty
+ * Desktop keeps labels – at >=1024px viewport width there's plenty
  * of room and at-a-glance gun identification is faster than
  * hovering each bubble. Mobile users tap a bubble and read the
  * tooltip.
@@ -66,20 +66,20 @@ const FILTER_ALL = "all";
 /**
  * Sample-size threshold. Guns with fewer matches are excluded
  * because their K/D and accuracy are statistically unstable. Set
- * to 1 while the data set is small — bump to 5 once each gun has
+ * to 1 while the data set is small – bump to 5 once each gun has
  * a comfortable sample.
  */
 const MIN_MATCHES = 1;
 
 /**
  * Bubble radius range (pixels). MIN_R bumped from 8 to 12 in pass 21
- * so the smallest bubbles are 24px diameter — still under iOS' 44px
+ * so the smallest bubbles are 24px diameter – still under iOS' 44px
  * touch target recommendation but a meaningful tap-accuracy
  * improvement. MAX_R also bumped to keep the visual hierarchy
  * (large bubbles dominate small ones) intact.
  *
  * The ZAxis range below uses these squared so bubble AREA (not
- * radius) scales linearly with kills/match — visually honest.
+ * radius) scales linearly with kills/match – visually honest.
  */
 const BUBBLE_MIN_R = 12;
 const BUBBLE_MAX_R = 36;
@@ -98,7 +98,7 @@ type BubblePoint = {
   treeBranch: string;
   imageUrl: string;
   totalKills: number;
-  avgKillsPerMatch: number;
+  avgKillsPerRound: number;
   matchCount: number;
 };
 
@@ -118,17 +118,17 @@ export function WeaponMetaChart({ stats, treeBranches }: Props) {
         x: s.globalAccuracy * 100,
         y: s.globalKD,
         // Bubble size now tracks AVERAGE kills per match rather than
-        // total kills. Total kills was misleading — it favoured
+        // total kills. Total kills was misleading – it favoured
         // heavily-used guns regardless of effectiveness (a mediocre
         // gun played 100 times beat a great gun played 5 times).
         // Average kills/match is the more honest "how lethal is
         // this gun in a typical game" metric.
-        z: s.avgKillsPerMatch,
+        z: s.avgKillsPerRound,
         gunName: s.gunName,
         treeBranch: s.treeBranch,
         imageUrl: s.imageUrl,
         totalKills: s.totalKills,
-        avgKillsPerMatch: s.avgKillsPerMatch,
+        avgKillsPerRound: s.avgKillsPerRound,
         matchCount: s.matchCount,
       }));
   }, [stats, selectedTree]);
@@ -137,7 +137,7 @@ export function WeaponMetaChart({ stats, treeBranches }: Props) {
     return (
       <ChartCard
         title="Weapon Meta Map"
-        subtitle="Where each gun sits in the accuracy vs K/D space, bubble size proportional to average kills per match."
+        subtitle="Where each gun sits in the accuracy vs K/D space, bubble size proportional to average kills per round."
       >
         <TreeFilter
           value={selectedTree}
@@ -165,7 +165,7 @@ export function WeaponMetaChart({ stats, treeBranches }: Props) {
   return (
     <ChartCard
       title="Weapon Meta Map"
-      subtitle="Where each gun sits in the accuracy vs K/D space — bigger bubbles mean more kills per match on average."
+      subtitle="Where each gun sits in the accuracy vs K/D space – bigger bubbles mean more kills per round."
     >
       <TreeFilter
         value={selectedTree}
@@ -229,7 +229,7 @@ export function WeaponMetaChart({ stats, treeBranches }: Props) {
               type="number"
               dataKey="z"
               range={[BUBBLE_MIN_R * BUBBLE_MIN_R, BUBBLE_MAX_R * BUBBLE_MAX_R]}
-              name="Kills/Match"
+              name="Kills/Round"
             />
             <Tooltip
               cursor={{ stroke: "#3a3a3a", strokeDasharray: "3 3" }}
@@ -242,7 +242,7 @@ export function WeaponMetaChart({ stats, treeBranches }: Props) {
               stroke="#1a1a1a"
               strokeWidth={1}
             >
-              {/* Bubble labels — desktop only. Pass 21 enabled mobile
+              {/* Bubble labels – desktop only. Pass 21 enabled mobile
                   labels as a workaround for unreliable tooltip taps,
                   but with the larger BUBBLE_MIN_R bumping tap targets
                   up to 24px diameter, mobile tap-for-tooltip now
@@ -321,12 +321,12 @@ function BubbleTooltip({
       <p className="font-mono tabular-nums text-text-muted">
         K/D: <span className="text-accent">{p.y.toFixed(2)}</span>
       </p>
-      {/* Kills/Match is the bubble-size driver — show it prominently
+      {/* Kills/Round is the bubble-size driver – show it prominently
           here. Total kills follows as context (so players still know
           the absolute scale). */}
       <p className="font-mono tabular-nums text-text-muted">
-        Kills/Match:{" "}
-        <span className="text-accent">{p.avgKillsPerMatch.toFixed(2)}</span>
+        Kills/Round:{" "}
+        <span className="text-accent">{p.avgKillsPerRound.toFixed(2)}</span>
       </p>
       <p className="font-mono tabular-nums text-text-muted">
         Total Kills:{" "}

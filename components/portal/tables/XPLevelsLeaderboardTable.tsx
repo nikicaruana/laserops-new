@@ -11,15 +11,15 @@ import { RankBadgeCell } from "@/components/portal/tables/RankBadgeCell";
 import { cn } from "@/lib/cn";
 
 /**
- * XPLevelsLeaderboardTable — client-side render of the All-Time XP/Levels
+ * XPLevelsLeaderboardTable – client-side render of the All-Time XP/Levels
  * leaderboard. Receives pre-sorted rows from the server component and owns
  * sort interactivity.
  *
  * Column shape (7 columns, mobile → desktop):
- *   #  |  Profile  |  Ops Tag  |  Rank Badge  |  Lvl  |  Total XP  |  XP / Match
+ *   #  |  Profile  |  Ops Tag  |  Rank Badge  |  Lvl  |  Total XP  |  XP / Round
  *
  * Why a dedicated Profile column:
- *   Photos are uniform-sized so they line up vertically as a clean stack —
+ *   Photos are uniform-sized so they line up vertically as a clean stack –
  *   matches the visual rhythm of the badge column. Previously the photo was
  *   sandwiched into the Ops Tag column, breaking that rhythm and crowding
  *   long nicknames.
@@ -52,7 +52,7 @@ export function XPLevelsLeaderboardTable({ rows }: Props) {
         header: "",
         align: "center",
         sortable: false,
-        // Image-only column — width matches the image's intrinsic size so the
+        // Image-only column – width matches the image's intrinsic size so the
         // photos stack uniformly down the column.
         width: "36px",
         widthSm: "60px",
@@ -77,7 +77,7 @@ export function XPLevelsLeaderboardTable({ rows }: Props) {
         widthSm: "minmax(0, 1fr)",
         cell: (row) => (
           // [overflow-wrap:anywhere] breaks mid-word when no other break is
-          // available — required for nicknames like "TheHolySpirit" that have
+          // available – required for nicknames like "TheHolySpirit" that have
           // no whitespace or hyphens. Tailwind v3-style break-words / break-all
           // either don't break inside words or break too aggressively; the
           // arbitrary CSS value here is the cleanest cross-version answer.
@@ -90,7 +90,7 @@ export function XPLevelsLeaderboardTable({ rows }: Props) {
         key: "rankBadge",
         header: "Rank",
         align: "center",
-        // Sorted by level — the badge IS the level visually, so sorting by
+        // Sorted by level – the badge IS the level visually, so sorting by
         // level here matches user expectation when they click this column.
         sortable: true,
         accessor: (row) => row.level,
@@ -130,18 +130,18 @@ export function XPLevelsLeaderboardTable({ rows }: Props) {
         cell: (row) => row.totalXp.toLocaleString("en-US"),
       },
       {
-        key: "xpPerMatch",
+        key: "xpPerRound",
         // Spaces around the slash so the header has a natural wrap opportunity
-        // ("XP /" + "Match" on two lines if column is narrow). "XP/Match"
+        // ("XP /" + "Round" on two lines if column is narrow). "XP/Round"
         // without spaces would refuse to wrap.
-        header: "XP / Match",
+        header: "XP / Round",
         align: "right",
         sortable: true,
         numeric: true,
-        accessor: (row) => row.xpPerMatch,
+        accessor: (row) => row.xpPerRound,
         width: "58px",
         widthSm: "100px",
-        cell: (row) => Math.round(row.xpPerMatch).toLocaleString("en-US"),
+        cell: (row) => Math.round(row.xpPerRound).toLocaleString("en-US"),
       },
     ],
     [],
@@ -174,7 +174,7 @@ export function XPLevelsLeaderboardTable({ rows }: Props) {
 /**
  * Renders the row's rank as #01, #02, ... with color emphasis for top 3.
  * The `rank` is the original-data rank (XP-desc position), not the current
- * display position — so a Level 5 player who's #07 in XP stays "#07" even
+ * display position – so a Level 5 player who's #07 in XP stays "#07" even
  * when the user sorts by some other column.
  */
 function RankNumber({ rank }: { rank: number }) {
