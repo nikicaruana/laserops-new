@@ -129,12 +129,12 @@ export function projectRoundWinsCard(row: PlayerStatsRaw): StatCard {
 
 export function projectKillsCard(row: PlayerStatsRaw): StatCard {
   const killsTotal = parseNumericOr(row.Kills_Total, 0);
-  const killsPerMatch = parseNumericOr(row.Kills_Per_Match, 0);
+  const killsPerRound = parseNumericOr(row.Kills_Per_Match, 0);
   return {
-    label: "Kills / Match",
-    // 0 decimals – fractional kills don't communicate at the precision
-    // players care about.
-    primaryValue: fmtInt(killsPerMatch),
+    label: "Kills / Round",
+    // 1 decimal – per-round kills cluster in a small range (~1-4) where the
+    // fraction is meaningful.
+    primaryValue: fmtDecimal(killsPerRound, 1),
     secondary: { kind: "stat", prefix: "Total", value: fmtInt(killsTotal) },
     ratingImageUrl: row.Kills_Per_Match_Rating_Image?.trim() ?? "",
   };
@@ -144,7 +144,7 @@ export function projectDamageCard(row: PlayerStatsRaw): StatCard {
   const damageTotal = parseNumericOr(row.Damage_Total, 0);
   const damagePerMatch = parseNumericOr(row.Damage_Per_Match, 0);
   return {
-    label: "Damage / Match",
+    label: "Damage / Round",
     primaryValue: fmtInt(damagePerMatch),
     secondary: { kind: "stat", prefix: "Total", value: fmtInt(damageTotal) },
     ratingImageUrl: row.Damage_Rating_Image?.trim() ?? "",
@@ -163,7 +163,7 @@ export function projectCapturesCard(row: PlayerStatsRaw): StatCard {
   const total = parseNumericOr(row.Captures_Total, 0);
   const perMatch = parseNumericOr(row.Captures_Per_Match, 0);
   return {
-    label: "Captures / Match",
+    label: "Captures / Round",
     primaryValue: fmtDecimal(perMatch, 1),
     secondary: { kind: "stat", prefix: "Total", value: fmtInt(total) },
     ratingImageUrl: row.Captures_Rating_Image?.trim() ?? "",
@@ -174,7 +174,7 @@ export function projectCaptureTimeCard(row: PlayerStatsRaw): StatCard {
   const total = parseNumericOr(row.Cap_Time_Total, 0);
   const perMatch = parseNumericOr(row.Cap_Time_Per_Match, 0);
   return {
-    label: "Hold Time / Match",
+    label: "Hold Time / Round",
     primaryValue: fmtDuration(perMatch),
     secondary: { kind: "stat", prefix: "Total", value: fmtDuration(total) },
     ratingImageUrl: row.Cap_Time_Rating_Image?.trim() ?? "",

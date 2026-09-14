@@ -31,6 +31,7 @@ type Row = {
   profile_pic_url: string | null;
   period_key: string | null;
   games: number | null;
+  rounds: number | null;
   wins: number | null;
   losses: number | null;
   rounds_won: number | null;
@@ -55,7 +56,7 @@ export async function getPeriodRowsFromSupabase(
   const { data } = await supabase
     .from("leaderboard_period_stats")
     .select(
-      "nickname, profile_pic_url, period_key, games, wins, losses, rounds_won, rounds_lost, total_kills, total_deaths, total_hits, total_shots, total_damage, total_score",
+      "nickname, profile_pic_url, period_key, games, rounds, wins, losses, rounds_won, rounds_lost, total_kills, total_deaths, total_hits, total_shots, total_damage, total_score",
     )
     .eq("period_type", "month");
 
@@ -82,6 +83,7 @@ export async function getPeriodRowsFromSupabase(
       LaserOps_Game_Month: monthName,
       LaserOps_Game_YearMonth: key,
       Matches_Played: str(r.games),
+      Rounds_Played: str(r.rounds),
       Matches_Won: str(r.wins),
       Rounds_Won: str(r.rounds_won),
       Rounds_Lost: str(r.rounds_lost),

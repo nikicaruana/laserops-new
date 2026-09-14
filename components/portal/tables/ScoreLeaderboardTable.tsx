@@ -22,7 +22,7 @@ import { cn } from "@/lib/cn";
  * --------------------------------------------------------------------
  * Client component for the Score leaderboard.
  *
- * Reads ?year and ?month from the URL (shared with Match/Round Wins —
+ * Reads ?year and ?month from the URL (shared with Match/Round Wins –
  * picking April 2026 on either filters both, which is what users expect:
  * they're filtering "the period I'm looking at," not per-table).
  *
@@ -30,7 +30,7 @@ import { cn } from "@/lib/cn";
  *   #  |  Profile  |  Ops Tag  |  Total Score  |  Points / Match
  *
  * One fewer column than Match/Round Wins so the Ops Tag column gets
- * even more room — long nicknames should rarely wrap.
+ * even more room – long nicknames should rarely wrap.
  */
 
 type Props = {
@@ -114,19 +114,19 @@ export function ScoreLeaderboardTable({ allRows }: Props) {
         cell: (row) => row.totalScore.toLocaleString("en-US"),
       },
       {
-        key: "pointsPerMatch",
+        key: "pointsPerRound",
         // Spaces around the slash give "Points / Match" a wrap opportunity
         // for narrow viewports.
-        header: "Points / Match",
+        header: "Points / Round",
         align: "right",
         sortable: true,
         numeric: true,
-        accessor: (row) => row.pointsPerMatch,
+        accessor: (row) => row.pointsPerRound,
         width: "60px",
         widthSm: "100px",
-        // Round to integer for display — fractional points/match don't
+        // Round to integer for display – fractional points/match don't
         // communicate anything meaningful at the precision players care about.
-        cell: (row) => Math.round(row.pointsPerMatch).toLocaleString("en-US"),
+        cell: (row) => Math.round(row.pointsPerRound).toLocaleString("en-US"),
       },
     ],
     [],

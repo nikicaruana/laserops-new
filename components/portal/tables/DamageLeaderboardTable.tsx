@@ -28,7 +28,7 @@ import { cn } from "@/lib/cn";
  * Numeric formatting:
  *   - Total Damage: integer with thousands separator (damage values
  *     can grow into the high tens of thousands).
- *   - Damage/Match: rounded integer — fractional damage doesn't
+ *   - Damage/Match: rounded integer – fractional damage doesn't
  *     communicate anything meaningful at the precision players care
  *     about.
  */
@@ -113,16 +113,16 @@ export function DamageLeaderboardTable({ allRows }: Props) {
         cell: (row) => row.totalDamage.toLocaleString("en-US"),
       },
       {
-        key: "damagePerMatch",
-        header: "Damage / Match",
+        key: "damagePerRound",
+        header: "Damage / Round",
         align: "right",
         sortable: true,
         numeric: true,
-        accessor: (row) => row.damagePerMatch,
+        accessor: (row) => row.damagePerRound,
         width: "60px",
         widthSm: "110px",
         cell: (row) =>
-          Math.round(row.damagePerMatch).toLocaleString("en-US"),
+          Math.round(row.damagePerRound).toLocaleString("en-US"),
       },
     ],
     [],

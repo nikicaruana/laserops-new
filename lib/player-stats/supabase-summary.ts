@@ -41,9 +41,11 @@ type LifetimeRow = {
   avg_match_rating: number | null;
   current_level: number | null;
   total_xp: number | null;
+  rounds: number | null;
   rounds_won: number | null;
   rounds_lost: number | null;
   online_games: number | null;
+  online_rounds: number | null;
   total_captures: number | null;
   total_hold_seconds: number | null;
 };
@@ -65,7 +67,7 @@ type RatingRow = Record<
 type RankRow = { level: number; rank_name: string | null; badge_url: string | null; score_threshold: number | null };
 
 const LIFETIME_COLS =
-  "account_id, nickname, profile_pic_url, games, wins, win_rate, total_kills, total_damage, total_score, avg_accuracy, avg_kd, avg_match_rating, current_level, total_xp, rounds_won, rounds_lost, online_games, total_captures, total_hold_seconds";
+  "account_id, nickname, profile_pic_url, games, rounds, wins, win_rate, total_kills, total_damage, total_score, avg_accuracy, avg_kd, avg_match_rating, current_level, total_xp, rounds_won, rounds_lost, online_games, online_rounds, total_captures, total_hold_seconds";
 const RATING_COLS =
   "s_match_win, s_rounds_wl, s_kills, s_damage, s_accuracy, s_kd, s_match_rating, s_obj1, s_obj2, rating_overall";
 /** Which rating slot a game mode routes each objective stat into (default mode). */
@@ -96,9 +98,13 @@ function buildRow(args: {
   const { life, rating: r, favGun, gunImage, accoladeCounts, accoladesTotal, thisRank, progressFraction } = args;
   const games = life.games ?? 0;
   const perMatch = (total: number | null) => (games > 0 ? (total ?? 0) / games : 0);
-  // Objective stats are ONLINE-only, so their per-match uses online games.
-  const onlineGames = life.online_games ?? 0;
-  const perOnline = (total: number | null) => (onlineGames > 0 ? (total ?? 0) / onlineGames : 0);
+  // Per-ROUND is the rated unit (the rating ranks kills/round, damage/round,
+  // obj/round), so the cards show per-round to match their star.
+  const rounds = life.rounds ?? 0;
+  const perRound = (total: number | null) => (rounds > 0 ? (total ?? 0) / rounds : 0);
+  // Objective stats are ONLINE-only, so their per-round uses online rounds.
+  const onlineRounds = life.online_rounds ?? 0;
+  const perOnlineRound = (total: number | null) => (onlineRounds > 0 ? (total ?? 0) / onlineRounds : 0);
   const level = life.current_level ?? 0;
   // Resolve the two generic objective stars onto the captures / hold cards via
   // the default mode's slot mapping (slot 1 = hold time, slot 2 = captures for
@@ -135,11 +141,12 @@ function buildRow(args: {
     Rounds_WL_Rating_Image: starImage(r?.s_rounds_wl ?? null),
 
     Kills_Total: num(life.total_kills),
-    Kills_Per_Match: String(perMatch(life.total_kills)),
+    // NOTE: *_Per_Match keys now carry PER-ROUND values (labels say "/ Round").
+    Kills_Per_Match: String(perRound(life.total_kills)),
     Kills_Per_Match_Rating_Image: starImage(r?.s_kills ?? null),
 
     Damage_Total: num(life.total_damage),
-    Damage_Per_Match: String(perMatch(life.total_damage)),
+    Damage_Per_Match: String(perRound(life.total_damage)),
     Damage_Rating_Image: starImage(r?.s_damage ?? null),
 
     // Score's raw numbers stay for the Compare page; its rating star is retired
@@ -151,11 +158,11 @@ function buildRow(args: {
 
     // Objective play (ONLINE games only).
     Captures_Total: num(life.total_captures),
-    Captures_Per_Match: String(perOnline(life.total_captures)),
+    Captures_Per_Match: String(perOnlineRound(life.total_captures)),
     Captures_Rating_Image: starImage(capturesStar),
 
     Cap_Time_Total: num(life.total_hold_seconds),
-    Cap_Time_Per_Match: String(perOnline(life.total_hold_seconds)),
+    Cap_Time_Per_Match: String(perOnlineRound(life.total_hold_seconds)),
     Cap_Time_Rating_Image: starImage(holdStar),
 
     Match_Rating: num(life.avg_match_rating),

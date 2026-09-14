@@ -213,14 +213,14 @@ export function CompareView({ allRows, uniqueGunsMap }: Props) {
           />
 
           <StatRow
-            label="Kills / Match"
+            label="Kills / Round"
             a={{
-              primary: Math.round(playerA.killsPerMatch).toLocaleString("en-US"),
+              primary: playerA.killsPerMatch.toFixed(1),
               secondary: `Total ${playerA.killsTotal.toLocaleString("en-US")}`,
               ratingUrl: playerA.killsRatingUrl,
             }}
             b={{
-              primary: Math.round(playerB.killsPerMatch).toLocaleString("en-US"),
+              primary: playerB.killsPerMatch.toFixed(1),
               secondary: `Total ${playerB.killsTotal.toLocaleString("en-US")}`,
               ratingUrl: playerB.killsRatingUrl,
             }}
@@ -228,7 +228,7 @@ export function CompareView({ allRows, uniqueGunsMap }: Props) {
           />
 
           <StatRow
-            label="Damage / Match"
+            label="Damage / Round"
             a={{
               primary: Math.round(playerA.damagePerMatch).toLocaleString("en-US"),
               secondary: `Total ${playerA.damageTotal.toLocaleString("en-US")}`,
@@ -243,7 +243,7 @@ export function CompareView({ allRows, uniqueGunsMap }: Props) {
           />
 
           <StatRow
-            label="Captures / Match"
+            label="Captures / Round"
             a={{
               primary: playerA.capturesPerMatch.toFixed(1),
               secondary: `Total ${playerA.capturesTotal.toLocaleString("en-US")}`,
@@ -258,7 +258,7 @@ export function CompareView({ allRows, uniqueGunsMap }: Props) {
           />
 
           <StatRow
-            label="Hold Time / Match"
+            label="Hold Time / Round"
             a={{
               primary: fmtHold(playerA.holdPerMatch),
               secondary: `Total ${fmtHold(playerA.holdTotal)}`,

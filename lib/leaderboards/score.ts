@@ -3,12 +3,12 @@
  * --------------------------------------------------------------------
  * Aggregator for the Score leaderboard.
  *
- * Groups by player, sums Total_Points and Matches_Played across all rows
- * in the (already filtered) window, then computes Points per Match from
- * the summed totals — NOT by averaging per-month PPM, which would
- * mis-weight months with very different match counts.
+ * Groups by player, sums Total_Points and Rounds_Played across all rows
+ * in the (already filtered) window, then computes Points per Round from
+ * the summed totals – NOT by averaging per-month PPR, which would
+ * mis-weight months with very different round counts.
  *
- * Sort: primary by Total Score desc, tiebreak by Points per Match desc,
+ * Sort: primary by Total Score desc, tiebreak by Points per Round desc,
  * then alphabetical for stability.
  */
 
@@ -22,7 +22,7 @@ export type ScoreRow = {
   nickname: string;
   profilePicUrl: string;
   totalScore: number;
-  pointsPerMatch: number;
+  pointsPerRound: number;
 };
 
 export function aggregateScore(rows: PeriodRow[]): ScoreRow[] {
@@ -30,44 +30,44 @@ export function aggregateScore(rows: PeriodRow[]): ScoreRow[] {
     nickname: string;
     profilePicUrl: string;
     totalPoints: number;
-    matchesPlayed: number;
+    rounds: number;
   };
   const buckets = new Map<string, Bucket>();
 
   for (const r of rows) {
     const points = parseNumericOr(r.raw.Total_Points, 0);
-    const matchesPlayed = parseNumericOr(r.raw.Matches_Played, 0);
+    const rounds = parseNumericOr(r.raw.Rounds_Played, 0);
 
     const existing = buckets.get(r.nickname);
     if (existing) {
       existing.totalPoints += points;
-      existing.matchesPlayed += matchesPlayed;
+      existing.rounds += rounds;
     } else {
       buckets.set(r.nickname, {
         nickname: r.nickname,
         profilePicUrl: r.profilePicUrl,
         totalPoints: points,
-        matchesPlayed,
+        rounds,
       });
     }
   }
 
-  // Project, drop zero-match players (they have no meaningful PPM),
-  // compute PPM from totals.
+  // Project, drop zero-round players (they have no meaningful PPR),
+  // compute PPR from totals.
   const projected: Array<Omit<ScoreRow, "rank">> = [];
   for (const b of buckets.values()) {
-    if (b.matchesPlayed <= 0) continue;
+    if (b.rounds <= 0) continue;
     projected.push({
       nickname: b.nickname,
       profilePicUrl: b.profilePicUrl,
       totalScore: b.totalPoints,
-      pointsPerMatch: b.totalPoints / b.matchesPlayed,
+      pointsPerRound: b.totalPoints / b.rounds,
     });
   }
 
   projected.sort((a, b) => {
     if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
-    if (b.pointsPerMatch !== a.pointsPerMatch) return b.pointsPerMatch - a.pointsPerMatch;
+    if (b.pointsPerRound !== a.pointsPerRound) return b.pointsPerRound - a.pointsPerRound;
     return a.nickname.localeCompare(b.nickname);
   });
 

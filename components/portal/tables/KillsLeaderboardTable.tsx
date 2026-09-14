@@ -22,7 +22,7 @@ import { cn } from "@/lib/cn";
  * --------------------------------------------------------------------
  * Client component for the Kills leaderboard.
  *
- * Reads ?year and ?month from the URL — shared with the other period
+ * Reads ?year and ?month from the URL – shared with the other period
  * leaderboards so filtering once filters all of them, which is what
  * users expect.
  *
@@ -32,9 +32,9 @@ import { cn } from "@/lib/cn";
  * Numeric formatting:
  *   - Total Kills: integer with thousands separator (small numbers
  *     usually but supports growth).
- *   - Kills/Match: 1 decimal — kpm values are typically 5-15 so a
+ *   - Kills/Match: 1 decimal – kpm values are typically 5-15 so a
  *     decimal place is informative ("8.4 kpm" reads better than "8").
- *   - K/D: 2 decimals — convention; matches Match Report styling.
+ *   - K/D: 2 decimals – convention; matches Match Report styling.
  */
 
 type Props = {
@@ -116,16 +116,16 @@ export function KillsLeaderboardTable({ allRows }: Props) {
         cell: (row) => row.totalKills.toLocaleString("en-US"),
       },
       {
-        key: "killsPerMatch",
+        key: "killsPerRound",
         // Spaced slash gives a wrap opportunity for narrow viewports.
-        header: "Kills / Match",
+        header: "Kills / Round",
         align: "right",
         sortable: true,
         numeric: true,
-        accessor: (row) => row.killsPerMatch,
+        accessor: (row) => row.killsPerRound,
         width: "60px",
         widthSm: "100px",
-        cell: (row) => row.killsPerMatch.toFixed(1),
+        cell: (row) => row.killsPerRound.toFixed(1),
       },
       {
         key: "kdRatio",
