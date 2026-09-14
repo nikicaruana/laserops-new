@@ -19,20 +19,20 @@ const WEIGHT_KEYS = [
   "Rounds_WL_Rating",
   "Kills_Per_Match_Rating",
   "Damage_Rating",
-  "Score_Rating",
   "Accuracy_Rating",
   "KD_Rating",
   "Match_Rating_Rating",
-  "Objective_Rating",
+  "Objective_1_Rating",
+  "Objective_2_Rating",
 ];
 
 const RATING_FIELDS: FieldSpec[] = [
   { key: "Min_Level", label: "Minimum level", help: "A player must reach this level to be rated.", group: "Eligibility gates", step: "1" },
-  { key: "Min_Matches", label: "Minimum matches", help: "Minimum matches played to be rated.", group: "Eligibility gates", step: "1" },
+  { key: "Min_Matches", label: "Minimum online matches", help: "Minimum ONLINE-scored matches a player needs to be rated — this guarantees objective (capture / hold) data exists. Once past it, their other components still count all games, offline included.", group: "Eligibility gates", step: "1" },
   { key: "Min_Eligible_Pool", label: "Minimum eligible pool", help: "Fewest eligible players before ratings are shown at all.", group: "Eligibility gates", step: "1" },
 
-  { key: "Score_Rating", label: "Score", group: "Component weights (sum to 1)" },
-  { key: "Objective_Rating", label: "Objective play", help: "Capture / hold-objective performance. Leave at 0 until capture data is ingested, then rebalance the others down to make room.", group: "Component weights (sum to 1)" },
+  { key: "Objective_1_Rating", label: "Objective play 1", help: "Objective slot 1 — each game mode maps one of its objectives here (Domination: hold time). Fed by online games only.", group: "Component weights (sum to 1)" },
+  { key: "Objective_2_Rating", label: "Objective play 2", help: "Objective slot 2 — each game mode maps one of its objectives here (Domination: captures). Fed by online games only.", group: "Component weights (sum to 1)" },
   { key: "KD_Rating", label: "K/D ratio", group: "Component weights (sum to 1)" },
   { key: "Match_Rating_Rating", label: "Match rating", group: "Component weights (sum to 1)" },
   { key: "Accuracy_Rating", label: "Accuracy", group: "Component weights (sum to 1)" },
@@ -87,7 +87,7 @@ export default async function AdminRatingsPage() {
       </header>
 
       <div className="mb-6 border-l-4 border-amber-500 bg-amber-500/10 px-4 py-3 text-sm text-amber-200/90">
-        <span className="font-semibold text-amber-300">Heads up —</span> these weights and gates are
+        <span className="font-semibold text-amber-300">Heads up –</span> these weights and gates are
         finely tuned so ratings compare players fairly. Changing them re-ranks everyone on the next
         read, so adjust deliberately. The component weights must sum to 1, or ratings get skewed.
       </div>

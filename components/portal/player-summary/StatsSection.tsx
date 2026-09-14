@@ -3,7 +3,8 @@ import {
   projectRoundWinsCard,
   projectKillsCard,
   projectDamageCard,
-  projectScoreCard,
+  projectCapturesCard,
+  projectCaptureTimeCard,
   projectAccuracyCard,
   projectKdRatioCard,
   projectMatchRatingCard,
@@ -16,42 +17,43 @@ import type { PlayerStatsRaw } from "@/lib/player-stats/shared";
  * --------------------------------------------------------------------
  * Grid of StatCards for the Player Summary's stats area.
  *
- * Eight cards in this order, grouped by what they communicate:
+ * Nine cards in this order, grouped by what they communicate:
  *   1. Matches Won + Win Rate     ┐
  *   2. Rounds Won + W/L Ratio     ┘ wins / consistency
- *   3. Total Kills + Per Match    ┐
- *   4. Total Damage + Per Match   ┘ combat output
- *   5. Total Score + Per Match    ┐
- *   6. Avg Match Rating           ┘ performance score
- *   7. Accuracy                   ┐
- *   8. K/D Ratio                  ┘ skill ratios
+ *   3. Kills / Match              ┐
+ *   4. Damage / Match             ┘ combat output
+ *   5. Captures / Match           ┐
+ *   6. Hold Time / Match          ┘ objective play (online only)
+ *   7. Avg Match Rating             performance score
+ *   8. Accuracy                   ┐
+ *   9. K/D Ratio                  ┘ skill ratios
  *
  * Responsive grid:
  *   - Mobile: 2 cards per row
  *   - sm (640+): 3 cards per row
  *   - xl (1280+): 4 cards per row
  *
- * 8 cards divides evenly across all three layouts (4×2, then perfect 2×4
- * on mobile, 3+3+2 on tablet, 4×2 on desktop). Looks intentional at every
- * breakpoint with no awkward orphan rows.
+ * 9 cards lays out cleanly at 3 per row (3×3); the 2- and 4-col breakpoints
+ * carry a single card on the final row.
  */
 
 type StatsSectionProps = {
   row: PlayerStatsRaw;
-  /** Whether the player has unlocked ratings — passed to each StatCard so
+  /** Whether the player has unlocked ratings – passed to each StatCard so
    *  locked players show the locked rating image instead of a 0-star grid. */
   ratingUnlocked: boolean;
 };
 
 export function StatsSection({ row, ratingUnlocked }: StatsSectionProps) {
-  // Project once. Order here is the render order — adjust if a different
+  // Project once. Order here is the render order – adjust if a different
   // grouping reads better in practice.
   const cards = [
     projectMatchWinsCard(row),
     projectRoundWinsCard(row),
     projectKillsCard(row),
     projectDamageCard(row),
-    projectScoreCard(row),
+    projectCapturesCard(row),
+    projectCaptureTimeCard(row),
     projectMatchRatingCard(row),
     projectAccuracyCard(row),
     projectKdRatioCard(row),
@@ -62,7 +64,7 @@ export function StatsSection({ row, ratingUnlocked }: StatsSectionProps) {
     // gap-y: wider so overhanging rating pills fit between rows.
     // pb: padding-bottom equal to roughly half a pill's height. The
     //   overhanging pills on the LAST row need a place to live inside
-    //   the section's bounds — without this padding, the parent
+    //   the section's bounds – without this padding, the parent
     //   <details> element's overflow:clip during animation would clip
     //   them, and they'd visibly disappear at the open/close edge.
     //   Padding moves them inside the clipping rectangle while keeping

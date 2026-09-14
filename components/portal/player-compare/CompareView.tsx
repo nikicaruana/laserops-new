@@ -243,18 +243,33 @@ export function CompareView({ allRows, uniqueGunsMap }: Props) {
           />
 
           <StatRow
-            label="Score / Match"
+            label="Captures / Match"
             a={{
-              primary: Math.round(playerA.scorePerMatch).toLocaleString("en-US"),
-              secondary: `Total ${playerA.scoreTotal.toLocaleString("en-US")}`,
-              ratingUrl: playerA.scoreRatingUrl,
+              primary: playerA.capturesPerMatch.toFixed(1),
+              secondary: `Total ${playerA.capturesTotal.toLocaleString("en-US")}`,
+              ratingUrl: playerA.capturesRatingUrl,
             }}
             b={{
-              primary: Math.round(playerB.scorePerMatch).toLocaleString("en-US"),
-              secondary: `Total ${playerB.scoreTotal.toLocaleString("en-US")}`,
-              ratingUrl: playerB.scoreRatingUrl,
+              primary: playerB.capturesPerMatch.toFixed(1),
+              secondary: `Total ${playerB.capturesTotal.toLocaleString("en-US")}`,
+              ratingUrl: playerB.capturesRatingUrl,
             }}
-            winner={winners.scorePerMatch}
+            winner={winners.capturesPerMatch}
+          />
+
+          <StatRow
+            label="Hold Time / Match"
+            a={{
+              primary: fmtHold(playerA.holdPerMatch),
+              secondary: `Total ${fmtHold(playerA.holdTotal)}`,
+              ratingUrl: playerA.holdRatingUrl,
+            }}
+            b={{
+              primary: fmtHold(playerB.holdPerMatch),
+              secondary: `Total ${fmtHold(playerB.holdTotal)}`,
+              ratingUrl: playerB.holdRatingUrl,
+            }}
+            winner={winners.holdPerMatch}
           />
 
           <StatRow
@@ -533,6 +548,15 @@ type StatCellDef = {
   secondary?: string;
   ratingUrl?: string;
 };
+
+/** Seconds -> compact duration ("45s", "1m 30s", "2m"). */
+function fmtHold(seconds: number): string {
+  const s = Math.round(seconds);
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  const rem = s % 60;
+  return rem === 0 ? `${m}m` : `${m}m ${rem}s`;
+}
 
 function StatRow({
   label,

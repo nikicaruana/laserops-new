@@ -6,7 +6,7 @@
  * Each ComparePlayerData holds everything both players' columns need:
  * identities, all comparable numeric stats, and per-accolade counts.
  * computeWinners() produces a single CompareWinners object from two
- * ComparePlayerData values — higher-is-better for every stat.
+ * ComparePlayerData values – higher-is-better for every stat.
  */
 
 import { parseNumericOr } from "@/lib/sheets";
@@ -47,9 +47,12 @@ export type ComparePlayerData = {
   damagePerMatch: number;
   damageTotal: number;
   damageRatingUrl: string;
-  scorePerMatch: number;
-  scoreTotal: number;
-  scoreRatingUrl: string;
+  capturesPerMatch: number;
+  capturesTotal: number;
+  capturesRatingUrl: string;
+  holdPerMatch: number;
+  holdTotal: number;
+  holdRatingUrl: string;
   // Single-value stats
   accuracyPct: number;
   accuracyRatingUrl: string;
@@ -76,7 +79,8 @@ export type CompareWinners = {
   roundsWinRate: StatWinner;
   killsPerMatch: StatWinner;
   damagePerMatch: StatWinner;
-  scorePerMatch: StatWinner;
+  capturesPerMatch: StatWinner;
+  holdPerMatch: StatWinner;
   accuracy: StatWinner;
   kd: StatWinner;
   matchRating: StatWinner;
@@ -149,9 +153,12 @@ export function projectComparePlayer(
     damagePerMatch: parseNumericOr(row.Damage_Per_Match, 0),
     damageTotal: parseNumericOr(row.Damage_Total, 0),
     damageRatingUrl: row.Damage_Rating_Image?.trim() ?? "",
-    scorePerMatch: parseNumericOr(row.Score_Per_Match, 0),
-    scoreTotal: parseNumericOr(row.Score_Total, 0),
-    scoreRatingUrl: row.Score_Rating_Image?.trim() ?? "",
+    capturesPerMatch: parseNumericOr(row.Captures_Per_Match, 0),
+    capturesTotal: parseNumericOr(row.Captures_Total, 0),
+    capturesRatingUrl: row.Captures_Rating_Image?.trim() ?? "",
+    holdPerMatch: parseNumericOr(row.Cap_Time_Per_Match, 0),
+    holdTotal: parseNumericOr(row.Cap_Time_Total, 0),
+    holdRatingUrl: row.Cap_Time_Rating_Image?.trim() ?? "",
     accuracyPct: normalizeRateToPercent(row.Accuracy ?? ""),
     accuracyRatingUrl: row.Accuracy_Rating_Image?.trim() ?? "",
     kd: parseNumericOr(row.KD_Ratio, 0),
@@ -186,13 +193,14 @@ export function computeWinners(
     matchesPlayed: cmp(a.matchesPlayed, b.matchesPlayed),
     uniqueGuns: cmp(a.uniqueGunsUsed, b.uniqueGunsUsed),
     matchesWon: cmp(a.matchesWon, b.matchesWon),
-    // Win rate is the rated metric — compare by rate not raw count
+    // Win rate is the rated metric – compare by rate not raw count
     matchWinRate: cmp(a.matchWinRatePct, b.matchWinRatePct),
     roundsWon: cmp(a.roundsWon, b.roundsWon),
     roundsWinRate: cmp(a.roundsWinRatePct, b.roundsWinRatePct),
     killsPerMatch: cmp(a.killsPerMatch, b.killsPerMatch),
     damagePerMatch: cmp(a.damagePerMatch, b.damagePerMatch),
-    scorePerMatch: cmp(a.scorePerMatch, b.scorePerMatch),
+    capturesPerMatch: cmp(a.capturesPerMatch, b.capturesPerMatch),
+    holdPerMatch: cmp(a.holdPerMatch, b.holdPerMatch),
     accuracy: cmp(a.accuracyPct, b.accuracyPct),
     kd: cmp(a.kd, b.kd),
     matchRating: cmp(a.matchRating, b.matchRating),

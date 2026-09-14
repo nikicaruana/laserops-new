@@ -8,7 +8,7 @@
  * description), and optionally a rating image.
  *
  * Per-card project functions are explicit and named rather than driven by
- * a generic config — keeps formatting decisions visible at the use site.
+ * a generic config – keeps formatting decisions visible at the use site.
  *
  * Two flavours of card:
  *   - "Count + rate" cards (Match Wins, Round Wins): primary = count of
@@ -75,12 +75,21 @@ function fmtPct(n: number): string {
   return `${Math.round(n)}%`;
 }
 
+/** Seconds -> compact duration ("45s", "1m 30s", "2m"). */
+function fmtDuration(seconds: number): string {
+  const s = Math.round(seconds);
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  const rem = s % 60;
+  return rem === 0 ? `${m}m` : `${m}m ${rem}s`;
+}
+
 /* ============================================================
    COUNT + RATE CARDS
    Primary = count of wins, secondary = the rate the rating measures.
    We keep these as "count primary" because the count carries useful
    calibration info (a 100% win rate from 1 match is different from a
-   100% win rate from 50 matches — the count tells you which).
+   100% win rate from 50 matches – the count tells you which).
    ============================================================ */
 
 export function projectMatchWinsCard(row: PlayerStatsRaw): StatCard {
@@ -98,7 +107,7 @@ export function projectRoundWinsCard(row: PlayerStatsRaw): StatCard {
   const roundsWon = parseNumericOr(row.Rounds_Won_Total, 0);
   const roundsLost = parseNumericOr(row.Rounds_Lost_Total, 0);
   // Win rate computed from underlying counts. Sheet's Rounds_WL_Ratio is
-  // a ratio (won/lost) not a rate (won/total) — we want the rate here so
+  // a ratio (won/lost) not a rate (won/total) – we want the rate here so
   // it parallels Match Win Rate above.
   const total = roundsWon + roundsLost;
   const winRatePct = total > 0 ? (roundsWon / total) * 100 : 0;
@@ -114,7 +123,7 @@ export function projectRoundWinsCard(row: PlayerStatsRaw): StatCard {
    PER-MATCH CARDS
    Primary = per-match metric (the one the rating evaluates),
    secondary = career total. Flipped from earlier "total primary" version
-   because the rating measures the per-match number — visual hierarchy
+   because the rating measures the per-match number – visual hierarchy
    should reflect what's being rated.
    ============================================================ */
 
@@ -123,7 +132,7 @@ export function projectKillsCard(row: PlayerStatsRaw): StatCard {
   const killsPerMatch = parseNumericOr(row.Kills_Per_Match, 0);
   return {
     label: "Kills / Match",
-    // 0 decimals — fractional kills don't communicate at the precision
+    // 0 decimals – fractional kills don't communicate at the precision
     // players care about.
     primaryValue: fmtInt(killsPerMatch),
     secondary: { kind: "stat", prefix: "Total", value: fmtInt(killsTotal) },
@@ -142,14 +151,33 @@ export function projectDamageCard(row: PlayerStatsRaw): StatCard {
   };
 }
 
-export function projectScoreCard(row: PlayerStatsRaw): StatCard {
-  const scoreTotal = parseNumericOr(row.Score_Total, 0);
-  const scorePerMatch = parseNumericOr(row.Score_Per_Match, 0);
+/* ============================================================
+   OBJECTIVE CARDS  (ONLINE games only)
+   Objective play is captured only in online-scored games, so the
+   per-match figures use online games as the denominator. Each maps to
+   one of the two generic objective rating slots (see the per-mode
+   objective mapping in the scoring admin).
+   ============================================================ */
+
+export function projectCapturesCard(row: PlayerStatsRaw): StatCard {
+  const total = parseNumericOr(row.Captures_Total, 0);
+  const perMatch = parseNumericOr(row.Captures_Per_Match, 0);
   return {
-    label: "Score / Match",
-    primaryValue: fmtInt(scorePerMatch),
-    secondary: { kind: "stat", prefix: "Total", value: fmtInt(scoreTotal) },
-    ratingImageUrl: row.Score_Rating_Image?.trim() ?? "",
+    label: "Captures / Match",
+    primaryValue: fmtDecimal(perMatch, 1),
+    secondary: { kind: "stat", prefix: "Total", value: fmtInt(total) },
+    ratingImageUrl: row.Captures_Rating_Image?.trim() ?? "",
+  };
+}
+
+export function projectCaptureTimeCard(row: PlayerStatsRaw): StatCard {
+  const total = parseNumericOr(row.Cap_Time_Total, 0);
+  const perMatch = parseNumericOr(row.Cap_Time_Per_Match, 0);
+  return {
+    label: "Hold Time / Match",
+    primaryValue: fmtDuration(perMatch),
+    secondary: { kind: "stat", prefix: "Total", value: fmtDuration(total) },
+    ratingImageUrl: row.Cap_Time_Rating_Image?.trim() ?? "",
   };
 }
 
@@ -164,7 +192,7 @@ export function projectAccuracyCard(row: PlayerStatsRaw): StatCard {
   const accPct = normalizeRateToPercent(row.Accuracy);
   return {
     label: "Accuracy",
-    // 1 decimal — accuracy values cluster in a tight band and small
+    // 1 decimal – accuracy values cluster in a tight band and small
     // differences (21.3% vs 21.7%) are meaningful.
     primaryValue: `${accPct.toFixed(1)}%`,
     secondary: { kind: "none" },
@@ -187,7 +215,7 @@ export function projectMatchRatingCard(row: PlayerStatsRaw): StatCard {
   return {
     label: "Avg Match Rating",
     primaryValue: fmtDecimal(rating),
-    // Description rather than secondary stat — Match Rating is a
+    // Description rather than secondary stat – Match Rating is a
     // unit-less number that's meaningless without context. The
     // description gives that context inline.
     secondary: {

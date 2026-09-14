@@ -8,11 +8,19 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { ScoringFormulaEditor } from "@/components/admin/ScoringFormulaEditor";
+import { ObjectiveSlotMapping } from "@/components/admin/ObjectiveSlotMapping";
 import { parseFormula, defaultFormula } from "@/lib/scoring/formula";
 
 export const metadata = { title: "Scoring formula" };
 
-type Mode = { name: string; slug: string; is_default: boolean; sort_order: number | null };
+type Mode = {
+  name: string;
+  slug: string;
+  is_default: boolean;
+  sort_order: number | null;
+  obj_slot1_stat: string | null;
+  obj_slot2_stat: string | null;
+};
 
 export default async function AdminScoringPage({
   searchParams,
@@ -24,7 +32,7 @@ export default async function AdminScoringPage({
 
   const { data: modeRows } = await supabase
     .from("game_modes")
-    .select("name, slug, is_default, sort_order")
+    .select("name, slug, is_default, sort_order, obj_slot1_stat, obj_slot2_stat")
     .order("sort_order");
   const modes = (modeRows ?? []) as Mode[];
 
@@ -87,13 +95,21 @@ export default async function AdminScoringPage({
       </div>
 
       <div className="mb-6 border-l-4 border-amber-500 bg-amber-500/10 px-4 py-3 text-sm text-amber-200/90">
-        <span className="font-semibold text-amber-300">Heads up —</span> this formula is finely
+        <span className="font-semibold text-amber-300">Heads up –</span> this formula is finely
         tuned for the best gameplay experience. Changing it affects how every future match is
         scored, so adjust deliberately. Past games keep the score they were computed with.
       </div>
 
       {selected ? (
-        <ScoringFormulaEditor key={modeSlug} initial={formula} modeSlug={modeSlug} />
+        <>
+          <ObjectiveSlotMapping
+            key={`obj-${modeSlug}`}
+            modeSlug={modeSlug}
+            slot1={selected.obj_slot1_stat}
+            slot2={selected.obj_slot2_stat}
+          />
+          <ScoringFormulaEditor key={modeSlug} initial={formula} modeSlug={modeSlug} />
+        </>
       ) : (
         <p className="text-sm text-text-muted">
           No game modes yet.{" "}

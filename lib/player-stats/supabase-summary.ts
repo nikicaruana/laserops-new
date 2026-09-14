@@ -43,6 +43,9 @@ type LifetimeRow = {
   total_xp: number | null;
   rounds_won: number | null;
   rounds_lost: number | null;
+  online_games: number | null;
+  total_captures: number | null;
+  total_hold_seconds: number | null;
 };
 
 type RatingRow = Record<
@@ -50,10 +53,11 @@ type RatingRow = Record<
   | "s_rounds_wl"
   | "s_kills"
   | "s_damage"
-  | "s_score"
   | "s_accuracy"
   | "s_kd"
   | "s_match_rating"
+  | "s_obj1"
+  | "s_obj2"
   | "rating_overall",
   number | null
 >;
@@ -61,9 +65,11 @@ type RatingRow = Record<
 type RankRow = { level: number; rank_name: string | null; badge_url: string | null; score_threshold: number | null };
 
 const LIFETIME_COLS =
-  "account_id, nickname, profile_pic_url, games, wins, win_rate, total_kills, total_damage, total_score, avg_accuracy, avg_kd, avg_match_rating, current_level, total_xp, rounds_won, rounds_lost";
+  "account_id, nickname, profile_pic_url, games, wins, win_rate, total_kills, total_damage, total_score, avg_accuracy, avg_kd, avg_match_rating, current_level, total_xp, rounds_won, rounds_lost, online_games, total_captures, total_hold_seconds";
 const RATING_COLS =
-  "s_match_win, s_rounds_wl, s_kills, s_damage, s_score, s_accuracy, s_kd, s_match_rating, rating_overall";
+  "s_match_win, s_rounds_wl, s_kills, s_damage, s_accuracy, s_kd, s_match_rating, s_obj1, s_obj2, rating_overall";
+/** Which rating slot a game mode routes each objective stat into (default mode). */
+type ObjSlots = { slot1: string | null; slot2: string | null };
 
 /** Level progress fraction (0-1) from the rank_levels score_threshold ladder. */
 function progressFor(ranks: RankRow[], level: number, totalXp: number): number {
@@ -85,11 +91,21 @@ function buildRow(args: {
   thisRank: RankRow | undefined;
   progressFraction: number;
   opsTagFallback: string;
+  objSlots: ObjSlots;
 }): PlayerStatsRaw {
   const { life, rating: r, favGun, gunImage, accoladeCounts, accoladesTotal, thisRank, progressFraction } = args;
   const games = life.games ?? 0;
   const perMatch = (total: number | null) => (games > 0 ? (total ?? 0) / games : 0);
+  // Objective stats are ONLINE-only, so their per-match uses online games.
+  const onlineGames = life.online_games ?? 0;
+  const perOnline = (total: number | null) => (onlineGames > 0 ? (total ?? 0) / onlineGames : 0);
   const level = life.current_level ?? 0;
+  // Resolve the two generic objective stars onto the captures / hold cards via
+  // the default mode's slot mapping (slot 1 = hold time, slot 2 = captures for
+  // Domination). Falls back to null when a mode doesn't map that stat.
+  const { slot1, slot2 } = args.objSlots;
+  const capturesStar = slot1 === "captures" ? r?.s_obj1 ?? null : slot2 === "captures" ? r?.s_obj2 ?? null : null;
+  const holdStar = slot1 === "hold_seconds" ? r?.s_obj1 ?? null : slot2 === "hold_seconds" ? r?.s_obj2 ?? null : null;
 
   const accoladeColumns: Record<string, string> = {};
   for (const acc of ACCOLADES) {
@@ -126,9 +142,21 @@ function buildRow(args: {
     Damage_Per_Match: String(perMatch(life.total_damage)),
     Damage_Rating_Image: starImage(r?.s_damage ?? null),
 
+    // Score's raw numbers stay for the Compare page; its rating star is retired
+    // (Score is no longer a rating component — online/offline scores differ too
+    // much to compare).
     Score_Total: num(life.total_score),
     Score_Per_Match: String(perMatch(life.total_score)),
-    Score_Rating_Image: starImage(r?.s_score ?? null),
+    Score_Rating_Image: "",
+
+    // Objective play (ONLINE games only).
+    Captures_Total: num(life.total_captures),
+    Captures_Per_Match: String(perOnline(life.total_captures)),
+    Captures_Rating_Image: starImage(capturesStar),
+
+    Cap_Time_Total: num(life.total_hold_seconds),
+    Cap_Time_Per_Match: String(perOnline(life.total_hold_seconds)),
+    Cap_Time_Rating_Image: starImage(holdStar),
 
     Match_Rating: num(life.avg_match_rating),
     Match_Rating_Rating_Image: starImage(r?.s_match_rating ?? null),
@@ -169,7 +197,7 @@ export async function getPlayerSummaryRow(
 
   const accountId = life.account_id;
 
-  const [{ data: rating }, { data: favGuns }, { data: awards }, { data: accoladeDefs }, { data: ranks }, { data: allGuns }] =
+  const [{ data: rating }, { data: favGuns }, { data: awards }, { data: accoladeDefs }, { data: ranks }, { data: allGuns }, { data: modeRow }] =
     await Promise.all([
       supabase.from("player_ratings").select(RATING_COLS).eq("account_id", accountId).maybeSingle(),
       supabase
@@ -183,9 +211,14 @@ export async function getPlayerSummaryRow(
       supabase.from("accolade_definitions").select("id, name"),
       supabase.from("rank_levels").select("level, rank_name, badge_url, score_threshold").order("level"),
       supabase.from("guns").select("name, image_url"),
+      supabase.from("game_modes").select("obj_slot1_stat, obj_slot2_stat").eq("is_default", true).maybeSingle(),
     ]);
 
   const rankRows = (ranks ?? []) as RankRow[];
+  const objSlots: ObjSlots = {
+    slot1: (modeRow as { obj_slot1_stat: string | null } | null)?.obj_slot1_stat ?? null,
+    slot2: (modeRow as { obj_slot2_stat: string | null } | null)?.obj_slot2_stat ?? null,
+  };
   const level = life.current_level ?? 0;
   const favGun = (favGuns ?? [])[0]?.gun_name ?? "";
   const gunImage =
@@ -208,6 +241,7 @@ export async function getPlayerSummaryRow(
     thisRank: rankRows.find((r) => r.level === level),
     progressFraction: progressFor(rankRows, level, life.total_xp ?? 0),
     opsTagFallback: opsTag,
+    objSlots,
   });
 
   return { row, ratingUnlocked: !!rating };
@@ -221,7 +255,7 @@ export async function getPlayerSummaryRow(
 export async function getAllPlayerSummaryRows(
   supabase: SupabaseClient,
 ): Promise<{ rows: PlayerStatsRaw[]; uniqueGunsMap: Record<string, number> }> {
-  const [{ data: lifeRows }, { data: ratingRows }, { data: gunRows }, { data: awardRows }, { data: accoladeDefs }, { data: ranks }, { data: allGuns }] =
+  const [{ data: lifeRows }, { data: ratingRows }, { data: gunRows }, { data: awardRows }, { data: accoladeDefs }, { data: ranks }, { data: allGuns }, { data: modeRow }] =
     await Promise.all([
       supabase.from("player_stats_lifetime").select(LIFETIME_COLS),
       supabase.from("player_ratings").select(`account_id, ${RATING_COLS}`),
@@ -230,9 +264,14 @@ export async function getAllPlayerSummaryRows(
       supabase.from("accolade_definitions").select("id, name"),
       supabase.from("rank_levels").select("level, rank_name, badge_url, score_threshold").order("level"),
       supabase.from("guns").select("name, image_url"),
+      supabase.from("game_modes").select("obj_slot1_stat, obj_slot2_stat").eq("is_default", true).maybeSingle(),
     ]);
 
   const rankRows = (ranks ?? []) as RankRow[];
+  const objSlots: ObjSlots = {
+    slot1: (modeRow as { obj_slot1_stat: string | null } | null)?.obj_slot1_stat ?? null,
+    slot2: (modeRow as { obj_slot2_stat: string | null } | null)?.obj_slot2_stat ?? null,
+  };
   const gunImage = new Map(((allGuns ?? []) as { name: string; image_url: string | null }[]).map((g) => [g.name, g.image_url ?? ""]));
   const idToName = new Map(((accoladeDefs ?? []) as { id: string; name: string }[]).map((d) => [d.id, d.name]));
 
@@ -283,6 +322,7 @@ export async function getAllPlayerSummaryRows(
         thisRank: rankRows.find((r) => r.level === level),
         progressFraction: progressFor(rankRows, level, life.total_xp ?? 0),
         opsTagFallback: life.nickname ?? "",
+        objSlots,
       }),
     );
 
