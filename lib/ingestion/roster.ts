@@ -29,7 +29,7 @@ export const hbKey = (s: string | null | undefined) => {
 export async function resolveRoster(supabase: SupabaseClient, matchId: string): Promise<RosterResolver> {
   const { data: parts } = await supabase
     .from("match_participants")
-    .select("headset_label, account_id, display_name, gun_used, xp_multiplier")
+    .select("headset_label, account_id, display_name, gun_used, xp_multiplier, extra_headbands")
     .eq("match_id", matchId);
 
   const accIds = [...new Set((parts ?? []).map((p) => p.account_id).filter(Boolean) as string[])];
@@ -40,16 +40,22 @@ export async function resolveRoster(supabase: SupabaseClient, matchId: string): 
 
   const byHb = new Map<string, RosterEntry>();
   for (const p of parts ?? []) {
-    const k = hbKey(p.headset_label as string);
-    if (!k) continue;
     const acc = p.account_id ? accById.get(p.account_id as string) : undefined;
-    byHb.set(k, {
+    const entry: RosterEntry = {
       nickname: acc?.ops_tag || (p.display_name as string) || "",
       accountId: (p.account_id as string) ?? null,
       profilePicUrl: acc?.profile_pic_url ?? null,
       gun: (p.gun_used as string) || null,
       xpMultiplier: Number(p.xp_multiplier ?? 1) || 1,
-    });
+    };
+    const k = hbKey(p.headset_label as string);
+    if (k) byHb.set(k, entry);
+    // Extra headbands (mid-game swaps) resolve to the SAME player, so their
+    // stats merge into one row at scoring time.
+    for (const ex of ((p.extra_headbands as string[] | null) ?? [])) {
+      const ek = hbKey(ex);
+      if (ek && !byHb.has(ek)) byHb.set(ek, entry);
+    }
   }
 
   return (headband: string) => {

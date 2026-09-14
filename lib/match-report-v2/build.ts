@@ -62,7 +62,7 @@ type Acc = {
 };
 
 export function buildMatchReportV2(
-  rawRounds: { raw: string; resolutions?: RoundResolutions }[],
+  rawRounds: { raw: string; resolutions?: RoundResolutions; winnerOverride?: string | null }[],
   meta: { matchId: string; label: string; date?: string | null },
 ): MatchReportV2 {
   const { spawnWindowSeconds, minHoldSeconds, recaptureWindowSeconds, capturePoints, recapturePoints, holdPerSecond } = V2_SCORING;
@@ -78,8 +78,10 @@ export function buildMatchReportV2(
   const teamMembers: Record<string, Set<string>> = {};
 
   parsed.forEach((r, i) => {
-    rounds.push({ index: i + 1, winnerTeam: r.result.winner_team, allBasesBurned: r.result.all_bases_burned, durationSeconds: r.meta.duration_seconds });
-    if (r.result.winner_team) roundsWonByTeam[r.result.winner_team] = (roundsWonByTeam[r.result.winner_team] ?? 0) + 1;
+    const ov = rawRounds[i].winnerOverride;
+    const winnerTeam = ov === "draw" ? null : (ov || r.result.winner_team);
+    rounds.push({ index: i + 1, winnerTeam, allBasesBurned: r.result.all_bases_burned, durationSeconds: r.meta.duration_seconds });
+    if (winnerTeam) roundsWonByTeam[winnerTeam] = (roundsWonByTeam[winnerTeam] ?? 0) + 1;
     for (const t of r.teams) teamNames[t.colour] = t.name;
 
     const nameOf: Record<number, string> = {};

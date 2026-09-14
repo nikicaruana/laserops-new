@@ -21,6 +21,7 @@ type Agg = {
   team_colour: string | null; score: number | null; xp_total: number | null;
   rounds_won: number | null; rounds_lost: number | null;
   was_winner: boolean | null; xp_from_accolades: number | null; xp_multiplier: number | null;
+  xp_total_after_match: number | null; elo_after: number | null;
 };
 type MatchRow = { id: string; played_on: string | null; scheduled_at: string | null; created_at: string | null; sequence_no: number | null; is_double_xp: boolean | null };
 
@@ -31,13 +32,13 @@ const levelForXp = (ranks: Rank[], xp: number) => {
 };
 const thresholdOf = (ranks: Rank[], level: number) => ranks.find((r) => r.level === level)?.threshold ?? null;
 
-export async function recomputeProgression(client: SupabaseClient): Promise<{ matches: number; rows: number }> {
+export async function recomputeProgression(client: SupabaseClient, fromMatchId?: string): Promise<{ matches: number; rows: number }> {
   const [{ data: cfgRows }, { data: xpCfgRows }, { data: rankRows }, { data: matchRows }, { data: aggRows }] = await Promise.all([
     client.from("elo_config").select("key, value"),
     client.from("xp_config").select("key, value"),
     client.from("rank_levels").select("level, score_threshold").order("level"),
     client.from("matches").select("id, played_on, scheduled_at, created_at, sequence_no, is_double_xp"),
-    client.from("match_player_aggregate").select("id, match_id, account_id, team_colour, score, xp_total, rounds_won, rounds_lost, was_winner, xp_from_accolades, xp_multiplier"),
+    client.from("match_player_aggregate").select("id, match_id, account_id, team_colour, score, xp_total, rounds_won, rounds_lost, was_winner, xp_from_accolades, xp_multiplier, xp_total_after_match, elo_after"),
   ]);
 
   const params = parseEloConfig((cfgRows ?? []) as { key: string; value: string | null }[]);
@@ -53,12 +54,30 @@ export async function recomputeProgression(client: SupabaseClient): Promise<{ ma
     .filter((m) => byMatch.has(m.id))
     .sort((a, b) => sortKey(a) < sortKey(b) ? -1 : sortKey(a) > sortKey(b) ? 1 : (a.sequence_no ?? 0) - (b.sequence_no ?? 0));
 
+  // Incremental: when a specific match changed (published/edited), replay only
+  // from THAT match onward. Everything before it is unchanged, so fast-forward
+  // the running XP/Elo from stored results instead of re-scoring it. A full
+  // recompute (e.g. an XP/level/Elo config change) passes no fromMatchId.
+  const startIndex = fromMatchId ? Math.max(0, matches.findIndex((mm) => mm.id === fromMatchId)) : 0;
+
   const runningXp = new Map<string, number>();
   const runningElo = new Map<string, number>();
   const updates: Record<string, unknown>[] = [];
 
-  for (const m of matches) {
+  for (let i = 0; i < matches.length; i++) {
+    const m = matches[i];
     const rows = byMatch.get(m.id)!;
+
+    // Untouched earlier matches: carry each account's running state forward from
+    // its stored results — no re-score, no write.
+    if (i < startIndex) {
+      for (const a of rows) {
+        if (!a.account_id) continue;
+        runningXp.set(a.account_id, a.xp_total_after_match ?? runningXp.get(a.account_id) ?? 0);
+        runningElo.set(a.account_id, a.elo_after ?? runningElo.get(a.account_id) ?? params.startElo);
+      }
+      continue;
+    }
 
     // Elo: seed each row with its account's running Elo (start Elo for walk-ins).
     const eloRows: EloRow[] = rows.map((a) => ({
@@ -115,5 +134,5 @@ export async function recomputeProgression(client: SupabaseClient): Promise<{ ma
     const { error } = await client.rpc("apply_match_progression", { rows: updates });
     if (error) throw new Error(`apply_match_progression failed: ${error.message}`);
   }
-  return { matches: matches.length, rows: updates.length };
+  return { matches: matches.length - startIndex, rows: updates.length };
 }

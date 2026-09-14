@@ -24,6 +24,7 @@ type Row = {
   played_on: string | null;
   round_count: number | null;
   source_file_type: string | null;
+  scoring_mode: string | null;
   xp_distributed_at: string | null;
   elo_calculated_at: string | null;
   results_stale_at: string | null;
@@ -76,7 +77,7 @@ export default async function AdminMatchesPage({
   let query = supabase
     .from("matches")
     .select(
-      "id, match_code, title, status, scheduled_at, played_on, round_count, source_file_type, xp_distributed_at, elo_calculated_at, results_stale_at, registered_count, paid_count, on_day_count, match_player_aggregate(count)",
+      "id, match_code, title, status, scheduled_at, played_on, round_count, source_file_type, scoring_mode, xp_distributed_at, elo_calculated_at, results_stale_at, registered_count, paid_count, on_day_count, match_player_aggregate(count)",
     )
     .order("scheduled_at", { ascending: false, nullsFirst: false })
     .order("played_on", { ascending: false, nullsFirst: false })
@@ -149,6 +150,7 @@ export default async function AdminMatchesPage({
                 <th className="px-3 py-2.5 font-semibold">Date / time</th>
                 <th className="px-3 py-2.5 font-semibold">Status</th>
                 <th className="px-3 py-2.5 text-right font-semibold">Players</th>
+                <th className="px-3 py-2.5 text-center font-semibold">Mode</th>
                 <th className="px-3 py-2.5 text-center font-semibold">File</th>
                 <th className="px-3 py-2.5 text-right font-semibold">Rds</th>
                 <th className="px-3 py-2.5 font-semibold">Processed</th>
@@ -175,6 +177,11 @@ export default async function AdminMatchesPage({
                           ({m.paid_count ?? 0} paid, {m.on_day_count ?? 0} on day)
                         </span>
                       )}
+                    </td>
+                    <td className="px-3 py-2.5 text-center">
+                      <span className={`inline-block rounded px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-[0.1em] ${m.scoring_mode === "offline" ? "bg-amber-500/15 text-amber-300" : "bg-sky-500/15 text-sky-300"}`}>
+                        {m.scoring_mode === "offline" ? "Offline" : "Online"}
+                      </span>
                     </td>
                     <td className="px-3 py-2.5 text-center text-xs uppercase text-text-muted">{m.source_file_type ?? EMPTY}</td>
                     <td className="px-3 py-2.5 text-right font-mono tabular-nums text-text-muted">{m.round_count ?? EMPTY}</td>

@@ -18,13 +18,13 @@ import { EditableMatchTitle } from "@/components/admin/EditableMatchTitle";
 import { CopyInviteLink } from "@/components/portal/CopyInviteLink";
 import { MatchParticipantsManager, type Participant, type ParticipantPayment } from "@/components/admin/MatchParticipantsManager";
 import { IngestPanel, type SavedRound } from "@/components/admin/IngestPanel";
-import { PublishScores } from "@/components/admin/PublishScores";
-import { PublishedPlayersEditor } from "@/components/admin/PublishedPlayersEditor";
-import { RecomputeResults } from "@/components/admin/RecomputeResults";
+import { OfflineRoundResults } from "@/components/admin/OfflineRoundResults";
+import { lwaMatchPlayers, isLwa } from "@/lib/ingestion/lwa";
+import { MatchModeToggle } from "@/components/admin/MatchModeToggle";
+import { MatchResultsBox } from "@/components/admin/MatchResultsBox";
 import { LiveIngestWatcher } from "@/components/admin/LiveIngestWatcher";
 import { LiveFeedToggle } from "@/components/admin/LiveFeedToggle";
 import { NativeWatcherSetup } from "@/components/admin/NativeWatcherSetup";
-import { HeadbandIdentityPanel, type HeadbandRow } from "@/components/admin/HeadbandIdentityPanel";
 import { CollapsibleSection } from "@/components/admin/CollapsibleSection";
 import { RealtimeMatchRefresh } from "@/components/admin/RealtimeMatchRefresh";
 import { MatchPhotosManager } from "@/components/admin/MatchPhotosManager";
@@ -98,7 +98,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
     supabase
       .from("matches")
       .select(
-        "id, match_code, title, status, scheduled_at, played_on, round_count, source_file_type, xp_distributed_at, elo_calculated_at, results_stale_at, live_feed_enabled, winning_team_colour, is_private, is_double_xp, min_players, max_players, price_eur, pricing_mode, deposit_eur, registered_count, paid_count, on_day_count, reached_quorum_at, entry_code, invite_code, ladder_id, home_squad_id, away_squad_id, winner_squad_id, home_squad_colour, away_squad_colour",
+        "id, match_code, title, status, scheduled_at, played_on, round_count, source_file_type, xp_distributed_at, elo_calculated_at, results_stale_at, live_feed_enabled, winning_team_colour, is_private, is_double_xp, min_players, max_players, price_eur, pricing_mode, deposit_eur, registered_count, paid_count, on_day_count, reached_quorum_at, entry_code, invite_code, ladder_id, home_squad_id, away_squad_id, winner_squad_id, home_squad_colour, away_squad_colour, scoring_mode",
       )
       .eq("id", id)
       .maybeSingle(),
@@ -127,7 +127,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
     supabase.from("guns").select("name").order("name"),
     supabase
       .from("match_ingest_rounds")
-      .select("id, filename, raw_file, resolutions")
+      .select("id, filename, raw_file, resolutions, winner_override")
       .eq("match_id", id)
       .order("created_at"),
     supabase.from("score_formula").select("structure, mode_slug"),
@@ -208,16 +208,41 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   // Re-parse the stored raw file with the CURRENT parser on every load, so
   // parser improvements show without re-uploading. Falls back to nothing on a
   // parse error.
-  const ingestRounds: SavedRound[] = ((ingestRows ?? []) as { id: string; filename: string | null; raw_file: string | null; resolutions: Record<string, unknown> | null }[])
+  const ingestRounds: SavedRound[] = ((ingestRows ?? []) as { id: string; filename: string | null; raw_file: string | null; resolutions: Record<string, unknown> | null; winner_override: string | null }[])
     .map((row) => {
-      if (!row.raw_file) return null;
+      if (!row.raw_file || isLwa(row.raw_file)) return null;
       try {
-        return { id: row.id, filename: row.filename, parsed: parseRound(row.raw_file, { spawnWindowSeconds }), resolutions: (row.resolutions ?? {}) as SavedRound["resolutions"] };
+        return { id: row.id, filename: row.filename, parsed: parseRound(row.raw_file, { spawnWindowSeconds }), resolutions: (row.resolutions ?? {}) as SavedRound["resolutions"], winner_override: row.winner_override };
       } catch {
         return null;
       }
     })
     .filter((x): x is SavedRound => x !== null);
+
+  // Offline (LWA) ingest -> per-player aggregates, queried defensively so a
+  // not-yet-applied migration (missing `mode` column) can't break the page.
+  let offlinePlayers: ReturnType<typeof lwaMatchPlayers> = [];
+  let offlineFile: { id: string; filename: string | null; playerCount: number } | null = null;
+  {
+    const { data: modeRows, error: modeErr } = await supabase
+      .from("match_ingest_rounds")
+      .select("id, filename, raw_file")
+      .eq("match_id", id);
+    if (!modeErr) {
+      const offlineIngest = ((modeRows ?? []) as { id: string; filename: string | null; raw_file: string | null }[]).filter((r) => r.raw_file && isLwa(r.raw_file));
+      offlinePlayers = offlineIngest.flatMap((r) => { try { return lwaMatchPlayers(r.raw_file as string); } catch { return []; } });
+      if (offlineIngest.length > 0) offlineFile = { id: offlineIngest[0].id, filename: offlineIngest[0].filename, playerCount: offlinePlayers.length };
+    }
+  }
+  const scoringMode: "online" | "offline" = (match.scoring_mode as string) === "offline" ? "offline" : "online";
+  const isOfflineMatch = scoringMode === "offline";
+  const offlineTeamColours = [...new Set([...offlinePlayers.map((p) => p.team), ...ingestRounds.flatMap((r) => r.parsed.players.map((pl) => pl.team))].filter(Boolean))];
+  // Marshal-entered per-round winners (offline). Defensive read for the same reason.
+  let offlineRoundResults: (string | null)[] = [];
+  if (isOfflineMatch) {
+    const { data: orr, error: orrErr } = await supabase.from("matches").select("offline_round_results").eq("id", id).maybeSingle();
+    if (!orrErr && orr) offlineRoundResults = ((orr as { offline_round_results: (string | null)[] | null }).offline_round_results) ?? [];
+  }
 
   // Scoring formula (prefer domination) + spawn-camp consequence for the on-the-fly
   // LaserOps score in the ingest preview.
@@ -257,28 +282,12 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   // headband number -> a label (ops tag / name) so the ingest preview can show
   // who each headband is instead of the raw "Head NN".
   const headbandLabels: Record<number, string> = {};
-  // headband number -> roster link state, for the identity-resolution panel.
-  const rosterByHeadband: Record<number, { linked: boolean; label: string | null; temp_name: string | null; participant_id: string }> = {};
   for (const p of participants) {
     const label = p.account?.ops_tag || p.account?.full_name || p.display_name;
     if (label) {
       for (const hb of [p.headset_label, ...(p.extra_headbands ?? [])]) {
         const n = hb ? parseInt(hb, 10) : NaN;
         if (!Number.isNaN(n)) headbandLabels[n] = label;
-      }
-    }
-    for (const hb of [p.headset_label, ...(p.extra_headbands ?? [])]) {
-      const n = hb ? parseInt(hb, 10) : NaN;
-      if (Number.isNaN(n)) continue;
-      const linked = Boolean(p.account_id);
-      // A linked entry always wins over an unlinked one for the same headband.
-      if (!rosterByHeadband[n] || (linked && !rosterByHeadband[n].linked)) {
-        rosterByHeadband[n] = {
-          linked,
-          label: p.account?.ops_tag || p.account?.full_name || null,
-          temp_name: p.display_name || null,
-          participant_id: p.id,
-        };
       }
     }
   }
@@ -290,14 +299,19 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
       if (pl.headband_no != null) ingestedHeadbands.add(pl.headband_no);
     }
   }
-  const headbandRows: HeadbandRow[] = [...ingestedHeadbands]
-    .sort((a, b) => a - b)
-    .map((hb) => {
-      const roster = rosterByHeadband[hb];
-      if (roster?.linked) return { headband: hb, status: "linked", label: roster.label, temp_name: roster.temp_name, participant_id: roster.participant_id };
-      if (roster) return { headband: hb, status: "walkin", label: roster.label, temp_name: roster.temp_name, participant_id: roster.participant_id };
-      return { headband: hb, status: "unclaimed", label: null, temp_name: null, participant_id: null };
-    });
+  const offlineTeamByHb: Record<number, string> = {};
+  const offlineStatByHb: Record<number, string> = {};
+  for (const pl of offlinePlayers) {
+    const m = pl.headband.match(/\d+/);
+    const n = m ? parseInt(m[0], 10) : NaN;
+    if (Number.isNaN(n)) continue;
+    ingestedHeadbands.add(n);
+    offlineTeamByHb[n] = pl.team;
+    const acc = pl.shots > 0 ? Math.round((pl.hits / pl.shots) * 100) : 0;
+    offlineStatByHb[n] = pl.frags + "K \u00b7 " + pl.deaths + "D \u00b7 " + acc + "%";
+  }
+  const ingestByHeadband: Record<number, { stat: string | null; team: string | null }> = {};
+  for (const n of ingestedHeadbands) ingestByHeadband[n] = { stat: offlineStatByHb[n] ?? null, team: offlineTeamByHb[n] ?? null };
 
   return (
     <div>
@@ -333,9 +347,9 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         <RescheduleMatchButton matchId={match.id} status={match.status} scheduledAt={match.scheduled_at} />
       </div>
 
-      {/* Results freshness: scored matches show a recompute control; stale after an edit. */}
-      {match.xp_distributed_at && (
-        <RecomputeResults matchId={match.id} stale={!!match.results_stale_at} />
+      {/* Match results: publish / re-publish (re-scores from the line-up) + recompute, with a stale flag. */}
+      {(ingestRounds.length > 0 || offlinePlayers.length > 0 || !!match.xp_distributed_at) && (
+        <MatchResultsBox matchId={match.id} published={!!match.xp_distributed_at} stale={!!match.results_stale_at} />
       )}
 
       {squadPair?.home && squadPair.away && (
@@ -395,6 +409,18 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         </div>
       )}
 
+      <div className="mb-8">
+        <p className="mb-2 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-text-muted">Scoring mode</p>
+        <div className="max-w-md">
+          <MatchModeToggle matchId={match.id} mode={scoringMode} />
+        </div>
+        <p className="mt-2 text-[0.65rem] text-text-subtle">
+          {isOfflineMatch
+            ? "Offline: upload the .lwa below, enter round results, then publish - scored kill-only across every round."
+            : "Online: ingest the per-round JSON as the game runs."}
+        </p>
+      </div>
+
       {match.status === "live" && match.entry_code && (
         <div className="mb-8 flex flex-wrap items-center gap-5 border border-accent bg-accent/10 px-5 py-4">
           <div>
@@ -452,14 +478,14 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         </Fact>
       </div>
 
-      {/* Signed in players – live joins + manual admin entries */}
-      {showRoster && (
+      {/* Players & headbands – roster + file headbands + assignment (pre/post publish) */}
+      {(showRoster || Object.keys(ingestByHeadband).length > 0) && (
         <CollapsibleSection
-          title="Signed in players"
+          title="Players & headbands"
           count={participants.length}
-          subtitle="Players in the match with their headband and gun. Signed-up players join live with the code; add walk-ins (e.g. private-booking guests) by hand."
+          subtitle="Everyone in the match with their headband, gun and profile. Assign the headbands the game file saw, add walk-ins by hand, or let signed-up players join live. Editing after publishing marks results stale &ndash; re-publish to apply."
         >
-          <MatchParticipantsManager matchId={match.id} initial={participants} guns={guns} payments={payments} />
+          <MatchParticipantsManager matchId={match.id} initial={participants} guns={guns} payments={payments} ingest={ingestByHeadband} published={!!match.xp_distributed_at} />
         </CollapsibleSection>
       )}
 
@@ -573,45 +599,19 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         </CollapsibleSection>
       )}
 
-      {/* Identity resolution – link ingested headbands to real profiles */}
-      {headbandRows.length > 0 && (
-        <CollapsibleSection
-          title="Identity resolution"
-          count={headbandRows.length}
-          subtitle="Every headband from the round files. Link each to a real profile so the committed stats, XP and ELO land on the right player. Walk-ins added by hand can be linked too."
-        >
-          <HeadbandIdentityPanel matchId={match.id} rows={headbandRows} />
-        </CollapsibleSection>
-      )}
-
-      {/* Edit published players – reassign a headband to a profile / set the gun */}
-      {match.xp_distributed_at && entries.length > 0 && (
-        <CollapsibleSection
-          title="Edit players"
-          count={entries.length}
-          subtitle="After publishing, reassign a headband to a profile (e.g. a walk-in who made an account later) or set the gun. Saving re-attributes that player's stats and rolls it into their career — scores and XP amounts aren't recomputed. Requires 2FA."
-        >
-          <PublishedPlayersEditor
-            matchId={match.id}
-            guns={guns}
-            players={entries.map((e) => ({
-              headset_label: e.headset_label ?? "",
-              nickname: e.nickname ?? (e.headset_label ?? ""),
-              team_colour: e.team_colour,
-              gun_used: e.gun_used,
-              account_id: e.account_id,
-            }))}
-          />
-        </CollapsibleSection>
-      )}
-
       {/* Live feed – toggle on to stream; off (default) for private bookings */}
       <CollapsibleSection
         title="Live feed"
         subtitle="Stream the game live to players' phones + a venue screen. Turn it on for public games; leave it off for private bookings (upload JSONs manually instead)."
       >
-        <LiveFeedToggle matchId={match.id} enabled={!!match.live_feed_enabled} />
-        {match.live_feed_enabled && (
+        {isOfflineMatch ? (
+          <p className="border border-border bg-bg-elevated px-4 py-3 text-sm text-text-muted">
+            The live feed isn&apos;t available for offline games. They&apos;re scored from a .lwa after the match, not streamed live. Switch this match to Online to use it.
+          </p>
+        ) : (
+          <LiveFeedToggle matchId={match.id} enabled={!!match.live_feed_enabled} />
+        )}
+        {!isOfflineMatch && match.live_feed_enabled && (
           <div className="mt-5 space-y-5 border-t border-border pt-5">
             <div>
               <Link href={`/admin/matches/${match.id}/live`} className="text-xs font-semibold uppercase tracking-[0.12em] text-accent hover:text-accent-soft">
@@ -674,13 +674,19 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         />
       </CollapsibleSection>
 
-      {/* Publish scores (commit step) */}
-      {ingestRounds.length > 0 && (
+      {/* Offline round results – marshal enters per-round winners */}
+      {isOfflineMatch && (
         <CollapsibleSection
-          title="Publish scores"
-          subtitle="Make the results official: writes each player's score, accolades and XP from the reviewed rounds and marks the match scored. Requires 2FA; blocked while any capture ambiguity is unreviewed. Re-publishing replaces this match's committed rows. (ELO is a later phase.)"
+          title="Offline rounds"
+          subtitle="The offline file and its per-round winners. Offline files don't record the winner, so enter the winning team of each offline round (numbered after the online rounds). Save before publishing."
         >
-          <PublishScores matchId={match.id} alreadyPublished={!!match.xp_distributed_at} />
+          <OfflineRoundResults
+            matchId={match.id}
+            teamColours={offlineTeamColours}
+            initial={offlineRoundResults}
+            startRound={ingestRounds.length + 1}
+            offlineFile={offlineFile}
+          />
         </CollapsibleSection>
       )}
 

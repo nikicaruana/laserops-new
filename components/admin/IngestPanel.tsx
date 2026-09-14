@@ -15,13 +15,13 @@ import { parseRound, type Round } from "@/lib/ingestion/round-parser";
 import { laserOpsScores } from "@/lib/ingestion/score";
 import { evaluateStreaks, type StreakDef } from "@/lib/ingestion/streak-engine";
 import { effectiveWithResolutions, unreviewedCount, type RoundResolutions } from "@/lib/ingestion/resolutions";
-import { isLwa, lwaToCsv, lwaPlayerCounters } from "@/lib/ingestion/lwa";
+import { isLwa, lwaToCsv, lwaPlayerCounters, lwaMatchPlayers } from "@/lib/ingestion/lwa";
 import type { ScoreFormula } from "@/lib/scoring/formula";
 import { createClient } from "@/lib/supabase/client";
 
 const OPERATOR_ID = "00000000-0000-0000-0000-000000000001";
 
-export type SavedRound = { id: string; filename: string | null; parsed: Round; resolutions: RoundResolutions };
+export type SavedRound = { id: string; filename: string | null; parsed: Round; resolutions: RoundResolutions; winner_override: string | null };
 
 const th = "px-2 py-2 text-left text-[0.55rem] font-semibold uppercase tracking-[0.1em] text-text-muted";
 const td = "px-2 py-1.5 text-sm";
@@ -64,6 +64,15 @@ export function IngestPanel({
   const [resolutions, setResolutions] = useState<Record<string, RoundResolutions>>(
     () => Object.fromEntries(rounds.map((r) => [r.id, r.resolutions ?? {}])),
   );
+  const [winnerOverrides, setWinnerOverrides] = useState<Record<string, string | null>>(
+    () => Object.fromEntries(rounds.map((r) => [r.id, r.winner_override ?? null])),
+  );
+  async function saveWinner(roundId: string, value: string | null) {
+    setWinnerOverrides((prev) => ({ ...prev, [roundId]: value }));
+    const supabase = createClient();
+    const { error: err } = await supabase.from("match_ingest_rounds").update({ winner_override: value }).eq("id", roundId);
+    if (err) setError("Couldn't save winner: " + err.message);
+  }
 
   async function saveResolutions(roundId: string, next: RoundResolutions) {
     setResolutions((prev) => ({ ...prev, [roundId]: next }));
@@ -81,6 +90,19 @@ export function IngestPanel({
     for (const f of picked) {
       try {
         const text = await f.text();
+        if (isLwa(text)) {
+          // Offline: one .lwa/CSV aggregate for the WHOLE match. Replaces any
+          // existing ingest rows for this match.
+          const players = lwaMatchPlayers(text);
+          if (players.length === 0) { setError(`${f.name}: no players found in the offline file.`); break; }
+          await supabase.from("match_ingest_rounds").delete().eq("match_id", matchId).eq("mode", "offline");
+          const { error: errOff } = await supabase.from("match_ingest_rounds").insert({
+            operator_id: OPERATOR_ID, match_id: matchId, filename: f.name, raw_file: text, mode: "offline",
+          });
+          if (errOff) { setError(`${f.name}: ${errOff.message}`); break; }
+          await supabase.from("matches").update({ source_file_type: "csv", scoring_mode: "offline", live_feed_enabled: false }).eq("id", matchId);
+          break; // offline is a single whole-match file
+        }
         const parsed = parseRound(text, { spawnWindowSeconds });
         const { error: err } = await supabase.from("match_ingest_rounds").insert({
           operator_id: OPERATOR_ID,
@@ -88,6 +110,7 @@ export function IngestPanel({
           filename: f.name,
           raw_file: text,
           parsed,
+          mode: "online",
         });
         if (err) {
           setError(`${f.name}: ${err.message}`);
@@ -118,10 +141,10 @@ export function IngestPanel({
       <div className="flex flex-wrap items-center gap-4 border border-border bg-bg-elevated px-4 py-4">
         <label className="inline-flex cursor-pointer items-center gap-2 border border-accent bg-accent px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-bg">
           {busy ? "Saving…" : "Choose round file(s)"}
-          <input type="file" accept=".json,application/json" multiple onChange={onPick} className="hidden" disabled={busy} />
+          <input type="file" accept=".json,.lwa,.csv,application/json" multiple onChange={onPick} className="hidden" disabled={busy} />
         </label>
         <p className="text-[0.7rem] text-text-subtle">
-          One JSON file per round. Parsed and saved to this match. Preview only, no stats written yet.
+          One JSON file per round (online), or a single .lwa / CSV for a whole offline match. Saved to this match.
         </p>
       </div>
 
@@ -150,6 +173,8 @@ export function IngestPanel({
           recapturePoints={recapturePoints}
           resolutions={resolutions[sr.id] ?? {}}
           onChangeResolutions={(next) => saveResolutions(sr.id, next)}
+          winnerOverride={winnerOverrides[sr.id] ?? null}
+          onChangeWinner={(v) => saveWinner(sr.id, v)}
           onRemove={() => remove(sr.id)}
         />
       ))}
@@ -171,6 +196,8 @@ function RoundPreview({
   resolutions,
   onChangeResolutions,
   onRemove,
+  winnerOverride,
+  onChangeWinner,
 }: {
   name: string;
   round: Round;
@@ -185,6 +212,8 @@ function RoundPreview({
   resolutions: RoundResolutions;
   onChangeResolutions: (next: RoundResolutions) => void;
   onRemove: () => void;
+  winnerOverride: string | null;
+  onChangeWinner: (v: string | null) => void;
 }) {
   // Apply admin resolutions (ambiguous same-second captures) before scoring:
   // reassignments + optional even hold split, reflected in scores/hold/streaks.
@@ -203,6 +232,7 @@ function RoundPreview({
   const tradesConfigured = !!tradeMinHoldSeconds && tradeMinHoldSeconds > 0;
   const ambiguities = r.ambiguous_captures ?? [];
   const unreviewed = unreviewedCount(r, resolutions);
+  const effectiveWinner = winnerOverride === "draw" ? null : (winnerOverride || r.result.winner_team);
   const [open, setOpen] = useState(true);
   const [csvResult, setCsvResult] = useState<null | { checked: number; issues: { player: string; field: string; json: number; csv: number }[]; source: string }>(null);
   const [convertedCsv, setConvertedCsv] = useState<{ name: string; text: string } | null>(null);
@@ -333,6 +363,25 @@ function RoundPreview({
             Remove
           </button>
         </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-2.5">
+        <span className="text-[0.6rem] font-bold uppercase tracking-[0.12em] text-text-muted">Round winner</span>
+        <span className={effectiveWinner ? "rounded px-2 py-0.5 text-xs font-bold uppercase tracking-[0.08em] bg-accent/15 text-accent" : "rounded px-2 py-0.5 text-xs font-bold uppercase tracking-[0.08em] bg-bg text-text-subtle"}>
+          {effectiveWinner ?? "Draw / no winner"}
+        </span>
+        <select
+          value={winnerOverride ?? ""}
+          onChange={(e) => onChangeWinner(e.target.value === "" ? null : e.target.value)}
+          className="h-9 rounded-none border border-border-strong bg-bg px-2 text-xs text-text focus:border-accent focus:outline-none"
+        >
+          <option value="">{r.result.winner_team ? "Auto (base control: " + r.result.winner_team + ")" : "Auto (no base-control winner)"}</option>
+          {r.teams.map((tm) => (
+            <option key={tm.colour} value={tm.colour}>{tm.colour} won</option>
+          ))}
+          <option value="draw">Draw / no winner</option>
+        </select>
+        {winnerOverride ? <span className="text-[0.6rem] font-bold uppercase tracking-[0.1em] text-amber-300">Overridden</span> : null}
       </div>
 
       {ambiguities.length > 0 && (

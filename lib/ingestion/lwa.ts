@@ -70,6 +70,33 @@ export function lwaToCsv(text: string): string {
   return lines.join("\r\n") + "\r\n";
 }
 
+export type LwaPlayerStat = {
+  headband: string; team: string;
+  frags: number; deaths: number; hits: number; shots: number; wounds: number; revivals: number;
+};
+
+/** Per-player MATCH aggregate from an offline .lwa (one file = the whole match).
+ *  Offline exports carry the killing portion only; captures/MaxFragSeries/gun are
+ *  blank, so those are not read here. Team is the LWA team Color. */
+export function lwaMatchPlayers(text: string): LwaPlayerStat[] {
+  const g = parseLwa(text);
+  const n = (v: unknown) => parseInt(s(v)) || 0;
+  const out: LwaPlayerStat[] = [];
+  for (const team of g.Teams ?? []) {
+    const colour = s(team.Color).trim();
+    for (const p of team.Players ?? []) {
+      const hb = s(p.NickName).trim();
+      if (!hb) continue;
+      out.push({
+        headband: hb, team: colour,
+        frags: n(p.FragsCount), deaths: n(p.DeathsCount), hits: n(p.HitsCount),
+        shots: n(p.ShotsCount), wounds: n(p.WoundsCount), revivals: n(p.RevivalsCount),
+      });
+    }
+  }
+  return out;
+}
+
 /** Per-player counters from an LWA file, keyed by nickname (for cross-check). */
 export function lwaPlayerCounters(text: string): Record<string, Record<string, number>> {
   const g = parseLwa(text);

@@ -1,17 +1,16 @@
 /**
  * app/api/matches/[id]/recompute/route.ts
  * --------------------------------------------------------------------
- * Recompute XP / level / Elo across all scored matches and rebuild the lifetime
- * read-models, then clear the "results out of date" flag. Admin + 2FA. Recompute
- * is global (Elo is sequential + cross-match), so the [id] is only the match the
- * admin triggered it from.
+ * Recompute XP / level / Elo from the triggered match onward (everything before
+ * it is unchanged) and rebuild the lifetime read-models, then clear the "results
+ * out of date" flag. Admin + 2FA.
  */
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { recomputeProgression } from "@/lib/ingestion/progression";
 
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  await params;
+  const { id } = await params;
   const supabase = await createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -23,7 +22,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
 
   let stats;
   try {
-    stats = await recomputeProgression(supabase);
+    stats = await recomputeProgression(supabase, id);
   } catch (e) {
     return NextResponse.json({ error: `Recompute failed: ${e instanceof Error ? e.message : "unknown error"}` }, { status: 500 });
   }

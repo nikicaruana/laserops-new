@@ -1,15 +1,19 @@
 /**
  * app/api/matches/[id]/ingest-round/route.ts
  * --------------------------------------------------------------------
- * Auto-ingest one round file for a match. Called by the in-browser Live
- * auto-ingest watcher (File System Access API) on the venue tablet as each
- * per-round JSON appears in the AlphaTag export folder. Admin session (no 2FA —
- * this is preview data, not the official publish). Idempotent per filename so
- * re-reads of the same file don't create duplicate rounds.
+ * Ingest match data for scoring. Two shapes, auto-detected from the file:
+ *   - ONLINE: one per-round JSON (event stream). Appended; idempotent per
+ *     filename. Fed by the in-browser Live auto-ingest watcher on the venue
+ *     tablet as each round file appears.
+ *   - OFFLINE: one .lwa/CSV aggregate for the WHOLE match (all rounds already
+ *     summed). Uploaded by an admin after the game. Since it is the whole match,
+ *     it REPLACES any existing ingest rows for the match.
+ * Admin session (no 2FA — this is preview data, not the official publish).
  */
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { parseRound } from "@/lib/ingestion/round-parser";
+import { isLwa, lwaMatchPlayers } from "@/lib/ingestion/lwa";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -25,6 +29,27 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const raw = body.raw ?? "";
   if (!raw.trim()) return NextResponse.json({ error: "Empty file." }, { status: 400 });
 
+  // --- OFFLINE: one .lwa/CSV aggregate for the whole match -----------------
+  if (isLwa(raw)) {
+    let players: ReturnType<typeof lwaMatchPlayers>;
+    try {
+      players = lwaMatchPlayers(raw);
+    } catch {
+      return NextResponse.json({ ok: false, skipped: "unparseable" });
+    }
+    if (players.length === 0) return NextResponse.json({ ok: false, skipped: "no-players" });
+
+    // Whole-match file: replace any prior ingest rows for this match.
+    await supabase.from("match_ingest_rounds").delete().eq("match_id", id).eq("mode", "offline");
+    const { error: insErr } = await supabase
+      .from("match_ingest_rounds")
+      .insert({ match_id: id, filename: filename || null, raw_file: raw, mode: "offline" });
+    if (insErr) return NextResponse.json({ error: insErr.message }, { status: 500 });
+    await supabase.from("matches").update({ source_file_type: "csv", scoring_mode: "offline", live_feed_enabled: false }).eq("id", id);
+    return NextResponse.json({ ok: true, mode: "offline", players: players.length });
+  }
+
+  // --- ONLINE: one per-round JSON event stream -----------------------------
   // Best-effort parse so we don't ingest a half-written / non-round file.
   try {
     const round = parseRound(raw, { spawnWindowSeconds: 3 });
@@ -48,7 +73,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   const { error: insErr } = await supabase
     .from("match_ingest_rounds")
-    .insert({ match_id: id, filename: filename || null, raw_file: raw });
+    .insert({ match_id: id, filename: filename || null, raw_file: raw, mode: "online" });
   if (insErr) return NextResponse.json({ error: insErr.message }, { status: 500 });
 
   // Note the source type so the match shows as JSON-sourced.
@@ -59,5 +84,5 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     .select("id", { count: "exact", head: true })
     .eq("match_id", id);
 
-  return NextResponse.json({ ok: true, rounds: count ?? null });
+  return NextResponse.json({ ok: true, mode: "online", rounds: count ?? null });
 }
