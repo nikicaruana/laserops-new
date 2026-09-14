@@ -54,7 +54,9 @@ export type GameInfo = {
   gameNo: string;
   isPrivate: boolean;
   isDoubleXp: boolean;
-  // Per-team data — stored for all three colours regardless of whether
+  /** Offline (.lwa) match: objective / streak / kill-matrix stats aren't captured, so the report omits them. */
+  offline?: boolean;
+  // Per-team data – stored for all three colours regardless of whether
   // each team played. Consumers filter by non-zero rating/rounds to
   // know which teams actually participated.
   teams: {
@@ -62,7 +64,7 @@ export type GameInfo = {
     blue: { roundWins: number; rating: number };
     yellow: { roundWins: number; rating: number };
   };
-  // Outcome — derived from the sheet's pre-computed Winning_Team field.
+  // Outcome – derived from the sheet's pre-computed Winning_Team field.
   // Useful for rendering the "blue won 5-0" narrative when there's a
   // clean winner; falls back to per-team display when not.
   winningTeam: string;
@@ -73,6 +75,13 @@ export type GameInfo = {
   losingTeamRating: number;
   winningTeamBadge: string;
   losingTeamBadge: string;
+  // Squad-vs-squad context (ladder or casual). Absent for ordinary matches.
+  // When set, the report labels the match and swaps squad badges in for the
+  // team-colour badges (using the admin-assigned colour->squad mapping).
+  matchKind?: "ladder" | "squad" | null;
+  ladderName?: string | null;
+  winningTeamName?: string | null;
+  losingTeamName?: string | null;
 };
 
 export async function fetchGameIdMap(): Promise<GameInfo[]> {
@@ -140,7 +149,7 @@ export function findMatchById(
 export function listAllMatchIds(games: GameInfo[]): string[] {
   return [...games]
     .sort((a, b) => {
-      // Sort by year descending, then game number descending — most
+      // Sort by year descending, then game number descending – most
       // recent matches first.
       if (a.gameStartTimeYear !== b.gameStartTimeYear) {
         return b.gameStartTimeYear.localeCompare(a.gameStartTimeYear);

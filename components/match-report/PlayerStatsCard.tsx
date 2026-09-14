@@ -46,9 +46,11 @@ type Props = {
    *  their own stats, so the button is hidden on other players' cards.
    *  Defaults true (the admin preview always shows it). */
   canShare?: boolean;
+  /** Offline match: omit objective (Obj Caps / Cap Time) stat tiles. */
+  offline?: boolean;
 };
 
-export function PlayerStatsCard({ player, ranks, matchId, canShare = true }: Props) {
+export function PlayerStatsCard({ player, ranks, matchId, canShare = true, offline = false }: Props) {
   const sectionRef = useRef<HTMLElement>(null);
 
   // Scroll into view when the player changes. Smooth scroll so it
@@ -203,6 +205,8 @@ export function PlayerStatsCard({ player, ranks, matchId, canShare = true }: Pro
           format="percent"
           rank={player.accuracyRank}
         />
+        {!offline && (
+          <>
         <StatTile
           key={`${player.nickname}-objcaps`}
           label="Obj Caps"
@@ -218,6 +222,8 @@ export function PlayerStatsCard({ player, ranks, matchId, canShare = true }: Pro
           suffix="s"
           rank={player.capTimeRank ?? 0}
         />
+          </>
+        )}
       </div>
 
       {/* Streaks earned in this match. Tap a badge for its description. */}

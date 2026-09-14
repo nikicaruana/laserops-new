@@ -39,6 +39,8 @@ type Props = {
    * Defaults to false (match report behaviour: click → expand stats card).
    */
   linkNamesToProfiles?: boolean;
+  /** Offline match: omit the objective (Caps / Cap Time) columns entirely. */
+  offline?: boolean;
 };
 
 /**
@@ -97,7 +99,7 @@ function computeBestValues(players: MatchPlayer[]): BestValues {
   };
 }
 
-export function PlayersTable({ players, matchId, selectedPlayer, linkNamesToProfiles = false }: Props) {
+export function PlayersTable({ players, matchId, selectedPlayer, linkNamesToProfiles = false, offline = false }: Props) {
   const pathname = usePathname();
   const best = useMemo(() => computeBestValues(players), [players]);
   const selectedLower = selectedPlayer.toLowerCase();
@@ -147,8 +149,12 @@ export function PlayersTable({ players, matchId, selectedPlayer, linkNamesToProf
               <Th align="right">K/D</Th>
               <Th align="right">Acc</Th>
               <Th align="right">Dmg</Th>
-              <Th align="right" tight>Caps</Th>
-              <Th align="right">Cap Time</Th>
+              {!offline && (
+                <>
+                  <Th align="right" tight>Caps</Th>
+                  <Th align="right">Cap Time</Th>
+                </>
+              )}
               <Th align="right">Total XP</Th>
             </tr>
           </thead>
@@ -167,6 +173,7 @@ export function PlayersTable({ players, matchId, selectedPlayer, linkNamesToProf
                   href={href}
                   best={best}
                   linkNamesToProfiles={linkNamesToProfiles}
+                  offline={offline}
                 />
               );
             })}
@@ -229,6 +236,7 @@ function PlayerRow({
   href,
   best,
   linkNamesToProfiles,
+  offline,
 }: {
   player: MatchPlayer;
   rank: number;
@@ -236,6 +244,7 @@ function PlayerRow({
   href: string;
   best: BestValues;
   linkNamesToProfiles: boolean;
+  offline: boolean;
 }) {
   const rowBg = isSelected ? "bg-accent/[0.06]" : "bg-bg-elevated";
   const stickyBg = isSelected ? "bg-bg-elevated" : "bg-bg-elevated";
@@ -377,6 +386,8 @@ function PlayerRow({
         <RowLink href={href}>{player.damage.toLocaleString("en-US")}</RowLink>
       </BestTd>
 
+      {!offline && (
+        <>
       <BestTd value={player.objCaps ?? 0} best={best.objCaps} format="number" tight>
         <RowLink href={href}>{player.objCaps ?? 0}</RowLink>
       </BestTd>
@@ -384,6 +395,8 @@ function PlayerRow({
       <BestTd value={player.capTime ?? 0} best={best.capTime} format="number">
         <RowLink href={href}>{`${player.capTime ?? 0}s`}</RowLink>
       </BestTd>
+        </>
+      )}
 
       <BestTd value={player.totalXp} best={best.totalXp} format="number">
         <RowLink href={href}>{player.totalXp.toLocaleString("en-US")}</RowLink>

@@ -171,10 +171,11 @@ async function MatchContent({
         players={report.players}
         matchId={matchId}
         selectedPlayer={selectedPlayer}
+        offline={report.game.offline}
       />
       <PlayerCardArea>
         {player && (
-          <PlayerStatsCard player={player} ranks={report.ranks} matchId={matchId} canShare={isOwnCard} />
+          <PlayerStatsCard player={player} ranks={report.ranks} matchId={matchId} canShare={isOwnCard} offline={report.game.offline} />
         )}
       </PlayerCardArea>
       <MatchImages
