@@ -153,6 +153,8 @@ function mkPlayer(b: Base, idx: number, opts: Opts, accs: Accolade[]): MatchPlay
     rankBadgeUrl: opts.rankBadgeByLevel(b.level),
     score: b.score,
     kills: b.kills,
+    spawnKills: Math.round(b.kills * 0.12),
+    spawnDamage: Math.round(b.damage * 0.06),
     deaths: b.deaths,
     kd,
     accuracy: b.accuracy,

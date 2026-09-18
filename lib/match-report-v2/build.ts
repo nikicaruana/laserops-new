@@ -145,9 +145,9 @@ export function buildMatchReportV2(
       .sort((x, y) => y.points - x.points);
     const pp = killMatrix.perPlayer[a.name] ?? { killed: [], killedBy: [], nemesis: null };
     return {
-      id: a.id, name: a.name, team: a.team, frags: a.frags, deaths: a.deaths, kd: Math.round(kd * 100) / 100,
-      accuracy: Math.round(accuracy * 1000) / 1000, shots: a.shots, hits: a.hits, wounds: a.wounds, damage: a.damage,
-      spawnKills: a.spawnKills, captures: a.captures, recaptures: a.recaptures, excludedCaptures: a.excluded, holdSeconds: a.hold,
+      id: a.id, name: a.name, team: a.team, frags: f, deaths: a.deaths, kd: Math.round(kd * 100) / 100,
+      accuracy: Math.round(accuracy * 1000) / 1000, shots: a.shots, hits: a.hits, wounds: a.wounds, damage: dmg,
+      spawnKills: a.spawnKills, spawnDamage: a.spawnDamage, captures: a.captures, recaptures: a.recaptures, excludedCaptures: a.excluded, holdSeconds: a.hold,
       killScore, objectiveScore, streakScore, totalScore: killScore + objectiveScore + streakScore,
       streaks, accolades: [], killed: pp.killed, killedBy: pp.killedBy, nemesis: pp.nemesis,
     };

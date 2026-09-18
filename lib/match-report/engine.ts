@@ -61,6 +61,10 @@ export type MatchPlayer = {
   kd: number;
   accuracy: number;
   damage: number;
+  /** Kills / damage inside the spawn-protection window — voided from the Kill
+   *  Score and shown greyed. Undefined for legacy (Sheets) rows. */
+  spawnKills?: number;
+  spawnDamage?: number;
   totalXp: number;
   gunUsed: string;
   gunUsedImage: string;

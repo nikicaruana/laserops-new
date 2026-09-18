@@ -121,7 +121,7 @@ export function computeOfflineMatchCommit(
     return {
       account_id: idn.accountId, nickname: idn.nickname, headset_label: s.primaryHeadband, team_colour: s.team,
       profile_pic_url: idn.profilePicUrl ?? null, gun_used: idn.gun ?? null,
-      frags: s.frags, deaths: s.deaths, hits: s.hits, shots: s.shots, wounds: s.wounds, captures: 0, hold_seconds: 0,
+      frags: s.frags, deaths: s.deaths, hits: s.hits, shots: s.shots, wounds: s.wounds, spawn_kills: 0, spawn_damage: 0, captures: 0, hold_seconds: 0,
       accuracy: Math.round(s.accuracy * 10000) / 10000, kd: Math.round(s.kd * 100) / 100, damage: Math.round(s.damage), score: s.score,
       match_rating: matchAvg > 0 ? Math.round(rating * 100) / 100 : 0, match_average_score: Math.round(matchAvg),
       score_performance_delta: Math.round(s.score - matchAvg), xp_multiplier: mult,

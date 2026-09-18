@@ -156,6 +156,18 @@ export function PlayersTable({ players, matchId, selectedPlayer, linkNamesToProf
                 </>
               )}
               <Th align="right">Total XP</Th>
+              {!offline && (
+                <>
+                  <Th align="right" tight>
+                    <span className="block leading-tight">Sp.</span>
+                    <span className="block leading-tight">K</span>
+                  </Th>
+                  <Th align="right" tight>
+                    <span className="block leading-tight">Sp.</span>
+                    <span className="block leading-tight">Dmg</span>
+                  </Th>
+                </>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -401,6 +413,17 @@ function PlayerRow({
       <BestTd value={player.totalXp} best={best.totalXp} format="number">
         <RowLink href={href}>{player.totalXp.toLocaleString("en-US")}</RowLink>
       </BestTd>
+
+      {!offline && (
+        <>
+          <Td align="right">
+            <RowLink href={href}><span className="text-text-subtle">{player.spawnKills ?? 0}</span></RowLink>
+          </Td>
+          <Td align="right">
+            <RowLink href={href}><span className="text-text-subtle">{(player.spawnDamage ?? 0).toLocaleString("en-US")}</span></RowLink>
+          </Td>
+        </>
+      )}
     </tr>
   );
 }

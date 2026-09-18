@@ -47,6 +47,8 @@ type AggRow = {
   accuracy: number | null;
   kd: number | null;
   damage: number | null;
+  spawn_kills: number | null;
+  spawn_damage: number | null;
   score: number | null;
   match_rating: number | null;
   match_average_score: number | null;
@@ -221,6 +223,8 @@ export async function fetchMatchReportSupabase(
       kd: n(r.kd),
       accuracy: n(r.accuracy),
       damage: n(r.damage),
+      spawnKills: n(r.spawn_kills),
+      spawnDamage: n(r.spawn_damage),
       totalXp: n(r.xp_total),
       gunUsed: r.gun_used ?? "",
       gunUsedImage: r.gun_used ? gunImage.get(r.gun_used) ?? "" : "",

@@ -23,7 +23,7 @@ export type CommitTally = { headband: string; nickname: string; count: number };
 
 export type CommitAggregate = {
   account_id: string | null; nickname: string; headset_label: string; team_colour: string; profile_pic_url: string | null; gun_used: string | null;
-  frags: number; deaths: number; hits: number; shots: number; wounds: number; captures: number; hold_seconds: number;
+  frags: number; deaths: number; hits: number; shots: number; wounds: number; spawn_kills: number; spawn_damage: number; captures: number; hold_seconds: number;
   accuracy: number; kd: number; damage: number; score: number; match_rating: number; match_average_score: number; score_performance_delta: number; xp_multiplier: number;
   score_rank: number; kills_rank: number; deaths_rank: number; kd_rank: number; accuracy_rank: number; damage_rank: number;
   was_winner: boolean; rounds_won: number; rounds_lost: number; team_score: number; opponent_team_score: number;
@@ -89,7 +89,7 @@ export function computeMatchCommit(
       : null;
     return {
       account_id: idn.accountId, nickname: idn.nickname, headset_label: p.name, team_colour: p.team, profile_pic_url: idn.profilePicUrl ?? null, gun_used: idn.gun ?? null,
-      frags: p.frags, deaths: p.deaths, hits: p.hits, shots: p.shots, wounds: p.wounds, captures: p.captures + p.recaptures, hold_seconds: Math.round(p.holdSeconds),
+      frags: p.frags, deaths: p.deaths, hits: p.hits, shots: p.shots, wounds: p.wounds, spawn_kills: p.spawnKills, spawn_damage: Math.round(p.spawnDamage), captures: p.captures + p.recaptures, hold_seconds: Math.round(p.holdSeconds),
       accuracy: Math.round(p.accuracy * 10000) / 10000, kd: p.kd, damage: p.damage, score: p.totalScore,
       match_rating: matchAvg > 0 ? Math.round((p.totalScore / matchAvg) * 100) / 100 : 0, match_average_score: Math.round(matchAvg), score_performance_delta: Math.round(p.totalScore - matchAvg), xp_multiplier: mult,
       score_rank: rankOf(scores, p.totalScore), kills_rank: rankOf(kills, p.frags), deaths_rank: rankOf(deaths, p.deaths, false),
