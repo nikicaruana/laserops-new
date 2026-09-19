@@ -110,4 +110,13 @@ export type MatchReport = {
   matchDate: string;
   label?: string;
   generatedAt?: string;
+  /** Per-report scoring config (drives the notes box). Absent on older reports. */
+  scoring?: {
+    capturePoints: number;
+    recapturePoints: number;
+    recaptureWindowSeconds: number;
+    minHoldSeconds: number;
+    holdPerSecond: number;
+    spawnWindowSeconds: number;
+  };
 };

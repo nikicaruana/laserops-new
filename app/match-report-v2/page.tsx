@@ -25,6 +25,9 @@ export default async function MatchReportV2Page({ searchParams }: { searchParams
     );
   }
 
+  // Per-report scoring (falls back to the original defaults for older reports).
+  const sc = report.scoring ?? { capturePoints: 75, recapturePoints: 50, recaptureWindowSeconds: 20, minHoldSeconds: 3, holdPerSecond: 2, spawnWindowSeconds: 3 };
+
   const selected = (player ?? "").trim();
   const focus = selected
     ? report.players.find((p) => p.nickname.toLowerCase() === selected.toLowerCase()) ?? report.players[0]
@@ -48,9 +51,9 @@ export default async function MatchReportV2Page({ searchParams }: { searchParams
       <div className="mb-6 rounded-md border border-border bg-bg-elevated px-4 py-3 text-sm text-text-muted">
         <p className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-text-subtle">How it&apos;s currently scored</p>
         <ul className="mt-2 list-disc space-y-1 pl-5">
-          <li><span className="text-text">Base capture:</span> 75 points — only if the base is held for at least 3 seconds (shorter captures don&apos;t count).</li>
-          <li><span className="text-text">Recapture:</span> 50 points — retaking the same base within 20 seconds.</li>
-          <li><span className="text-text">Hold:</span> 2 points per second a base is held.</li>
+          <li><span className="text-text">Base capture:</span> {sc.capturePoints} points — only if the base is held for at least {sc.minHoldSeconds} seconds (shorter captures don&apos;t count).</li>
+          <li><span className="text-text">Recapture:</span> {sc.recapturePoints} points — retaking the same base within {sc.recaptureWindowSeconds} seconds.</li>
+          <li><span className="text-text">Hold:</span> {sc.holdPerSecond} point{sc.holdPerSecond === 1 ? "" : "s"} per second a base is held.</li>
           <li><span className="text-text">Kills:</span> score also factors in kills, damage, accuracy and K/D; spawn-trap kills are voided. Streaks add points too.</li>
           <li><span className="text-text">XP (estimated):</span> score + 750 per round won + 500 for the match win + accolade XP. Accolades give XP only, not score.</li>
         </ul>

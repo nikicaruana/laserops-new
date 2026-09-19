@@ -8,9 +8,11 @@ import type { MatchReport } from "@/lib/match-report-v2/report-types";
 import lo_2026_27 from "./LO-2026-27.report.json";
 import lo_2026_28 from "./LO-2026-28.report.json";
 import lo_2026_29 from "./LO-2026-29.report.json";
+import lo_2026_30 from "./LO-2026-30.report.json";
 
 // Newest first — REPORTS[0] is the default shown when no ?match= is given.
 export const REPORTS: MatchReport[] = [
+  lo_2026_30 as unknown as MatchReport,
   lo_2026_29 as unknown as MatchReport,
   lo_2026_28 as unknown as MatchReport,
   lo_2026_27 as unknown as MatchReport,
