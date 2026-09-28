@@ -10,7 +10,7 @@ import { cn } from "@/lib/cn";
  *
  * The fill bar starts (in the DOM, server-rendered) without the .is-filled
  * class. CSS rule .xp-fill says width: 0. After IntersectionObserver fires,
- * we add .is-filled directly to the element via classList.add — bypassing
+ * we add .is-filled directly to the element via classList.add – bypassing
  * React state entirely. CSS .xp-fill.is-filled then sets width to the
  * target, and .xp-fill's `transition: width` runs the animation.
  *

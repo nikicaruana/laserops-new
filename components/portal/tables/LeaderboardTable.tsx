@@ -11,7 +11,7 @@ import { HeaderInfoIcon } from "./HeaderInfoIcon";
  * Reusable, sortable table for player-portal leaderboards.
  *
  * Architecture:
- *   - Client component — owns sort state via useState
+ *   - Client component – owns sort state via useState
  *   - Generic over row type T so each leaderboard supplies its own data shape
  *   - Caller defines the columns via a typed array; this component handles
  *     header rendering, sort cycling, sort indicator arrows, and row layout
@@ -37,7 +37,7 @@ import { HeaderInfoIcon } from "./HeaderInfoIcon";
  *     next to the header label. Click/hover reveals an explanation
  *     popover (HeaderInfoIcon). Useful for terse stat names like
  *     "Acc%", "K/D", "ELO ±", "Rating" where new players need context.
- *   - Tooltips are independent of the sort affordance — clicking the
+ *   - Tooltips are independent of the sort affordance – clicking the
  *     icon doesn't trigger a sort, clicking the label still does.
  */
 
@@ -52,7 +52,7 @@ export type ColumnAlign = "left" | "center" | "right";
  *   - `align`: text alignment for both header and cells in this column
  *   - `sortable`: whether the header is clickable to sort. Default false.
  *   - `numeric`: apply tabular-nums + monospace font to cells in this column.
- *   - `sortType`: "number" or "string" — drives sort comparator and the
+ *   - `sortType`: "number" or "string" – drives sort comparator and the
  *      asc/desc default direction. Default "number".
  *   - `accessor`: how to extract the sort value from a row. Defaults to
  *      `row[key]`. Provide explicitly for computed sort orders.
@@ -60,7 +60,7 @@ export type ColumnAlign = "left" | "center" | "right";
  *      compose grid-template-columns. IMPORTANT: for flexible columns that
  *      may contain unbreakable text (long nicknames, URLs etc.), use
  *      "minmax(0, 1fr)" not bare "1fr". A bare 1fr track has an implicit
- *      min-content floor — unbreakable content forces it wider than its
+ *      min-content floor – unbreakable content forces it wider than its
  *      fair share, which pushes the row's other columns out of alignment
  *      with the rest of the table. minmax(0, 1fr) caps the floor at 0 so
  *      content wraps inside the cell instead.
@@ -70,7 +70,7 @@ export type ColumnAlign = "left" | "center" | "right";
  *      icon renders next to the header label; click/hover reveals a
  *      small popover with this text. Independent of sort behaviour.
  *   - `tooltipAriaLabel`: optional aria-label for the info icon. Defaults
- *      to "More info" — pass something more descriptive like
+ *      to "More info" – pass something more descriptive like
  *      "About match rating" when the column context isn't obvious from
  *      the surrounding label alone.
  */
@@ -99,7 +99,7 @@ type LeaderboardTableProps<T> = {
   /**
    * Called for each row to determine if it gets the rank-1 highlight
    * (yellow left edge bar + tinted background). For most leaderboards
-   * this is `(row, index) => index === 0` BUT only when sort state is default —
+   * this is `(row, index) => index === 0` BUT only when sort state is default –
    * once the user re-sorts, "rank 1" no longer means the top of the table.
    */
   isTopRank?: (row: T, index: number, isDefaultSort: boolean) => boolean;
@@ -144,7 +144,7 @@ export function LeaderboardTable<T>({
   const [sort, setSort] = useState<SortState>({ kind: "default" });
 
   // Compose grid-template-columns CSS values from column widths.
-  // Inline style — NOT Tailwind classes — because Tailwind's JIT scanner
+  // Inline style – NOT Tailwind classes – because Tailwind's JIT scanner
   // can't see dynamically-built class strings, and we need the column
   // template to be derived from the typed column list rather than duplicated
   // as a literal class somewhere.
@@ -163,7 +163,7 @@ export function LeaderboardTable<T>({
     const sortType = col.sortType ?? "number";
     const direction = sort.direction === "asc" ? 1 : -1;
 
-    // Copy before sort — never mutate props.
+    // Copy before sort – never mutate props.
     const copy = [...rows];
     copy.sort((a, b) => {
       const av = accessor(a);
@@ -192,10 +192,10 @@ export function LeaderboardTable<T>({
         return { kind: "active", columnKey: col.key, direction: initialDirection };
       }
       if (current.columnKey !== col.key) {
-        // Clicked a different column — start its cycle from scratch
+        // Clicked a different column – start its cycle from scratch
         return { kind: "active", columnKey: col.key, direction: initialDirection };
       }
-      // Same column — advance the cycle
+      // Same column – advance the cycle
       if (current.direction === initialDirection) {
         // Flip direction
         return {
@@ -204,7 +204,7 @@ export function LeaderboardTable<T>({
           direction: initialDirection === "desc" ? "asc" : "desc",
         };
       }
-      // Already toggled — third click resets to default
+      // Already toggled – third click resets to default
       return { kind: "default" };
     });
   }
@@ -215,7 +215,7 @@ export function LeaderboardTable<T>({
     <div
       role="table"
       aria-label={ariaLabel}
-      className="relative w-full overflow-hidden border border-border bg-bg-elevated"
+      className="relative w-full overflow-hidden portal-card"
       // CSS custom properties driving the grid-template-columns of every
       // .lb-row descendant. Switched between mobile and desktop values via
       // a media query in globals.css. See the .lb-row block there.
@@ -226,7 +226,7 @@ export function LeaderboardTable<T>({
         } as React.CSSProperties
       }
     >
-      {/* Scroll container — vertical only. Both the sticky header and the
+      {/* Scroll container – vertical only. Both the sticky header and the
           body rows inherit their width from this element. Because they
           share the same available width, the minmax(0,1fr) grid track
           resolves to the same value in both, keeping headers aligned.
@@ -235,12 +235,16 @@ export function LeaderboardTable<T>({
           adding min-w-max would expand the table to max-content width,
           blowing out the 1fr column and breaking text wrap in Ops Tag. */}
       <div className="overflow-auto" style={{ maxHeight }}>
-        {/* Sticky header — no min-w-max; width = container width, same as
-            body rows below. Yellow accent strip bundled into the sticky
-            element so it scrolls away only when the table scrolls away. */}
+        {/* Inner wrapper: `w-max` lets the header background + rows span the full
+            CONTENT width when the table overflows horizontally – so the header
+            colour scheme no longer stops at the viewport edge when you scroll
+            right. `min-w-full` keeps 1fr columns filling the container when the
+            table fits (max-content < 100% → the min-width wins). */}
+        <div className="w-max min-w-full">
+        {/* Sticky header – width = wrapper (content) width, same as body rows. */}
         <div className="sticky top-0 z-10">
           <div aria-hidden className="h-1 bg-accent" />
-          {/* Solid bg — /95 + backdrop-blur produced grey-banding
+          {/* Solid bg – /95 + backdrop-blur produced grey-banding
               artifacts during scroll on iOS Safari and Android Chrome. */}
           <div
             role="rowgroup"
@@ -265,7 +269,7 @@ export function LeaderboardTable<T>({
           </div>
         </div>
 
-        {/* Body rows — no min-w-max; width = container width, same as the
+        {/* Body rows – no min-w-max; width = container width, same as the
             sticky header above so 1fr resolves identically. */}
         <div role="rowgroup">
           {displayedRows.map((row, idx) => {
@@ -286,7 +290,7 @@ export function LeaderboardTable<T>({
                 {highlight && (
                   <span aria-hidden className="absolute inset-y-0 left-0 w-[3px] bg-accent" />
                 )}
-                {/* Link overlay — when href is provided, an invisible <Link>
+                {/* Link overlay – when href is provided, an invisible <Link>
                     spans the full row, making the entire row a single
                     tap target that navigates on click.
                     z-1 puts the link above the cell content so clicks
@@ -295,7 +299,7 @@ export function LeaderboardTable<T>({
                     interactive child (its own button/link), give that
                     cell `position: relative; z-2` to claim hit priority
                     above this overlay.
-                    The link itself has zero visible content — only an
+                    The link itself has zero visible content – only an
                     sr-only label for screen readers. The hit area is
                     just the absolute box. */}
                 {href ? (
@@ -316,6 +320,7 @@ export function LeaderboardTable<T>({
               </div>
             );
           })}
+        </div>
         </div>
       </div>
     </div>
@@ -346,7 +351,7 @@ function HeaderCell<T>({
   // label (outside the digits) so digits stay flush right and the indicator
   // doesn't disrupt vertical alignment of the right edge.
   // The indicator is wrapped in an inline-block with shrink-0 so it never
-  // wraps onto its own line — only the label text wraps.
+  // wraps onto its own line – only the label text wraps.
   const indicator = direction ? (
     <span
       aria-hidden
@@ -368,10 +373,10 @@ function HeaderCell<T>({
     </span>
   );
 
-  // Optional info icon — renders only when the column declares a
+  // Optional info icon – renders only when the column declares a
   // tooltip. CRITICAL: cannot live inside the sort <button> because
   // HeaderInfoIcon renders its own <button>, and nested buttons are
-  // invalid HTML (browsers handle this inconsistently — Safari and
+  // invalid HTML (browsers handle this inconsistently – Safari and
   // Firefox break click event propagation in subtle ways). Instead
   // we render it as a sibling of the sort button, both inside the
   // columnheader flex container.
@@ -403,10 +408,10 @@ function HeaderCell<T>({
   );
 
   // Build the inner content for the columnheader. Order rules:
-  //   - Right-aligned: [info icon][sort button]   — icon on the LEFT
+  //   - Right-aligned: [info icon][sort button]   – icon on the LEFT
   //     of the label so the digits below stay flush against the right
   //     edge of the column.
-  //   - Left/center:   [sort button][info icon]   — icon on the right,
+  //   - Left/center:   [sort button][info icon]   – icon on the right,
   //     follows the label naturally in reading order.
   //
   // The sort button is wrapped/unwrapped depending on whether the

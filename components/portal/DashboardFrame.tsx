@@ -8,9 +8,9 @@
  *     watermark band we clip from the bottom is seamless.
  *   - Iframe is rendered ~36px taller than the visible wrapper so the
  *     Looker watermark sits below the clip line. 36px is a *rendered*
- *     pixel value — robust across viewport sizes.
+ *     pixel value – robust across viewport sizes.
  *   - Yellow corner brackets (top-left + bottom-right) framing the box
- *     for site-native chrome — sm and up. On mobile the frame goes
+ *     for site-native chrome – sm and up. On mobile the frame goes
  *     edge-to-edge, no brackets.
  *
  * Default canvas is 950×1200. All math derives from the props so
@@ -18,9 +18,9 @@
  */
 
 type DashboardFrameProps = {
-  /** Looker Studio embed URL — full URL including /embed/reporting/.../page/... */
+  /** Looker Studio embed URL – full URL including /embed/reporting/.../page/... */
   embedUrl: string;
-  /** Accessible iframe title — describe the report ("XP / Levels Leaderboard") */
+  /** Accessible iframe title – describe the report ("XP / Levels Leaderboard") */
   title: string;
   /** Native canvas width in Looker (px). Default 950. */
   canvasWidth?: number;
@@ -51,7 +51,7 @@ export function DashboardFrame({
         className="relative mx-auto"
         style={{ maxWidth: canvasWidth }}
       >
-        {/* Yellow corner brackets — desktop only. On mobile the frame is
+        {/* Yellow corner brackets – desktop only. On mobile the frame is
             edge-to-edge so brackets would clip awkwardly. */}
         <div
           aria-hidden

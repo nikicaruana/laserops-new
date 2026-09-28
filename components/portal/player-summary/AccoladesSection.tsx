@@ -15,13 +15,13 @@ import type { PlayerStatsRaw } from "@/lib/player-stats/shared";
  *   - Top: total accolades count (small headline)
  *   - Three tier subsections in order T1 (100 XP) → T3 (50 XP).
  *     Each tier has:
- *       1. A header line: "TIER 1 — 100 XP" or similar
+ *       1. A header line: "TIER 1 – 100 XP" or similar
  *       2. A grid of cards for accolades the player has earned (count > 0).
  *          If none earned in this tier, a small "none earned yet" line
  *          replaces the grid.
  *       3. A definitions list showing every accolade in this tier with
  *          its short description, regardless of what's earned. Always
- *          visible so the page is educational — players see what's
+ *          visible so the page is educational – players see what's
  *          available even before earning anything.
  *
  * Grid responsiveness: 3 cards per row on mobile, 4 on sm, 5 on xl.
@@ -38,7 +38,7 @@ export function AccoladesSection({ row }: AccoladesSectionProps) {
 
   return (
     <div className="flex flex-col gap-6 sm:gap-8">
-      {/* Top line — total earned. Small headline rather than a big card,
+      {/* Top line – total earned. Small headline rather than a big card,
           so it doesn't compete with the per-tier breakdown below. */}
       <div className="flex items-baseline justify-center gap-2">
         <span className="text-xs font-bold uppercase tracking-[0.14em] text-text-muted">
@@ -82,7 +82,7 @@ function TierBlock({ group }: { group: TierGroup }) {
         </div>
       )}
 
-      {/* Definitions — always visible, even if no cards earned, so the
+      {/* Definitions – always visible, even if no cards earned, so the
           section serves as a guide to what's available in each tier. */}
       <TierDefinitions group={group} />
     </section>
@@ -126,7 +126,7 @@ function TierDefinitions({ group }: { group: TierGroup }) {
   return (
     // flex-wrap with column-x gap fits definitions by their natural width
     // and packs them tightly. Better scanability than a CSS Grid for short
-    // text items — the grid produced columns much wider than the content,
+    // text items – the grid produced columns much wider than the content,
     // making items read as isolated.
     //
     // On mobile we still want a single column (definitions one per line).
@@ -140,7 +140,7 @@ function TierDefinitions({ group }: { group: TierGroup }) {
           {/* Accolade name in semibold to anchor the line. Description
               in muted colour as supporting detail. */}
           <span className="font-semibold text-text-muted">{def.name}</span>
-          <span className="text-text-subtle">— {def.description}</span>
+          <span className="text-text-subtle">– {def.description}</span>
         </li>
       ))}
     </ul>

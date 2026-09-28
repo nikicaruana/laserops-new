@@ -70,7 +70,7 @@ export default async function AdminSeasonsPage() {
                   {s.status}
                 </td>
                 <td className="px-4 py-3 font-mono text-xs text-text-subtle">
-                  {s.starts_on ?? "—"} → {s.ends_on ?? "—"}
+                  {s.starts_on ?? "–"} → {s.ends_on ?? "–"}
                 </td>
                 <td className="px-4 py-3 text-right">
                   <Link href={`/admin/seasons/${s.id}`} className="text-xs font-bold uppercase tracking-[0.12em] text-accent hover:text-accent-soft">

@@ -12,7 +12,7 @@ import { formatFireRate } from "@/lib/cms/weapons";
  *   [ MAG SIZE | DAMAGE | RELOAD | FIRE RATE  ]   ← 1x4 all viewports
  *   [ UNLOCK TIER       | DIFFICULTY          ]   ← 2 across (hidden in compare)
  *
- * Inverted layout (bottom-up — used by gallery B in compare mode):
+ * Inverted layout (bottom-up – used by gallery B in compare mode):
  *   [ MAG SIZE | DAMAGE | RELOAD | FIRE RATE  ]
  *   [ GUN NAME                                ]
  * The gun image card sits BELOW this in the inverted gallery, so the
@@ -25,7 +25,7 @@ import { formatFireRate } from "@/lib/cms/weapons";
  *     so each fits within ~22% of viewport width.
  *   - Inverted layout flips internal order: tiles on top, name below.
  *     Used by gallery B in compare mode for true mirror.
- *   - Ties now highlight BOTH sides instead of neither — the parent
+ *   - Ties now highlight BOTH sides instead of neither – the parent
  *     can pass "win" or "tie" and the tile lights up in either case.
  * --------------------------------------------------------------------
  */
@@ -36,7 +36,7 @@ import { formatFireRate } from "@/lib/cms/weapons";
  *
  * Each entry's value:
  *   - "win"  → highlight (this gun wins this stat)
- *   - "tie"  → highlight (both sides tied — show on both)
+ *   - "tie"  → highlight (both sides tied – show on both)
  *   - "lose" → render normal
  *
  * Ties highlighting both panels reflects the comparison reality:
@@ -56,7 +56,7 @@ type Props = {
   ariaLabel?: string;
   /** When true, hides the Unlock Tier / Difficulty secondary row. */
   hideSecondary?: boolean;
-  /** When true, internal order flips — tiles on top, name below.
+  /** When true, internal order flips – tiles on top, name below.
    *  Used by gallery B in compare mode for mirror layout. */
   inverted?: boolean;
   winners?: StatWinners | null;
@@ -73,7 +73,7 @@ export function WeaponStatsPanel({
   // on the `inverted` prop without duplicating the JSX.
   const nameBlock = (
     <h3 className="text-center text-xl font-extrabold tracking-tight text-text sm:text-2xl lg:text-3xl">
-      {weapon?.name ?? "—"}
+      {weapon?.name ?? "–"}
     </h3>
   );
 
@@ -97,13 +97,13 @@ export function WeaponStatsPanel({
         value={
           weapon && weapon.reloadSeconds > 0
             ? `${formatNumberShort(weapon.reloadSeconds)}s`
-            : "—"
+            : "–"
         }
         winner={winners?.reload}
       />
       <StatTile
         label="Fire Rate"
-        value={weapon ? formatFireRate(weapon.fireRate) : "—"}
+        value={weapon ? formatFireRate(weapon.fireRate) : "–"}
         winner={winners?.fireRate}
       />
     </div>
@@ -116,7 +116,7 @@ export function WeaponStatsPanel({
         value={
           weapon?.unlockTier && weapon.unlockTier !== ""
             ? weapon.unlockTier
-            : "—"
+            : "–"
         }
       />
       <SecondaryTile
@@ -124,7 +124,7 @@ export function WeaponStatsPanel({
         value={
           weapon?.difficulty && weapon.difficulty !== ""
             ? weapon.difficulty
-            : "—"
+            : "–"
         }
         valueColorClass={getDifficultyColorClass(weapon?.difficulty)}
       />
@@ -139,7 +139,7 @@ export function WeaponStatsPanel({
     >
       {inverted ? (
         // Mirror order: tiles → name → secondary (if shown).
-        // The card image lives outside this panel — gallery component
+        // The card image lives outside this panel – gallery component
         // arranges it below this whole block in inverted mode.
         <>
           {primaryStatsBlock}
@@ -177,7 +177,7 @@ function StatTile({
   value: string;
   winner?: StatWinner;
 }) {
-  // "win" and "tie" both visually highlight — they represent
+  // "win" and "tie" both visually highlight – they represent
   // "this stat is at least as good as the other gun's." Only "lose"
   // and undefined render in default state.
   const isHighlighted = winner === "win" || winner === "tie";
@@ -188,7 +188,7 @@ function StatTile({
         "px-1 py-2 text-center transition-colors sm:px-2 sm:py-3",
         isHighlighted
           ? "border-2 border-accent bg-accent/10 shadow-[0_0_0_1px_rgba(255,222,0,0.3)]"
-          : "border-l-4 border-l-accent bg-bg-elevated",
+          : "border-l-4 border-l-accent portal-surface",
       ].join(" ")}
     >
       {/* Smaller label font on mobile (text-[0.55rem]) so longer labels
@@ -198,7 +198,7 @@ function StatTile({
       <p className="text-[0.55rem] font-bold uppercase tracking-[0.1em] text-text-muted sm:text-[0.7rem] sm:tracking-[0.14em]">
         {label}
       </p>
-      {/* text-xl on mobile (was text-2xl) — smaller tiles need smaller
+      {/* text-xl on mobile (was text-2xl) – smaller tiles need smaller
           numbers. text-3xl on sm+ keeps the headline feel on tablets
           and desktop. */}
       <p className="mt-1 font-mono text-xl font-extrabold tabular-nums text-accent sm:text-3xl">
@@ -220,7 +220,7 @@ function SecondaryTile({
   valueColorClass?: string;
 }) {
   return (
-    <div className="border border-border bg-bg-elevated/60 px-2 py-2 text-center sm:px-3 sm:py-3">
+    <div className="border border-border portal-surface px-2 py-2 text-center sm:px-3 sm:py-3">
       <p className="text-[0.6rem] font-bold uppercase tracking-[0.14em] text-text-muted sm:text-[0.7rem]">
         {label}
       </p>
@@ -256,12 +256,12 @@ function getDifficultyColorClass(difficulty: string | undefined): string | undef
 /* ---------- Number formatting ---------- */
 
 function fmtNum(value: number | undefined): string {
-  if (value === undefined || value === 0) return "—";
+  if (value === undefined || value === 0) return "–";
   return formatNumberShort(value);
 }
 
 function formatNumberShort(value: number): string {
-  if (!Number.isFinite(value)) return "—";
+  if (!Number.isFinite(value)) return "–";
   if (Number.isInteger(value)) return value.toString();
   return value.toFixed(1).replace(/\.0$/, "");
 }

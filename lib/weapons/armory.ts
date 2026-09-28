@@ -17,7 +17,7 @@ import { isFallbackGunName, type Weapon } from "@/lib/cms/weapons";
 export type ArmoryEntry = PlayerArmoryRow & {
   /** Matching row from the Gun_Damage / weapons sheet, when found by
    *  case-insensitive gun name. Undefined when the catalogue has no
-   *  matching row — renderers fall back to PlayerArmoryRow's own
+   *  matching row – renderers fall back to PlayerArmoryRow's own
    *  display fields (gunMagSize, gunDamage, gunReload, gunFireRate). */
   spec?: Weapon;
 };

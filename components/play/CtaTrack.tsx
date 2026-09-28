@@ -9,7 +9,7 @@ import type { ReactNode } from "react";
  * event when it's clicked, tagged with a `cta` id (e.g. "hero_open_game").
  *
  * Uses `display: contents` (Tailwind `contents`) so the wrapper adds no
- * box of its own — the wrapped control lays out exactly as if this span
+ * box of its own – the wrapped control lays out exactly as if this span
  * weren't here (full-width buttons, flex/grid items all behave normally).
  * The click bubbles from the inner control to this span, so it works for
  * Next <Link>, plain <a>, and <button> alike.

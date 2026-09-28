@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 /**
- * Compare Players page — now sourced from Supabase (was Google Sheets).
+ * Compare Players page – now sourced from Supabase (was Google Sheets).
  *
  * Fetches synthetic per-match rows for all players plus a distinct-guns-used
  * map (both from the read-models), then hands them to the existing CompareView
@@ -21,7 +21,7 @@ export default async function ComparePlayersPage() {
   const { rows, uniqueGunsMap } = await getAllPlayerSummaryRows(supabase);
 
   return (
-    /* max-w-[680px] ≈ max-w-5xl shrunk by ~35% — keeps the two columns
+    /* max-w-[680px] ≈ max-w-5xl shrunk by ~35% – keeps the two columns
        readable without filling the whole viewport on large screens. */
     <div className="mx-auto w-full max-w-[680px]">
       <Suspense fallback={null}>

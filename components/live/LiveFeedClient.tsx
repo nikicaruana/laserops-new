@@ -14,6 +14,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useWakeLock } from "@/lib/hooks/use-wake-lock";
 import { LiveRoundView } from "@/components/live/LiveRoundView";
 import type { LiveSnapshot } from "@/lib/live-sim/engine";
+import { fetchKillstreaks, fetchActiveDeployments, deployKillstreak, mapDeploymentRow, type KillstreakDef, type ActiveDeployment } from "@/lib/killstreaks";
 
 type Snap = { snapshot: LiveSnapshot; elapsed_seconds: number | null; round_no: number | null; server_ts: string };
 
@@ -30,6 +31,8 @@ export function LiveFeedClient({
   const [t, setT] = useState(0);
   const [connected, setConnected] = useState(false);
   const [taunts, setTaunts] = useState<{ from: string; id: string }[]>([]);
+  const [ksDefs, setKsDefs] = useState<KillstreakDef[]>([]);
+  const [deploys, setDeploys] = useState<ActiveDeployment[]>([]);
   // Base for local clock extrapolation: elapsed at the last snapshot + when we got it.
   const base = useRef<{ elapsed: number; recvMs: number }>({ elapsed: 0, recvMs: Date.now() });
   // Broadcast channel for live taunts (ephemeral — no DB writes/egress).
@@ -54,6 +57,43 @@ export function LiveFeedClient({
   const sendTaunt = (to: string) => {
     if (!me || !tauntCh.current) return;
     tauntCh.current.send({ type: "broadcast", event: "taunt", payload: { from: me, to } });
+  };
+
+  // Killstreak definitions (once) + active jams for this match, with Realtime
+  // INSERTs. Fetching active rows on mount is what makes a mid-jam reload keep
+  // the scramble (it can't be cleared by pull-to-refresh).
+  useEffect(() => { fetchKillstreaks().then(setKsDefs); }, []);
+  useEffect(() => {
+    const supabase = createClient();
+    let active = true;
+    fetchActiveDeployments(matchId).then((d) => { if (active) setDeploys(d); });
+    const ch = supabase
+      .channel(`ks:${matchId}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "killstreak_deployments", filter: `match_id=eq.${matchId}` }, (payload) => {
+        if (!active) return;
+        const d = mapDeploymentRow(payload.new);
+        setDeploys((prev) => {
+          if (prev.some((x) => x.id === d.id)) return prev;
+          // drop any optimistic local row this real one replaces
+          const kept = prev.filter((x) => !(x.id.startsWith("local-") && x.byPlayer === d.byPlayer && x.killstreakKey === d.killstreakKey));
+          return [...kept, d];
+        });
+      })
+      .subscribe();
+    return () => { active = false; supabase.removeChannel(ch); };
+  }, [matchId]);
+
+  const onDeployKillstreak = (def: KillstreakDef, baseIds: number[]) => {
+    if (mode !== "player" || !me) return;
+    const myTeam = data?.stats.find((st) => st.name === me)?.team ?? "";
+    const now = Date.now();
+    const localId = `local-${now}-${Math.random()}`;
+    // Optimistic local jam for instant deployer feedback; the real row (via
+    // Realtime) replaces it, or we roll it back if the server rejects the deploy.
+    setDeploys((prev) => [...prev, { id: localId, roundNo, killstreakKey: def.key, byPlayer: me, byTeam: myTeam, scope: def.scope, baseIds: def.scope === "all" ? [] : baseIds, expiresAtMs: now + def.durationSeconds * 1000 }]);
+    deployKillstreak({ matchId, def, baseIds }).then((r) => {
+      if (!r.ok) { setDeploys((prev) => prev.filter((x) => x.id !== localId)); console.warn("[killstreak] deploy rejected:", r.error); }
+    });
   };
 
   useEffect(() => {
@@ -108,7 +148,7 @@ export function LiveFeedClient({
   return (
     <div className="px-3 py-3">
       {title && <p className="mb-2 text-center text-[0.6rem] font-semibold uppercase tracking-[0.16em] text-text-subtle">{title}</p>}
-      <LiveRoundView snap={data} t={t} mode={mode} me={me} roundLabel={roundNo ? `Round ${roundNo}` : undefined} onTaunt={sendTaunt} incomingTaunts={taunts} />
+      <LiveRoundView snap={data} t={t} mode={mode} me={me} roundLabel={roundNo ? `Round ${roundNo}` : undefined} onTaunt={sendTaunt} incomingTaunts={taunts} killstreakDefs={ksDefs} deployments={deploys} onDeployKillstreak={onDeployKillstreak} />
     </div>
   );
 }

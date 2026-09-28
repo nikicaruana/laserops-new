@@ -59,13 +59,13 @@ export default async function LiveGamePage({ params }: { params: Promise<{ id: s
         {/* Live feed – the player's personalised phone view while the game is on
             (only when the admin has enabled it for this match) */}
         {isLive && participant && match.live_feed_enabled && (
-          <div className="mb-6 border border-border bg-bg-elevated p-2">
+          <div className="mb-6 portal-card p-2">
             <LiveFeedClient matchId={match.id} mode="player" me={account.ops_tag ?? null} />
           </div>
         )}
 
         {participant ? (
-          <div className="border border-border bg-bg-elevated px-5 py-6 text-center">
+          <div className="portal-card px-5 py-6 text-center">
             <p className="text-sm font-semibold uppercase tracking-[0.12em] text-accent">You&rsquo;re in</p>
             <p className="mt-2 text-sm text-text-muted">
               Headband <span className="font-mono font-semibold text-text">{participant.headset_label ?? "–"}</span>
@@ -78,7 +78,7 @@ export default async function LiveGamePage({ params }: { params: Promise<{ id: s
             </p>
           </div>
         ) : isLive ? (
-          <div className="border border-border bg-bg-elevated px-5 py-6 text-center">
+          <div className="portal-card px-5 py-6 text-center">
             <p className="text-sm text-text-muted">You haven&apos;t joined this game yet.</p>
             <Link href={`/player-portal/games/${id}/join`} className="mt-4 inline-block border border-accent bg-accent px-5 py-2 text-xs font-bold uppercase tracking-[0.12em] text-bg">
               Join game
@@ -88,7 +88,7 @@ export default async function LiveGamePage({ params }: { params: Promise<{ id: s
 
         {/* Live roster */}
         {isLive && (
-          <div className="mt-6 border border-border bg-bg-elevated">
+          <div className="mt-6 portal-card">
             <div className="flex items-center justify-between border-b border-border px-5 py-3">
               <p className="text-sm font-bold uppercase tracking-[0.16em] text-text-muted">In the arena</p>
               <span className="font-mono text-sm font-bold text-accent">{roster.length}</span>
@@ -115,7 +115,7 @@ export default async function LiveGamePage({ params }: { params: Promise<{ id: s
         )}
 
         {isOver && (
-          <div className="mt-6 border border-border bg-bg-elevated px-5 py-6 text-center">
+          <div className="mt-6 portal-card px-5 py-6 text-center">
             <p className="text-sm text-text-muted">This game has finished.</p>
             {match.match_code && (
               <Link href={`/match-report?match=${match.match_code}`} className="mt-4 inline-block border border-accent bg-accent px-5 py-2 text-xs font-bold uppercase tracking-[0.12em] text-bg">

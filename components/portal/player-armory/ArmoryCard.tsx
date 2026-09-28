@@ -51,7 +51,7 @@ export function ArmoryCard({ entry }: Props) {
     const el = cardRef.current;
     if (!el) return;
     if (typeof IntersectionObserver === "undefined") {
-      // SSR / older browsers — just play immediately.
+      // SSR / older browsers – just play immediately.
       setInView(true);
       return;
     }
@@ -74,7 +74,7 @@ export function ArmoryCard({ entry }: Props) {
   // Whether to render the count-up numerator using AnimatedNumber. We
   // need a positive `unlockReqPoints` for it to be a meaningful "X / Y"
   // style label; for level-only unlocks (no point requirement) the sheet
-  // gives us a string like "Reach Level 13" — fall back to that.
+  // gives us a string like "Reach Level 13" – fall back to that.
   const showCountUp = isLocked && entry.unlockReqPoints > 0;
 
   return (
@@ -84,9 +84,9 @@ export function ArmoryCard({ entry }: Props) {
         type="button"
         onClick={() => setOpen(true)}
         className={cn(
-          "group flex w-full flex-col rounded-sm border border-border bg-bg-overlay text-left transition-colors",
+          "group flex w-full flex-col rounded-sm portal-card text-left transition-colors",
           "hover:border-border-strong focus:border-border-strong focus:outline-none",
-          /* Desktop: horizontal layout — image left, stats right */
+          /* Desktop: horizontal layout – image left, stats right */
           "lg:flex-row",
         )}
         aria-label={
@@ -95,7 +95,7 @@ export function ArmoryCard({ entry }: Props) {
             : `${entry.gunDisplayTitle || entry.gunName}: view details`
         }
       >
-        {/* Image area — yellow band. On desktop: fixed width, full card height. */}
+        {/* Image area – yellow band. On desktop: fixed width, full card height. */}
         <div
           className="flex h-28 shrink-0 items-center justify-center px-3 sm:h-32 lg:h-auto lg:w-72 lg:self-stretch"
           style={{ backgroundColor: "#ffde00" }}
@@ -134,7 +134,7 @@ export function ArmoryCard({ entry }: Props) {
             ) : null}
           </div>
 
-          {/* Title — gun name when unlocked, unlock criteria when not. */}
+          {/* Title – gun name when unlocked, unlock criteria when not. */}
           <h3 className="text-center text-xl font-extrabold leading-tight tracking-tight text-text sm:text-3xl lg:text-left lg:text-2xl">
             {isLocked
               ? entry.unlockDisplayText || "Locked"
@@ -205,18 +205,18 @@ function MiniStat({ label, value }: { label: string; value: string }) {
 }
 
 function fmtNum(value: number): string {
-  if (!Number.isFinite(value) || value === 0) return "—";
+  if (!Number.isFinite(value) || value === 0) return "–";
   if (Number.isInteger(value)) return value.toLocaleString("en-US");
   return value.toFixed(1).replace(/\.0$/, "");
 }
 
 function fmtFloat(value: number): string {
-  if (!Number.isFinite(value) || value === 0) return "—";
+  if (!Number.isFinite(value) || value === 0) return "–";
   return value.toFixed(2).replace(/\.?0+$/, "");
 }
 
 function fmtPct(value: number): string {
-  if (!Number.isFinite(value) || value === 0) return "—";
+  if (!Number.isFinite(value) || value === 0) return "–";
   const asPct = value <= 1.5 ? value * 100 : value;
   return `${asPct.toFixed(1).replace(/\.0$/, "")}%`;
 }

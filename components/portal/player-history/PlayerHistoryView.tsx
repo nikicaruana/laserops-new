@@ -21,22 +21,22 @@ import { HistoryProfileCard } from "./HistoryProfileCard";
  * CHART WINDOWING (post pass-10)
  *
  * Charts cap at the **last 10 matches** for two reasons:
- *   1. Readability — once a player has played 20+ matches the X axis
+ *   1. Readability – once a player has played 20+ matches the X axis
  *      becomes a forest of unreadable match IDs, especially on mobile.
  *      The most recent N is also the most diagnostic window for
  *      "how am I trending right now."
- *   2. Performance — recharts re-layouts the entire SVG on every
+ *   2. Performance – recharts re-layouts the entire SVG on every
  *      tooltip hover; very long series start to feel sluggish.
  *
  * The Match Summaries table at the bottom continues to show ALL
- * matches — it's the persistent record. The cap is purely a chart
+ * matches – it's the persistent record. The cap is purely a chart
  * concern.
  *
  * "Last 10" = most recent 10 chronologically. Matches arrive sorted
  * oldest→newest from the engine, so `slice(-10)` gives us the tail.
  * --------------------------------------------------------------------
  *
- * Server component — children are individually marked client where
+ * Server component – children are individually marked client where
  * needed (charts use recharts which requires browser APIs, the
  * Personal Records card is now client because each tile links to
  * the match report). Data is passed down as serialised props.
@@ -44,7 +44,7 @@ import { HistoryProfileCard } from "./HistoryProfileCard";
 
 /** Maximum number of matches to render in any chart. See header comment
  *  for rationale. If you ever want to tune this, this is the only
- *  knob — every chart receives the pre-sliced array. */
+ *  knob – every chart receives the pre-sliced array. */
 const CHART_WINDOW_SIZE = 10;
 
 type Props = {
@@ -71,17 +71,20 @@ export function PlayerHistoryView({ history, ops }: Props) {
 
       <PersonalRecordsCard records={history.records} ops={ops} />
 
+      {/* Match Summaries sits directly under Personal Records – it's the
+          persistent per-match record and the thing players scan first.
+          Shows ALL matches (the charts below cap at the recent window). */}
+      <MatchSummariesTable matches={history.matches} ops={ops} />
+
       {/* Charts. Each is a client component because recharts needs
           browser APIs (canvas, ResizeObserver). Match data is passed
-          as serialised props — the client doesn't refetch.
+          as serialised props – the client doesn't refetch.
           chartMatches is capped at the most recent CHART_WINDOW_SIZE
-          matches; the table below still gets the full history. */}
+          matches; the table above still gets the full history. */}
       <EloProgressionChart matches={chartMatches} />
       <ScoreVsAvgChart matches={chartMatches} />
       <KillsVsKdChart matches={chartMatches} />
       <ShotsVsAccuracyChart matches={chartMatches} />
-
-      <MatchSummariesTable matches={history.matches} ops={ops} />
     </div>
   );
 }

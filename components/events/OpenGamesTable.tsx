@@ -147,7 +147,7 @@ export function OpenGamesTable({ games }: Props) {
       <div
         role="tablist"
         aria-label="Filter games by status"
-        className="mb-5 inline-flex rounded-sm border border-border p-1"
+        className="mb-5 inline-flex rounded-sm border border-border bg-bg-overlay/80 backdrop-blur-sm p-1"
       >
         {(["open", "completed"] as View[]).map((v) => (
           <button
@@ -177,7 +177,7 @@ export function OpenGamesTable({ games }: Props) {
         /* On desktop: min-width forces horizontal scroll rather than
            collapsing columns. On mobile: no min-width, columns narrow
            naturally and text is allowed to wrap. */
-        <div className="overflow-x-auto rounded-sm border border-border">
+        <div className="overflow-x-auto rounded-sm portal-card">
           <table className="w-full border-collapse text-sm sm:min-w-[540px]">
             {/* ── Header ─────────────────────────────────────────────── */}
             <thead>
@@ -205,7 +205,7 @@ export function OpenGamesTable({ games }: Props) {
                     key={`${game.date}-${game.time}-${idx}`}
                     className={[
                       // Alternating row shade
-                      idx % 2 === 0 ? "bg-bg" : "bg-bg-elevated",
+                      idx % 2 === 0 ? "bg-transparent" : "bg-white/[0.04]",
                       // Double XP: subtle yellow left-border + faint yellow tint
                       game.isDoubleXP
                         ? "border-l-2 border-accent/50 !bg-accent/[0.06]"

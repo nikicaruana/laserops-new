@@ -22,7 +22,7 @@ import { useInView } from "@/lib/hooks/useInView";
  *
  * Pre-pends a synthetic "Start" baseline at 1000 because the dataset
  * records ELO AFTER each match. Without the baseline, the line
- * appears to start above 1000 on a player's very first match — which
+ * appears to start above 1000 on a player's very first match – which
  * isn't the truth. Every player begins at 1000 before any matches.
  *
  * --------------------------------------------------------------------
@@ -57,7 +57,7 @@ export function EloProgressionChart({ matches }: Props) {
     return (
       <ChartCard
         title="ELO Rating Progression"
-        subtitle="ELO measures your competitive strength — win rounds against strong teams and perform well to climb."
+        subtitle="ELO measures your competitive strength – win rounds against strong teams and perform well to climb."
       >
         <NoDataPanel message="No ELO data available yet for this player." />
       </ChartCard>
@@ -80,19 +80,19 @@ export function EloProgressionChart({ matches }: Props) {
   return (
     <ChartCard
       title="ELO Rating Progression"
-      subtitle="ELO measures your competitive strength — win rounds against strong teams and perform well to climb. Every player starts at 1000."
+      subtitle="ELO measures your competitive strength – win rounds against strong teams and perform well to climb. Every player starts at 1000."
     >
       {/* ref is on the chart wrapper so the IntersectionObserver fires
           when the chart body (not just the yellow header) is in view. */}
       <div ref={ref} className="h-[280px] w-full sm:h-[340px]">
         <ResponsiveContainer width="100%" height="100%">
-          {/* right:24 — needs more room than the other charts because
+          {/* right:24 – needs more room than the other charts because
               the rightmost data point's LabelList ("1,084" etc.)
               extends to the right of the actual point and was clipping
               against the card edge. The other composed charts don't
               have this problem because their line labels were removed
               in pass 4.
-              left:0 — YAxis manages its own width via the `width` prop.
+              left:0 – YAxis manages its own width via the `width` prop.
               key={String(inView)}: forces a Recharts remount when inView
               flips false→true so the entrance animation plays in-view. */}
           <LineChart key={String(inView)} data={data} margin={{ top: 28, right: 24, left: 0, bottom: 8 }}>
@@ -110,7 +110,7 @@ export function EloProgressionChart({ matches }: Props) {
               tickLine={false}
               axisLine={{ stroke: "#3a3a3a" }}
               // 40px is enough for "1,095" / "1,050" etc at 11px font.
-              // Down from 48px — gives 8px back to the plot area.
+              // Down from 48px – gives 8px back to the plot area.
               width={40}
               domain={[yMin, yMax]}
               allowDecimals={false}

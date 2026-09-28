@@ -82,7 +82,7 @@ export function StreakTile({ streak }: { streak: MatchStreak }) {
       <dialog
         ref={dialogRef}
         className={cn(
-          "rounded-sm border border-border-strong bg-bg-elevated text-text",
+          "rounded-sm portal-card text-text",
           "p-0 max-w-sm w-[90vw] m-auto",
           "backdrop:bg-bg/80 backdrop:backdrop-blur-sm",
         )}

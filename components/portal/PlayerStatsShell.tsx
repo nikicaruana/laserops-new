@@ -7,6 +7,7 @@ import {
   PlayerSearchAutoload,
 } from "@/components/portal/player-summary/PlayerSearch";
 import { SubTabs } from "@/components/portal/SubTabs";
+import { useAccount } from "@/lib/hooks/useAccount";
 
 /**
  * PlayerStatsShell
@@ -17,23 +18,24 @@ import { SubTabs } from "@/components/portal/SubTabs";
  * fetches knownNicknames once, cached). This shell:
  *
  *   1. Reads the current ?ops= param to know which player is selected.
- *   2. Renders the PlayerSearch bar at the top — always visible, giving
+ *   2. Renders the PlayerSearch bar at the top – always visible, giving
  *      the impression "search first, then browse tabs below".
  *   3. Renders the SubTabs row (Summary / History / Armory / Last Match)
- *      only once a player is selected — tabs are meaningless without a
+ *      only once a player is selected – tabs are meaningless without a
  *      player context.
  *   4. Handles localStorage auto-load (PlayerSearchAutoload) so returning
  *      visitors land on their last-viewed player automatically.
  *
  * The inner component uses useSearchParams (CSR bailout hook) so it must
  * sit behind a Suspense boundary. The fallback renders the page content
- * without search bar or tabs — correct for static prerender since the URL
+ * without search bar or tabs – correct for static prerender since the URL
  * isn't known at build time.
  */
 
 const PLAYER_STATS_TABS = [
   { label: "Summary", href: "/player-portal/player-stats/summary" },
   { label: "History", href: "/player-portal/player-stats/history" },
+  { label: "Rivalries", href: "/player-portal/player-stats/rivalries" },
   { label: "Armory", href: "/player-portal/player-stats/armory" },
   { label: "Last Match", href: "/player-portal/player-stats/last-match" },
   { label: "Compare", href: "/player-portal/player-stats/compare" },
@@ -65,29 +67,41 @@ function PlayerStatsShellInner({ knownNicknames, children }: Props) {
   const opsParam = searchParams.get("ops") ?? "";
   const hasPlayer = opsParam !== "";
 
+  // Progression is a personal tab: show it only when the viewer is looking at
+  // their own stats (their ops tag matches the one in context).
+  const { opsTag } = useAccount();
+  const isOwn = opsTag != null && opsParam.trim().toLowerCase() === opsTag.trim().toLowerCase();
+  const tabs = isOwn
+    ? [
+        PLAYER_STATS_TABS[0],
+        { label: "Progression", href: "/player-portal/player-stats/progression" },
+        ...PLAYER_STATS_TABS.slice(1),
+      ]
+    : PLAYER_STATS_TABS;
+
   return (
     <>
       {/* Auto-load the last-viewed player from localStorage if URL has no
           ?ops= param. Runs for every player-stats sub-page. */}
       <PlayerSearchAutoload hasOpsParam={hasPlayer} />
 
-      {/* Search bar — always shown; visually above the sub-tabs so the
+      {/* Search bar – always shown; visually above the sub-tabs so the
           user understands they pick a player first. */}
-      <div className="border-b border-border bg-bg">
+      <div className="border-b border-border portal-surface">
         <div className="mx-auto w-full max-w-[90rem] px-4 py-3 sm:px-8 lg:px-12">
           {/* On desktop the full-width search bar looks disproportionately
-              large — cap it so it reads as a compact input, not a hero form. */}
+              large – cap it so it reads as a compact input, not a hero form. */}
           <div className="sm:mx-auto sm:max-w-xs">
             <PlayerSearch knownNicknames={knownNicknames} currentOpsTag={opsParam} />
           </div>
         </div>
       </div>
 
-      {/* Sub-tabs — only once a player is selected.
+      {/* Sub-tabs – only once a player is selected.
           forwardParams carries ops (main player) + compare (opponent)
           across tabs. Non-compare tabs simply ignore ?compare=. */}
       {hasPlayer && (
-        <SubTabs tabs={PLAYER_STATS_TABS} forwardParams={["ops", "compare"]} />
+        <SubTabs tabs={tabs} forwardParams={["ops", "compare"]} />
       )}
 
       {/* Page content */}

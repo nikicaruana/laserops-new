@@ -5,7 +5,7 @@ import { Container } from "@/components/ui/Container";
 /**
  * GalleryPreview
  * --------------------------------------------------------------------
- * Homepage section. Async server component — fetches gallery images
+ * Homepage section. Async server component – fetches gallery images
  * (ISR-cached), filters to those tagged "featured", and renders up to
  * 9 in a compact 3-column masonry grid with a "View All Photos" CTA.
  *
@@ -24,7 +24,7 @@ export async function GalleryPreview() {
     .filter((img) => img.tags.includes("featured"))
     .slice(0, MAX_PREVIEW);
 
-  // Nothing to show — render nothing rather than a broken/empty section.
+  // Nothing to show – render nothing rather than a broken/empty section.
   if (featured.length === 0) return null;
 
   return (
@@ -51,7 +51,7 @@ export async function GalleryPreview() {
           </div>
         </div>
 
-        {/* Masonry grid — CSS columns, no JS */}
+        {/* Masonry grid – CSS columns, no JS */}
         <div className="columns-2 gap-3 sm:columns-3 sm:gap-4">
           {featured.map((img) => (
             <Link

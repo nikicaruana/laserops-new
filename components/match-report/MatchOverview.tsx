@@ -26,7 +26,7 @@ export function MatchOverview({ game, matchDate }: Props) {
   const teams = activeTeams(game);
 
   return (
-    <div className="rounded-sm border border-border bg-bg-elevated p-5 sm:p-7">
+    <div className="rounded-sm portal-card p-5 sm:p-7">
       {/* Top meta row: match id + date + flags. Match ID and date
           stack vertically under a single MATCH label – the date is
           obviously match-related so a separate "Date" label was

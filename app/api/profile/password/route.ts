@@ -1,5 +1,5 @@
 /**
- * app/api/profile/password/route.ts  — POST
+ * app/api/profile/password/route.ts  – POST
  * --------------------------------------------------------------------
  * Changes (or first-sets) the signed-in user's password.
  *   - If they already have a password (current_user_has_password), the

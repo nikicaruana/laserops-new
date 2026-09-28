@@ -26,10 +26,10 @@ export const brand = {
     instagram: "https://www.instagram.com/laserops.mt/",
     facebook: "https://www.facebook.com/laserops.mt",
     tiktok: "",
-    /** WhatsApp community group invite link — set NEXT_PUBLIC_WHATSAPP_URL in Vercel */
+    /** WhatsApp community group invite link – set NEXT_PUBLIC_WHATSAPP_URL in Vercel */
     whatsapp: process.env.NEXT_PUBLIC_WHATSAPP_URL ?? "",
   },
 
-  /** Public-facing site URL — fallback if env var not set */
+  /** Public-facing site URL – fallback if env var not set */
   siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "https://www.laseropsmalta.com",
 } as const;

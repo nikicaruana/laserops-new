@@ -13,7 +13,7 @@ import { GalleryLightbox } from "./GalleryLightbox";
  * filter state, lightbox state, and IntersectionObserver fade-ins.
  *
  * Layout: CSS `columns-2 sm:columns-3 lg:columns-4` with
- * `break-inside-avoid` — true masonry without a JS layout library.
+ * `break-inside-avoid` – true masonry without a JS layout library.
  *
  * Filter pills: shown only when there are multiple top-level folders.
  * Inactive images stay mounted (display:none via className) so the
@@ -192,7 +192,7 @@ function GalleryItem({ image, index, onClick }: ItemProps) {
         draggable={false}
         className="block w-full select-none object-cover transition-transform duration-500 group-hover:scale-[1.03]"
       />
-      {/* Hover overlay — caption */}
+      {/* Hover overlay – caption */}
       {image.caption && (
         <div className="pointer-events-none absolute inset-0 flex items-end bg-gradient-to-t from-black/70 via-black/0 to-transparent p-3 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100">
           <p className="line-clamp-2 text-left text-xs font-semibold leading-snug text-white/90">
@@ -225,7 +225,7 @@ function FilterPill({
         "rounded-sm border px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.14em] transition-colors",
         active
           ? "border-accent bg-accent text-bg"
-          : "border-border text-text-muted hover:border-border-strong hover:text-text",
+          : "border-border bg-bg-overlay/70 text-text-muted backdrop-blur-sm hover:border-border-strong hover:text-text",
       )}
     >
       {label}

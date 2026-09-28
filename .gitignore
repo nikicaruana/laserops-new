@@ -48,3 +48,7 @@ next-env.d.ts
 # Claude Code local worktrees & settings (not for the repo)
 .claude/worktrees/
 .claude/settings.json
+
+# Local real game-data samples (not committed)
+sample-game-data/*
+!sample-game-data/README.md

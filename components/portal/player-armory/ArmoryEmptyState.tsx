@@ -12,7 +12,7 @@ export function ArmoryEmptyState() {
         Search a player to begin
       </p>
       <p className="mx-auto mt-3 max-w-md text-sm text-text-muted sm:text-base">
-        Enter an Ops Tag above to see that player&apos;s armory — every
+        Enter an Ops Tag above to see that player&apos;s armory – every
         gun in the catalogue, grouped by tree branch, with their personal
         stats on each unlocked weapon and unlock progress on the locked
         ones.

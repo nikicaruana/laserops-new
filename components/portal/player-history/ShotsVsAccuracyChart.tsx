@@ -25,7 +25,7 @@ import { useInView } from "@/lib/hooks/useInView";
  * --------------------------------------------------------------------
  * CHANGES in this pass:
  *
- *   1. Reverted the two-line X-axis tick (match ID + gun name) — on
+ *   1. Reverted the two-line X-axis tick (match ID + gun name) – on
  *      phones the gun names overlapped each other and the match IDs
  *      overlapped between adjacent ticks. Now the X axis matches the
  *      other charts: just match IDs.
@@ -37,7 +37,7 @@ import { useInView } from "@/lib/hooks/useInView";
  *      rather than baked into the axis.
  *
  *      We use a chart-specific tooltip (ShotsAccuracyTooltip) rather
- *      than the shared DarkTooltip — the gun field is unique to this
+ *      than the shared DarkTooltip – the gun field is unique to this
  *      chart, so a one-off custom tooltip keeps the shared component
  *      simple.
  *
@@ -60,7 +60,7 @@ export function ShotsVsAccuracyChart({ matches }: Props) {
     // Carried as a hidden field on each datum so the custom tooltip
     // can read it from the payload. Recharts attaches the full data
     // object to each tooltip payload entry under `payload.payload`.
-    gunUsed: m.gunUsed || "—",
+    gunUsed: m.gunUsed || "–",
   }));
 
   if (data.length === 0) {

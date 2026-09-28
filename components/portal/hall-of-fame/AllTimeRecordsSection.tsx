@@ -2,7 +2,7 @@ import type { RecordCategory } from "@/lib/leaderboards/hall-of-fame";
 import { RecordList } from "./RecordList";
 
 /**
- * All-Time Records — single-game (one-off) bests across every match,
+ * All-Time Records – single-game (one-off) bests across every match,
  * top 3 per metric. Two-column grid on desktop.
  */
 export function AllTimeRecordsSection({

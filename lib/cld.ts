@@ -13,7 +13,7 @@ const UPLOAD = "/image/upload/";
 // A leading transformation segment uses `key_value` tokens (comma-separated).
 const HAS_TRANSFORM = /^(?:[a-z]{1,3}_[^/,]+)(?:,[a-z]{1,3}_[^/,]+)*\//i;
 
-export function cldImage(url: string | null | undefined, opts: { w?: number; h?: number } = {}): string {
+export function cldImage(url: string | null | undefined, opts: { w?: number; h?: number; trim?: boolean } = {}): string {
   const u = url ?? "";
   const i = u.indexOf(UPLOAD);
   if (!u.includes("res.cloudinary.com") || i === -1) return u;
@@ -22,5 +22,8 @@ export function cldImage(url: string | null | undefined, opts: { w?: number; h?:
   const t = ["f_auto", "q_auto", "dpr_auto", "c_fit"];
   if (opts.w) t.push(`w_${opts.w}`);
   if (opts.h) t.push(`h_${opts.h}`);
-  return u.slice(0, i + UPLOAD.length) + t.join(",") + "/" + after;
+  // e_trim as a separate chained transform so it crops the uniform/transparent
+  // border BEFORE the fit-resize — for badges with baked-in padding.
+  const prefix = opts.trim ? "e_trim/" : "";
+  return u.slice(0, i + UPLOAD.length) + prefix + t.join(",") + "/" + after;
 }

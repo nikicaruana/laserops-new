@@ -6,7 +6,7 @@
  * Editors populate this sheet to manage the public match schedule that
  * appears on /events/open-games. Each row is one open game.
  *
- * Cache: 300s (5 min) — shorter than the default 1800s because the
+ * Cache: 300s (5 min) – shorter than the default 1800s because the
  * match schedule changes frequently: status flips (Open → Full → Completed),
  * sign-up links go live, match reports get posted. Editors need changes
  * to surface quickly.
@@ -22,7 +22,7 @@
 import { fetchSheetAsObjects } from "@/lib/sheets";
 import { CMS_URLS } from "./client";
 
-/** Raw row shape — columns exactly as they appear in the sheet headers. */
+/** Raw row shape – columns exactly as they appear in the sheet headers. */
 type RawOpenGame = {
   Date: string;
   Time: string;
@@ -78,7 +78,7 @@ function isPast(status: string): boolean {
  *   DD/MM/YYYY       → "27/06/2026" → "2026-06-27"
  *
  * Falls back to the raw string if none of the above match (sort by
- * raw string as a last resort — defensive).
+ * raw string as a last resort – defensive).
  */
 function toISO(dateStr: string): string {
   if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
@@ -93,7 +93,7 @@ function toISO(dateStr: string): string {
 
 /**
  * Fetch and parse the Open_Games sheet.
- * Returns an empty array on any error — the page renders a graceful
+ * Returns an empty array on any error – the page renders a graceful
  * empty state rather than throwing.
  */
 export async function fetchOpenGames(): Promise<OpenGame[]> {
@@ -103,7 +103,7 @@ export async function fetchOpenGames(): Promise<OpenGame[]> {
   );
 
   if (!result.ok) {
-    // Log server-side but don't surface to the client — empty state is shown.
+    // Log server-side but don't surface to the client – empty state is shown.
     console.warn("[open-games] sheet fetch failed:", result.error);
     return [];
   }
@@ -124,9 +124,9 @@ export async function fetchOpenGames(): Promise<OpenGame[]> {
 
   // ── Sort into three display groups ──────────────────────────────────
   //
-  // 1. Upcoming (Open / Full / any non-past status) — nearest first
-  // 2. Past WITH a match report — most recent first (the interesting ones)
-  // 3. Past WITHOUT a match report — most recent first (at the bottom)
+  // 1. Upcoming (Open / Full / any non-past status) – nearest first
+  // 2. Past WITH a match report – most recent first (the interesting ones)
+  // 3. Past WITHOUT a match report – most recent first (at the bottom)
   //
   // Dates are normalised to ISO before comparing so D/M/YY sheet values
   // sort correctly (e.g. "6/6/26" before "27/6/26").

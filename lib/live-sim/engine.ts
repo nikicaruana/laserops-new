@@ -17,6 +17,10 @@ export type RoundData = {
   baseFlips: { t: number; baseId: number; team: string }[];
   burns: { baseId: number; team: string; t: number }[];
   burnThresholdSeconds: number; events: Ev[];
+  /** Per-hit damage (producer-supplied) so the live view can show damage dealt. */
+  damageEvents?: { t: number; actor: string; amount: number }[];
+  /** Per-player base-hold periods — each capture period credited to its capturer. */
+  holdPeriods?: { pid: string; from: number; to: number }[];
 };
 export type MatchData = { label: string; rounds: RoundData[] };
 
@@ -40,16 +44,26 @@ export function simEndOf(r: RoundData): number {
   return Math.min(r.durationSeconds, end + 3);
 }
 
-export type Stat = { name: string; team: string; kills: number; deaths: number; caps: number; streak: number; best: number; score: number };
+export type Stat = { name: string; team: string; kills: number; deaths: number; caps: number; streak: number; best: number; score: number; damage: number; hold: number };
 export function statsAt(data: RoundData, t: number): Map<string, Stat> {
   const per = new Map<string, Stat>();
-  for (const p of data.players) per.set(p.name, { name: p.name, team: p.team, kills: 0, deaths: 0, caps: 0, streak: 0, best: 0, score: 0 });
+  for (const p of data.players) per.set(p.name, { name: p.name, team: p.team, kills: 0, deaths: 0, caps: 0, streak: 0, best: 0, score: 0, damage: 0, hold: 0 });
   for (const e of data.events) {
     if (e.t > t) break;
     if (e.type === "kill") { const a = e.actor ? per.get(e.actor) : undefined; if (a) { a.kills++; a.streak++; a.best = Math.max(a.best, a.streak); } const v = e.victim ? per.get(e.victim) : undefined; if (v) { v.deaths++; v.streak = 0; } }
     else if (e.type === "capture") { const p = e.pid ? per.get(e.pid) : undefined; if (p) p.caps++; }
   }
-  for (const s of per.values()) s.score = s.kills * 50 + s.caps * 75;
+  // Damage dealt so far (events are sorted by t).
+  for (const d of data.damageEvents ?? []) { if (d.t > t) break; const a = per.get(d.actor); if (a) a.damage += d.amount; }
+  // Base hold so far — each capture period credited to its capturer, clamped to t.
+  for (const hp of data.holdPeriods ?? []) { const a = per.get(hp.pid); if (!a) continue; a.hold += Math.max(0, Math.min(t, hp.to) - hp.from); }
+  // A fuller live score that tracks the report's shape (kills+damage kill-score,
+  // caps + hold objective). Provisional — the published report is authoritative.
+  for (const s of per.values()) {
+    const kd = s.deaths > 0 ? s.kills / s.deaths : s.kills;
+    const killScore = Math.round((s.kills * 50 + s.damage * 0.2) * (1 + kd * 0.12));
+    s.score = killScore + s.caps * 75 + Math.round(s.hold) * 2;
+  }
   return per;
 }
 

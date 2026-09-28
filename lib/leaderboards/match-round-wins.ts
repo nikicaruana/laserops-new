@@ -6,7 +6,7 @@
  * Reads PeriodRows (one row per player per month), groups by player,
  * sums Matches_Won and Rounds_Won/Lost across all rows in scope, and
  * computes the Round Win Rate from the summed totals (NOT from averaging
- * per-month rates — that would weight a 1-round month equally with a
+ * per-month rates – that would weight a 1-round month equally with a
  * 100-round month, which is statistically wrong).
  *
  * Sort: primary by Matches_Won desc, tiebreak by Rounds_Won desc, then
@@ -28,7 +28,7 @@ const DISPLAY_LIMIT = 50;
  * from sort position; winRate is a 0-100 number (display formats with %).
  *
  * winRate is `null` when the player has no rounds played in the filter
- * window — display as "—" rather than "0%" or "NaN%".
+ * window – display as "–" rather than "0%" or "NaN%".
  */
 export type MatchRoundWinsRow = {
   rank: number;
@@ -75,7 +75,7 @@ export function aggregateMatchRoundWins(rows: PeriodRow[]): MatchRoundWinsRow[] 
       existing.matchWins += matchesWon;
       existing.roundWins += roundsWon;
       existing.roundLosses += roundsLost;
-      // Keep the first non-fallback profile pic we saw — they should all
+      // Keep the first non-fallback profile pic we saw – they should all
       // match across a player's rows but be defensive.
     } else {
       buckets.set(r.nickname, {

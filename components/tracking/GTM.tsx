@@ -16,7 +16,7 @@ export function GTM() {
 
   return (
     <>
-      {/* Consent Mode v2 default state — must run BEFORE GTM */}
+      {/* Consent Mode v2 default state – must run BEFORE GTM */}
       <Script id="consent-default" strategy="beforeInteractive">
         {`
           window.dataLayer = window.dataLayer || [];
@@ -47,7 +47,7 @@ export function GTM() {
           });
           /* Re-apply a returning visitor's saved choice BEFORE GTM evaluates
              page-view tags. Without this, the saved consent is only re-applied
-             by the React CookieConsent banner AFTER hydration — by which time
+             by the React CookieConsent banner AFTER hydration – by which time
              the Page View has already fired and consent-gated Custom HTML tags
              (e.g. the Meta Pixel, gated on ad_storage) have been blocked and
              won't reliably re-fire. Reading localStorage here (same key/shape

@@ -18,7 +18,7 @@ import { CMS_REVALIDATE_SECONDS, CMS_URLS } from "./client";
  * the CMS Accolade_Name column. If the CMS uses a different capitalisation
  * scheme (e.g. "Spray N Pray" with spaces), we do a flexible normalisation
  * match. Mismatches manifest as "missing accolades" in the UI rather than
- * crashes — defensive.
+ * crashes – defensive.
  */
 
 type AccoladeRaw = Record<string, string> & {

@@ -80,7 +80,7 @@ const GAME_MODES = [
 /* ─── Page ─────────────────────────────────────────────────────────── */
 
 export default async function OutdoorLaserTagPage() {
-  // Gun images for the carousel — pulled from the weapons CMS so the
+  // Gun images for the carousel – pulled from the weapons CMS so the
   // teaser stays in sync as guns are added/renamed. Only weapons with a
   // real image URL are included.
   // Fetch weapons (for the carousel) and the page's curated photos in
@@ -153,7 +153,7 @@ export default async function OutdoorLaserTagPage() {
       </section>
 
       {/* ── Explained ────────────────────────────────────────── */}
-      <section className="border-b border-border bg-bg-elevated">
+      <section className="border-b border-border portal-surface">
         <Container size="narrow" className="py-14 sm:py-16">
           <SectionLabel>The Basics</SectionLabel>
           <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
@@ -290,7 +290,7 @@ export default async function OutdoorLaserTagPage() {
       </section>
 
       {/* ── Respawn / Always in the action ───────────────────── */}
-      <section className="border-b border-border bg-bg-elevated">
+      <section className="border-b border-border portal-surface">
         <Container size="narrow" className="py-14 sm:py-16">
           <SectionLabel>How a Match Plays Out</SectionLabel>
           <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
@@ -347,7 +347,7 @@ export default async function OutdoorLaserTagPage() {
             {GAME_MODES.map((mode) => (
               <li
                 key={mode}
-                className="flex items-center gap-2 border border-border bg-bg-elevated px-4 py-3 text-sm font-bold uppercase tracking-[0.08em] text-text"
+                className="flex items-center gap-2 portal-card px-4 py-3 text-sm font-bold uppercase tracking-[0.08em] text-text"
               >
                 <span className="shrink-0 text-accent">▸</span>
                 <span className="min-w-0">{mode}</span>
@@ -368,7 +368,7 @@ export default async function OutdoorLaserTagPage() {
       </section>
 
       {/* ── Scores recorded ──────────────────────────────────── */}
-      <section className="border-b border-border bg-bg-elevated">
+      <section className="border-b border-border portal-surface">
         <Container size="narrow" className="py-14 sm:py-16">
           <SectionLabel>Player Portal</SectionLabel>
           <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
@@ -438,7 +438,7 @@ export default async function OutdoorLaserTagPage() {
       </section>
 
       {/* ── CTA ──────────────────────────────────────────────── */}
-      <section className="border-b border-border bg-bg-elevated">
+      <section className="border-b border-border portal-surface">
         <Container size="narrow" className="py-14 sm:py-16">
           <SectionLabel>Ready to Try It?</SectionLabel>
           <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">

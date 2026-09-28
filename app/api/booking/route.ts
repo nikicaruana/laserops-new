@@ -36,19 +36,19 @@ export async function POST(req: NextRequest) {
     return Response.json({ ok: false, error: "Missing required fields." }, { status: 400 });
   }
 
-  const subject = `New Booking Enquiry — ${eventType} on ${date}`;
+  const subject = `New Booking Enquiry – ${eventType} on ${date}`;
 
   const rows = [
     ["Event Type", eventType],
     ["Full Name", fullName],
     ["Email", email],
-    ["Phone", phone || "—"],
-    ["Company", companyName || "—"],
+    ["Phone", phone || "–"],
+    ["Company", companyName || "–"],
     ["Date", date],
     ["Start Time", startTime],
-    ["End Time", endTime || "—"],
+    ["End Time", endTime || "–"],
     ["Number of Players", players],
-    ["Comments", comments || "—"],
+    ["Comments", comments || "–"],
   ];
 
   const tableRows = rows

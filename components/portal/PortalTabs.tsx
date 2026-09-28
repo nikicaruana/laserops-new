@@ -5,16 +5,16 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
 
 /**
- * PortalTabs — top-level Player Portal navigation.
+ * PortalTabs – top-level Player Portal navigation.
  *
  * Visual treatment: yellow underline + yellow text for the active tab.
- * Inactive tabs sit in muted text. This is the "tree A" look — the second
+ * Inactive tabs sit in muted text. This is the "tree A" look – the second
  * level (SubTabs) uses a different treatment (pills) so the two levels
  * read as distinct without introducing a second hue.
  *
  * Layout: centered at all viewport widths. Mobile centering with only 2
  * items leaves some empty space on either side, but reads as deliberate
- * portal-like symmetry — and the tap targets stay full-size since
+ * portal-like symmetry – and the tap targets stay full-size since
  * centering doesn't shrink anything.
  *
  * URL-driven: the active tab is derived from the pathname. Each tab links
@@ -25,7 +25,7 @@ import { cn } from "@/lib/cn";
 type Tab = {
   label: string;
   href: string;
-  /** URL prefix that means "this tab is active" — e.g. /player-portal/leaderboards */
+  /** URL prefix that means "this tab is active" – e.g. /player-portal/leaderboards */
   matchPrefix: string;
 };
 
@@ -48,13 +48,13 @@ export function PortalTabs() {
   return (
     <nav
       aria-label="Player portal sections"
-      className="border-b border-border bg-bg"
+      className="border-b border-border portal-surface"
     >
       {/* Outer container: width cap + horizontal padding inset. */}
       <div className="mx-auto w-full max-w-[90rem] px-4 sm:px-8 lg:px-12">
         {/* Inner row: w-max + mx-auto centers when content fits, falls
             back to left-anchored when content overflows. Same pattern
-            as SubTabs — sidesteps the `justify-content: center +
+            as SubTabs – sidesteps the `justify-content: center +
             overflow` quirk. */}
         <div className="mx-auto flex w-max max-w-full items-stretch gap-1 sm:gap-6 lg:gap-10">
           {tabs.map((tab) => {
@@ -75,7 +75,7 @@ export function PortalTabs() {
                 )}
               >
                 {tab.label}
-                {/* Underline bar — fills the tab's bottom edge when active.
+                {/* Underline bar – fills the tab's bottom edge when active.
                     Sits on top of the parent's bottom border for a clean overlap. */}
                 <span
                   aria-hidden

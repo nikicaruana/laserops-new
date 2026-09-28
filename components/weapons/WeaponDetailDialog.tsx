@@ -108,7 +108,7 @@ export function WeaponDetailDialog({ weapon, onClose }: Props) {
       //     lives on the inner content div.
       //   - backdrop:bg-bg/80 + backdrop:backdrop-blur-sm gives a
       //     soft tinted modal backdrop instead of pitch black.
-      className="m-auto w-[92vw] max-w-md rounded-sm border border-border-strong bg-bg-elevated p-0 text-text backdrop:bg-bg/80 backdrop:backdrop-blur-sm"
+      className="m-auto w-[92vw] max-w-md rounded-sm border border-border bg-bg-overlay p-0 text-text backdrop:bg-bg/80 backdrop:backdrop-blur-sm"
     >
       <div className="p-5 sm:p-6">
         {/* Header: small "Weapon" eyebrow, gun name big, close X

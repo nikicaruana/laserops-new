@@ -1,5 +1,5 @@
 /**
- * sheets.ts — generic utilities for fetching and parsing CSV data
+ * sheets.ts – generic utilities for fetching and parsing CSV data
  * published from Google Sheets.
  *
  * Why hand-roll a CSV parser instead of pulling in a library?
@@ -28,7 +28,7 @@ export type SheetFetchResult<T> =
  * Fetch a published Google Sheet CSV and parse it into rows of objects keyed
  * by the header row. Caches at the Next.js layer for the given seconds.
  *
- * Server-side only — relies on Next.js's extended fetch with revalidate.
+ * Server-side only – relies on Next.js's extended fetch with revalidate.
  *
  * @param url   The published-to-web CSV URL from Google Sheets
  * @param revalidateSeconds  Cache TTL. Default 300 (5min) matches Google's own cache.
@@ -39,7 +39,7 @@ export async function fetchSheetAsObjects<T extends Record<string, string>>(
 ): Promise<SheetFetchResult<T>> {
   try {
     const res = await fetch(url, {
-      // Next.js extended fetch — caches the response for revalidateSeconds at the
+      // Next.js extended fetch – caches the response for revalidateSeconds at the
       // edge. Subsequent requests within that window don't hit Google.
       // Tagged "sheets" so the /api/revalidate endpoint can force every
       // sheet-derived cache to re-read on demand (e.g. after editing a match).
@@ -62,7 +62,7 @@ export async function fetchSheetAsObjects<T extends Record<string, string>>(
 
     if (rows.length === 0) {
       // Could mean the sheet is empty, or the parser found no data rows after
-      // the header. Either way the table will be empty — surface as a soft error
+      // the header. Either way the table will be empty – surface as a soft error
       // so the page can show its empty state.
       return { ok: false, error: "Sheet returned no data rows." };
     }
@@ -80,7 +80,7 @@ export async function fetchSheetAsObjects<T extends Record<string, string>>(
 /**
  * Parse a CSV string into an array of objects keyed by the header row.
  *
- * The header row is treated as the source of truth for object keys — order
+ * The header row is treated as the source of truth for object keys – order
  * of columns in the sheet doesn't matter at the call site, only the names.
  */
 export function parseCsvToObjects<T extends Record<string, string>>(
@@ -133,7 +133,7 @@ function parseCsvLines(csv: string): string[][] {
         i++;
         continue;
       }
-      // Any other char inside quotes — including commas and newlines — is literal
+      // Any other char inside quotes – including commas and newlines – is literal
       currentField += char;
       i++;
       continue;
@@ -180,7 +180,7 @@ function parseCsvLines(csv: string): string[][] {
 /**
  * Parse a string that may contain numeric data with thousand separators
  * (e.g. "47,398") or a stray currency symbol. Returns NaN if not parseable
- * (caller should provide a fallback — typically 0).
+ * (caller should provide a fallback – typically 0).
  */
 export function parseNumeric(value: string | undefined): number {
   if (!value) return NaN;

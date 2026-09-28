@@ -9,7 +9,7 @@ import type { AccoladeWithCount } from "@/lib/player-stats/summary-accolades";
  * brand-yellow badge silhouette and a count pill below.
  *
  * Visual rationale: yellow art on dark surface reads as a "vintage
- * enamel pin / display case" treatment — calm, premium, lets the badge
+ * enamel pin / display case" treatment – calm, premium, lets the badge
  * be the figure rather than competing with the card's own colour.
  * Matches the rest of the portal's dark-surface card chrome.
  *
@@ -25,8 +25,8 @@ type AccoladeCardProps = {
 export function AccoladeCard({ data }: AccoladeCardProps) {
   const { definition, count } = data;
   return (
-    <div className="flex flex-col items-center gap-2 border border-border bg-bg-elevated p-3 sm:gap-3 sm:p-4">
-      {/* Badge artwork — brand yellow silhouette on transparent. The
+    <div className="flex flex-col items-center gap-2 portal-card p-3 sm:gap-3 sm:p-4">
+      {/* Badge artwork – brand yellow silhouette on transparent. The
           ribbon name baked into the artwork serves as the label.
           Sized by WIDTH (w-full) rather than height: the badges are
           roughly square, so filling the card's content width gives
@@ -41,7 +41,7 @@ export function AccoladeCard({ data }: AccoladeCardProps) {
         className="block h-auto w-full max-w-[10rem]"
       />
 
-      {/* Count pill — lighter elevated grey for contrast against the
+      {/* Count pill – lighter elevated grey for contrast against the
           dark card surface. Reads as a small embedded plaque. */}
       <div className="mt-auto rounded-sm border border-border-strong bg-bg-overlay px-3 py-1 sm:px-4 sm:py-1.5">
         <span className="font-mono text-sm font-bold tabular-nums text-text sm:text-base">

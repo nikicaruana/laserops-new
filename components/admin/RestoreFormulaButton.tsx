@@ -4,7 +4,7 @@
  * components/admin/RestoreFormulaButton.tsx
  * --------------------------------------------------------------------
  * Re-applies an older scoring-formula version as the current formula (going
- * forward). Does NOT undo scoring already done — that's "recompute from date X".
+ * forward). Does NOT undo scoring already done – that's "recompute from date X".
  * Gated behind a password re-auth (sensitive change).
  */
 import { useState } from "react";

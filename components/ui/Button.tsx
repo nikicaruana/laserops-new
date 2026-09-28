@@ -42,26 +42,26 @@ const sizeStyles: Record<Size, string> = {
 };
 
 const variantStyles: Record<Variant, string> = {
-  // PRIMARY — solid yellow, the "book now" CTA. Hover shifts to dimmed yellow.
+  // PRIMARY – solid yellow, the "book now" CTA. Hover shifts to dimmed yellow.
   primary: cn(
     "bg-accent text-bg",
     "hover:bg-accent-soft",
     "shadow-[0_0_0_1px_var(--color-accent)]",
   ),
-  // SECONDARY — outlined, used alongside primary CTAs without competing
+  // SECONDARY – outlined, used alongside primary CTAs without competing
   secondary: cn(
     "border border-border-strong bg-transparent text-text",
     "hover:border-accent hover:text-accent",
   ),
-  // GHOST — minimal, for tertiary actions and inline links
+  // GHOST – minimal, for tertiary actions and inline links
   ghost: cn("bg-transparent text-text-muted", "hover:text-accent"),
-  // DARK — solid black, for use on the yellow/accent background band
+  // DARK – solid black, for use on the yellow/accent background band
   dark: cn(
     "bg-bg text-accent",
     "hover:bg-bg/90",
     "shadow-[0_0_0_1px_var(--color-bg)]",
   ),
-  // OUTLINE-DARK — outlined black, secondary pairing on the yellow/accent band
+  // OUTLINE-DARK – outlined black, secondary pairing on the yellow/accent band
   "outline-dark": cn(
     "border border-bg bg-transparent text-bg",
     "hover:bg-bg hover:text-accent",

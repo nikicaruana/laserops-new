@@ -148,7 +148,7 @@ export function RivalriesView({ ops, data }: { ops: string; data: PlayerRivalrie
         </div>
       )}
 
-      <section className="overflow-hidden rounded-sm border border-border bg-bg-elevated">
+      <section className="overflow-hidden rounded-sm portal-card">
         <header className="bg-accent px-5 py-3 text-center sm:px-6 sm:py-4">
           <h2 className="text-lg font-extrabold uppercase tracking-tight text-bg sm:text-xl">Head to head</h2>
         </header>

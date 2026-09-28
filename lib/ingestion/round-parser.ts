@@ -228,6 +228,29 @@ export function parseRound(
       headband_no: hb,
     };
   });
+
+  // Mid-round joins: a headband switched on AFTER GameStart is absent from
+  // startItem.Players; the game then emits a `PlayerAdded` event carrying the
+  // same identity fields ({ PlayerId, Name: "Head NN", Nickname, Team }). Fold
+  // these into the roster so their events are counted — otherwise the unrostered
+  // id's kills/deaths/hits are silently dropped (observed on LO-2026-30 R2:
+  // Head 39 joined as id 23 mid-round). The headband is fully trackable here.
+  {
+    const rostered = new Set(players.map((p) => p.in_game_player_id));
+    let joins = 0;
+    for (const r of raws) {
+      if (r.ItemType !== "PlayerAdded") continue;
+      const it = (r.Item ?? {}) as { PlayerId?: number; Name?: string; Nickname?: string; Team?: string };
+      const id = it.PlayerId;
+      if (id == null || rostered.has(id)) continue;
+      const hb = headbandFromName(it.Name);
+      if (hb === null) flags.push({ code: "no_headband", detail: `mid-round player ${id} name "${it.Name ?? ""}"` });
+      players.push({ in_game_player_id: id, name: it.Name ?? "", nickname: it.Nickname ?? "", team: it.Team ?? "", headband_no: hb });
+      rostered.add(id);
+      joins++;
+    }
+    if (joins > 0) flags.push({ code: "mid_round_join", detail: `${joins} player(s) joined mid-round (PlayerAdded)` });
+  }
   // Bases (field devices) IN PLAY = the device ids that actually appear in
   // FieldDeviceEvents (ground truth). GameStart.FieldDevices supplies names, but
   // its ids can mismatch the event ids (seen in a real R5 file: registered id 102
@@ -539,12 +562,22 @@ export function parseRound(
     }
   }
 
-  // Cross-checks: Frags final vs counted; Captures final vs joined.
+  // Truthful counts + cross-checks. Each PlayerFragEvent is a discrete record of
+  // a real kill (and a real death for its victim); the game's own running
+  // cumulative Frags/Deaths COUNTER in the stream can lag it under buffering, and
+  // the game's final export (the LWA) uses the event count. So frags/deaths are
+  // taken from the EVENTS (ground truth), with a flag when the counter disagreed.
   for (const pid of playerIds) {
-    const fragCount = kills.filter((k) => k.actor_id === pid).length;
-    if (final_player_counters[pid].frags !== fragCount) {
-      flags.push({ code: "frag_count_mismatch", detail: `player ${pid}: counter ${final_player_counters[pid].frags} vs ${fragCount} events` });
+    const eventFrags = kills.filter((k) => k.actor_id === pid).length;
+    const eventDeaths = kills.filter((k) => k.victim_id === pid).length;
+    if (final_player_counters[pid].frags !== eventFrags) {
+      flags.push({ code: "frag_counter_lag", detail: `player ${pid}: cumulative counter ${final_player_counters[pid].frags} vs ${eventFrags} kill events (using event count)` });
     }
+    if (final_player_counters[pid].deaths !== eventDeaths) {
+      flags.push({ code: "death_counter_lag", detail: `player ${pid}: cumulative counter ${final_player_counters[pid].deaths} vs ${eventDeaths} death events (using event count)` });
+    }
+    final_player_counters[pid].frags = eventFrags;
+    final_player_counters[pid].deaths = eventDeaths;
     const capCount = captures.filter((c) => c.capturing_player_id === pid).length;
     if (final_player_counters[pid].captures !== capCount) {
       flags.push({ code: "capture_count_mismatch", detail: `player ${pid}: counter ${final_player_counters[pid].captures} vs ${capCount} joined` });

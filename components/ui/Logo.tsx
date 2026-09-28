@@ -7,7 +7,7 @@ type LogoProps = {
   variant?: "icon" | "wordmark";
   /** Color treatment for the asset. Yellow only available for the icon variant. */
   color?: "white" | "black" | "yellow";
-  /** Visual size — tuned per variant. */
+  /** Visual size – tuned per variant. */
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   /** Wrap in a link to home (default true) */
   asLink?: boolean;
@@ -16,8 +16,8 @@ type LogoProps = {
 
 /**
  * Size tables per variant.
- * Icon is square — sizes are pixel height/width.
- * Wordmark is wide — sizes drive width and height auto-scales (~5.5:1 ratio).
+ * Icon is square – sizes are pixel height/width.
+ * Wordmark is wide – sizes drive width and height auto-scales (~5.5:1 ratio).
  */
 const sizeMap = {
   icon: {
@@ -50,7 +50,7 @@ export function Logo({
 
   const dimensions = (() => {
     if (variant === "icon") {
-      // Icon doesn't have an xs size — fall back to sm
+      // Icon doesn't have an xs size – fall back to sm
       const iconSize = size === "xs" ? "sm" : size;
       const s = sizeMap.icon[iconSize];
       return { displayW: s, naturalW: 256, naturalH: 256 };
@@ -60,7 +60,7 @@ export function Logo({
   })();
 
   const altText =
-    variant === "icon" ? "LaserOps" : "LaserOps — Tactical Laser Tag";
+    variant === "icon" ? "LaserOps" : "LaserOps – Tactical Laser Tag";
 
   const img = (
     <Image
@@ -79,7 +79,7 @@ export function Logo({
   return (
     <Link
       href="/"
-      aria-label="LaserOps Malta — Home"
+      aria-label="LaserOps Malta – Home"
       className="inline-flex items-center transition-opacity hover:opacity-80"
     >
       {img}

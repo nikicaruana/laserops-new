@@ -5,7 +5,7 @@
  * --------------------------------------------------------------------
  * App-wide error boundary (App Router). Catches client-side exceptions in
  * any route under the root layout and renders a clean, on-brand fallback
- * with a retry — instead of Next's raw "Application error: a client-side
+ * with a retry – instead of Next's raw "Application error: a client-side
  * exception has occurred" screen. `reset()` re-renders the failed segment
  * so a transient glitch recovers in place without a full reload.
  */
@@ -33,7 +33,7 @@ export default function AppError({
         This page hit a snag
       </h1>
       <p className="max-w-md text-sm text-text-muted sm:text-base">
-        A temporary error interrupted the page. Try again — if it keeps
+        A temporary error interrupted the page. Try again – if it keeps
         happening, let us know and we&rsquo;ll take a look.
       </p>
       <div className="mt-2 flex flex-wrap items-center justify-center gap-3">

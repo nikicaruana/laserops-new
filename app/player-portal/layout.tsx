@@ -7,7 +7,7 @@ import type { Metadata } from "next";
  * by the root layout above us, so users always have a way out of the portal.
  *
  * Navigation between Leaderboards / Player Stats / Match Report is handled
- * by the main site nav (desktop dropdown + mobile nav items) — no separate
+ * by the main site nav (desktop dropdown + mobile nav items) – no separate
  * in-page tab strip needed.
  *
  * Each sub-section layout (leaderboards, player-stats) adds its own
@@ -24,5 +24,5 @@ export const metadata: Metadata = {
 };
 
 export default function PlayerPortalLayout({ children }: { children: React.ReactNode }) {
-  return <div className="bg-bg">{children}</div>;
+  return <>{children}</>;
 }

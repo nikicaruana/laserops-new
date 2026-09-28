@@ -9,15 +9,25 @@
  * let you jump back to a finished round's end state. Per base: holder + per-team
  * hold timers with warn/critical/burned states (relative to the CURRENT holder).
  * Personal gun kill feed with tap-to-taunt. Prototype for the realtime pipeline.
+ *
+ * Killstreaks (prototype): streaks unlock deployable killstreaks (Scrambler /
+ * EMP). A usable killstreak shows in the bottom-right "Killstreaks" strip next
+ * to the streaks feed. Tap it to ARM — the killstreak bar + the bases grid both
+ * highlight to show they're connected — then tap a base (Scrambler) or any base
+ * (EMP) to deploy. The target is the ENEMY team's feed: a pixelly static overlay
+ * covers the affected base(s) with "<ops tag>'s Scrambler/EMP". Switch the viewed
+ * player to an enemy to see the effect land. Killstreak defs are hardcoded here
+ * for the prototype; the admin CMS will drive them (unlock streak, duration, etc).
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useWakeLock } from "@/lib/hooks/use-wake-lock";
 import { cldImage } from "@/lib/cld";
+import { fetchKillstreaks, killstreakOverlayLabel, type KillstreakDef } from "@/lib/killstreaks";
 
 type Ev = { t: number; type: "kill" | "capture" | "respawn"; actor?: string; victim?: string; spawn?: boolean; pid?: string; base?: string; team?: string };
 type SimPlayer = { name: string; team: string; gunName: string; gunImage: string };
 type Base = { id: number; name: string };
-type RoundData = { round: number; winner: string | null; durationSeconds: number; teams: string[]; players: SimPlayer[]; bases: Base[]; baseFlips: { t: number; baseId: number; team: string }[]; burns: { baseId: number; team: string; t: number }[]; burnThresholdSeconds: number; events: Ev[] };
+type RoundData = { round: number; winner: string | null; durationSeconds: number; teams: string[]; players: SimPlayer[]; bases: Base[]; baseFlips: { t: number; baseId: number; team: string }[]; burns: { baseId: number; team: string; t: number }[]; burnThresholdSeconds: number; events: Ev[]; damageEvents?: { t: number; actor: string; amount: number }[]; holdPeriods?: { pid: string; from: number; to: number }[] };
 export type MatchData = { label: string; rounds: RoundData[] };
 
 const BASE_IMAGES: Record<string, string> = {
@@ -49,16 +59,40 @@ function simEndOf(r: RoundData): number {
   return Math.min(r.durationSeconds, end + 3);
 }
 
-type Stat = { name: string; team: string; kills: number; deaths: number; caps: number; streak: number; best: number; score: number };
+type Stat = { name: string; team: string; kills: number; deaths: number; caps: number; streak: number; best: number; score: number; spawnKills: number; streakPts: number; damage: number; hold: number };
+// Streak point values that the sim can derive from its event stream (subset of
+// the seeded streaks — the ones based purely on kills/caps).
+const SIM_STREAK_PTS: Record<number, number> = { 3: 25, 5: 50, 10: 100, 20: 200 };
+const SIM_CAP_PTS: Record<number, number> = { 3: 25, 5: 50 };
 function statsAt(data: RoundData, t: number): Map<string, Stat> {
   const per = new Map<string, Stat>();
-  for (const p of data.players) per.set(p.name, { name: p.name, team: p.team, kills: 0, deaths: 0, caps: 0, streak: 0, best: 0, score: 0 });
+  for (const p of data.players) per.set(p.name, { name: p.name, team: p.team, kills: 0, deaths: 0, caps: 0, streak: 0, best: 0, score: 0, spawnKills: 0, streakPts: 0, damage: 0, hold: 0 });
+  const firstKill = data.events.find((e) => e.type === "kill" && e.actor);
   for (const e of data.events) {
     if (e.t > t) break;
-    if (e.type === "kill") { const a = e.actor ? per.get(e.actor) : undefined; if (a) { a.kills++; a.streak++; a.best = Math.max(a.best, a.streak); } const v = e.victim ? per.get(e.victim) : undefined; if (v) { v.deaths++; v.streak = 0; } }
-    else if (e.type === "capture") { const p = e.pid ? per.get(e.pid) : undefined; if (p) p.caps++; }
+    if (e.type === "kill") {
+      const a = e.actor ? per.get(e.actor) : undefined;
+      if (a) {
+        a.kills++; if (e.spawn) a.spawnKills++; a.streak++; a.best = Math.max(a.best, a.streak);
+        if (SIM_STREAK_PTS[a.streak]) a.streakPts += SIM_STREAK_PTS[a.streak]; // 3/5/10/20-kill streaks
+        if (firstKill && e === firstKill) a.streakPts += 25; // first blood
+      }
+      const v = e.victim ? per.get(e.victim) : undefined; if (v) { v.deaths++; v.streak = 0; }
+    } else if (e.type === "capture") {
+      const p = e.pid ? per.get(e.pid) : undefined; if (p) { p.caps++; if (SIM_CAP_PTS[p.caps]) p.streakPts += SIM_CAP_PTS[p.caps]; }
+    }
   }
-  for (const s of per.values()) s.score = s.kills * 50 + s.caps * 75;
+  // Damage dealt + base hold so far (now carried in the sim data too).
+  for (const d of data.damageEvents ?? []) { if (d.t > t) break; const a = per.get(d.actor); if (a) a.damage += d.amount; }
+  for (const hp of data.holdPeriods ?? []) { const a = per.get(hp.pid); if (a) a.hold += Math.max(0, Math.min(t, hp.to) - hp.from); }
+  // Provisional live score: spawn-voided kills + damage kill-score, caps + hold
+  // objective, plus streak points. The published report stays authoritative.
+  for (const s of per.values()) {
+    const scored = Math.max(0, s.kills - s.spawnKills);
+    const kd = s.deaths > 0 ? scored / s.deaths : scored;
+    const killScore = Math.round((scored * 50 + s.damage * 0.2) * (1 + kd * 0.12));
+    s.score = killScore + s.caps * 75 + Math.round(s.hold) * 2 + s.streakPts;
+  }
   return per;
 }
 
@@ -106,6 +140,59 @@ function myStreaks(data: RoundData, t: number, me: string) {
   return out.sort((a, b) => b.t - a.t);
 }
 
+// ── Killstreaks — defs come from the admin CMS (killstreak_definitions) ────────
+type KsEffect = { id: number; key: string; byPlayer: string; byTeam: string; baseIds: number[] | "all"; round: number; tStart: number; tEnd: number };
+
+/**
+ * Pixelly static overlay that covers a scrambled base on the enemy feed. A tiny
+ * self-animating canvas draws random black/white/accent pixels (~12fps), scaled
+ * up with image-rendering:pixelated for a chunky "signal jammed" look, with the
+ * deploying player's label on top.
+ */
+function PixelStatic({ label }: { label: string }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const c = ref.current;
+    if (!c) return;
+    const ctx = c.getContext("2d");
+    if (!ctx) return;
+    const W = 18, H = 18;
+    c.width = W;
+    c.height = H;
+    let raf = 0;
+    let last = 0;
+    const draw = (now: number) => {
+      if (now - last > 80) {
+        last = now;
+        const img = ctx.createImageData(W, H);
+        for (let i = 0; i < img.data.length; i += 4) {
+          const r = Math.random();
+          const tint = r < 0.12; // occasional accent fleck
+          // Mostly near-black with a few dim-grey pixels — a darker jam that
+          // never flashes bright white.
+          const v = r < 0.68 ? 14 : r < 0.9 ? 55 : 120;
+          img.data[i] = tint ? 255 : v;
+          img.data[i + 1] = tint ? 222 : v;
+          img.data[i + 2] = tint ? 0 : v;
+          img.data[i + 3] = 255;
+        }
+        ctx.putImageData(img, 0, 0);
+      }
+      raf = requestAnimationFrame(draw);
+    };
+    raf = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+  return (
+    <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden rounded-lg">
+      <canvas ref={ref} className="h-full w-full" style={{ imageRendering: "pixelated", opacity: 0.9 }} />
+      <div className="absolute inset-0 flex items-center justify-center p-1 text-center">
+        <span className="text-[0.5rem] font-extrabold uppercase leading-tight text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.95)]">{label}</span>
+      </div>
+    </div>
+  );
+}
+
 type Taunt = { round: number; from: string; to: string; at: number };
 
 export function LiveSim({ match }: { match: MatchData }) {
@@ -120,7 +207,11 @@ export function LiveSim({ match }: { match: MatchData }) {
   const [ended, setEnded] = useState(false);
   const [keepAwake, setKeepAwake] = useState(true);
   const [exited, setExited] = useState(false);
+  const [armed, setArmed] = useState<string | null>(null);
+  const [effects, setEffects] = useState<KsEffect[]>([]);
+  const [ksDefs, setKsDefs] = useState<KillstreakDef[]>([]);
   useWakeLock(keepAwake && !exited); // keep the phone screen on while in the live view
+  useEffect(() => { fetchKillstreaks().then(setKsDefs); }, []); // CMS-driven killstreaks
   const raf = useRef<number | null>(null);
   const lastNow = useRef<number>(0);
 
@@ -148,6 +239,9 @@ export function LiveSim({ match }: { match: MatchData }) {
     if (roundIdx + 1 < match.rounds.length) { const to = setTimeout(() => { setRoundIdx((r) => r + 1); setT(0); setPlaying(true); }, 900); return () => clearTimeout(to); }
   }, [ended, roundIdx, match.rounds.length]);
 
+  // Disarm any armed killstreak when the context changes under it.
+  useEffect(() => { setArmed(null); }, [roundIdx, sel, exited]);
+
   function goToRound(i: number) { setPlaying(false); setRoundIdx(i); setT(completed.has(i) ? simEndOf(match.rounds[i]) : 0); }
 
   const stats = useMemo(() => statsAt(data, t), [data, t]);
@@ -160,6 +254,44 @@ export function LiveSim({ match }: { match: MatchData }) {
   const done = t >= simEnd;
   const winner = useMemo(() => { const c: Record<string, number> = {}; for (const b of data.burns) if (b.t <= t) c[b.team] = (c[b.team] ?? 0) + 1; return Object.entries(c).find(([, n]) => n >= 2)?.[0] ?? null; }, [data, t]);
 
+  // Killstreak availability for the viewed player: each time they hit the
+  // unlocking streak they earn one charge; deploying it spends one.
+  const ksByKey = useMemo(() => new Map(ksDefs.map((d) => [d.key, d])), [ksDefs]);
+  const earnedByKey = useMemo(() => { const m: Record<string, number> = {}; for (const s of streaks) m[s.key] = (m[s.key] ?? 0) + 1; return m; }, [streaks]);
+  const ksAvail = useMemo(
+    () => ksDefs.map((k) => {
+      const earned = k.unlockStreakKey ? (earnedByKey[k.unlockStreakKey] ?? 0) : 0;
+      const used = effects.filter((e) => e.round === roundIdx && e.byPlayer === sel && e.key === k.key).length;
+      return { ...k, available: Math.max(0, earned - used) };
+    }),
+    [ksDefs, earnedByKey, effects, roundIdx, sel],
+  );
+  // Effects currently landing on THIS viewer's feed (enemy of the deployer, live now).
+  const activeEffects = useMemo(
+    () => (me ? effects.filter((e) => e.round === roundIdx && e.byTeam !== me.team && e.tStart <= t && t < e.tEnd) : []),
+    [effects, roundIdx, t, me],
+  );
+  // Effects the viewer's OWN team is currently deploying on the enemy, so you
+  // and your teammates can see the outgoing jam (with a countdown).
+  const outgoingEffects = useMemo(
+    () => (me ? effects.filter((e) => e.round === roundIdx && e.byTeam === me.team && e.tStart <= t && t < e.tEnd) : []),
+    [effects, roundIdx, t, me],
+  );
+  const effectOnBase = (baseId: number) => activeEffects.find((e) => e.baseIds === "all" || (Array.isArray(e.baseIds) && e.baseIds.includes(baseId))) ?? null;
+  function deployKs(key: string, baseIds: number[] | "all") {
+    if (!me) return;
+    const def = ksByKey.get(key);
+    if (!def) return;
+    setEffects((prev) => [...prev, { id: Math.random(), key, byPlayer: sel, byTeam: me.team, baseIds, round: roundIdx, tStart: t, tEnd: t + def.durationSeconds }]);
+    setArmed(null);
+  }
+  function tapBase(baseId: number) {
+    if (!armed) return;
+    const def = ksByKey.get(armed);
+    if (!def) return;
+    deployKs(armed, def.scope === "all" ? "all" : [baseId]);
+  }
+
   const feed = useMemo(() => {
     type Item = { t: number; kind: "kill" | "death" | "taunt"; other: string; spawn?: boolean; killId?: number };
     const items: Item[] = [];
@@ -170,11 +302,16 @@ export function LiveSim({ match }: { match: MatchData }) {
 
   function sendTaunt(to: string, killId: number) { setTaunts((prev) => [...prev, { round: roundIdx, from: sel, to, at: t }]); setSent((prev) => new Set(prev).add(`${roundIdx}:${killId}`)); }
 
+  const availKs = ksAvail.filter((k) => k.available > 0);
+  const armedDef = armed ? (ksByKey.get(armed) ?? null) : null;
+
   return (
     <div className="text-text">
       <style>{`
         @keyframes lsSize{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
         @keyframes lsGlow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.55)}}
+        @keyframes lsArm{0%,100%{box-shadow:0 0 0 2px var(--color-accent),0 0 0 4px rgba(255,222,0,0.15)}50%{box-shadow:0 0 0 2px var(--color-accent),0 0 0 7px rgba(255,222,0,0.35)}}
+        .ls-armed{animation:lsArm 1.1s ease-in-out infinite;border-radius:0.6rem;}
         .ls-scroll{scrollbar-width:thin;scrollbar-color:var(--color-accent-dim) transparent;}
         .ls-scroll::-webkit-scrollbar{width:6px;height:6px;}
         .ls-scroll::-webkit-scrollbar-track{background:transparent;}
@@ -227,8 +364,8 @@ export function LiveSim({ match }: { match: MatchData }) {
                 {winner ? <span className="text-[0.6rem] font-bold uppercase tracking-[0.14em]" style={{ color: teamHex(winner) }}>{winner} wins</span> : <span className="flex items-center gap-1 text-[0.6rem] font-bold uppercase tracking-[0.14em] text-red-400"><span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" /> Live</span>}
               </div>
 
-              {/* Base capture states */}
-              <div className="grid shrink-0 grid-cols-3 gap-2">
+              {/* Base capture states — also the target picker while a killstreak is armed */}
+              <div className={`grid shrink-0 grid-cols-3 gap-2 p-0.5 ${armed ? "ls-armed" : ""}`}>
                 {data.bases.map((base) => {
                   const st = bases[base.id];
                   const owner = st?.owner ?? null;
@@ -236,8 +373,9 @@ export function LiveSim({ match }: { match: MatchData }) {
                   const anim = st?.anim ?? "none";
                   const sizeAnim = anim === "crit" ? "lsSize 0.7s ease-in-out infinite" : anim === "warn" ? "lsSize 1.1s ease-in-out infinite" : undefined;
                   const img = owner ? BASE_IMAGES[owner.toLowerCase()] : BASE_IMAGES["neutral"];
+                  const eff = effectOnBase(base.id);
                   return (
-                    <div key={base.id} className="rounded-lg p-2 text-center" style={{ borderStyle: burned ? "dotted" : "solid", borderWidth: burned ? 3 : 1, borderColor: burned ? teamHex(st!.burnTeam) : teamHex(owner) + "88", backgroundColor: teamHex(owner) + "14", animation: anim === "crit" ? "lsGlow 0.7s ease-in-out infinite" : undefined }}>
+                    <div key={base.id} onClick={armed ? () => tapBase(base.id) : undefined} className={`relative rounded-lg p-2 text-center ${armed ? "cursor-pointer hover:ring-2 hover:ring-accent" : ""}`} style={{ borderStyle: burned ? "dotted" : "solid", borderWidth: burned ? 3 : 1, borderColor: burned ? teamHex(st!.burnTeam) : teamHex(owner) + "88", backgroundColor: teamHex(owner) + "14", animation: anim === "crit" ? "lsGlow 0.7s ease-in-out infinite" : undefined }}>
                       <div className="flex justify-center" style={{ animation: sizeAnim }}>{img ? <img src={cldImage(img, { w: 96 })} alt={base.name} className="h-10 w-10 object-contain" /> : <BaseEmblem color={teamHex(owner)} />}</div>
                       <div className="mt-1 truncate text-[0.65rem] font-extrabold uppercase tracking-[0.06em]" title={base.name} style={{ color: burned ? teamHex(st!.burnTeam) : undefined }}>{base.name}</div>
                       <div className="mt-1 space-y-0.5">
@@ -247,19 +385,44 @@ export function LiveSim({ match }: { match: MatchData }) {
                           </div>
                         ); })}
                       </div>
+                      {eff && ksByKey.get(eff.key) && <PixelStatic label={killstreakOverlayLabel(ksByKey.get(eff.key)!, eff.byPlayer)} />}
                     </div>
                   );
                 })}
               </div>
 
+              {/* Outgoing jam — you + your team see what you're scrambling */}
+              {outgoingEffects.length > 0 && (
+                <div className="shrink-0 space-y-1.5 rounded-lg border border-accent/40 bg-accent/10 px-2.5 py-2">
+                  {outgoingEffects.map((e) => {
+                    const def = ksByKey.get(e.key);
+                    if (!def) return null;
+                    const target = e.baseIds === "all"
+                      ? "All bases"
+                      : data.bases.filter((b) => Array.isArray(e.baseIds) && e.baseIds.includes(b.id)).map((b) => b.name).join(", ");
+                    const who = e.byPlayer === sel ? "You" : e.byPlayer;
+                    return (
+                      <div key={e.id} className="flex items-center gap-2.5">
+                        {def.badgeUrl ? <img src={cldImage(def.badgeUrl, { w: 96 })} alt={def.name} className="h-9 w-9 shrink-0 object-contain" /> : <span className="flex h-9 w-9 shrink-0 items-center justify-center text-2xl">{def.icon || "•"}</span>}
+                        <div className="min-w-0 flex-1 leading-tight">
+                          <div className="truncate text-xs font-bold text-text">{who}</div>
+                          <div className="truncate text-[0.6rem] font-semibold uppercase tracking-[0.08em] text-text-muted">{target}</div>
+                        </div>
+                        <span className="shrink-0 font-mono text-xs tabular-nums text-text-muted">{mmss(Math.max(0, e.tEnd - t))}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
               {/* Scorecard */}
               <div className="shrink-0 rounded-lg bg-bg-elevated p-3">
                 <div className="flex items-end justify-between">
-                  <div><div className="text-[0.55rem] font-semibold uppercase tracking-[0.16em] text-text-subtle">Live score</div><div className="text-3xl font-extrabold leading-none tabular-nums text-accent">{me?.score.toLocaleString("en-US") ?? 0}</div></div>
-                  <div className="text-right text-[0.7rem] text-text-muted">Rank #{myRank || "–"} / {data.players.length}</div>
+                  <div><div className="text-[0.55rem] font-semibold uppercase tracking-[0.16em] text-text-subtle">Live score</div><div className="text-2xl font-extrabold leading-none tabular-nums text-accent">{me?.score.toLocaleString("en-US") ?? 0}</div></div>
+                  <div className="text-right text-sm text-text-muted">Rank #{myRank || "–"} / {data.players.length}</div>
                 </div>
-                <div className="mt-2 grid grid-cols-4 gap-1.5 text-center">
-                  {[["Kills", me?.kills ?? 0], ["Deaths", me?.deaths ?? 0], ["K/D", kd.toFixed(2)], ["Caps", me?.caps ?? 0]].map(([k, v]) => (<div key={k as string} className="rounded-md bg-bg py-1.5"><div className="text-base font-bold tabular-nums">{v}</div><div className="text-[0.5rem] uppercase tracking-[0.08em] text-text-subtle">{k}</div></div>))}
+                <div className="mt-2 grid grid-cols-3 gap-1.5 text-center">
+                  {[["Kills", me?.kills ?? 0], ["Deaths", me?.deaths ?? 0], ["K/D", kd.toFixed(2)], ["Caps", me?.caps ?? 0], ["Dmg", Math.round(me?.damage ?? 0)], ["Hold", mmss(Math.round(me?.hold ?? 0))]].map(([k, v]) => (<div key={k as string} className="rounded-md bg-bg py-1.5"><div className="text-base font-bold tabular-nums">{v}</div><div className="text-[0.5rem] uppercase tracking-[0.08em] text-text-subtle">{k}</div></div>))}
                 </div>
               </div>
 
@@ -281,18 +444,44 @@ export function LiveSim({ match }: { match: MatchData }) {
                 </ul>
               </div>
 
-              {/* Streaks */}
-              <div className="shrink-0">
-                <div className="mb-1 px-1 text-[0.55rem] font-semibold uppercase tracking-[0.14em] text-text-subtle">Your streaks</div>
-                <div className="ls-scroll flex gap-2 overflow-x-auto pb-1">
-                  {streaks.length === 0 && <span className="px-1 text-xs text-text-subtle">None yet — get on a run!</span>}
-                  {streaks.map((s, i) => (<div key={i} className="flex shrink-0 flex-col items-center"><img src={cldImage(sb(s.key), { w: 96 })} alt={STREAK_NAMES[s.key] ?? s.key} className="h-11 w-11 object-contain" /><span className="mt-0.5 whitespace-nowrap text-[0.55rem] text-text-muted">{STREAK_NAMES[s.key] ?? s.key}</span></div>))}
+              {/* Streaks + killstreaks (armed → full-width instruction bar) */}
+              {armedDef ? (
+                <button type="button" onClick={() => setArmed(null)} className="ls-armed shrink-0 bg-accent/10 px-3 py-2 text-center">
+                  <div className="flex items-center justify-center gap-1.5 text-[0.55rem] font-bold uppercase tracking-[0.14em] text-accent">{armedDef.badgeUrl ? <img src={cldImage(armedDef.badgeUrl, { w: 64 })} alt="" className="h-4 w-4 object-contain" /> : <span>{armedDef.icon || "•"}</span>} {armedDef.name} armed</div>
+                  <div className="mt-0.5 text-xs font-semibold text-text">{armedDef.armInstructions ?? "Tap a base to deploy, or tap here to cancel"}</div>
+                </button>
+              ) : (
+                <div className="flex shrink-0 items-start gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-1 px-1 text-[0.55rem] font-semibold uppercase tracking-[0.14em] text-text-subtle">Your streaks</div>
+                    <div className="flex items-center -space-x-2 overflow-hidden">
+                      {streaks.length === 0 && <span className="px-1 text-xs text-text-subtle">None yet — get on a run!</span>}
+                      {streaks.slice(0, 6).map((s, i) => (<img key={i} src={cldImage(sb(s.key), { w: 160, trim: true })} alt={STREAK_NAMES[s.key] ?? s.key} title={STREAK_NAMES[s.key] ?? s.key} style={{ zIndex: 90 - i }} className="relative h-[4.5rem] w-auto shrink-0 object-contain" />))}
+                    </div>
+                  </div>
+                  <div className="shrink-0">
+                    <div className="mb-1 px-1 text-right text-[0.55rem] font-semibold uppercase tracking-[0.14em] text-text-subtle">Killstreaks</div>
+                    <div className="flex justify-end">
+                      {availKs.length === 0 ? (
+                        <span className="px-1 py-2 text-[0.65rem] text-text-subtle">—</span>
+                      ) : (
+                        <div className="flex items-center gap-0 rounded-lg border border-accent/50 bg-accent/10 p-0.5">
+                          {availKs.map((k) => (
+                            <button key={k.key} type="button" onClick={() => setArmed(k.key)} title={`Deploy ${k.name}`} className="relative flex shrink-0 items-center justify-center rounded-md transition-colors hover:bg-accent/20">
+                              {k.badgeUrl ? <img src={cldImage(k.badgeUrl, { w: 160 })} alt={k.name} className="h-[4.5rem] w-[4.5rem] object-contain" /> : <span className="flex h-[4.5rem] w-[4.5rem] items-center justify-center text-4xl">{k.icon || "•"}</span>}
+                              {k.available > 1 && <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[0.55rem] font-bold text-bg">{k.available}</span>}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
               </>)}
             </div>
           </div>
-          <p className="mt-2 text-center text-[0.65rem] text-text-subtle">What {sel} sees on their phone — Round {data.round}.</p>
+          <p className="mt-2 text-center text-[0.65rem] text-text-subtle">What {sel} sees on their phone — Round {data.round}. Deploy a killstreak, then switch to an enemy player to see it land.</p>
         </div>
 
         {/* Live leaderboard */}

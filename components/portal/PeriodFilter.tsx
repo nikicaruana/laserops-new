@@ -16,13 +16,13 @@ import type { FilterOption } from "@/lib/leaderboards/period-shared";
  *     survives refresh, can be shared via link, and the back button works.
  *   - Each leaderboard reads the same params, so a Year/Month chosen on the
  *     "Match/Round Wins" table would also be the default on a "Total Points"
- *     table on the same page. Probably what users expect — they're filtering
+ *     table on the same page. Probably what users expect – they're filtering
  *     "the period I'm looking at", not per-table.
  *   - Empty / "all" maps to the absence of the param in the URL. Choosing
  *     "All Years" clears `?year=`.
  *
  * UI:
- *   - Native <select> for accessibility and mobile native pickers — iOS
+ *   - Native <select> for accessibility and mobile native pickers – iOS
  *     shows the system wheel picker which is what users expect.
  *   - Styled to fit the dark/yellow brand: appearance-none, custom chevron
  *     SVG, dark-overlay background.
@@ -61,7 +61,7 @@ export function PeriodFilter({ years, months, paramScope = DEFAULT_SCOPE }: Peri
     }
     const queryString = next.toString();
     const url = queryString ? `${pathname}?${queryString}` : pathname;
-    // useTransition keeps the UI responsive — the URL update is treated as
+    // useTransition keeps the UI responsive – the URL update is treated as
     // a non-urgent state change so React can interrupt if the user clicks
     // again before the previous update fully renders.
     startTransition(() => {
@@ -120,7 +120,7 @@ function FilterDropdown({ label, value, onChange, options, allLabel }: FilterDro
         className={cn(
           // Reset native chrome so we can style it consistently
           "appearance-none cursor-pointer",
-          // Sizing & spacing — extra right padding for the custom chevron
+          // Sizing & spacing – extra right padding for the custom chevron
           "py-1.5 pl-3 pr-8 sm:py-2 sm:pl-4 sm:pr-9",
           // Brand surface
           "border border-border-strong bg-bg-overlay text-text",
@@ -139,7 +139,7 @@ function FilterDropdown({ label, value, onChange, options, allLabel }: FilterDro
           </option>
         ))}
       </select>
-      {/* Custom yellow chevron — the native one is hidden via appearance-none.
+      {/* Custom yellow chevron – the native one is hidden via appearance-none.
           Pointer-events-none so clicks pass through to the select. */}
       <svg
         aria-hidden

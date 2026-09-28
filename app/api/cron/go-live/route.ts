@@ -9,6 +9,7 @@
 import type { NextRequest } from "next/server";
 import { Resend } from "resend";
 import { createServiceClient } from "@/lib/supabase/service";
+import { emitNotification } from "@/lib/notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -66,6 +67,12 @@ export async function GET(req: NextRequest) {
 
     started.push({ id: m.id, code, match_code: updated.match_code });
 
+    // Notify registered signups their game is live.
+    const { data: liveSignups } = await supabase.from("match_signups").select("account_id").eq("match_id", m.id).eq("status", "registered");
+    for (const r of (liveSignups ?? []) as { account_id: string | null }[]) {
+      if (r.account_id) await emitNotification(supabase, r.account_id, "game_live", { title: updated.title || "Your game is live", body: "Your game is live now. Sign in to join.", href: `/player-portal/games/${m.id}/join` });
+    }
+
     if (resend && adminEmails.length > 0) {
       const when = updated.scheduled_at
         ? new Date(updated.scheduled_at).toLocaleString("en-GB", {
@@ -82,7 +89,7 @@ export async function GET(req: NextRequest) {
         await resend.emails.send({
           from: "LaserOps <bookings@laseropsmalta.com>",
           to: adminEmails,
-          subject: `Match live: ${label} — code ${code}`,
+          subject: `Match live: ${label} – code ${code}`,
           html: `
 <!DOCTYPE html>
 <html><head><meta charset="utf-8"></head>

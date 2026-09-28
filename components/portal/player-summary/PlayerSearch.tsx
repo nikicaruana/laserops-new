@@ -10,7 +10,7 @@ import { cn } from "@/lib/cn";
  * Search input for selecting a player by ops tag.
  *
  * UX:
- *   - Type to see autocomplete suggestions (native <datalist> — fast,
+ *   - Type to see autocomplete suggestions (native <datalist> – fast,
  *     accessible, no JS gymnastics, plays well with mobile keyboards).
  *   - Press Enter or click "View" to commit.
  *   - On commit:
@@ -48,7 +48,7 @@ export function PlayerSearch({ knownNicknames, currentOpsTag }: PlayerSearchProp
   const [input, setInput] = useState(currentOpsTag);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  // Stable IDs for accessibility — input/label/datalist association.
+  // Stable IDs for accessibility – input/label/datalist association.
   const datalistId = useId();
   const inputId = useId();
   const errorId = useId();
@@ -88,7 +88,7 @@ export function PlayerSearch({ knownNicknames, currentOpsTag }: PlayerSearchProp
     try {
       localStorage.setItem(LOCALSTORAGE_KEY, canonical);
     } catch {
-      // localStorage can throw in private mode on some browsers — ignore.
+      // localStorage can throw in private mode on some browsers – ignore.
     }
 
     // Update URL with the canonical (correctly-cased) nickname.
@@ -113,7 +113,7 @@ export function PlayerSearch({ knownNicknames, currentOpsTag }: PlayerSearchProp
           type="search"
           // The native datalist attribute wires this to the <datalist> below
           // for browser-native autocomplete. Mobile browsers show their own
-          // suggestion UI on top of this — fine.
+          // suggestion UI on top of this – fine.
           list={datalistId}
           value={input}
           onChange={(e) => {

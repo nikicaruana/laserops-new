@@ -53,7 +53,7 @@ export function SquadLeaderboardTable({ rows }: { rows: SquadLeaderRow[] }) {
         widthSm: "minmax(150px, 1.4fr)",
         cell: (r) => (
           <span className="flex items-center gap-2">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden border border-border bg-bg-overlay text-[0.55rem] font-bold text-text-muted">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden portal-card text-[0.55rem] font-bold text-text-muted">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               {r.profile_pic_url ? <img src={cldImage(squareUrl(r.profile_pic_url, 48), { w: 384 })} alt="" className="h-full w-full object-cover" /> : (r.ops_tag || "P").slice(0, 1).toUpperCase()}
             </span>
@@ -95,7 +95,7 @@ export function SquadLeaderboardTable({ rows }: { rows: SquadLeaderRow[] }) {
   );
 
   return (
-    <section aria-label="Squad leaderboard" className="overflow-hidden rounded-sm border border-border bg-bg-elevated">
+    <section aria-label="Squad leaderboard" className="overflow-hidden rounded-sm portal-card">
       <header className="bg-accent px-5 py-3 text-center sm:px-6 sm:py-4">
         <h2 className="text-lg font-extrabold uppercase tracking-tight text-bg sm:text-xl">Squad Leaderboard</h2>
       </header>

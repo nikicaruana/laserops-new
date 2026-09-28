@@ -37,7 +37,7 @@ export function TaggedPhotosGrid({
   const hiddenCount = photos.length - limit;
 
   return (
-    <div className="border border-border bg-bg-elevated p-4">
+    <div className="portal-card p-4">
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6">
         {shown.map((p) => {
           const img = (

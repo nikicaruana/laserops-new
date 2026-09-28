@@ -3,11 +3,13 @@
 /**
  * components/portal/AvatarUploader.tsx
  * --------------------------------------------------------------------
- * Profile-picture control. Shows the current avatar and lets the player
- * pick a new image, position/zoom it inside a locked 1:1 frame (so the
- * result is always square, cropping non-square sources), then uploads the
- * cropped blob to /api/profile-pic (which stores it on Cloudinary and
- * writes the URL to their account).
+ * Profile-picture control. Changing the photo first asks the source:
+ *   - Upload a photo   -> pick a file, position/zoom in a locked 1:1 frame, and
+ *                         upload the cropped square blob to /api/profile-pic.
+ *   - From tagged photos-> pick one of the photos this player is tagged in;
+ *                         Cloudinary copies it to their avatar (sourceUrl POST).
+ * If the player has no tagged photos, "Change photo" goes straight to upload.
+ * Profile photos render SQUARE (circles are reserved for squad logos).
  */
 import { useCallback, useRef, useState } from "react";
 import Cropper from "react-easy-crop";
@@ -16,18 +18,22 @@ import { getCroppedBlob, type PixelCrop } from "@/lib/cropImage";
 import { avatarOrDefault } from "@/lib/avatar";
 import { Button } from "@/components/ui/Button";
 
-/** 1:1 delivery transform — safety net on top of the client-side square crop. */
+/** 1:1 delivery transform – safety net on top of the client-side square crop. */
 function squareUrl(url: string, w = 400): string {
   if (!url.includes("/upload/")) return url;
   return url.replace("/upload/", `/upload/c_fill,ar_1:1,g_auto,w_${w},q_auto,f_auto/`);
 }
 
+type TaggedPhoto = { id: string; url: string };
+
 export function AvatarUploader({
   initialUrl,
   opsTag,
+  taggedPhotos = [],
 }: {
   initialUrl: string | null;
   opsTag: string | null;
+  taggedPhotos?: TaggedPhoto[];
 }) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -39,10 +45,21 @@ export function AvatarUploader({
   const [croppedPixels, setCroppedPixels] = useState<PixelCrop | null>(null);
   const [status, setStatus] = useState<"idle" | "saving">("idle");
   const [error, setError] = useState<string | null>(null);
+  // Which step of the change flow is showing: the source chooser, or the
+  // tagged-photo picker. null = neither.
+  const [step, setStep] = useState<null | "choose" | "tagged">(null);
+
+  const hasTagged = taggedPhotos.length > 0;
 
   const onCropComplete = useCallback((_area: unknown, pixels: PixelCrop) => {
     setCroppedPixels(pixels);
   }, []);
+
+  function startChange() {
+    setError(null);
+    if (hasTagged) setStep("choose");
+    else fileInputRef.current?.click();
+  }
 
   function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -52,7 +69,7 @@ export function AvatarUploader({
       setError("Please choose an image file.");
       return;
     }
-    // Reset crop state and open the editor.
+    setStep(null);
     setCrop({ x: 0, y: 0 });
     setZoom(1);
     setImageSrc(URL.createObjectURL(file));
@@ -106,10 +123,31 @@ export function AvatarUploader({
     }
   }
 
+  async function useTaggedPhoto(url: string) {
+    setStatus("saving");
+    setError(null);
+    try {
+      const res = await fetch("/api/profile-pic", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sourceUrl: url }),
+      });
+      const data = (await res.json()) as { ok: boolean; url?: string; error?: string };
+      if (!res.ok || !data.ok || !data.url) throw new Error(data.error || "Couldn't set that photo.");
+      setCurrentUrl(data.url);
+      setStep(null);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't set that photo.");
+    } finally {
+      setStatus("idle");
+    }
+  }
+
   return (
     <div className="flex flex-col items-center gap-4">
-      {/* Current avatar (branded default when none set) */}
-      <div className="relative h-32 w-32 overflow-hidden rounded-full border border-border-strong bg-bg-overlay">
+      {/* Current avatar (branded default when none set) – square. */}
+      <div className="relative h-32 w-32 overflow-hidden rounded-sm border border-border-strong bg-bg-overlay">
         <img
           src={squareUrl(avatarOrDefault(currentUrl), 256)}
           alt={opsTag ? `${opsTag} avatar` : "Your avatar"}
@@ -117,20 +155,9 @@ export function AvatarUploader({
         />
       </div>
 
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        onChange={onPickFile}
-        className="hidden"
-      />
+      <input ref={fileInputRef} type="file" accept="image/*" onChange={onPickFile} className="hidden" />
       <div className="flex items-center gap-4">
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          onClick={() => fileInputRef.current?.click()}
-        >
+        <Button type="button" variant="secondary" size="sm" onClick={startChange}>
           {currentUrl ? "Change photo" : "Add photo"}
         </Button>
         {currentUrl && (
@@ -147,13 +174,59 @@ export function AvatarUploader({
 
       {error && <p className="text-sm text-red-400">{error}</p>}
 
+      {/* Source chooser */}
+      {step === "choose" && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setStep(null)}>
+          <div className="w-full max-w-sm portal-card p-5" onClick={(e) => e.stopPropagation()}>
+            <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.12em] text-accent">Change your photo</h3>
+            <div className="flex flex-col gap-3">
+              <Button type="button" size="sm" onClick={() => { setStep(null); fileInputRef.current?.click(); }}>
+                Upload a photo
+              </Button>
+              <Button type="button" variant="secondary" size="sm" onClick={() => setStep("tagged")}>
+                From tagged photos
+              </Button>
+              <button type="button" onClick={() => setStep(null)} className="mt-1 text-xs uppercase tracking-[0.12em] text-text-subtle hover:text-accent">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tagged-photo picker */}
+      {step === "tagged" && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setStep(null)}>
+          <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto border border-border bg-bg-overlay p-5" onClick={(e) => e.stopPropagation()}>
+            <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.12em] text-accent">Pick a tagged photo</h3>
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+              {taggedPhotos.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  disabled={status === "saving"}
+                  onClick={() => useTaggedPhoto(p.url)}
+                  className="group relative aspect-square overflow-hidden rounded-sm border border-border bg-bg transition-colors hover:border-accent disabled:opacity-50"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={p.url} alt="" className="h-full w-full object-cover" loading="lazy" />
+                </button>
+              ))}
+            </div>
+            <div className="mt-5 flex justify-end gap-3">
+              <Button type="button" variant="secondary" size="sm" onClick={() => setStep("choose")}>
+                Back
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Crop editor (shown after picking a file) */}
       {imageSrc && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="w-full max-w-md border border-border-strong bg-bg-elevated p-5">
-            <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.12em] text-accent">
-              Position your photo
-            </h3>
+          <div className="w-full max-w-md portal-card p-5">
+            <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.12em] text-accent">Position your photo</h3>
 
             <div className="relative h-72 w-full overflow-hidden bg-bg">
               <Cropper
@@ -161,7 +234,7 @@ export function AvatarUploader({
                 crop={crop}
                 zoom={zoom}
                 aspect={1}
-                cropShape="round"
+                cropShape="rect"
                 showGrid={false}
                 onCropChange={setCrop}
                 onZoomChange={setZoom}
@@ -170,9 +243,7 @@ export function AvatarUploader({
             </div>
 
             <label className="mt-4 block">
-              <span className="mb-1 block text-xs uppercase tracking-[0.12em] text-text-muted">
-                Zoom
-              </span>
+              <span className="mb-1 block text-xs uppercase tracking-[0.12em] text-text-muted">Zoom</span>
               <input
                 type="range"
                 min={1}
@@ -185,23 +256,10 @@ export function AvatarUploader({
             </label>
 
             <div className="mt-5 flex gap-3">
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                className="flex-1"
-                onClick={cancelCrop}
-                disabled={status === "saving"}
-              >
+              <Button type="button" variant="secondary" size="sm" className="flex-1" onClick={cancelCrop} disabled={status === "saving"}>
                 Cancel
               </Button>
-              <Button
-                type="button"
-                size="sm"
-                className="flex-1"
-                onClick={saveCrop}
-                disabled={status === "saving"}
-              >
+              <Button type="button" size="sm" className="flex-1" onClick={saveCrop} disabled={status === "saving"}>
                 {status === "saving" ? "Uploading…" : "Save"}
               </Button>
             </div>

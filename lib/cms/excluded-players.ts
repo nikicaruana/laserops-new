@@ -11,7 +11,7 @@ import { CMS_REVALIDATE_SECONDS, CMS_URLS } from "./client";
  *   - Homepage Season Leaders (components/home/SeasonLeadersSection.tsx)
  *
  * NOT applied to general leaderboards (all-time XP, all-time scores,
- * etc.) — owners and other excluded players still show on those for
+ * etc.) – owners and other excluded players still show on those for
  * pride and visibility. The naming "prize-ineligible" rather than
  * "hidden" / "banned" reflects this product semantic.
  *

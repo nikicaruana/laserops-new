@@ -3,7 +3,7 @@ import { getPeriodRowsFromSupabase } from "@/lib/leaderboards/supabase-period";
 import { MatchRoundWinsLeaderboardTable } from "@/components/portal/tables/MatchRoundWinsLeaderboardTable";
 
 /**
- * MatchRoundWinsLeaderboard — server-side wrapper.
+ * MatchRoundWinsLeaderboard – server-side wrapper.
  *
  * Reads monthly period rows from Supabase (leaderboard_period_stats) and
  * hands them to the client component, which owns:

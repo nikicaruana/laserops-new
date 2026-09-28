@@ -28,7 +28,7 @@ type ChallengeRaw = Record<string, string> & {
  *     player, sum the metric across all months in the season window.
  *   - period_max: pull from Leaderboard_Period_Stats, group by player,
  *     take the highest single-month value of the metric.
- *   - match_top: pull from Game_Data_Lookup_PUBLIC, do not aggregate —
+ *   - match_top: pull from Game_Data_Lookup_PUBLIC, do not aggregate –
  *     return raw rows ordered by metric. A single player can appear
  *     multiple times for different matches.
  *   - gun_threshold_count: pull from Game_Data_Lookup_PUBLIC, scope to the
@@ -51,7 +51,7 @@ export type Challenge = {
   description: string;
   prize: string;
   /**
-   * Display priority — tie-break order when a player wins multiple
+   * Display priority – tie-break order when a player wins multiple
    * challenges and there's a "one prize per player" rule. Lower number
    * = higher priority.
    */

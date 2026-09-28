@@ -32,7 +32,7 @@ export function LevelCard({
   levelProgressPct,
 }: LevelCardProps) {
   return (
-    <div className="flex flex-col gap-4 border border-border bg-bg-elevated p-4 sm:gap-5 sm:p-6">
+    <div className="flex flex-col gap-4 portal-card p-4 sm:gap-5 sm:p-6">
       {/* Row 1: badge + level display */}
       <div className="flex items-center justify-center gap-4">
         {rankBadgeUrl !== "" && (

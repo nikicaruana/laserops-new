@@ -14,7 +14,7 @@ import { useEffect, useRef, useState } from "react";
  *   "21.3%"    decimal percentage       → "0.0%" → "21.3%"
  *   "2.15"     decimal                  → "0.00" → "2.15"
  *
- * Duration: 1400 ms with cubic ease-out — matches the rating pill animation
+ * Duration: 1400 ms with cubic ease-out – matches the rating pill animation
  * so they finish together on screen.
  *
  * Non-numeric strings ("N/A", plain text) are rendered statically.
@@ -73,7 +73,7 @@ type Props = {
 };
 
 export function AnimatedValue({ value, className }: Props) {
-  // Start with the final value — safe for SSR and no-JS users.
+  // Start with the final value – safe for SSR and no-JS users.
   const [displayed, setDisplayed] = useState(value);
 
   const spanRef    = useRef<HTMLSpanElement>(null);
@@ -86,7 +86,7 @@ export function AnimatedValue({ value, className }: Props) {
     setDisplayed(parsed && parsed.num > 0 ? makeZero(parsed) : value);
   }, [value]);
 
-  // IntersectionObserver — trigger count-up on first view.
+  // IntersectionObserver – trigger count-up on first view.
   useEffect(() => {
     const parsed = parseValue(value);
     if (!parsed || parsed.num === 0) {
@@ -109,7 +109,7 @@ export function AnimatedValue({ value, className }: Props) {
         animatedRef.current = true;
         observer.disconnect();
 
-        const DURATION = 1400; // ms — matches RatingPill animation length
+        const DURATION = 1400; // ms – matches RatingPill animation length
         const startTime = performance.now();
 
         const frame = (now: number) => {

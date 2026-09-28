@@ -7,7 +7,7 @@ import { CMS_REVALIDATE_SECONDS, CMS_URLS } from "./client";
  * Loadout / weapons metadata. One row per gun.
  *
  * Lives on the DATA spreadsheet (same one as accolades, ranking system,
- * game id map) — see CMS_URLS.weapons in client.ts.
+ * game id map) – see CMS_URLS.weapons in client.ts.
  *
  * Used by /weapons (the gallery page) and potentially by the Match
  * Report's gun-used display in the future. For now only the gallery
@@ -70,7 +70,7 @@ export type Weapon = {
   magSize: number;
   damage: number;
   reloadSeconds: number;
-  /** Discriminated — see FireRate type. Use formatFireRate() to render
+  /** Discriminated – see FireRate type. Use formatFireRate() to render
    *  in the UI and compareFireRate() to determine the winner of two
    *  guns in compare mode. */
   fireRate: FireRate;
@@ -104,7 +104,7 @@ export type Weapon = {
  * in this data set.
  *
  * Exported so the usage-stats aggregator can apply the same filter
- * — both consumers must agree on what counts as a "non-gun" entry,
+ * – both consumers must agree on what counts as a "non-gun" entry,
  * otherwise the gallery and the meta chart would drift.
  */
 export function isFallbackGunName(value: string | undefined | null): boolean {
@@ -178,7 +178,7 @@ export async function fetchWeapons(): Promise<Weapon[]> {
 export function listGunTreeBranches(weapons: Weapon[]): string[] {
   const seen = new Set<string>();
   for (const w of weapons) {
-    // Same fallback filter as gun names — a stray "Unknown" tree
+    // Same fallback filter as gun names – a stray "Unknown" tree
     // in the source data shouldn't pollute the dropdown.
     if (w.treeBranch === "" || isFallbackGunName(w.treeBranch)) continue;
     seen.add(w.treeBranch);
@@ -198,7 +198,7 @@ export function listGunTreeBranches(weapons: Weapon[]): string[] {
  * Anything else falls back to {kind: "auto", rpm: 0} so the gun is
  * still rendered but loses every comparison. Empty cell → also rpm:0.
  *
- * The parser is deliberately forgiving on the semi-auto string —
+ * The parser is deliberately forgiving on the semi-auto string –
  * Niki's spreadsheet is the source of truth, and small variations
  * in how the value gets typed shouldn't break the rendering.
  */
@@ -207,26 +207,26 @@ export function parseFireRate(value: string | undefined): FireRate {
   const trimmed = value.trim();
   if (trimmed === "") return { kind: "auto", rpm: 0 };
 
-  // Semi-auto detection — checks the lowercased trimmed text against
+  // Semi-auto detection – checks the lowercased trimmed text against
   // the common spellings.
   const lower = trimmed.toLowerCase();
   if (lower === "semi auto" || lower === "semi-auto" || lower === "semi") {
     return { kind: "semi" };
   }
 
-  // Numeric — parseNumericOr handles strings like "725", "725.0",
+  // Numeric – parseNumericOr handles strings like "725", "725.0",
   // "725 rpm" (it strips trailing non-numeric). NaN → 0.
   const rpm = parseNumericOr(trimmed, 0);
   return { kind: "auto", rpm };
 }
 
 /**
- * Render a FireRate for display. Returns "—" for zero/missing,
+ * Render a FireRate for display. Returns "–" for zero/missing,
  * "Semi" for semi-auto, or the RPM number as a plain string.
  */
 export function formatFireRate(fr: FireRate): string {
   if (fr.kind === "semi") return "Semi";
-  if (fr.rpm === 0) return "—";
+  if (fr.rpm === 0) return "–";
   return Math.round(fr.rpm).toString();
 }
 
@@ -274,7 +274,7 @@ export function compareHigherWins(a: number, b: number): "a" | "b" | "tie" {
 export function compareLowerWins(a: number, b: number): "a" | "b" | "tie" {
   if (a < b && a > 0) return "a";
   if (b < a && b > 0) return "b";
-  // 0 reload is suspect — typically means missing data, not "instant
+  // 0 reload is suspect – typically means missing data, not "instant
   // reload." Treat as tie when comparing to a positive value, so a
   // missing-data gun doesn't appear to "win" reload comparisons.
   return "tie";

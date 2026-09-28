@@ -127,7 +127,7 @@ export default async function CommunityPage() {
             <CommunityStat value="Every" label="Match tracked" />
           </div>
 
-          {/* Photo strip — shown when ≥2 community-tagged photos are available. */}
+          {/* Photo strip – shown when ≥2 community-tagged photos are available. */}
           {showStrip && (
             <div
               className={`mt-10 grid gap-3 ${stripPhotos.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}
@@ -152,7 +152,7 @@ export default async function CommunityPage() {
       </section>
 
       {/* ── Open Games ───────────────────────────────────────── */}
-      <section className="border-b border-border bg-bg-elevated">
+      <section className="border-b border-border portal-surface">
         <Container size="narrow" className="py-14 sm:py-16">
           <SectionLabel>Open Games</SectionLabel>
           <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
@@ -257,7 +257,7 @@ export default async function CommunityPage() {
       </section>
 
       {/* ── ELO System ───────────────────────────────────────── */}
-      <section className="border-b border-border bg-bg-elevated">
+      <section className="border-b border-border portal-surface">
         <Container size="narrow" className="py-14 sm:py-16">
           <SectionLabel>Fair Matchmaking</SectionLabel>
           <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
@@ -267,9 +267,9 @@ export default async function CommunityPage() {
             <p className="leading-relaxed">
               One of the biggest problems with pickup laser tag games is the
               potential for lopsided teams. Nobody enjoys a 5-0 squashing, on
-              either side of it. For our open games, we use an ELO rating system —
+              either side of it. For our open games, we use an ELO rating system –
               the same kind of skill rating used in chess and competitive video
-              games — to keep matches as close as possible.
+              games – to keep matches as close as possible.
             </p>
             <p className="leading-relaxed">
               Every player has a rating that goes up when they win and down when
@@ -318,7 +318,7 @@ export default async function CommunityPage() {
       </section>
 
       {/* ── The People ───────────────────────────────────────── */}
-      <section className="border-b border-border bg-bg-elevated">
+      <section className="border-b border-border portal-surface">
         <Container size="narrow" className="py-14 sm:py-16">
           <SectionLabel>The People</SectionLabel>
           <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
@@ -380,10 +380,10 @@ export default async function CommunityPage() {
 
       {/*
        * ── Testimonials ─────────────────────────────────────────
-       * Placeholder — content to be added once decided.
+       * Placeholder – content to be added once decided.
        * Uncomment and populate this section when ready.
        *
-       * <section className="border-b border-border bg-bg-elevated">
+       * <section className="border-b border-border portal-surface">
        *   <Container size="narrow" className="py-14 sm:py-16">
        *     <SectionLabel>What Players Say</SectionLabel>
        *     <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
@@ -397,7 +397,7 @@ export default async function CommunityPage() {
        */}
 
       {/* ── FAQ ──────────────────────────────────────────────── */}
-      <section className="border-b border-border bg-bg-elevated">
+      <section className="border-b border-border portal-surface">
         <Container size="narrow" className="py-14 sm:py-16">
           <SectionLabel>FAQ</SectionLabel>
           <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
@@ -453,7 +453,7 @@ function PeopleText({ className }: { className?: string }) {
       <p className="leading-relaxed">
         Whether you&apos;re chasing the top of the leaderboard, striving to win our
         seasonal challenges, or just looking for a weekly thing to do that&apos;s
-        healthy, competitive, and above all else — serious fun, there&apos;s a spot
+        healthy, competitive, and above all else – serious fun, there&apos;s a spot
         for you.
       </p>
     </div>

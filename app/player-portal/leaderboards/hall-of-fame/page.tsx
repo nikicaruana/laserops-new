@@ -19,10 +19,10 @@ export const metadata: Metadata = {
 };
 
 /**
- * Hall of Fame — three tabbed sections:
- *   1. Season Champions — top 2 of each challenge in completed seasons
- *   2. All-Time Records — single-game bests across every match
- *   3. Weapon Masters — career master + single-game records per gun
+ * Hall of Fame – three tabbed sections:
+ *   1. Season Champions – top 2 of each challenge in completed seasons
+ *   2. All-Time Records – single-game bests across every match
+ *   3. Weapon Masters – career master + single-game records per gun
  *
  * All data is fetched server-side here (each fetch is cached at the
  * sheet layer); the tab wrapper only toggles visibility client-side.

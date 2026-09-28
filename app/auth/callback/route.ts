@@ -21,7 +21,7 @@ export async function GET(request: Request) {
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
   const rawNext = searchParams.get("next") ?? "/player-portal";
-  // Only ever redirect within the app — reject absolute or protocol-relative
+  // Only ever redirect within the app – reject absolute or protocol-relative
   // ("//evil.com") targets to avoid an open redirect.
   const next =
     rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/player-portal";
@@ -33,7 +33,7 @@ export async function GET(request: Request) {
   const supabase = await createClient();
 
   // New / unfinished accounts (no callsign yet) go to onboarding first.
-  // Password-recovery links must NOT be diverted — they need to reach the
+  // Password-recovery links must NOT be diverted – they need to reach the
   // reset-password page. Otherwise: incomplete accounts are forced through
   // onboarding/waiver; complete accounts honor an explicit `next` (e.g.
   // returning to /profile after linking Google), defaulting to their summary.

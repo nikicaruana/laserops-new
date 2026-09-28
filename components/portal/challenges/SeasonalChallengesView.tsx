@@ -11,7 +11,7 @@ import type { ChallengeWithEntries } from "@/lib/leaderboards/season-challenges"
  *
  * If a future season has no challenges defined, the empty array is
  * passed and the section renders an empty state. We don't hide the page
- * entirely — it'd be confusing for users who navigated to /challenges
+ * entirely – it'd be confusing for users who navigated to /challenges
  * to see nothing at all.
  */
 
@@ -44,13 +44,13 @@ export function SeasonalChallengesView({
 
   const dateRange = formatSeasonRange(season.startYearMonth, season.endYearMonth);
   // A completed season only reaches this view as the "between seasons"
-  // fallback (no season is currently active) — so present it as final
+  // fallback (no season is currently active) – so present it as final
   // standings, not as a live leaderboard.
   const isConcluded = season.status === "completed";
 
   return (
     <div className="flex flex-col gap-6 sm:gap-8">
-      {/* Season header — just the name + date range. The "Seasonal
+      {/* Season header – just the name + date range. The "Seasonal
           Challenges" title comes from the page header (DashboardPageHeader)
           to avoid duplication. Season name uses the brand accent yellow
           to make the active season stand out within the page. */}

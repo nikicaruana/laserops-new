@@ -30,7 +30,7 @@ import { cn } from "@/lib/cn";
  *   - default (Round Wins etc.): rank | photo | Ops Tag | metric
  */
 
-type Variant = "xp" | "match_top" | "default";
+type Variant = "xp" | "match_top" | "guns" | "default";
 
 type Props = {
   entries: ChallengeEntry[];
@@ -82,7 +82,7 @@ export function ChallengeLeaderboardTable({
         sortable: true,
         sortType: "string",
         accessor: (row) => row.nickname,
-        // minmax(0, 1fr) — see XPLevels table for why this matters.
+        // minmax(0, 1fr) – see XPLevels table for why this matters.
         // Bare 1fr would force long unbreakable nicknames to push the
         // grid out of alignment.
         width: "minmax(0, 1fr)",
@@ -120,7 +120,7 @@ export function ChallengeLeaderboardTable({
         accessor: (row) => row.level,
         width: "22px",
         widthSm: "56px",
-        cell: (row) => (row.level > 0 ? row.level : "—"),
+        cell: (row) => (row.level > 0 ? row.level : "–"),
       });
     }
 
@@ -136,23 +136,38 @@ export function ChallengeLeaderboardTable({
         widthSm: "120px",
         cell: (row) => (
           <span className="block text-center font-mono text-[0.65rem] tabular-nums text-text-muted sm:text-xs">
-            {row.matchId ?? "—"}
+            {row.matchId ?? "–"}
           </span>
         ),
       });
     }
 
-    cols.push({
-      key: "metric",
-      header: headerLabel,
-      align: "right",
-      sortable: true,
-      numeric: true,
-      accessor: (row) => row.metricValue,
-      width: "64px",
-      widthSm: "110px",
-      cell: (row) => row.metricValue.toLocaleString("en-US"),
-    });
+    if (variant === "guns") {
+      // The gun names the player cleared the threshold with, not a bare count.
+      cols.push({
+        key: "guns",
+        header: headerLabel,
+        align: "left",
+        sortable: true,
+        sortType: "number",
+        accessor: (row) => row.metricValue,
+        width: "minmax(120px, 1.7fr)",
+        widthSm: "minmax(180px, 1.7fr)",
+        cell: (row) => <GunList guns={row.qualifyingGuns ?? []} count={row.metricValue} />,
+      });
+    } else {
+      cols.push({
+        key: "metric",
+        header: headerLabel,
+        align: "right",
+        sortable: true,
+        numeric: true,
+        accessor: (row) => row.metricValue,
+        width: "64px",
+        widthSm: "110px",
+        cell: (row) => row.metricValue.toLocaleString("en-US"),
+      });
+    }
 
     return cols;
   }, [variant, headerLabel]);
@@ -169,7 +184,7 @@ export function ChallengeLeaderboardTable({
       isTopRank={(_row, idx, isDefaultSort) => isDefaultSort && idx === 0}
       // Tap any row → navigate to that player's summary. Same pattern
       // as the all-time leaderboards. For match_top entries, multiple
-      // rows can lead to the same player's summary — that's correct
+      // rows can lead to the same player's summary – that's correct
       // (each row IS a different performance by potentially the same
       // player, but the summary shows their overall stats).
       rowHref={(row) =>
@@ -182,12 +197,37 @@ export function ChallengeLeaderboardTable({
   );
 }
 
+/* ---------- Gun list cell ---------- */
+
+/**
+ * Renders the guns a player cleared the threshold with as small chips (best
+ * gun first). Falls back to the numeric count if, for any reason, names are
+ * missing.
+ */
+function GunList({ guns, count }: { guns: string[]; count: number }) {
+  if (guns.length === 0) {
+    return <span className="text-xs text-text-muted sm:text-sm">{count}</span>;
+  }
+  return (
+    <span className="flex flex-wrap gap-1">
+      {guns.map((g) => (
+        <span
+          key={g}
+          className="rounded-sm bg-bg-overlay px-1.5 py-0.5 text-[0.6rem] font-semibold uppercase tracking-[0.04em] text-text-muted sm:text-[0.7rem]"
+        >
+          {g}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 /* ---------- Rank number component ---------- */
 
 /**
  * Renders the row's rank as #01, #02 with prize-winner emphasis.
  * For challenge tables we use isPrizeWinning instead of always
- * coloring the top 3 — only those who actually win prizes get the
+ * coloring the top 3 – only those who actually win prizes get the
  * accent-yellow.
  */
 function RankNumber({ rank }: { rank: number }) {

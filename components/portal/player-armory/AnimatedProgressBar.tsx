@@ -21,7 +21,7 @@ import { useEffect, useRef, useState } from "react";
  *
  * Used by both ArmoryCard (where `play` follows IntersectionObserver
  * inView) and ArmoryDetailDialog (where `play` follows the dialog's
- * open state — it's true whenever the dialog is mounted).
+ * open state – it's true whenever the dialog is mounted).
  */
 
 type Props = {
@@ -31,7 +31,7 @@ type Props = {
   play: boolean;
   /** Bar height + colour overrides. Defaults match the card style. */
   className?: string;
-  /** Track background class — defaults to `bg-bg`. */
+  /** Track background class – defaults to `bg-bg`. */
   trackClassName?: string;
 };
 

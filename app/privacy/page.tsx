@@ -36,7 +36,7 @@ export default function PrivacyPage() {
       </section>
 
       {/* ── What We Collect ──────────────────────────────────── */}
-      <section className="border-b border-border bg-bg-elevated">
+      <section className="border-b border-border portal-surface">
         <Container size="narrow" className="py-14 sm:py-16">
           <SectionLabel>Data We Collect</SectionLabel>
           <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
@@ -46,7 +46,7 @@ export default function PrivacyPage() {
             <p className="leading-relaxed">
               <strong className="font-semibold text-text">Usage data.</strong>{" "}
               If you accept analytics cookies, Google Analytics 4 collects
-              anonymised information about how you use the site — pages visited,
+              anonymised information about how you use the site – pages visited,
               time on page, general device type, and approximate location at
               country level. This data contains no personally identifiable
               information and is used solely to help us improve the site.
@@ -56,7 +56,7 @@ export default function PrivacyPage() {
                 Enquiry and booking submissions.
               </strong>{" "}
               When you submit a contact or booking form, we collect the
-              information you provide — typically your name, email address,
+              information you provide – typically your name, email address,
               phone number, and message. This is used only to respond to your
               enquiry.
             </p>
@@ -107,7 +107,7 @@ export default function PrivacyPage() {
       </section>
 
       {/* ── Your Rights ──────────────────────────────────────── */}
-      <section className="border-b border-border bg-bg-elevated">
+      <section className="border-b border-border portal-surface">
         <Container size="narrow" className="py-14 sm:py-16">
           <SectionLabel>GDPR Rights</SectionLabel>
           <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
@@ -119,7 +119,7 @@ export default function PrivacyPage() {
               personal data we hold about you, request that it be corrected or
               deleted, restrict or object to how we process it, and receive it
               in a portable format. You also have the right to withdraw consent
-              at any time — this does not affect the lawfulness of processing
+              at any time – this does not affect the lawfulness of processing
               carried out before withdrawal.
             </p>
             <p className="leading-relaxed">

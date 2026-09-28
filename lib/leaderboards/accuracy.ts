@@ -9,7 +9,7 @@
  *
  * Why sums-then-divide (not averaging per-month accuracies):
  * accuracy is a ratio. Averaging the ratios would weight a 5-shot
- * month equally to a 500-shot month — inflating or deflating the
+ * month equally to a 500-shot month – inflating or deflating the
  * "real" accuracy depending on which months were lighter. Summing
  * hits and shots first and dividing once gives the player's true
  * career accuracy across the window.
@@ -17,7 +17,7 @@
  * Sort: primary by Accuracy desc, tiebreak by Total Shots desc
  * (more volume → more confidence in the rate), then alphabetical.
  *
- * Players with zero shots in the window are excluded — accuracy is
+ * Players with zero shots in the window are excluded – accuracy is
  * undefined and they shouldn't rank. There's no minimum-shots
  * threshold by default; if noise from very-low-volume players
  * (e.g. 1 hit / 1 shot = 100%) becomes a problem, set MIN_SHOTS

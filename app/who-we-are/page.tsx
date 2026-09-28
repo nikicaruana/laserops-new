@@ -37,7 +37,7 @@ export default function WhoWeArePage() {
       </section>
 
       {/* ── Taking Laser Tag To The Next Level ───────────────── */}
-      <section className="border-b border-border bg-bg-elevated">
+      <section className="border-b border-border portal-surface">
         <Container size="narrow" className="py-14 sm:py-16">
           <SectionLabel>Our Mission</SectionLabel>
           <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">

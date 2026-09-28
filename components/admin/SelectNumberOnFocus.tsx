@@ -21,7 +21,7 @@ export function SelectNumberOnFocus() {
           try {
             t.select();
           } catch {
-            /* some browsers dislike select() on number inputs — ignore */
+            /* some browsers dislike select() on number inputs – ignore */
           }
         });
       }

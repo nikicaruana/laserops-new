@@ -83,10 +83,10 @@ export async function fetchSeasons(): Promise<Season[]> {
  *
  * Priority:
  *   1. The first row with Status === "active". (If multiple, the lowest
- *      Season_Number wins — but you should aim to keep exactly one.)
+ *      Season_Number wins – but you should aim to keep exactly one.)
  *   2. If none active, the most recent "completed" season (acts as Hall
  *      of Fame between seasons).
- *   3. If still nothing, undefined — caller decides whether to hide the
+ *   3. If still nothing, undefined – caller decides whether to hide the
  *      section or show an empty state.
  */
 export function getActiveSeason(seasons: Season[]): Season | undefined {

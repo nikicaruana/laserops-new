@@ -248,7 +248,7 @@ export function GameSignupControl({
         </div>
       ) : null;
     const refundNote = (
-      <p className={`max-w-xs text-[0.65rem] leading-relaxed text-text-subtle ${align === "center" ? "text-center" : "sm:text-right"}`}>
+      <p className={`max-w-xs sm:max-w-md text-[0.65rem] leading-relaxed text-text-subtle ${align === "center" ? "text-center" : "sm:text-right"}`}>
         {REFUND_POLICY}
       </p>
     );

@@ -6,6 +6,7 @@
  */
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { BadgePreview } from "@/components/admin/BadgePreview";
 
 export const metadata = { title: "Streaks" };
 
@@ -71,8 +72,7 @@ export default async function AdminStreaksPage() {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       {s.badge_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={s.badge_url} alt="" className="h-9 w-9 shrink-0 object-contain" />
+                        <BadgePreview src={s.badge_url} alt={s.name ?? "Streak badge"} className="h-9 w-9" />
                       ) : (
                         <div className="h-9 w-9 shrink-0 border border-dashed border-border" />
                       )}
@@ -80,7 +80,7 @@ export default async function AdminStreaksPage() {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-text-muted">{s.description}</td>
-                  <td className="px-4 py-3 text-center font-mono tabular-nums text-text-muted">{s.tier ?? "—"}</td>
+                  <td className="px-4 py-3 text-center font-mono tabular-nums text-text-muted">{s.tier ?? "–"}</td>
                   <td className="px-4 py-3 text-right font-mono tabular-nums text-text">{s.points ?? 0}</td>
                   <td className="px-4 py-3 text-center">
                     {s.is_active ? <span className="text-accent">●</span> : <span className="text-text-subtle/50">○</span>}

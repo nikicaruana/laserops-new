@@ -15,7 +15,7 @@ const STYLES: Record<string, string> = {
 
 const LABELS: Record<string, string> = {
   tentative: "Tentative",
-  awaiting_confirm: "Awaiting OK",
+  awaiting_confirm: "Awaiting LaserOps Confirmation",
   confirmed: "Confirmed",
   live: "Live",
   completed: "Completed",

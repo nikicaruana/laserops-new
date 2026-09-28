@@ -40,7 +40,7 @@ export default async function OpenGamesPage() {
   /* ── JSON-LD Event schema (Google rich results) ─────────────────────
      One schema.org/Event per upcoming game so Google can show a rich
      result with date, location, and event status in search.
-     Only emit non-cancelled events — no point indexing cancelled games. */
+     Only emit non-cancelled events – no point indexing cancelled games. */
   const upcomingForSchema = games.filter(
     (g) => g.status.toLowerCase() !== "cancelled",
   );
@@ -67,7 +67,7 @@ export default async function OpenGamesPage() {
               position: i + 1,
               item: {
                 "@type": "Event",
-                name: `LaserOps Open Game${g.type ? ` — ${g.type}` : ""}`,
+                name: `LaserOps Open Game${g.type ? ` – ${g.type}` : ""}`,
                 startDate,
                 eventStatus,
                 eventAttendanceMode:
@@ -202,7 +202,7 @@ export default async function OpenGamesPage() {
       </section>
 
       {/* ── CTA ──────────────────────────────────────────────────────── */}
-      <section className="border-b border-border bg-bg-elevated">
+      <section className="border-b border-border portal-surface">
         <Container size="narrow" className="py-14 sm:py-16">
           <SectionLabel>Private Bookings</SectionLabel>
           <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">

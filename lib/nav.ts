@@ -6,9 +6,9 @@
 export type NavChild = {
   label: string;
   href: string;
-  /** Render in brand yellow — same semantics as NavLink.highlight. */
+  /** Render in brand yellow – same semantics as NavLink.highlight. */
   highlight?: boolean;
-  /** Render in muted red — same semantics as NavLink.redHighlight. */
+  /** Render in muted red – same semantics as NavLink.redHighlight. */
   redHighlight?: boolean;
 };
 
@@ -17,11 +17,11 @@ export type NavLink = {
   href: string;
   /** Excluded from main nav, but still tracked here for routing/sitemap purposes */
   hidden?: boolean;
-  /** Render in brand yellow to draw attention. Use sparingly — at most one. */
+  /** Render in brand yellow to draw attention. Use sparingly – at most one. */
   highlight?: boolean;
   /** Render in muted red (red-800). Mirrors the "Level X ▶ Y" red used
    *  on the Match Report XP card so the nav and the feature share a
-   *  visual tie. Mutually exclusive with `highlight` — don't set both. */
+   *  visual tie. Mutually exclusive with `highlight` – don't set both. */
   redHighlight?: boolean;
   /** Optional dropdown children shown on desktop hover and mobile accordion. */
   children?: NavChild[];
@@ -45,7 +45,6 @@ export const primaryNav: NavLink[] = [
       { label: "Birthday Parties", href: "/birthday-parties" },
     ],
   },
-  { label: "Community", href: "/community" },
   { label: "Gallery", href: "/gallery" },
   {
     label: "Player Portal",
@@ -53,7 +52,9 @@ export const primaryNav: NavLink[] = [
     highlight: true,
     mobileExpand: true,
     children: [
-      { label: "Upcoming Games", href: "/player-portal/games", highlight: true },
+      { label: "Game Portal", href: "/player-portal/games", highlight: true },
+      { label: "Squads", href: "/player-portal/squads", highlight: true },
+      { label: "Ladders", href: "/player-portal/ladders", highlight: true },
       { label: "Leaderboards", href: "/player-portal/leaderboards", highlight: true },
       { label: "Player Stats", href: "/player-portal/player-stats", highlight: true },
       { label: "Match Report", href: "/match-report", redHighlight: true },
@@ -65,10 +66,12 @@ export const primaryNav: NavLink[] = [
     children: [
       { label: "Outdoor Laser Tag", href: "/outdoor-laser-tag-malta" },
       { label: "Who We Are", href: "/who-we-are" },
+      { label: "Community", href: "/community" },
       { label: "FAQs", href: "/faqs" },
       { label: "Contact", href: "/contact" },
     ],
   },
+  { label: "Store", href: "/player-portal/store" },
 ];
 
 export const utilityNav: NavLink[] = [

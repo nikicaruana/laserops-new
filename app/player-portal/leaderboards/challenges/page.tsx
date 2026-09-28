@@ -23,14 +23,14 @@ export const metadata: Metadata = {
  *   4. Hand to the view
  *
  * If any step yields nothing (no seasons, no challenges, no data), the
- * view shows an appropriate empty state — the page never blank-screens.
+ * view shows an appropriate empty state – the page never blank-screens.
  */
 export default async function ChallengesLeaderboardPage() {
   const supabase = await createClient();
   const seasons = await getSeasonsFromSupabase(supabase);
   const activeSeason = getActiveSeason(seasons);
 
-  // Soonest upcoming season (by number — robust to date-entry typos). Used to
+  // Soonest upcoming season (by number – robust to date-entry typos). Used to
   // tell users what's next when the shown season has already concluded (the
   // gap between an ended season and the next one going active).
   const nextSeason = [...seasons]

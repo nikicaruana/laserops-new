@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
  * BracketFrame
  * --------------------------------------------------------------------
  * Yellow corner-bracket frame used to highlight key visual content in
- * the player portal — profile photos, weapon images, hero images. It's
+ * the player portal – profile photos, weapon images, hero images. It's
  * the project's standard "tactical highlight" treatment.
  *
  * Visually: four L-shaped yellow brackets at the corners of the content,
@@ -37,7 +37,7 @@ export function BracketFrame({
   return (
     <div className={cn("relative inline-block align-top", className)}>
       {children}
-      {/* Bracket overlay — pointer-events-none so it doesn't interfere with
+      {/* Bracket overlay – pointer-events-none so it doesn't interfere with
           interactive content beneath. inset shifts the brackets slightly
           outside the frame for a more deliberate "marker" feel. */}
       <span

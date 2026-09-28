@@ -6,18 +6,18 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/cn";
 
 /**
- * SubTabs — second-level Player Portal navigation.
+ * SubTabs – second-level Player Portal navigation.
  *
  * Visual treatment: pill-style. Active tab gets a yellow border + yellow
  * text on a slightly elevated dark fill. Inactive tabs are muted text only.
  * This is deliberately distinct from PortalTabs (underline + text color)
  * so the two navigation levels don't read as the same control.
  *
- * Layout: matches PortalTabs — left-aligned on mobile, centered at sm+.
+ * Layout: matches PortalTabs – left-aligned on mobile, centered at sm+.
  * Mobile keeps overflow-x-auto as a safety net if labels ever grow.
  *
  * --------------------------------------------------------------------
- * forwardParams — carrying state across subtab navigation
+ * forwardParams – carrying state across subtab navigation
  *
  * Some subtab groups want to keep a piece of URL state when the user
  * jumps from one subtab to another. The Player Stats group is the
@@ -27,7 +27,7 @@ import { cn } from "@/lib/cn";
  * Pass `forwardParams` with the query keys that should ride along
  * (e.g. `["ops"]`). For each tab href that doesn't already specify
  * those keys, we read them off the current URL and append them. Keys
- * not present in the current URL are skipped — we don't invent
+ * not present in the current URL are skipped – we don't invent
  * empty values.
  *
  * The "doesn't already specify" check matters: a tab definition can
@@ -45,7 +45,7 @@ import { cn } from "@/lib/cn";
  * We isolate the search-params read into an inner client component
  * (`SubTabsInner`), wrap that in <Suspense>, and let the fallback
  * render with an empty search params object. The fallback's tab
- * hrefs end up as the original hrefs (no forwarded params) — which
+ * hrefs end up as the original hrefs (no forwarded params) – which
  * is the only correct thing to render during static prerender
  * anyway, since the URL's query string isn't known at build time.
  *
@@ -54,7 +54,7 @@ import { cn } from "@/lib/cn";
  * happens before the user can click anything, so the "real" tab
  * hrefs are always correct at the moment of interaction.
  *
- * Affects every page that renders SubTabs — so this layer fixes
+ * Affects every page that renders SubTabs – so this layer fixes
  * leaderboards, player-stats, and any future portal subtab nav at
  * once. Without this, the build error is:
  *   "useSearchParams() should be wrapped in a suspense boundary at
@@ -73,7 +73,7 @@ type SubTabsProps = {
    * Names of query params on the current URL that should be appended
    * to each tab's href when navigating. Use for state that's
    * "about which entity I'm looking at" rather than "about how this
-   * page is configured" — the former should follow you across tabs;
+   * page is configured" – the former should follow you across tabs;
    * the latter shouldn't.
    *
    * Example: `forwardParams={["ops"]}` on the Player Stats subtabs
@@ -85,7 +85,7 @@ type SubTabsProps = {
 export function SubTabs(props: SubTabsProps) {
   // Wrap the inner component (which calls useSearchParams) in a
   // Suspense boundary. The fallback renders the same chrome with
-  // an empty search params object — visually identical except tab
+  // an empty search params object – visually identical except tab
   // hrefs don't include forwarded params (which is correct for the
   // static-prerender HTML anyway, since the URL isn't known at
   // build time).
@@ -96,12 +96,12 @@ export function SubTabs(props: SubTabsProps) {
   );
 }
 
-/** Module-scope empty URLSearchParams instance — reused across renders
+/** Module-scope empty URLSearchParams instance – reused across renders
  *  for the Suspense fallback, no allocation per render. */
 const EMPTY_PARAMS = new URLSearchParams();
 
 /**
- * Inner component — does the search-params read. Isolated here so
+ * Inner component – does the search-params read. Isolated here so
  * the CSR-bailout-triggering hook lives behind the Suspense boundary
  * declared by the public SubTabs component.
  */
@@ -114,9 +114,9 @@ function SubTabsInner(props: SubTabsProps) {
 }
 
 /**
- * Visual shell — pure render given the props plus a search params
+ * Visual shell – pure render given the props plus a search params
  * object. Doesn't call any hook that would trigger CSR bailout.
- * usePathname() is fine here (it's allowed during prerender — Next
+ * usePathname() is fine here (it's allowed during prerender – Next
  * knows the pathname at build time for each route).
  */
 function SubTabsShell({
@@ -127,7 +127,7 @@ function SubTabsShell({
   const pathname = usePathname();
 
   return (
-    <div className="border-b border-border bg-bg-elevated/40">
+    <div className="border-b border-border portal-surface">
       <div className="mx-auto w-full max-w-[90rem] px-4 sm:px-8 lg:px-12">
         {/* overflow-x-auto with hidden scrollbars for the mobile fallback
             if labels grow. Whitespace-nowrap keeps each pill on one line.
@@ -168,7 +168,7 @@ function SubTabsShell({
 }
 
 // Minimal type alias for the read-only flavour returned by
-// useSearchParams — same shape we need (just `.get()` and `.has()`).
+// useSearchParams – same shape we need (just `.get()` and `.has()`).
 type ReadonlyURLSearchParams = {
   get: (key: string) => string | null;
   has: (key: string) => boolean;

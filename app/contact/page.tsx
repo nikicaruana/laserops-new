@@ -22,7 +22,7 @@ function ContactCard({
 }) {
   return (
     <div className="flex items-start gap-4">
-      <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center border border-border bg-bg-elevated text-accent">
+      <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center portal-card text-accent">
         {icon}
       </div>
       <div>
@@ -52,7 +52,7 @@ function SocialLink({
       target="_blank"
       rel="noopener noreferrer"
       aria-label={label}
-      className="flex h-10 w-10 items-center justify-center border border-border bg-bg-elevated text-text-muted transition-colors hover:border-accent hover:text-accent"
+      className="flex h-10 w-10 items-center justify-center portal-card text-text-muted transition-colors hover:border-accent hover:text-accent"
     >
       {icon}
     </a>
@@ -107,7 +107,7 @@ export default function ContactPage() {
             Get in Touch
           </h1>
           <p className="mt-5 text-base leading-relaxed text-text-muted sm:text-lg">
-            Questions about booking, group sizes, or anything else — drop us a
+            Questions about booking, group sizes, or anything else – drop us a
             message and we&apos;ll get back to you within 24 hours. For the
             fastest response, WhatsApp works best.
           </p>
@@ -115,7 +115,7 @@ export default function ContactPage() {
       </section>
 
       {/* ── Contact details ──────────────────────────────────── */}
-      <section className="border-b border-border bg-bg-elevated">
+      <section className="border-b border-border portal-surface">
         <Container size="narrow" className="py-14 sm:py-16">
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             <ContactCard icon={PhoneIcon} label="Phone / WhatsApp">
@@ -185,7 +185,7 @@ export default function ContactPage() {
             <a href="/booking" className="text-accent hover:underline">
               booking form
             </a>{" "}
-            instead — it captures the details we need to get things set up.
+            instead – it captures the details we need to get things set up.
           </p>
           <div className="mt-8">
             <ContactForm />

@@ -8,7 +8,7 @@
  *   score      = ceil( Σ groupValue )
  *
  * A block is just { stat, weight }; whether it's additive or a multiplier is
- * decided by which list it sits in — moving it between the two changes its
+ * decided by which list it sits in – moving it between the two changes its
  * role. Pure + dependency-free so both the admin preview and the (future)
  * ingestion engine compute identically from the same stored structure.
  */
@@ -95,7 +95,7 @@ export function defaultFormula(): ScoreFormula {
   };
 }
 
-/** Defensive parse — falls back to the default if the stored JSON is unusable. */
+/** Defensive parse – falls back to the default if the stored JSON is unusable. */
 export function parseFormula(raw: unknown): ScoreFormula {
   if (
     raw &&

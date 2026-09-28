@@ -1,0 +1,2063 @@
+{
+  "matchId": "LO-2026-27",
+  "label": "LO-2026-27 · 5v5 Online Domination",
+  "date": "2026.09.05 03:09:17",
+  "roundCount": 5,
+  "rounds": [
+    {
+      "index": 1,
+      "winnerTeam": "Yellow",
+      "allBasesBurned": true,
+      "durationSeconds": 2100
+    },
+    {
+      "index": 2,
+      "winnerTeam": "Yellow",
+      "allBasesBurned": true,
+      "durationSeconds": 2100
+    },
+    {
+      "index": 3,
+      "winnerTeam": "Blue",
+      "allBasesBurned": true,
+      "durationSeconds": 2100
+    },
+    {
+      "index": 4,
+      "winnerTeam": "Yellow",
+      "allBasesBurned": true,
+      "durationSeconds": 2100
+    },
+    {
+      "index": 5,
+      "winnerTeam": "Blue",
+      "allBasesBurned": true,
+      "durationSeconds": 2100
+    }
+  ],
+  "teams": [
+    {
+      "colour": "Blue",
+      "name": "Alpha Impact",
+      "roundsWon": 2,
+      "playerNames": [
+        "Head 01",
+        "Head 06",
+        "Head 40",
+        "Head 42",
+        "Head 45"
+      ]
+    },
+    {
+      "colour": "Yellow",
+      "name": "Scream Shadow",
+      "roundsWon": 3,
+      "playerNames": [
+        "Head 02",
+        "Head 04",
+        "Head 37",
+        "Head 39",
+        "Head 41"
+      ]
+    }
+  ],
+  "matchWinner": "Yellow",
+  "roundsWonByTeam": {
+    "Yellow": 3,
+    "Blue": 2
+  },
+  "players": [
+    {
+      "id": 9,
+      "name": "Head 39",
+      "team": "Yellow",
+      "frags": 74,
+      "deaths": 65,
+      "kd": 1.14,
+      "accuracy": 0.149,
+      "shots": 2577,
+      "hits": 384,
+      "wounds": 406,
+      "damage": 11290,
+      "spawnKills": 0,
+      "captures": 16,
+      "recaptures": 1,
+      "excludedCaptures": 1,
+      "holdSeconds": 3365,
+      "killScore": 6946,
+      "objectiveScore": 7980,
+      "streakScore": 1750,
+      "totalScore": 16676,
+      "streaks": [
+        {
+          "key": "hold_base_3min",
+          "name": "Hold 3 min",
+          "count": 9,
+          "points": 450
+        },
+        {
+          "key": "hold_base_5min",
+          "name": "Hold 5 min",
+          "count": 3,
+          "points": 300
+        },
+        {
+          "key": "kill_streak_10",
+          "name": "10-Streak",
+          "count": 1,
+          "points": 100
+        },
+        {
+          "key": "bully",
+          "name": "Bully",
+          "count": 1,
+          "points": 100
+        },
+        {
+          "key": "kill_streak_5",
+          "name": "5-Streak",
+          "count": 2,
+          "points": 100
+        },
+        {
+          "key": "clean_sweep",
+          "name": "Clean Sweep",
+          "count": 2,
+          "points": 100
+        },
+        {
+          "key": "captures_3",
+          "name": "3 Captures",
+          "count": 4,
+          "points": 100
+        },
+        {
+          "key": "burner_1",
+          "name": "Burner",
+          "count": 2,
+          "points": 100
+        },
+        {
+          "key": "streak_ender",
+          "name": "Streak Ender",
+          "count": 2,
+          "points": 100
+        },
+        {
+          "key": "kill_streak_3",
+          "name": "3-Streak",
+          "count": 3,
+          "points": 75
+        },
+        {
+          "key": "survivor",
+          "name": "Survivor",
+          "count": 1,
+          "points": 50
+        },
+        {
+          "key": "clutch_move",
+          "name": "Clutch Move",
+          "count": 1,
+          "points": 50
+        },
+        {
+          "key": "captures_5",
+          "name": "5 Captures",
+          "count": 1,
+          "points": 50
+        },
+        {
+          "key": "ptfo",
+          "name": "PTFO",
+          "count": 1,
+          "points": 50
+        },
+        {
+          "key": "last_blood",
+          "name": "Last Blood",
+          "count": 1,
+          "points": 25
+        }
+      ],
+      "accolades": [
+        "MVP",
+        "Reaper",
+        "Kamikaze",
+        "Swiss Cheese"
+      ],
+      "killed": [
+        {
+          "name": "Head 45",
+          "count": 25
+        },
+        {
+          "name": "Head 01",
+          "count": 21
+        },
+        {
+          "name": "Head 40",
+          "count": 14
+        },
+        {
+          "name": "Head 42",
+          "count": 11
+        },
+        {
+          "name": "Head 06",
+          "count": 3
+        }
+      ],
+      "killedBy": [
+        {
+          "name": "Head 42",
+          "count": 23
+        },
+        {
+          "name": "Head 40",
+          "count": 15
+        },
+        {
+          "name": "Head 01",
+          "count": 12
+        },
+        {
+          "name": "Head 06",
+          "count": 11
+        },
+        {
+          "name": "Head 45",
+          "count": 4
+        }
+      ],
+      "nemesis": {
+        "name": "Head 42",
+        "killsAgainst": 23,
+        "killsFor": 11
+      }
+    },
+    {
+      "id": 5,
+      "name": "Head 42",
+      "team": "Blue",
+      "frags": 72,
+      "deaths": 59,
+      "kd": 1.22,
+      "accuracy": 0.197,
+      "shots": 1887,
+      "hits": 372,
+      "wounds": 385,
+      "damage": 10930,
+      "spawnKills": 0,
+      "captures": 18,
+      "recaptures": 0,
+      "excludedCaptures": 0,
+      "holdSeconds": 1985,
+      "killScore": 6866,
+      "objectiveScore": 5320,
+      "streakScore": 1800,
+      "totalScore": 13986,
+      "streaks": [
+        {
+          "key": "hold_base_3min",
+          "name": "Hold 3 min",
+          "count": 5,
+          "points": 250
+        },
+        {
+          "key": "clean_sweep",
+          "name": "Clean Sweep",
+          "count": 4,
+          "points": 200
+        },
+        {
+          "key": "clutch_move",
+          "name": "Clutch Move",
+          "count": 4,
+          "points": 200
+        },
+        {
+          "key": "burner_1",
+          "name": "Burner",
+          "count": 4,
+          "points": 200
+        },
+        {
+          "key": "grim_reaper",
+          "name": "Grim Reaper",
+          "count": 2,
+          "points": 200
+        },
+        {
+          "key": "streak_ender",
+          "name": "Streak Ender",
+          "count": 3,
+          "points": 150
+        },
+        {
+          "key": "captures_3",
+          "name": "3 Captures",
+          "count": 5,
+          "points": 125
+        },
+        {
+          "key": "kill_streak_5",
+          "name": "5-Streak",
+          "count": 2,
+          "points": 100
+        },
+        {
+          "key": "ptfo",
+          "name": "PTFO",
+          "count": 2,
+          "points": 100
+        },
+        {
+          "key": "kill_streak_10",
+          "name": "10-Streak",
+          "count": 1,
+          "points": 100
+        },
+        {
+          "key": "kill_streak_3",
+          "name": "3-Streak",
+          "count": 3,
+          "points": 75
+        },
+        {
+          "key": "captures_5",
+          "name": "5 Captures",
+          "count": 1,
+          "points": 50
+        },
+        {
+          "key": "first_blood",
+          "name": "First Blood",
+          "count": 1,
+          "points": 25
+        },
+        {
+          "key": "last_blood",
+          "name": "Last Blood",
+          "count": 1,
+          "points": 25
+        }
+      ],
+      "accolades": [],
+      "killed": [
+        {
+          "name": "Head 39",
+          "count": 23
+        },
+        {
+          "name": "Head 02",
+          "count": 15
+        },
+        {
+          "name": "Head 41",
+          "count": 15
+        },
+        {
+          "name": "Head 04",
+          "count": 12
+        },
+        {
+          "name": "Head 37",
+          "count": 7
+        }
+      ],
+      "killedBy": [
+        {
+          "name": "Head 02",
+          "count": 22
+        },
+        {
+          "name": "Head 04",
+          "count": 12
+        },
+        {
+          "name": "Head 39",
+          "count": 11
+        },
+        {
+          "name": "Head 41",
+          "count": 11
+        },
+        {
+          "name": "Head 37",
+          "count": 3
+        }
+      ],
+      "nemesis": {
+        "name": "Head 02",
+        "killsAgainst": 22,
+        "killsFor": 15
+      }
+    },
+    {
+      "id": 8,
+      "name": "Head 06",
+      "team": "Blue",
+      "frags": 51,
+      "deaths": 18,
+      "kd": 2.83,
+      "accuracy": 0.109,
+      "shots": 2259,
+      "hits": 247,
+      "wounds": 146,
+      "damage": 7175,
+      "spawnKills": 0,
+      "captures": 12,
+      "recaptures": 0,
+      "excludedCaptures": 0,
+      "holdSeconds": 2530,
+      "killScore": 5440,
+      "objectiveScore": 5960,
+      "streakScore": 1425,
+      "totalScore": 12825,
+      "streaks": [
+        {
+          "key": "kill_streak_5",
+          "name": "5-Streak",
+          "count": 6,
+          "points": 300
+        },
+        {
+          "key": "hold_base_5min",
+          "name": "Hold 5 min",
+          "count": 3,
+          "points": 300
+        },
+        {
+          "key": "hold_base_3min",
+          "name": "Hold 3 min",
+          "count": 4,
+          "points": 200
+        },
+        {
+          "key": "hold_base_10min",
+          "name": "Hold 10 min",
+          "count": 1,
+          "points": 200
+        },
+        {
+          "key": "burner_1",
+          "name": "Burner",
+          "count": 2,
+          "points": 100
+        },
+        {
+          "key": "streak_ender",
+          "name": "Streak Ender",
+          "count": 2,
+          "points": 100
+        },
+        {
+          "key": "captures_3",
+          "name": "3 Captures",
+          "count": 3,
+          "points": 75
+        },
+        {
+          "key": "kill_streak_3",
+          "name": "3-Streak",
+          "count": 2,
+          "points": 50
+        },
+        {
+          "key": "clutch_move",
+          "name": "Clutch Move",
+          "count": 1,
+          "points": 50
+        },
+        {
+          "key": "first_blood",
+          "name": "First Blood",
+          "count": 1,
+          "points": 25
+        },
+        {
+          "key": "last_blood",
+          "name": "Last Blood",
+          "count": 1,
+          "points": 25
+        }
+      ],
+      "accolades": [
+        "Tank",
+        "Apex Predator",
+        "Ghost"
+      ],
+      "killed": [
+        {
+          "name": "Head 37",
+          "count": 22
+        },
+        {
+          "name": "Head 41",
+          "count": 15
+        },
+        {
+          "name": "Head 39",
+          "count": 11
+        },
+        {
+          "name": "Head 02",
+          "count": 3
+        }
+      ],
+      "killedBy": [
+        {
+          "name": "Head 41",
+          "count": 11
+        },
+        {
+          "name": "Head 37",
+          "count": 3
+        },
+        {
+          "name": "Head 39",
+          "count": 3
+        },
+        {
+          "name": "Head 02",
+          "count": 1
+        }
+      ],
+      "nemesis": {
+        "name": "Head 41",
+        "killsAgainst": 11,
+        "killsFor": 15
+      }
+    },
+    {
+      "id": 12,
+      "name": "Head 41",
+      "team": "Yellow",
+      "frags": 74,
+      "deaths": 50,
+      "kd": 1.48,
+      "accuracy": 0.143,
+      "shots": 4341,
+      "hits": 619,
+      "wounds": 282,
+      "damage": 11720,
+      "spawnKills": 0,
+      "captures": 13,
+      "recaptures": 1,
+      "excludedCaptures": 1,
+      "holdSeconds": 1088,
+      "killScore": 7316,
+      "objectiveScore": 3201,
+      "streakScore": 1200,
+      "totalScore": 11717,
+      "streaks": [
+        {
+          "key": "kill_streak_5",
+          "name": "5-Streak",
+          "count": 5,
+          "points": 250
+        },
+        {
+          "key": "streak_ender",
+          "name": "Streak Ender",
+          "count": 5,
+          "points": 250
+        },
+        {
+          "key": "kill_streak_3",
+          "name": "3-Streak",
+          "count": 5,
+          "points": 125
+        },
+        {
+          "key": "clean_sweep",
+          "name": "Clean Sweep",
+          "count": 2,
+          "points": 100
+        },
+        {
+          "key": "hold_base_5min",
+          "name": "Hold 5 min",
+          "count": 1,
+          "points": 100
+        },
+        {
+          "key": "last_blood",
+          "name": "Last Blood",
+          "count": 2,
+          "points": 50
+        },
+        {
+          "key": "hold_base_3min",
+          "name": "Hold 3 min",
+          "count": 1,
+          "points": 50
+        },
+        {
+          "key": "clutch_move",
+          "name": "Clutch Move",
+          "count": 1,
+          "points": 50
+        },
+        {
+          "key": "captures_3",
+          "name": "3 Captures",
+          "count": 2,
+          "points": 50
+        },
+        {
+          "key": "captures_5",
+          "name": "5 Captures",
+          "count": 1,
+          "points": 50
+        },
+        {
+          "key": "ptfo",
+          "name": "PTFO",
+          "count": 1,
+          "points": 50
+        },
+        {
+          "key": "burner_1",
+          "name": "Burner",
+          "count": 1,
+          "points": 50
+        },
+        {
+          "key": "first_blood",
+          "name": "First Blood",
+          "count": 1,
+          "points": 25
+        }
+      ],
+      "accolades": [
+        "Punisher",
+        "Heavy Hitter"
+      ],
+      "killed": [
+        {
+          "name": "Head 40",
+          "count": 21
+        },
+        {
+          "name": "Head 01",
+          "count": 20
+        },
+        {
+          "name": "Head 42",
+          "count": 11
+        },
+        {
+          "name": "Head 06",
+          "count": 11
+        },
+        {
+          "name": "Head 45",
+          "count": 11
+        }
+      ],
+      "killedBy": [
+        {
+          "name": "Head 06",
+          "count": 15
+        },
+        {
+          "name": "Head 40",
+          "count": 15
+        },
+        {
+          "name": "Head 42",
+          "count": 15
+        },
+        {
+          "name": "Head 01",
+          "count": 4
+        },
+        {
+          "name": "Head 45",
+          "count": 1
+        }
+      ],
+      "nemesis": {
+        "name": "Head 06",
+        "killsAgainst": 15,
+        "killsFor": 11
+      }
+    },
+    {
+      "id": 6,
+      "name": "Head 40",
+      "team": "Blue",
+      "frags": 60,
+      "deaths": 52,
+      "kd": 1.15,
+      "accuracy": 0.085,
+      "shots": 3100,
+      "hits": 264,
+      "wounds": 357,
+      "damage": 7725,
+      "spawnKills": 0,
+      "captures": 14,
+      "recaptures": 1,
+      "excludedCaptures": 7,
+      "holdSeconds": 1371,
+      "killScore": 5262,
+      "objectiveScore": 3842,
+      "streakScore": 1525,
+      "totalScore": 10629,
+      "streaks": [
+        {
+          "key": "streak_ender",
+          "name": "Streak Ender",
+          "count": 8,
+          "points": 400
+        },
+        {
+          "key": "hold_base_5min",
+          "name": "Hold 5 min",
+          "count": 2,
+          "points": 200
+        },
+        {
+          "key": "survivor",
+          "name": "Survivor",
+          "count": 3,
+          "points": 150
+        },
+        {
+          "key": "kill_streak_3",
+          "name": "3-Streak",
+          "count": 5,
+          "points": 125
+        },
+        {
+          "key": "clutch_move",
+          "name": "Clutch Move",
+          "count": 2,
+          "points": 100
+        },
+        {
+          "key": "hold_base_3min",
+          "name": "Hold 3 min",
+          "count": 2,
+          "points": 100
+        },
+        {
+          "key": "kill_streak_5",
+          "name": "5-Streak",
+          "count": 2,
+          "points": 100
+        },
+        {
+          "key": "kill_streak_10",
+          "name": "10-Streak",
+          "count": 1,
+          "points": 100
+        },
+        {
+          "key": "captures_3",
+          "name": "3 Captures",
+          "count": 3,
+          "points": 75
+        },
+        {
+          "key": "captures_5",
+          "name": "5 Captures",
+          "count": 1,
+          "points": 50
+        },
+        {
+          "key": "clean_sweep",
+          "name": "Clean Sweep",
+          "count": 1,
+          "points": 50
+        },
+        {
+          "key": "ptfo",
+          "name": "PTFO",
+          "count": 1,
+          "points": 50
+        },
+        {
+          "key": "first_blood",
+          "name": "First Blood",
+          "count": 1,
+          "points": 25
+        }
+      ],
+      "accolades": [],
+      "killed": [
+        {
+          "name": "Head 39",
+          "count": 15
+        },
+        {
+          "name": "Head 41",
+          "count": 15
+        },
+        {
+          "name": "Head 02",
+          "count": 14
+        },
+        {
+          "name": "Head 37",
+          "count": 8
+        },
+        {
+          "name": "Head 04",
+          "count": 8
+        }
+      ],
+      "killedBy": [
+        {
+          "name": "Head 41",
+          "count": 21
+        },
+        {
+          "name": "Head 39",
+          "count": 14
+        },
+        {
+          "name": "Head 04",
+          "count": 8
+        },
+        {
+          "name": "Head 02",
+          "count": 7
+        },
+        {
+          "name": "Head 37",
+          "count": 2
+        }
+      ],
+      "nemesis": {
+        "name": "Head 41",
+        "killsAgainst": 21,
+        "killsFor": 15
+      }
+    },
+    {
+      "id": 13,
+      "name": "Head 04",
+      "team": "Yellow",
+      "frags": 38,
+      "deaths": 27,
+      "kd": 1.41,
+      "accuracy": 0.175,
+      "shots": 1964,
+      "hits": 344,
+      "wounds": 163,
+      "damage": 6550,
+      "spawnKills": 0,
+      "captures": 10,
+      "recaptures": 4,
+      "excludedCaptures": 1,
+      "holdSeconds": 2174,
+      "killScore": 3884,
+      "objectiveScore": 5298,
+      "streakScore": 1175,
+      "totalScore": 10357,
+      "streaks": [
+        {
+          "key": "hold_base_5min",
+          "name": "Hold 5 min",
+          "count": 4,
+          "points": 400
+        },
+        {
+          "key": "hold_base_3min",
+          "name": "Hold 3 min",
+          "count": 5,
+          "points": 250
+        },
+        {
+          "key": "burner_1",
+          "name": "Burner",
+          "count": 3,
+          "points": 150
+        },
+        {
+          "key": "kill_streak_3",
+          "name": "3-Streak",
+          "count": 5,
+          "points": 125
+        },
+        {
+          "key": "kill_streak_5",
+          "name": "5-Streak",
+          "count": 2,
+          "points": 100
+        },
+        {
+          "key": "captures_3",
+          "name": "3 Captures",
+          "count": 2,
+          "points": 50
+        },
+        {
+          "key": "captures_5",
+          "name": "5 Captures",
+          "count": 1,
+          "points": 50
+        },
+        {
+          "key": "streak_ender",
+          "name": "Streak Ender",
+          "count": 1,
+          "points": 50
+        }
+      ],
+      "accolades": [],
+      "killed": [
+        {
+          "name": "Head 42",
+          "count": 12
+        },
+        {
+          "name": "Head 45",
+          "count": 12
+        },
+        {
+          "name": "Head 40",
+          "count": 8
+        },
+        {
+          "name": "Head 01",
+          "count": 6
+        }
+      ],
+      "killedBy": [
+        {
+          "name": "Head 42",
+          "count": 12
+        },
+        {
+          "name": "Head 40",
+          "count": 8
+        },
+        {
+          "name": "Head 01",
+          "count": 5
+        },
+        {
+          "name": "Head 45",
+          "count": 2
+        }
+      ],
+      "nemesis": {
+        "name": "Head 42",
+        "killsAgainst": 12,
+        "killsFor": 12
+      }
+    },
+    {
+      "id": 10,
+      "name": "Head 02",
+      "team": "Yellow",
+      "frags": 55,
+      "deaths": 41,
+      "kd": 1.34,
+      "accuracy": 0.225,
+      "shots": 1206,
+      "hits": 271,
+      "wounds": 240,
+      "damage": 7950,
+      "spawnKills": 0,
+      "captures": 8,
+      "recaptures": 1,
+      "excludedCaptures": 2,
+      "holdSeconds": 742,
+      "killScore": 5258,
+      "objectiveScore": 2134,
+      "streakScore": 650,
+      "totalScore": 8042,
+      "streaks": [
+        {
+          "key": "kill_streak_5",
+          "name": "5-Streak",
+          "count": 4,
+          "points": 200
+        },
+        {
+          "key": "hold_base_3min",
+          "name": "Hold 3 min",
+          "count": 2,
+          "points": 100
+        },
+        {
+          "key": "hold_base_5min",
+          "name": "Hold 5 min",
+          "count": 1,
+          "points": 100
+        },
+        {
+          "key": "kill_streak_3",
+          "name": "3-Streak",
+          "count": 4,
+          "points": 100
+        },
+        {
+          "key": "captures_3",
+          "name": "3 Captures",
+          "count": 2,
+          "points": 50
+        },
+        {
+          "key": "survivor",
+          "name": "Survivor",
+          "count": 1,
+          "points": 50
+        },
+        {
+          "key": "clutch_move",
+          "name": "Clutch Move",
+          "count": 1,
+          "points": 50
+        }
+      ],
+      "accolades": [
+        "Eagle Eye"
+      ],
+      "killed": [
+        {
+          "name": "Head 42",
+          "count": 22
+        },
+        {
+          "name": "Head 45",
+          "count": 15
+        },
+        {
+          "name": "Head 01",
+          "count": 10
+        },
+        {
+          "name": "Head 40",
+          "count": 7
+        },
+        {
+          "name": "Head 06",
+          "count": 1
+        }
+      ],
+      "killedBy": [
+        {
+          "name": "Head 42",
+          "count": 15
+        },
+        {
+          "name": "Head 40",
+          "count": 14
+        },
+        {
+          "name": "Head 01",
+          "count": 8
+        },
+        {
+          "name": "Head 06",
+          "count": 3
+        },
+        {
+          "name": "Head 45",
+          "count": 1
+        }
+      ],
+      "nemesis": {
+        "name": "Head 42",
+        "killsAgainst": 15,
+        "killsFor": 22
+      }
+    },
+    {
+      "id": 7,
+      "name": "Head 01",
+      "team": "Blue",
+      "frags": 38,
+      "deaths": 57,
+      "kd": 0.65,
+      "accuracy": 0.085,
+      "shots": 4379,
+      "hits": 371,
+      "wounds": 380,
+      "damage": 7145,
+      "spawnKills": 1,
+      "captures": 13,
+      "recaptures": 0,
+      "excludedCaptures": 1,
+      "holdSeconds": 1450,
+      "killScore": 3518,
+      "objectiveScore": 3875,
+      "streakScore": 550,
+      "totalScore": 7943,
+      "streaks": [
+        {
+          "key": "kill_streak_3",
+          "name": "3-Streak",
+          "count": 5,
+          "points": 125
+        },
+        {
+          "key": "hold_base_5min",
+          "name": "Hold 5 min",
+          "count": 1,
+          "points": 100
+        },
+        {
+          "key": "streak_ender",
+          "name": "Streak Ender",
+          "count": 1,
+          "points": 50
+        },
+        {
+          "key": "captures_3",
+          "name": "3 Captures",
+          "count": 2,
+          "points": 50
+        },
+        {
+          "key": "captures_5",
+          "name": "5 Captures",
+          "count": 1,
+          "points": 50
+        },
+        {
+          "key": "clutch_move",
+          "name": "Clutch Move",
+          "count": 1,
+          "points": 50
+        },
+        {
+          "key": "hold_base_3min",
+          "name": "Hold 3 min",
+          "count": 1,
+          "points": 50
+        },
+        {
+          "key": "burner_1",
+          "name": "Burner",
+          "count": 1,
+          "points": 50
+        },
+        {
+          "key": "first_blood",
+          "name": "First Blood",
+          "count": 1,
+          "points": 25
+        }
+      ],
+      "accolades": [
+        "Rambo"
+      ],
+      "killed": [
+        {
+          "name": "Head 39",
+          "count": 12
+        },
+        {
+          "name": "Head 37",
+          "count": 9
+        },
+        {
+          "name": "Head 02",
+          "count": 8
+        },
+        {
+          "name": "Head 04",
+          "count": 5
+        },
+        {
+          "name": "Head 41",
+          "count": 4
+        }
+      ],
+      "killedBy": [
+        {
+          "name": "Head 39",
+          "count": 21
+        },
+        {
+          "name": "Head 41",
+          "count": 20
+        },
+        {
+          "name": "Head 02",
+          "count": 10
+        },
+        {
+          "name": "Head 04",
+          "count": 6
+        }
+      ],
+      "nemesis": {
+        "name": "Head 39",
+        "killsAgainst": 21,
+        "killsFor": 12
+      }
+    },
+    {
+      "id": 11,
+      "name": "Head 37",
+      "team": "Yellow",
+      "frags": 9,
+      "deaths": 55,
+      "kd": 0.16,
+      "accuracy": 0.06,
+      "shots": 788,
+      "hits": 47,
+      "wounds": 316,
+      "damage": 1380,
+      "spawnKills": 0,
+      "captures": 13,
+      "recaptures": 0,
+      "excludedCaptures": 0,
+      "holdSeconds": 1402,
+      "killScore": 749,
+      "objectiveScore": 3779,
+      "streakScore": 425,
+      "totalScore": 4953,
+      "streaks": [
+        {
+          "key": "hold_base_3min",
+          "name": "Hold 3 min",
+          "count": 4,
+          "points": 200
+        },
+        {
+          "key": "burner_1",
+          "name": "Burner",
+          "count": 2,
+          "points": 100
+        },
+        {
+          "key": "captures_3",
+          "name": "3 Captures",
+          "count": 3,
+          "points": 75
+        },
+        {
+          "key": "streak_ender",
+          "name": "Streak Ender",
+          "count": 1,
+          "points": 50
+        }
+      ],
+      "accolades": [
+        "Ammo Saver",
+        "Spray n Pray",
+        "Pacifist"
+      ],
+      "killed": [
+        {
+          "name": "Head 06",
+          "count": 3
+        },
+        {
+          "name": "Head 42",
+          "count": 3
+        },
+        {
+          "name": "Head 40",
+          "count": 2
+        },
+        {
+          "name": "Head 45",
+          "count": 1
+        }
+      ],
+      "killedBy": [
+        {
+          "name": "Head 06",
+          "count": 22
+        },
+        {
+          "name": "Head 01",
+          "count": 9
+        },
+        {
+          "name": "Head 45",
+          "count": 9
+        },
+        {
+          "name": "Head 40",
+          "count": 8
+        },
+        {
+          "name": "Head 42",
+          "count": 7
+        }
+      ],
+      "nemesis": {
+        "name": "Head 06",
+        "killsAgainst": 22,
+        "killsFor": 3
+      }
+    },
+    {
+      "id": 4,
+      "name": "Head 45",
+      "team": "Blue",
+      "frags": 17,
+      "deaths": 64,
+      "kd": 0.27,
+      "accuracy": 0.073,
+      "shots": 2103,
+      "hits": 153,
+      "wounds": 397,
+      "damage": 3760,
+      "spawnKills": 0,
+      "captures": 4,
+      "recaptures": 1,
+      "excludedCaptures": 0,
+      "holdSeconds": 344,
+      "killScore": 1646,
+      "objectiveScore": 1038,
+      "streakScore": 50,
+      "totalScore": 2734,
+      "streaks": [
+        {
+          "key": "kill_streak_3",
+          "name": "3-Streak",
+          "count": 2,
+          "points": 50
+        }
+      ],
+      "accolades": [],
+      "killed": [
+        {
+          "name": "Head 37",
+          "count": 9
+        },
+        {
+          "name": "Head 39",
+          "count": 4
+        },
+        {
+          "name": "Head 04",
+          "count": 2
+        },
+        {
+          "name": "Head 41",
+          "count": 1
+        },
+        {
+          "name": "Head 02",
+          "count": 1
+        }
+      ],
+      "killedBy": [
+        {
+          "name": "Head 39",
+          "count": 25
+        },
+        {
+          "name": "Head 02",
+          "count": 15
+        },
+        {
+          "name": "Head 04",
+          "count": 12
+        },
+        {
+          "name": "Head 41",
+          "count": 11
+        },
+        {
+          "name": "Head 37",
+          "count": 1
+        }
+      ],
+      "nemesis": {
+        "name": "Head 39",
+        "killsAgainst": 25,
+        "killsFor": 4
+      }
+    }
+  ],
+  "accolades": [
+    {
+      "key": "MVP",
+      "name": "MVP",
+      "winnerId": 9,
+      "winnerName": "Head 39",
+      "stat": "score",
+      "value": 16676
+    },
+    {
+      "key": "Reaper",
+      "name": "Reaper",
+      "winnerId": 9,
+      "winnerName": "Head 39",
+      "stat": "frags",
+      "value": 74
+    },
+    {
+      "key": "Kamikaze",
+      "name": "Kamikaze",
+      "winnerId": 9,
+      "winnerName": "Head 39",
+      "stat": "deaths",
+      "value": 65
+    },
+    {
+      "key": "Tank",
+      "name": "Tank",
+      "winnerId": 8,
+      "winnerName": "Head 06",
+      "stat": "deaths",
+      "value": 18
+    },
+    {
+      "key": "Rambo",
+      "name": "Rambo",
+      "winnerId": 7,
+      "winnerName": "Head 01",
+      "stat": "shots",
+      "value": 4379
+    },
+    {
+      "key": "Ammo_Saver",
+      "name": "Ammo Saver",
+      "winnerId": 11,
+      "winnerName": "Head 37",
+      "stat": "shots",
+      "value": 788
+    },
+    {
+      "key": "Apex_Predator",
+      "name": "Apex Predator",
+      "winnerId": 8,
+      "winnerName": "Head 06",
+      "stat": "apex",
+      "value": 2.83
+    },
+    {
+      "key": "Eagle_Eye",
+      "name": "Eagle Eye",
+      "winnerId": 10,
+      "winnerName": "Head 02",
+      "stat": "accuracy",
+      "value": 0.225
+    },
+    {
+      "key": "Spray_n_Pray",
+      "name": "Spray n Pray",
+      "winnerId": 11,
+      "winnerName": "Head 37",
+      "stat": "accuracy",
+      "value": 0.06
+    },
+    {
+      "key": "Punisher",
+      "name": "Punisher",
+      "winnerId": 12,
+      "winnerName": "Head 41",
+      "stat": "hits",
+      "value": 619
+    },
+    {
+      "key": "Swiss_Cheese",
+      "name": "Swiss Cheese",
+      "winnerId": 9,
+      "winnerName": "Head 39",
+      "stat": "wounds",
+      "value": 406
+    },
+    {
+      "key": "Ghost",
+      "name": "Ghost",
+      "winnerId": 8,
+      "winnerName": "Head 06",
+      "stat": "wounds",
+      "value": 146
+    },
+    {
+      "key": "Heavy_Hitter",
+      "name": "Heavy Hitter",
+      "winnerId": 12,
+      "winnerName": "Head 41",
+      "stat": "damage",
+      "value": 11720
+    },
+    {
+      "key": "Pacifist",
+      "name": "Pacifist",
+      "winnerId": 11,
+      "winnerName": "Head 37",
+      "stat": "damage",
+      "value": 1380
+    }
+  ],
+  "killMatrix": {
+    "names": [
+      "Head 01",
+      "Head 02",
+      "Head 04",
+      "Head 06",
+      "Head 37",
+      "Head 39",
+      "Head 40",
+      "Head 41",
+      "Head 42",
+      "Head 45"
+    ],
+    "rows": {
+      "Head 41": {
+        "Head 40": 21,
+        "Head 42": 11,
+        "Head 06": 11,
+        "Head 45": 11,
+        "Head 01": 20
+      },
+      "Head 01": {
+        "Head 04": 5,
+        "Head 02": 8,
+        "Head 41": 4,
+        "Head 39": 12,
+        "Head 37": 9
+      },
+      "Head 42": {
+        "Head 39": 23,
+        "Head 02": 15,
+        "Head 04": 12,
+        "Head 41": 15,
+        "Head 37": 7
+      },
+      "Head 06": {
+        "Head 37": 22,
+        "Head 41": 15,
+        "Head 39": 11,
+        "Head 02": 3
+      },
+      "Head 39": {
+        "Head 40": 14,
+        "Head 45": 25,
+        "Head 42": 11,
+        "Head 01": 21,
+        "Head 06": 3
+      },
+      "Head 40": {
+        "Head 39": 15,
+        "Head 41": 15,
+        "Head 37": 8,
+        "Head 02": 14,
+        "Head 04": 8
+      },
+      "Head 02": {
+        "Head 01": 10,
+        "Head 42": 22,
+        "Head 40": 7,
+        "Head 45": 15,
+        "Head 06": 1
+      },
+      "Head 04": {
+        "Head 01": 6,
+        "Head 40": 8,
+        "Head 42": 12,
+        "Head 45": 12
+      },
+      "Head 45": {
+        "Head 39": 4,
+        "Head 37": 9,
+        "Head 41": 1,
+        "Head 04": 2,
+        "Head 02": 1
+      },
+      "Head 37": {
+        "Head 45": 1,
+        "Head 06": 3,
+        "Head 42": 3,
+        "Head 40": 2
+      }
+    },
+    "perPlayer": {
+      "Head 01": {
+        "killed": [
+          {
+            "name": "Head 39",
+            "count": 12
+          },
+          {
+            "name": "Head 37",
+            "count": 9
+          },
+          {
+            "name": "Head 02",
+            "count": 8
+          },
+          {
+            "name": "Head 04",
+            "count": 5
+          },
+          {
+            "name": "Head 41",
+            "count": 4
+          }
+        ],
+        "killedBy": [
+          {
+            "name": "Head 39",
+            "count": 21
+          },
+          {
+            "name": "Head 41",
+            "count": 20
+          },
+          {
+            "name": "Head 02",
+            "count": 10
+          },
+          {
+            "name": "Head 04",
+            "count": 6
+          }
+        ],
+        "nemesis": {
+          "name": "Head 39",
+          "killsAgainst": 21,
+          "killsFor": 12
+        }
+      },
+      "Head 02": {
+        "killed": [
+          {
+            "name": "Head 42",
+            "count": 22
+          },
+          {
+            "name": "Head 45",
+            "count": 15
+          },
+          {
+            "name": "Head 01",
+            "count": 10
+          },
+          {
+            "name": "Head 40",
+            "count": 7
+          },
+          {
+            "name": "Head 06",
+            "count": 1
+          }
+        ],
+        "killedBy": [
+          {
+            "name": "Head 42",
+            "count": 15
+          },
+          {
+            "name": "Head 40",
+            "count": 14
+          },
+          {
+            "name": "Head 01",
+            "count": 8
+          },
+          {
+            "name": "Head 06",
+            "count": 3
+          },
+          {
+            "name": "Head 45",
+            "count": 1
+          }
+        ],
+        "nemesis": {
+          "name": "Head 42",
+          "killsAgainst": 15,
+          "killsFor": 22
+        }
+      },
+      "Head 04": {
+        "killed": [
+          {
+            "name": "Head 42",
+            "count": 12
+          },
+          {
+            "name": "Head 45",
+            "count": 12
+          },
+          {
+            "name": "Head 40",
+            "count": 8
+          },
+          {
+            "name": "Head 01",
+            "count": 6
+          }
+        ],
+        "killedBy": [
+          {
+            "name": "Head 42",
+            "count": 12
+          },
+          {
+            "name": "Head 40",
+            "count": 8
+          },
+          {
+            "name": "Head 01",
+            "count": 5
+          },
+          {
+            "name": "Head 45",
+            "count": 2
+          }
+        ],
+        "nemesis": {
+          "name": "Head 42",
+          "killsAgainst": 12,
+          "killsFor": 12
+        }
+      },
+      "Head 06": {
+        "killed": [
+          {
+            "name": "Head 37",
+            "count": 22
+          },
+          {
+            "name": "Head 41",
+            "count": 15
+          },
+          {
+            "name": "Head 39",
+            "count": 11
+          },
+          {
+            "name": "Head 02",
+            "count": 3
+          }
+        ],
+        "killedBy": [
+          {
+            "name": "Head 41",
+            "count": 11
+          },
+          {
+            "name": "Head 37",
+            "count": 3
+          },
+          {
+            "name": "Head 39",
+            "count": 3
+          },
+          {
+            "name": "Head 02",
+            "count": 1
+          }
+        ],
+        "nemesis": {
+          "name": "Head 41",
+          "killsAgainst": 11,
+          "killsFor": 15
+        }
+      },
+      "Head 37": {
+        "killed": [
+          {
+            "name": "Head 06",
+            "count": 3
+          },
+          {
+            "name": "Head 42",
+            "count": 3
+          },
+          {
+            "name": "Head 40",
+            "count": 2
+          },
+          {
+            "name": "Head 45",
+            "count": 1
+          }
+        ],
+        "killedBy": [
+          {
+            "name": "Head 06",
+            "count": 22
+          },
+          {
+            "name": "Head 01",
+            "count": 9
+          },
+          {
+            "name": "Head 45",
+            "count": 9
+          },
+          {
+            "name": "Head 40",
+            "count": 8
+          },
+          {
+            "name": "Head 42",
+            "count": 7
+          }
+        ],
+        "nemesis": {
+          "name": "Head 06",
+          "killsAgainst": 22,
+          "killsFor": 3
+        }
+      },
+      "Head 39": {
+        "killed": [
+          {
+            "name": "Head 45",
+            "count": 25
+          },
+          {
+            "name": "Head 01",
+            "count": 21
+          },
+          {
+            "name": "Head 40",
+            "count": 14
+          },
+          {
+            "name": "Head 42",
+            "count": 11
+          },
+          {
+            "name": "Head 06",
+            "count": 3
+          }
+        ],
+        "killedBy": [
+          {
+            "name": "Head 42",
+            "count": 23
+          },
+          {
+            "name": "Head 40",
+            "count": 15
+          },
+          {
+            "name": "Head 01",
+            "count": 12
+          },
+          {
+            "name": "Head 06",
+            "count": 11
+          },
+          {
+            "name": "Head 45",
+            "count": 4
+          }
+        ],
+        "nemesis": {
+          "name": "Head 42",
+          "killsAgainst": 23,
+          "killsFor": 11
+        }
+      },
+      "Head 40": {
+        "killed": [
+          {
+            "name": "Head 39",
+            "count": 15
+          },
+          {
+            "name": "Head 41",
+            "count": 15
+          },
+          {
+            "name": "Head 02",
+            "count": 14
+          },
+          {
+            "name": "Head 37",
+            "count": 8
+          },
+          {
+            "name": "Head 04",
+            "count": 8
+          }
+        ],
+        "killedBy": [
+          {
+            "name": "Head 41",
+            "count": 21
+          },
+          {
+            "name": "Head 39",
+            "count": 14
+          },
+          {
+            "name": "Head 04",
+            "count": 8
+          },
+          {
+            "name": "Head 02",
+            "count": 7
+          },
+          {
+            "name": "Head 37",
+            "count": 2
+          }
+        ],
+        "nemesis": {
+          "name": "Head 41",
+          "killsAgainst": 21,
+          "killsFor": 15
+        }
+      },
+      "Head 41": {
+        "killed": [
+          {
+            "name": "Head 40",
+            "count": 21
+          },
+          {
+            "name": "Head 01",
+            "count": 20
+          },
+          {
+            "name": "Head 42",
+            "count": 11
+          },
+          {
+            "name": "Head 06",
+            "count": 11
+          },
+          {
+            "name": "Head 45",
+            "count": 11
+          }
+        ],
+        "killedBy": [
+          {
+            "name": "Head 06",
+            "count": 15
+          },
+          {
+            "name": "Head 40",
+            "count": 15
+          },
+          {
+            "name": "Head 42",
+            "count": 15
+          },
+          {
+            "name": "Head 01",
+            "count": 4
+          },
+          {
+            "name": "Head 45",
+            "count": 1
+          }
+        ],
+        "nemesis": {
+          "name": "Head 06",
+          "killsAgainst": 15,
+          "killsFor": 11
+        }
+      },
+      "Head 42": {
+        "killed": [
+          {
+            "name": "Head 39",
+            "count": 23
+          },
+          {
+            "name": "Head 02",
+            "count": 15
+          },
+          {
+            "name": "Head 41",
+            "count": 15
+          },
+          {
+            "name": "Head 04",
+            "count": 12
+          },
+          {
+            "name": "Head 37",
+            "count": 7
+          }
+        ],
+        "killedBy": [
+          {
+            "name": "Head 02",
+            "count": 22
+          },
+          {
+            "name": "Head 04",
+            "count": 12
+          },
+          {
+            "name": "Head 39",
+            "count": 11
+          },
+          {
+            "name": "Head 41",
+            "count": 11
+          },
+          {
+            "name": "Head 37",
+            "count": 3
+          }
+        ],
+        "nemesis": {
+          "name": "Head 02",
+          "killsAgainst": 22,
+          "killsFor": 15
+        }
+      },
+      "Head 45": {
+        "killed": [
+          {
+            "name": "Head 37",
+            "count": 9
+          },
+          {
+            "name": "Head 39",
+            "count": 4
+          },
+          {
+            "name": "Head 04",
+            "count": 2
+          },
+          {
+            "name": "Head 41",
+            "count": 1
+          },
+          {
+            "name": "Head 02",
+            "count": 1
+          }
+        ],
+        "killedBy": [
+          {
+            "name": "Head 39",
+            "count": 25
+          },
+          {
+            "name": "Head 02",
+            "count": 15
+          },
+          {
+            "name": "Head 04",
+            "count": 12
+          },
+          {
+            "name": "Head 41",
+            "count": 11
+          },
+          {
+            "name": "Head 37",
+            "count": 1
+          }
+        ],
+        "nemesis": {
+          "name": "Head 39",
+          "killsAgainst": 25,
+          "killsFor": 4
+        }
+      }
+    }
+  },
+  "generatedAt": "2026-09-05T22:12:05.849Z"
+}

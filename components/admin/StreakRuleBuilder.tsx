@@ -7,7 +7,7 @@
  * Pick a rule kind (the building blocks) + its params; a live plain-English
  * preview shows what it fires on. The data-driven engine
  * (lib/ingestion/streak-engine) evaluates whatever is saved here, so every
- * streak — built-in or custom — is fully configurable. Gated (TOTP).
+ * streak – built-in or custom – is fully configurable. Gated (TOTP).
  */
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -33,6 +33,8 @@ const KINDS: { kind: StreakRuleConfig["kind"]; label: string }[] = [
   { kind: "hold_duration", label: "Hold a base for N seconds" },
   { kind: "burn", label: "Burn N bases (advanced)" },
   { kind: "survive_round", label: "Survive the round with N kills" },
+  { kind: "revenge", label: "Avenge your last killer" },
+  { kind: "redemption", label: "Kill after dying N times in a row" },
 ];
 
 const EVENTS: EventName[] = ["kill", "capture", "death"];
@@ -51,13 +53,20 @@ function defaultRule(kind: StreakRuleConfig["kind"]): StreakRuleConfig {
     case "hold_duration": return { kind, min_seconds: 180 };
     case "burn": return { kind, count: 1 };
     case "survive_round": return { kind, require_event: "kill", require_count: 5 };
+    case "revenge": return { kind };
+    case "redemption": return { kind, deaths_required: 3 };
   }
 }
 
 export function describeRule(r: StreakRuleConfig): string {
+  const cap = r.limit === "per_life" ? " At most once per life." : r.limit === "per_round" ? " At most once per round." : "";
+  return baseDescribe(r) + cap;
+}
+
+function baseDescribe(r: StreakRuleConfig): string {
   const s = (n: number, scope: Scope) => (scope === "life" ? `${n} in one life` : `${n} in the round`);
   switch (r.kind) {
-    case "consecutive": return `Fires each time a player gets ${r.count} ${r.event} in a row (resets on ${r.reset_on.join("/")}).`;
+    case "consecutive": return `Fires once per life when a player gets ${r.count} ${r.event} in a row (resets on ${r.reset_on.join("/")})${r.up_to != null ? `, unless the run reaches ${r.up_to} (then the higher tier fires instead)` : ""}.`;
     case "count": return `Fires when a player reaches ${s(r.count, r.scope)} ${r.event}${r.actor_hp_max != null ? ` while on ≤${r.actor_hp_max} HP` : ""}.`;
     case "distinct": return `Fires when a player ${r.event === "capture" ? "captures" : "hits"} ${r.count} different ${r.distinct_by}s ${r.scope === "life" ? "in one life" : "in the round"}.`;
     case "per_target": return `Fires when a player gets ${r.count} ${r.event}s against the same ${r.target} ${r.scope === "life" ? "in one life" : "in the round"}.`;
@@ -69,6 +78,8 @@ export function describeRule(r: StreakRuleConfig): string {
     case "hold_duration": return `Fires when a player holds a base continuously for ${Math.round(r.min_seconds / 60)} min (${r.min_seconds}s).`;
     case "burn": return `Fires when a player burns ${r.count} base${r.count > 1 ? "s" : ""} (cumulative 10-min hold). Advanced / provisional.`;
     case "survive_round": return `Fires when a player finishes the round with 0 deaths and ≥${r.require_count} ${r.require_event}s.`;
+    case "revenge": return "Fires when a player kills the person who most recently killed them.";
+    case "redemption": return `Fires when a player gets a kill after dying ${r.deaths_required} times in a row with no kills in between.`;
   }
 }
 
@@ -140,7 +151,7 @@ export function StreakRuleBuilder({
           Firing rule
         </legend>
         <p className="mb-4 text-xs text-text-muted">
-          Built from blocks — the ingestion engine evaluates this against the match data.
+          Built from blocks – the ingestion engine evaluates this against the match data.
           {isBuiltin && " This is a built-in streak; you can retune its rule here."}
         </p>
 
@@ -158,7 +169,26 @@ export function StreakRuleBuilder({
             rule.kind === "first_of" || rule.kind === "last_of" || rule.kind === "cover_set" || rule.kind === "victim_streak") &&
             eventSelect(rule.event, (v) => upd({ event: v }))}
 
-          {rule.kind === "consecutive" && numField("How many in a row", rule.count, "count")}
+          {rule.kind === "consecutive" && (
+            <>
+              {numField("How many in a row", rule.count, "count")}
+              <div>
+                <label className={lbl}>Next tier at (optional)</label>
+                <input
+                  type="number"
+                  min={rule.count + 1}
+                  className={input}
+                  value={rule.up_to ?? ""}
+                  onChange={(e) => upd({ up_to: e.target.value === "" ? null : Number(e.target.value) })}
+                  placeholder="top tier (no cap)"
+                />
+                <p className="mt-1 text-[0.65rem] text-text-subtle">
+                  A life fires only its highest tier: set this to the next tier&apos;s threshold so a
+                  bigger run skips this badge. Leave blank for the top tier.
+                </p>
+              </div>
+            </>
+          )}
           {rule.kind === "count" && (
             <>
               {numField("How many", rule.count, "count")}
@@ -218,6 +248,20 @@ export function StreakRuleBuilder({
               {numField("At least this many", rule.require_count, "require_count")}
             </>
           )}
+          {rule.kind === "redemption" && numField("Deaths in a row first", rule.deaths_required, "deaths_required")}
+
+          <div className="sm:col-span-2">
+            <label className={lbl}>How often it can be earned</label>
+            <select
+              className={input}
+              value={rule.limit ?? ""}
+              onChange={(e) => upd({ limit: e.target.value === "" ? null : (e.target.value as "per_life" | "per_round") })}
+            >
+              <option value="">Every time the rule is met</option>
+              <option value="per_life">Once per life</option>
+              <option value="per_round">Once per round</option>
+            </select>
+          </div>
         </div>
 
         <p className="mt-4 border-l-2 border-accent bg-bg px-3 py-2 text-xs text-text-muted">{describeRule(rule)}</p>

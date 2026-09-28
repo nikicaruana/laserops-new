@@ -17,7 +17,7 @@ import { CMS_REVALIDATE_SECONDS, CMS_URLS } from "./client";
  * through them.
  *
  * Game_Data_Lookup already has XP_Total_Before/After + Level_Before/After
- * + thresholds for the current level — sufficient for the basic case.
+ * + thresholds for the current level – sufficient for the basic case.
  * Where this sheet matters is when Level_After - Level_Before > 1, i.e.
  * the player passed through intermediate levels we need badges for.
  */

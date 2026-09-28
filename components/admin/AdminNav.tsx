@@ -12,6 +12,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/cn";
+import { AdminNotificationBell } from "@/components/admin/AdminNotificationBell";
 
 type Item = { label: string; href?: string };
 
@@ -22,12 +23,31 @@ const SECTIONS: { heading: string; items: Item[] }[] = [
       { label: "Dashboard", href: "/admin" },
       { label: "Change log", href: "/admin/changelog" },
       { label: "User management", href: "/admin/users" },
+      { label: "Notifications", href: "/admin/notifications" },
       { label: "Security", href: "/admin/security" },
     ],
   },
   {
     heading: "Matches",
-    items: [{ label: "Match Manager", href: "/admin/matches" }],
+    items: [
+      { label: "Match Manager", href: "/admin/matches" },
+      { label: "Booking calendar", href: "/admin/booking-calendar" },
+    ],
+  },
+  {
+    heading: "Store",
+    items: [
+      { label: "Game tokens", href: "/admin/tokens" },
+      { label: "Financial reports", href: "/admin/reports" },
+      { label: "Reward images", href: "/admin/reward-images" },
+    ],
+  },
+  {
+    heading: "Community",
+    items: [
+      { label: "Squads", href: "/admin/squads" },
+      { label: "Ladders", href: "/admin/ladders" },
+    ],
   },
   {
     heading: "Arsenal",
@@ -39,12 +59,14 @@ const SECTIONS: { heading: string; items: Item[] }[] = [
   {
     heading: "Progression",
     items: [
-      { label: "XP & Levels", href: "/admin/xp" },
+      { label: "Levels", href: "/admin/levels" },
+      { label: "Progression calibrator", href: "/admin/progression" },
       { label: "ELO", href: "/admin/elo" },
       { label: "Ratings", href: "/admin/ratings" },
       { label: "Scoring formula", href: "/admin/scoring" },
       { label: "Accolades", href: "/admin/accolades" },
       { label: "Streaks", href: "/admin/streaks" },
+      { label: "Killstreaks", href: "/admin/killstreaks" },
     ],
   },
   {
@@ -155,18 +177,21 @@ export function AdminNav() {
         <Link href="/admin" className="text-sm font-extrabold uppercase tracking-[0.18em] text-accent">
           Admin
         </Link>
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          aria-label="Open menu"
-          aria-expanded={open}
-          className="inline-flex h-10 w-10 items-center justify-center text-text"
-        >
-          <span className="relative block h-[14px] w-6">
-            <span className="absolute left-0 right-0 top-0 h-px bg-current" />
-            <span className="absolute bottom-0 left-0 right-0 h-px bg-current" />
-          </span>
-        </button>
+        <div className="flex items-center gap-1">
+          <AdminNotificationBell />
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            aria-label="Open menu"
+            aria-expanded={open}
+            className="inline-flex h-10 w-10 items-center justify-center text-text"
+          >
+            <span className="relative block h-[14px] w-6">
+              <span className="absolute left-0 right-0 top-0 h-px bg-current" />
+              <span className="absolute bottom-0 left-0 right-0 h-px bg-current" />
+            </span>
+          </button>
+        </div>
       </div>
 
       {/* Mobile drawer */}
@@ -197,12 +222,15 @@ export function AdminNav() {
 
       {/* Desktop sidebar */}
       <nav className="hidden lg:block lg:w-56 lg:shrink-0">
-        <Link
-          href="/admin"
-          className="mb-8 block text-sm font-extrabold uppercase tracking-[0.18em] text-accent"
-        >
-          Admin
-        </Link>
+        <div className="mb-8 flex items-center justify-between">
+          <Link
+            href="/admin"
+            className="block text-sm font-extrabold uppercase tracking-[0.18em] text-accent"
+          >
+            Admin
+          </Link>
+          <AdminNotificationBell />
+        </div>
         {sections()}
         {exitLink}
       </nav>

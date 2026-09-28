@@ -24,10 +24,10 @@ export function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="border-t border-border bg-bg-elevated" role="contentinfo">
+    <footer className="border-t border-border portal-surface" role="contentinfo">
       <Container size="wide" className="py-16">
         <div className="grid gap-12 md:grid-cols-12">
-          {/* Brand column — full wordmark gets room to breathe here */}
+          {/* Brand column – full wordmark gets room to breathe here */}
           <div className="md:col-span-5">
             <Logo variant="wordmark" color="white" size="md" />
             <p className="mt-6 max-w-md text-sm leading-relaxed text-text-muted">

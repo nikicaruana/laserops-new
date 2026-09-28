@@ -131,7 +131,7 @@ export function AccoladeTile({ accolade }: { accolade: Accolade }) {
         // backdrop:bg-bg/80 = dark semi-transparent backdrop.
         // open:opacity-100 / opacity-0 with transition gives a fade-in.
         className={cn(
-          "rounded-sm border border-border-strong bg-bg-elevated text-text",
+          "rounded-sm portal-card text-text",
           "p-0 max-w-sm w-[90vw]",
           // Native <dialog> needs explicit margin auto to center.
           "m-auto",

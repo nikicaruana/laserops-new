@@ -52,7 +52,7 @@ export function ProfileCard({
   followersSlot,
 }: ProfileCardProps) {
   return (
-    <div className="flex h-full flex-col items-center gap-4 border border-border bg-bg-elevated p-4 sm:p-6">
+    <div className="flex h-full flex-col items-center gap-4 portal-card p-4 sm:p-6">
       <div className="flex flex-col items-center gap-1">
         <h3 className="break-words text-center text-xl font-extrabold leading-tight text-text [overflow-wrap:anywhere] sm:text-2xl">
           {nickname}

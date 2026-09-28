@@ -48,7 +48,7 @@ export default function CorporateEventsPage() {
             If you&apos;re looking for something truly memorable and different for
             your next team building event, you&apos;ve come to the right place.
             LaserOps runs corporate events in Malta that employees actually look
-            forward to — where strategy matters, communication is the difference
+            forward to – where strategy matters, communication is the difference
             between winning and losing, and yes, you finally get to shoot at your
             colleagues without a follow up meeting from HR.
           </p>
@@ -61,7 +61,7 @@ export default function CorporateEventsPage() {
       </section>
 
       {/* ── Real Strategy ────────────────────────────────────── */}
-      <section className="border-b border-border bg-bg-elevated">
+      <section className="border-b border-border portal-surface">
         <Container size="narrow" className="py-14 sm:py-16">
           <SectionLabel>Why It Works</SectionLabel>
           <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
@@ -130,7 +130,7 @@ export default function CorporateEventsPage() {
       </section>
 
       {/* ── Post Game Stats ──────────────────────────────────── */}
-      <section className="border-b border-border bg-bg-elevated">
+      <section className="border-b border-border portal-surface">
         <Container size="narrow" className="py-14 sm:py-16">
           <SectionLabel>Player Portal</SectionLabel>
           <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
@@ -190,7 +190,7 @@ export default function CorporateEventsPage() {
       </section>
 
       {/* ── Catering & Drinks ────────────────────────────────── */}
-      <section className="border-b border-border bg-bg-elevated">
+      <section className="border-b border-border portal-surface">
         <Container size="narrow" className="py-14 sm:py-16">
           <SectionLabel>Add-On</SectionLabel>
           <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
@@ -251,8 +251,8 @@ export default function CorporateEventsPage() {
             </p>
             <p className="leading-relaxed">
               It also doesn&apos;t hurt that the same things that make our community
-              come back week after week — balanced teams, real stats, actual
-              stakes — make the corporate version of the day feel like a proper
+              come back week after week – balanced teams, real stats, actual
+              stakes – make the corporate version of the day feel like a proper
               event rather than a glorified party game.
             </p>
           </div>
@@ -260,7 +260,7 @@ export default function CorporateEventsPage() {
       </section>
 
       {/* ── Group Sizes & Booking CTA ────────────────────────── */}
-      <section className="border-b border-border bg-bg-elevated">
+      <section className="border-b border-border portal-surface">
         <Container size="narrow" className="py-14 sm:py-16">
           <SectionLabel>Book Your Event</SectionLabel>
           <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">

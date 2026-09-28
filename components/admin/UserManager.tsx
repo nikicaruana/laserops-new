@@ -3,7 +3,7 @@
 /**
  * components/admin/UserManager.tsx
  * --------------------------------------------------------------------
- * Manage admin users. Lists current admins (with email — this page is admin-
+ * Manage admin users. Lists current admins (with email – this page is admin-
  * only) and lets you revoke, plus a search to grant admin to any account. The
  * accounts admin RLS policy + protect_account_fields let an admin flip is_admin;
  * guards prevent revoking yourself or the last admin (lock-out safety).
@@ -90,7 +90,7 @@ export function UserManager({
             <li key={u.id} className="flex items-center justify-between gap-4 border border-border bg-bg-elevated px-4 py-3">
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-text">
-                  {u.ops_tag ?? "—"}
+                  {u.ops_tag ?? "–"}
                   {u.id === selfAccountId && <span className="ml-2 text-[0.55rem] uppercase tracking-[0.14em] text-text-subtle">you</span>}
                 </p>
                 <p className="truncate text-xs text-text-muted">{u.email}</p>
@@ -123,7 +123,7 @@ export function UserManager({
             {results.map((u) => (
               <li key={u.id} className="flex items-center justify-between gap-4 border border-border bg-bg-elevated px-4 py-3">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-text">{u.ops_tag ?? "—"}</p>
+                  <p className="truncate text-sm font-semibold text-text">{u.ops_tag ?? "–"}</p>
                   <p className="truncate text-xs text-text-muted">{u.email}</p>
                 </div>
                 <button

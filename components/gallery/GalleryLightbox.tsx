@@ -128,7 +128,7 @@ export function GalleryLightbox({ images, index, onClose }: Props) {
       className="m-auto h-full max-h-full w-full max-w-full bg-transparent p-0 text-text backdrop:bg-black/90 backdrop:backdrop-blur-sm"
       style={{ border: "none" }}
     >
-      {/* Outer wrapper — full-screen flex, click on dark area closes */}
+      {/* Outer wrapper – full-screen flex, click on dark area closes */}
       <div
         className="flex h-full w-full flex-col items-center justify-center px-4 py-12 sm:px-8"
         onTouchStart={handleTouchStart}
@@ -159,7 +159,7 @@ export function GalleryLightbox({ images, index, onClose }: Props) {
           </button>
         </div>
 
-        {/* Main image — constrained so it never overflows the viewport */}
+        {/* Main image – constrained so it never overflows the viewport */}
         {img && (
           <div className="relative flex w-full flex-1 flex-col items-center justify-center gap-3">
             <img
@@ -182,7 +182,7 @@ export function GalleryLightbox({ images, index, onClose }: Props) {
           </div>
         )}
 
-        {/* Prev / Next buttons — absolute positioned left/right of the image */}
+        {/* Prev / Next buttons – absolute positioned left/right of the image */}
         {total > 1 && (
           <>
             <button

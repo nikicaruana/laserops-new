@@ -7,10 +7,13 @@
  * the admin update the match and read the signups' emails.
  */
 import type { NextRequest } from "next/server";
-import { Resend } from "resend";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
+import { emitNotification } from "@/lib/notifications";
+import { matchDateLabel, matchTimeRangeLabel } from "@/lib/match-time";
+import { sendMatchInvites } from "@/lib/calendar-invite";
 
-export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
 
@@ -28,69 +31,44 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     .update({ status: "confirmed" })
     .eq("id", id)
     .in("status", ["tentative", "awaiting_confirm"])
-    .select("id, title, scheduled_at, invite_code")
+    .select("id, title, scheduled_at, invite_code, is_private, duration_minutes")
     .maybeSingle();
 
   if (upErr) return Response.json({ ok: false, error: upErr.message }, { status: 500 });
   if (!match) return Response.json({ ok: true, confirmed: false }); // already confirmed / not confirmable
 
-  // Email the registered signups.
+  // Notify every registered signup that payment is open. The notification system
+  // owns the email now (game_confirmed_pay -> dispatched by the email cron).
   const { data: signupRows } = await supabase
     .from("match_signups")
-    .select("account:accounts(email)")
+    .select("account_id")
     .eq("match_id", id)
     .eq("status", "registered");
-  const emails = Array.from(
-    new Set(
-      ((signupRows ?? []) as unknown as { account: { email: string | null } | null }[])
-        .map((r) => r.account?.email)
-        .filter(Boolean) as string[],
-    ),
-  );
-
-  let emailed = 0;
-  if (process.env.RESEND_API_KEY && emails.length > 0) {
-    const origin = new URL(req.url).origin;
-    const link = match.invite_code ? `${origin}/invite/${match.invite_code}` : `${origin}/player-portal/games`;
-    const when = match.scheduled_at
-      ? new Date(match.scheduled_at).toLocaleString("en-GB", {
-          timeZone: "Europe/Malta",
-          weekday: "long",
-          day: "2-digit",
-          month: "long",
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-      : "soon";
-    const label = match.title || "Your LaserOps game";
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    try {
-      await resend.emails.send({
-        from: "LaserOps <bookings@laseropsmalta.com>",
-        to: emails,
-        subject: `Confirmed: ${label}`,
-        html: `
-<!DOCTYPE html>
-<html><head><meta charset="utf-8"></head>
-<body style="margin:0;padding:24px;font-family:Arial,sans-serif;background:#fff;color:#111;">
-  <p style="margin:0 0 6px;font-size:13px;color:#666;">Good news — your game is confirmed</p>
-  <h2 style="margin:0 0 4px;font-size:20px;">${label}</h2>
-  <p style="margin:0 0 16px;font-size:13px;color:#666;">${when}</p>
-  <p style="margin:0 0 16px;font-size:14px;line-height:1.5;">
-    We&rsquo;re now accepting payment. You can pay online now or on the day — and if you
-    <strong>pay online in advance you can book your gun</strong> ready for the game.
-  </p>
-  <p style="margin:0 0 24px;">
-    <a href="${link}" style="display:inline-block;background:#ffde00;color:#111;font-weight:700;text-decoration:none;padding:12px 20px;font-size:13px;letter-spacing:0.5px;text-transform:uppercase;">Sort my payment</a>
-  </p>
-  <p style="margin:0;font-size:12px;color:#888;">See you on the field.</p>
-</body></html>`,
+  const label = match.title || "Your LaserOps game";
+  // Open games: pay online to confirm the place. Private bookings can pay offline
+  // on request, so the copy differs.
+  const body = match.is_private
+    ? "The booking is confirmed. Pay online now (or arrange to pay offline), and book your gun if you pay online."
+    : "The game is confirmed. Pay online now to confirm your place and book your gun.";
+  const svc = createServiceClient();
+  let notified = 0;
+  if (svc) {
+    const ids = Array.from(
+      new Set(((signupRows ?? []) as { account_id: string | null }[]).map((r) => r.account_id).filter(Boolean) as string[]),
+    );
+    for (const accountId of ids) {
+      await emitNotification(svc, accountId, "game_confirmed_pay", {
+        title: `${label} is confirmed`,
+        body,
+        href: `/player-portal/games/${id}`,
+        data: { matchDate: matchDateLabel(match.scheduled_at), matchTimeRange: matchTimeRangeLabel(match.scheduled_at, match.duration_minutes) },
       });
-      emailed = emails.length;
-    } catch {
-      // Email failure shouldn't block confirmation.
+      notified++;
     }
   }
 
-  return Response.json({ ok: true, confirmed: true, emailed });
+  // Calendar invites: players + the business get an .ics for the confirmed game.
+  const invites = await sendMatchInvites(id, "REQUEST");
+
+  return Response.json({ ok: true, confirmed: true, notified, invitesSent: invites.sent });
 }

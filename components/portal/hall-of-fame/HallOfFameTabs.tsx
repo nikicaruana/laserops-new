@@ -12,7 +12,7 @@ import { usePathname } from "next/navigation";
  *
  * The server reads `?tab=` (via the page's searchParams) and passes
  * `initialSlug`, so a shared link opens the right tab with no flash.
- * Clicking a tab updates the URL client-side with history.replaceState —
+ * Clicking a tab updates the URL client-side with history.replaceState –
  * no Next navigation, so the page's server render (incl. the uncached
  * champions data) isn't re-run on a tab switch.
  *
@@ -70,7 +70,7 @@ export function HallOfFameTabs({ labels, initialSlug, children }: Props) {
             className={`rounded-sm border px-3 py-2 text-[0.7rem] font-bold uppercase tracking-[0.1em] transition-colors sm:px-4 sm:text-xs ${
               active === i
                 ? "border-accent bg-bg-overlay text-accent"
-                : "border-border text-text-subtle hover:border-border-strong hover:text-text-muted"
+                : "border-border bg-bg-overlay/70 text-text-subtle backdrop-blur-sm hover:border-border-strong hover:text-text-muted"
             }`}
           >
             {label}

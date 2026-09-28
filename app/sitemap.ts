@@ -9,7 +9,7 @@ import { fetchImagesByTag } from "@/lib/cloudinary";
  *
  * Only canonical, indexable, 200-status URLs belong here. We deliberately
  * exclude redirect-only routes (/events, /player-portal*) and the player
- * portal/dashboards (dynamic player data, partly disallowed in robots.txt) —
+ * portal pages (dynamic player data, partly disallowed in robots.txt) –
  * a sitemap should list the pages we actually want ranked.
  *
  * Priorities (a weak relative signal):
@@ -41,7 +41,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     };
   }
 
-  // Hero image for the Outdoor Laser Tag page — surfaced in the sitemap
+  // Hero image for the Outdoor Laser Tag page – surfaced in the sitemap
   // for image SEO. Fails soft to no image if the tag/creds are unavailable.
   const oltHero = await fetchImagesByTag("olt-hero");
   const oltHeroUrl = oltHero[0]?.secureUrl;

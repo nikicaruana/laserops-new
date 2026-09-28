@@ -1,5 +1,5 @@
 /**
- * TableErrorState — renders when a leaderboard data fetch fails.
+ * TableErrorState – renders when a leaderboard data fetch fails.
  *
  * Visual design intent: doesn't shout "ERROR" with red. The portal aesthetic
  * is gritty but composed; an error here is more "no contact" than "alarm".
@@ -16,7 +16,7 @@ export function TableErrorState({ detail }: TableErrorStateProps) {
     <div
       role="alert"
       title={detail}
-      className="border border-border bg-bg-elevated px-6 py-12 text-center"
+      className="portal-card px-6 py-12 text-center"
     >
       <div className="mx-auto flex max-w-md flex-col items-center gap-3">
         <span aria-hidden className="text-2xl text-text-subtle">⌧</span>

@@ -26,7 +26,7 @@ export function FavouriteWeaponCard({
   const hasWeapon = weaponName !== "" && imageUrl !== "";
 
   return (
-    <div className="flex flex-col gap-3 border border-border bg-bg-elevated p-4 sm:p-6">
+    <div className="flex flex-col gap-3 portal-card p-4 sm:p-6">
       <div className="text-center text-[0.65rem] font-bold uppercase tracking-[0.14em] text-text-muted">
         Favourite Weapon
       </div>

@@ -42,7 +42,7 @@ export function HistoryProfileCard({
 }: Props) {
   return (
     <BracketFrame cornerSize="1.25rem" thickness="3px" inset="-0.5rem">
-      <div className="flex flex-col items-center gap-3 bg-bg-elevated p-5 sm:p-6">
+      <div className="flex flex-col items-center gap-3 portal-surface p-5 sm:p-6">
         <p className="text-2xl font-extrabold tracking-tight text-text [overflow-wrap:anywhere] sm:text-3xl">
           {nickname}
         </p>

@@ -29,7 +29,7 @@ import { cn } from "@/lib/cn";
  *   - Phone-only (sm:hidden). Tablets/desktop have less compelling
  *     install stories and the page header layout doesn't accommodate
  *     this control gracefully on wider widths.
- *   - Android: hidden if dismissed this session (sessionStorage) — the
+ *   - Android: hidden if dismissed this session (sessionStorage) – the
  *     native prompt can re-fire next visit, and getInstalledRelatedApps()
  *     reliably hides it once actually installed.
  *   - iOS: Safari can't tell us the app is already installed while browsing
@@ -43,7 +43,7 @@ import { cn } from "@/lib/cn";
 type Platform = "ios" | "android" | "other";
 
 /**
- * Type for Chrome's BeforeInstallPromptEvent — not in standard TS DOM lib
+ * Type for Chrome's BeforeInstallPromptEvent – not in standard TS DOM lib
  * since the install prompt is a Chrome extension, not a web standard.
  */
 type BeforeInstallPromptEvent = Event & {
@@ -80,7 +80,7 @@ const SESSION_DISMISS_KEY = "laserops:install-dismissed";
  */
 const PERSIST_HIDE_KEY = "laserops:install-hidden";
 
-/** navigator.getInstalledRelatedApps — Chromium only, not in the standard lib. */
+/** navigator.getInstalledRelatedApps – Chromium only, not in the standard lib. */
 type NavigatorWithRelatedApps = Navigator & {
   getInstalledRelatedApps?: () => Promise<Array<{ platform?: string; url?: string }>>;
 };
@@ -120,7 +120,7 @@ export function InstallAppButton() {
           if (Array.isArray(apps) && apps.length > 0) setInstalled(true);
         })
         .catch(() => {
-          /* not supported / blocked — fall back to the other signals */
+          /* not supported / blocked – fall back to the other signals */
         });
     }
 
@@ -135,7 +135,7 @@ export function InstallAppButton() {
     setPlatform(detectPlatform());
     setMounted(true);
 
-    // Capture beforeinstallprompt — fired by Chrome when the page
+    // Capture beforeinstallprompt – fired by Chrome when the page
     // qualifies for install. Suppress the auto-banner so our custom
     // button is the only entry point. The event will only fire
     // once per page load; we save it for later replay on click.
@@ -145,7 +145,7 @@ export function InstallAppButton() {
       setHasPrompt(true);
     }
 
-    // Detect successful install — the appinstalled event fires
+    // Detect successful install – the appinstalled event fires
     // regardless of how the install was triggered (our button, Chrome's
     // own UI, manual A2HS, etc.). Hide our button when this fires.
     function handleAppInstalled() {
@@ -179,7 +179,7 @@ export function InstallAppButton() {
 
   async function handleClick() {
     // iOS: open instructional modal. No API. Once they've opened it, we've
-    // "shown once" — remember it persistently so future visits stay quiet
+    // "shown once" – remember it persistently so future visits stay quiet
     // (Safari gives us no way to know if they went on to install).
     if (platform === "ios") {
       rememberHiddenPersistently();
@@ -207,7 +207,7 @@ export function InstallAppButton() {
       setHasPrompt(false);
       if (choice.outcome === "dismissed") {
         // User said no this time. Don't pester for the rest of this
-        // session — but also don't permanently dismiss; they may change
+        // session – but also don't permanently dismiss; they may change
         // their mind on a future visit.
         handleDismissForSession();
       }
@@ -222,20 +222,20 @@ export function InstallAppButton() {
     try {
       sessionStorage.setItem(SESSION_DISMISS_KEY, "1");
     } catch {
-      // sessionStorage can throw in private mode — ignore.
+      // sessionStorage can throw in private mode – ignore.
     }
   }
 
   /**
    * Persistently hide the button across future visits. Used for iOS, where we
-   * can't detect an already-installed app — once the user has engaged, we
+   * can't detect an already-installed app – once the user has engaged, we
    * shouldn't keep re-prompting them every visit.
    */
   function rememberHiddenPersistently() {
     try {
       localStorage.setItem(PERSIST_HIDE_KEY, "1");
     } catch {
-      // localStorage can throw in private mode — ignore.
+      // localStorage can throw in private mode – ignore.
     }
   }
 
@@ -252,7 +252,7 @@ export function InstallAppButton() {
         )}
         aria-label="Install LaserOps as an app on your device"
       >
-        {/* Phone-with-arrow icon — purpose-built so it reads as "install
+        {/* Phone-with-arrow icon – purpose-built so it reads as "install
             on phone" rather than a generic plus. */}
         <svg
           aria-hidden
@@ -280,7 +280,7 @@ export function InstallAppButton() {
         >
           <div
             className={cn(
-              "relative w-full border border-border-strong bg-bg-elevated p-6",
+              "relative w-full portal-card p-6",
               "sm:max-w-md sm:rounded-sm",
               "max-sm:rounded-t-sm",
             )}
@@ -368,7 +368,7 @@ function Step({ n, children }: { n: number; children: React.ReactNode }) {
 }
 
 /**
- * Backwards-compatibility export — the component used to be called
+ * Backwards-compatibility export – the component used to be called
  * AddToHomeScreen. Existing imports continue to work.
  */
 export { InstallAppButton as AddToHomeScreen };

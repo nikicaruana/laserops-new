@@ -18,7 +18,7 @@ import type { PlayerMatch } from "@/lib/player-history/engine";
  * The user can re-sort by any column header click.
  *
  * Reuses LeaderboardTable for visual + behavioural consistency with
- * the rest of the player portal — same column-header sort UX, same
+ * the rest of the player portal – same column-header sort UX, same
  * yellow accent strip on top, etc.
  *
  * --------------------------------------------------------------------
@@ -36,7 +36,7 @@ import type { PlayerMatch } from "@/lib/player-history/engine";
  *   typical content (e.g. "9,840" for damage, "1.55" for rating).
  *
  *   The container will scroll horizontally if total exceeds available
- *   width — that's fine, it's data-dense and 10 columns is a lot.
+ *   width – that's fine, it's data-dense and 10 columns is a lot.
  * --------------------------------------------------------------------
  *
  * Niki feedback (pass 2): each row links to the match report, scoped
@@ -47,12 +47,14 @@ import type { PlayerMatch } from "@/lib/player-history/engine";
 
 type Props = {
   matches: PlayerMatch[];
-  /** Player's Ops Tag — passed through to the match report URL so
+  /** Player's Ops Tag – passed through to the match report URL so
    *  the linked report opens with this player's stats expanded. */
   ops: string;
+  /** Heading text (defaults to "Match Summaries"). */
+  title?: string;
 };
 
-export function MatchSummariesTable({ matches, ops }: Props) {
+export function MatchSummariesTable({ matches, ops, title = "Match Summaries" }: Props) {
   // Reverse a copy so the most-recent match appears first (default view).
   // The engine produces matches oldest-first for the chart components;
   // we don't mutate that array here.
@@ -67,12 +69,12 @@ export function MatchSummariesTable({ matches, ops }: Props) {
         sortable: true,
         sortType: "string",
         accessor: (row) => row.matchId,
-        // Flex column — match IDs are ~12 chars ("LO-2026-10") and need
+        // Flex column – match IDs are ~12 chars ("LO-2026-10") and need
         // to be readable. Generous min so they never truncate.
         width: "minmax(95px, 1.2fr)",
         widthSm: "minmax(110px, 1.2fr)",
         cell: (row) => (
-          <span className="font-mono text-xs sm:text-sm">{row.matchId}</span>
+          <span className="font-mono text-xs font-semibold text-accent sm:text-sm">{row.matchId}</span>
         ),
       },
       {
@@ -82,13 +84,13 @@ export function MatchSummariesTable({ matches, ops }: Props) {
         sortable: true,
         sortType: "string",
         accessor: (row) => row.gunUsed,
-        // Flex column — gun names are the longest string in the table
+        // Flex column – gun names are the longest string in the table
         // ("AK-25 Predator", "Heavy Mk-II"). Bigger flex than match ID
         // so it gets the lion's share of slack space.
         width: "minmax(90px, 1.6fr)",
         widthSm: "minmax(120px, 1.6fr)",
         cell: (row) => (
-          <span className="text-xs sm:text-sm">{row.gunUsed || "—"}</span>
+          <span className="text-xs sm:text-sm">{row.gunUsed || "–"}</span>
         ),
       },
       {
@@ -185,19 +187,48 @@ export function MatchSummariesTable({ matches, ops }: Props) {
         cell: (row) => row.damage.toLocaleString("en-US"),
       },
       {
+        key: "objCaps",
+        header: "Caps",
+        align: "right",
+        sortable: true,
+        numeric: true,
+        // Undefined until ingestion writes per-match capture stats; sort
+        // those to the bottom and render a dash.
+        accessor: (row) => row.objCaps ?? -1,
+        width: "40px",
+        widthSm: "50px",
+        cell: (row) => (row.objCaps == null ? "–" : row.objCaps.toLocaleString("en-US")),
+      },
+      {
+        key: "capTime",
+        header: "Hold",
+        align: "right",
+        sortable: true,
+        numeric: true,
+        accessor: (row) => row.capTime ?? -1,
+        // Capture time in seconds, shown as m:ss.
+        width: "48px",
+        widthSm: "58px",
+        cell: (row) => {
+          if (row.capTime == null) return "–";
+          const s = Math.max(0, Math.round(row.capTime));
+          return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+        },
+      },
+      {
         key: "eloChange",
         header: "ELO ±",
         align: "right",
         sortable: true,
         numeric: true,
         accessor: (row) => row.eloChange,
-        // Most ELO deltas are 1-2 digits with sign; "—" placeholder
+        // Most ELO deltas are 1-2 digits with sign; "–" placeholder
         // for the latest match (no follow-up to compute against).
         width: "44px",
         widthSm: "58px",
         cell: (row) =>
           row.eloChange === 0
-            ? "—"
+            ? "–"
             : (row.eloChange > 0 ? "+" : "") + row.eloChange.toFixed(0),
       },
       {
@@ -219,16 +250,16 @@ export function MatchSummariesTable({ matches, ops }: Props) {
   return (
     <section
       aria-label="Match Summaries"
-      className="overflow-hidden rounded-sm border border-border bg-bg-elevated"
+      className="overflow-hidden rounded-sm portal-card"
     >
       <header className="bg-accent px-5 py-3 text-center sm:px-6 sm:py-4">
         <h2 className="text-lg font-extrabold uppercase tracking-tight text-bg sm:text-xl">
-          Match Summaries
+          {title}
         </h2>
       </header>
       <div className="p-3 sm:p-4">
         <LeaderboardTable
-          ariaLabel="Match summaries — every match this player has played"
+          ariaLabel="Match summaries – every match this player has played"
           columns={columns}
           rows={reversedMatches}
           rowKey={(row) => row.matchId}

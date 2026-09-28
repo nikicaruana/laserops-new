@@ -4,7 +4,7 @@
  * components/admin/ExcludedPlayersManager.tsx
  * --------------------------------------------------------------------
  * Manage the prize-ineligible list (excluded_players). Add nicknames, edit the
- * reason, toggle active/inactive (only active ones are excluded — toggling off
+ * reason, toggle active/inactive (only active ones are excluded – toggling off
  * keeps the row for history), delete. Writes via the admin session.
  */
 import { useState } from "react";

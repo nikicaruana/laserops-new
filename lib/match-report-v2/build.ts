@@ -62,11 +62,26 @@ type Acc = {
 };
 
 export function buildMatchReportV2(
-  rawRounds: { raw: string; resolutions?: RoundResolutions; winnerOverride?: string | null }[],
+  rawRounds: { raw: string; resolutions?: RoundResolutions; winnerOverride?: string | null; countsAsRound?: boolean }[],
   meta: { matchId: string; label: string; date?: string | null },
+  opts?: {
+    scoring?: Partial<typeof V2_SCORING>;
+    opsTagByHeadband?: Record<number, string>;
+    offline?: {
+      statsByHeadband: Record<number, { frags: number; deaths: number; hits: number; shots: number; damage: number; wounds?: number; team: string }>;
+      roundWinners: (string | null)[];
+    };
+  },
 ): MatchReportV2 {
-  const { spawnWindowSeconds, minHoldSeconds, recaptureWindowSeconds, capturePoints, recapturePoints, holdPerSecond } = V2_SCORING;
+  const { spawnWindowSeconds, minHoldSeconds, recaptureWindowSeconds, capturePoints, recapturePoints, holdPerSecond } = { ...V2_SCORING, ...(opts?.scoring ?? {}) };
   const parsed: Round[] = rawRounds.map((r) => parseRound(r.raw, { spawnWindowSeconds }));
+  // Optional headband -> display-name remap, applied to the parsed roster BEFORE
+  // aggregation — so it also MERGES multiple headbands worn by one person (e.g.
+  // Head 06 + Head 39 both -> "Kyle") into one player everywhere downstream.
+  if (opts?.opsTagByHeadband) {
+    const m = opts.opsTagByHeadband;
+    for (const r of parsed) for (const p of r.players) { if (p.headband_no != null && m[p.headband_no]) p.name = m[p.headband_no]; }
+  }
 
   const acc: Record<string, Acc> = {};
   const A = (id: number, name: string, team: string): Acc =>
@@ -80,8 +95,15 @@ export function buildMatchReportV2(
   parsed.forEach((r, i) => {
     const ov = rawRounds[i].winnerOverride;
     const winnerTeam = ov === "draw" ? null : (ov || r.result.winner_team);
-    rounds.push({ index: i + 1, winnerTeam, allBasesBurned: r.result.all_bases_burned, durationSeconds: r.meta.duration_seconds });
-    if (winnerTeam) roundsWonByTeam[winnerTeam] = (roundsWonByTeam[winnerTeam] ?? 0) + 1;
+    // A round with countsAsRound:false (e.g. a game-bugged, prematurely-ended
+    // round) still has its player stats aggregated below, but is NOT listed as a
+    // scored round and its winner is not tallied — so the match round count and
+    // the series score exclude it.
+    const countsAsRound = rawRounds[i].countsAsRound !== false;
+    if (countsAsRound) {
+      rounds.push({ index: rounds.length + 1, winnerTeam, allBasesBurned: r.result.all_bases_burned, durationSeconds: r.meta.duration_seconds });
+      if (winnerTeam) roundsWonByTeam[winnerTeam] = (roundsWonByTeam[winnerTeam] ?? 0) + 1;
+    }
     for (const t of r.teams) teamNames[t.colour] = t.name;
 
     const nameOf: Record<number, string> = {};
@@ -129,6 +151,25 @@ export function buildMatchReportV2(
     }
   });
 
+  // Offline rounds (LWA only): per-player kill stats (frags/deaths/hits/shots +
+  // pre-estimated damage) add to each player's totals so the kill-score includes
+  // them, but they contribute NO objective points and NO streaks. Each supplied
+  // winner counts toward the series (the offline export can't split the rounds).
+  if (opts?.offline) {
+    const m = opts.opsTagByHeadband ?? {};
+    for (const [hbStr, st] of Object.entries(opts.offline.statsByHeadband)) {
+      const hb = Number(hbStr);
+      const name = m[hb] ?? `Head ${hb}`;
+      const a = A(-hb, name, st.team); // existing online player keeps their team
+      a.frags += st.frags; a.deaths += st.deaths; a.hits += st.hits; a.shots += st.shots; a.damage += st.damage; a.wounds += st.wounds ?? 0;
+      (teamMembers[a.team] ??= new Set()).add(name);
+    }
+    for (const w of opts.offline.roundWinners) {
+      rounds.push({ index: rounds.length + 1, winnerTeam: w ?? null, allBasesBurned: false, durationSeconds: 0 });
+      if (w) roundsWonByTeam[w] = (roundsWonByTeam[w] ?? 0) + 1;
+    }
+  }
+
   const killMatrix = buildKillMatrix(parsed);
 
   // Assemble per-player reports + scores.
@@ -138,7 +179,10 @@ export function buildMatchReportV2(
     const accuracy = a.shots > 0 ? a.hits / a.shots : 0;
     const kd = a.deaths > 0 ? f / a.deaths : f;
     const killScore = Math.round((f * 50 + dmg * 0.2) * (1 + accuracy * 0.2) * (1 + kd * 0.12));
-    const objectiveScore = a.captures * capturePoints + a.recaptures * recapturePoints + a.hold * holdPerSecond;
+    // Round the objective portion UP to a whole number, so player scores and
+    // team ratings are always integers (fractional hold weights like x1.5 would
+    // otherwise leave a trailing .5).
+    const objectiveScore = Math.ceil(a.captures * capturePoints + a.recaptures * recapturePoints + a.hold * holdPerSecond);
     const streakScore = a.streakPoints;
     const streaks: PlayerStreak[] = Object.entries(a.streaks)
       .map(([key, count]) => ({ key, name: STREAK_NAMES[key] ?? key, count, points: (STREAK_POINTS[key] ?? 0) * count }))
@@ -172,7 +216,7 @@ export function buildMatchReportV2(
 
   return {
     matchId: meta.matchId, label: meta.label, date: meta.date ?? (parsed[0]?.meta.start_time ?? null),
-    roundCount: parsed.length, rounds, teams, matchWinner, roundsWonByTeam, players, accolades, killMatrix,
+    roundCount: rounds.length, rounds, teams, matchWinner, roundsWonByTeam, players, accolades, killMatrix,
     generatedAt: new Date().toISOString(),
   };
 }

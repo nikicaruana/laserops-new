@@ -114,6 +114,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   if (!svc) return NextResponse.json({ error: "Server is not configured for writes (service role key missing)." }, { status: 500 });
   await svc.from("match_awards").delete().eq("match_id", id);
   await svc.from("match_player_aggregate").delete().eq("match_id", id);
+  await svc.from("killstreak_deployments").delete().eq("match_id", id); // transient jams — not kept past the match
 
   const { error: aggErr } = await svc.from("match_player_aggregate").insert(result.aggregates.map((a) => ({ ...a, match_id: id })));
   if (aggErr) return NextResponse.json({ error: `Aggregate write failed: ${aggErr.message}` }, { status: 500 });

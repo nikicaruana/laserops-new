@@ -160,7 +160,7 @@ export function ScoreLeaderboardTable({ allRows }: Props) {
 
 function EmptyResults() {
   return (
-    <div className="border border-border bg-bg-elevated px-6 py-12 text-center">
+    <div className="portal-card px-6 py-12 text-center">
       <p className="text-sm font-semibold uppercase tracking-[0.14em] text-text-muted">
         No matches found
       </p>

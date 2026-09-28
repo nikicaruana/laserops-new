@@ -28,7 +28,7 @@ export function CopyInviteLink({ code, compact = false }: { code: string | null;
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
-      // Clipboard blocked (insecure context) — no-op; the field is selectable.
+      // Clipboard blocked (insecure context) – no-op; the field is selectable.
     }
   }
 

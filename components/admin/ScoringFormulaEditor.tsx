@@ -11,7 +11,7 @@
  * jsonb to score_formula (admin-write RLS), keyed by game mode.
  *
  * BlockCard / Zone are module-level components (not defined inside the editor)
- * so they keep a stable identity across renders — otherwise every keystroke
+ * so they keep a stable identity across renders – otherwise every keystroke
  * would remount the inputs and steal focus.
  */
 import { useMemo, useState } from "react";
@@ -29,7 +29,7 @@ import {
   type ScoreFormula,
 } from "@/lib/scoring/formula";
 
-// Single operator install — the default operator the schema uses everywhere.
+// Single operator install – the default operator the schema uses everywhere.
 const OPERATOR_ID = "00000000-0000-0000-0000-000000000001";
 
 type Area = "baseTerms" | "multipliers";
@@ -448,7 +448,7 @@ export function ScoringFormulaEditor({
                     >
                       {g.multipliers.length === 0 && (
                         <p className="py-1 text-center text-[0.65rem] text-text-subtle">
-                          No multipliers — base only
+                          No multipliers – base only
                         </p>
                       )}
                       {renderBlocks(g, "multipliers", g.multipliers)}

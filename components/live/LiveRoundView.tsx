@@ -13,6 +13,8 @@
 import { useMemo, useState } from "react";
 import { type LiveSnapshot, teamHex, mmss, sb, BASE_IMAGES, baseStateAt, STREAK_NAMES } from "@/lib/live-sim/engine";
 import { cldImage } from "@/lib/cld";
+import { PixelStatic } from "@/components/live/PixelStatic";
+import { killstreakOverlayLabel, type KillstreakDef, type ActiveDeployment } from "@/lib/killstreaks";
 
 function BaseEmblem({ color, size = 40 }: { color: string; size?: number }) {
   return (
@@ -25,6 +27,7 @@ function BaseEmblem({ color, size = 40 }: { color: string; size?: number }) {
 
 export function LiveRoundView({
   snap, t, mode, me = null, roundLabel, live = true, onTaunt, incomingTaunts = [],
+  killstreakDefs = [], deployments = [], onDeployKillstreak,
 }: {
   snap: LiveSnapshot;
   t: number;
@@ -36,6 +39,12 @@ export function LiveRoundView({
   onTaunt?: (to: string) => void;
   /** Player mode: taunts received from others (newest last). */
   incomingTaunts?: { from: string; id: string }[];
+  /** Killstreak defs (from killstreak_definitions). */
+  killstreakDefs?: KillstreakDef[];
+  /** Active killstreak jams for the match (persisted; survive reload). */
+  deployments?: ActiveDeployment[];
+  /** Player mode: deploy a killstreak on the enemy feed. */
+  onDeployKillstreak?: (def: KillstreakDef, baseIds: number[]) => void;
 }) {
   const [sentTaunts, setSentTaunts] = useState<Set<string>>(new Set());
   const bases = useMemo(() => baseStateAt(snap, t), [snap, t]);
@@ -46,6 +55,30 @@ export function LiveRoundView({
   const myRank = me ? snap.stats.findIndex((s) => s.name === me) + 1 : 0;
   const kd = mine ? (mine.deaths > 0 ? mine.kills / mine.deaths : mine.kills) : 0;
   const myStreaks = (me && snap.streaksByPlayer[me]) || [];
+
+  // Killstreaks: defs + active jams come from the parent (DB-backed). Availability
+  // is the player's unlock-streak earns this round minus their deploys this round.
+  const [armed, setArmed] = useState<string | null>(null);
+  const nowMs = Date.now();
+  const defsByKey = useMemo(() => new Map(killstreakDefs.map((d) => [d.key, d])), [killstreakDefs]);
+  const myTeam = mine?.team ?? null;
+  const activeDeploys = deployments.filter((d) => d.expiresAtMs > nowMs);
+  const incoming = mode === "player" && me && myTeam ? activeDeploys.filter((d) => d.byTeam !== myTeam) : [];
+  const outgoing = mode === "player" && me && myTeam ? activeDeploys.filter((d) => d.byTeam === myTeam) : [];
+  const jamOnBase = (baseId: number) => incoming.find((d) => d.scope === "all" || d.baseIds.includes(baseId)) ?? null;
+  const earnedByKey = useMemo(() => { const m: Record<string, number> = {}; for (const s of myStreaks) m[s.key] = (m[s.key] ?? 0) + 1; return m; }, [myStreaks]);
+  const myDeployCount = (key: string) => deployments.filter((d) => d.byPlayer === me && d.roundNo === snap.round && d.killstreakKey === key).length;
+  const ksAvail = mode === "player" && me
+    ? killstreakDefs
+        .map((k) => ({ def: k, available: Math.max(0, (k.unlockStreakKey ? earnedByKey[k.unlockStreakKey] ?? 0 : 0) - myDeployCount(k.key)) }))
+        .filter((x) => x.available > 0)
+    : [];
+  const armedDef = armed ? defsByKey.get(armed) ?? null : null;
+  function tapBase(baseId: number) {
+    if (!armedDef || !onDeployKillstreak) return;
+    onDeployKillstreak(armedDef, armedDef.scope === "all" ? [] : [baseId]);
+    setArmed(null);
+  }
 
   // Personal feed: my involvement, newest first. Public feed: all kills, newest first.
   const pFeed = useMemo(() => {
@@ -59,6 +92,8 @@ export function LiveRoundView({
       <style>{`
         @keyframes lsSize{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
         @keyframes lsGlow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.55)}}
+        @keyframes lsArm{0%,100%{box-shadow:0 0 0 2px var(--color-accent),0 0 0 4px rgba(255,222,0,0.15)}50%{box-shadow:0 0 0 2px var(--color-accent),0 0 0 7px rgba(255,222,0,0.35)}}
+        .ls-armed{animation:lsArm 1.1s ease-in-out infinite;border-radius:0.6rem;}
         .ls-scroll{scrollbar-width:thin;scrollbar-color:var(--color-accent-dim) transparent;}
         .ls-scroll::-webkit-scrollbar{width:6px;height:6px;}
         .ls-scroll::-webkit-scrollbar-thumb{background:var(--color-accent-dim);border-radius:9999px;}
@@ -79,8 +114,8 @@ export function LiveRoundView({
         ) : null}
       </div>
 
-      {/* Base capture states */}
-      <div className="grid shrink-0 grid-cols-3 gap-2">
+      {/* Base capture states — also the killstreak target picker while armed */}
+      <div className={`grid shrink-0 grid-cols-3 gap-2 ${armedDef ? "ls-armed p-0.5" : ""}`}>
         {snap.bases.map((base) => {
           const st = bases[base.id];
           const owner = st?.owner ?? null;
@@ -88,8 +123,10 @@ export function LiveRoundView({
           const anim = st?.anim ?? "none";
           const sizeAnim = anim === "crit" ? "lsSize 0.7s ease-in-out infinite" : anim === "warn" ? "lsSize 1.1s ease-in-out infinite" : undefined;
           const img = owner ? BASE_IMAGES[owner.toLowerCase()] : BASE_IMAGES["neutral"];
+          const jam = jamOnBase(base.id);
+          const jamDef = jam ? defsByKey.get(jam.killstreakKey) : null;
           return (
-            <div key={base.id} className="rounded-lg p-2 text-center" style={{ borderStyle: burned ? "dotted" : "solid", borderWidth: burned ? 3 : 1, borderColor: burned ? teamHex(st!.burnTeam) : teamHex(owner) + "88", backgroundColor: teamHex(owner) + "14", animation: anim === "crit" ? "lsGlow 0.7s ease-in-out infinite" : undefined }}>
+            <div key={base.id} onClick={armedDef ? () => tapBase(base.id) : undefined} className={`relative rounded-lg p-2 text-center ${armedDef ? "cursor-pointer hover:ring-2 hover:ring-accent" : ""}`} style={{ borderStyle: burned ? "dotted" : "solid", borderWidth: burned ? 3 : 1, borderColor: burned ? teamHex(st!.burnTeam) : teamHex(owner) + "88", backgroundColor: teamHex(owner) + "14", animation: anim === "crit" ? "lsGlow 0.7s ease-in-out infinite" : undefined }}>
               <div className="flex justify-center" style={{ animation: sizeAnim }}>{img ? <img src={cldImage(img, { w: 96 })} alt={base.name} className="h-10 w-10 object-contain" /> : <BaseEmblem color={teamHex(owner)} />}</div>
               <div className="mt-1 truncate text-[0.65rem] font-extrabold uppercase tracking-[0.06em]" title={base.name} style={{ color: burned ? teamHex(st!.burnTeam) : undefined }}>{base.name}</div>
               <div className="mt-1 space-y-0.5">
@@ -99,20 +136,42 @@ export function LiveRoundView({
                   </div>
                 ); })}
               </div>
+              {jam && jamDef && <PixelStatic label={killstreakOverlayLabel(jamDef, jam.byPlayer)} />}
             </div>
           );
         })}
       </div>
 
+      {/* Outgoing jam — you + your team see what you're scrambling */}
+      {mode === "player" && outgoing.length > 0 && (
+        <div className="shrink-0 space-y-1.5 rounded-lg border border-accent/40 bg-accent/10 px-2.5 py-2">
+          {outgoing.map((d) => {
+            const def = defsByKey.get(d.killstreakKey);
+            const target = d.scope === "all" ? "All bases" : snap.bases.filter((b) => d.baseIds.includes(b.id)).map((b) => b.name).join(", ");
+            const who = d.byPlayer === me ? "You" : d.byPlayer;
+            return (
+              <div key={d.id} className="flex items-center gap-2.5">
+                {def?.badgeUrl ? <img src={cldImage(def.badgeUrl, { w: 96 })} alt={def.name} className="h-9 w-9 shrink-0 object-contain" /> : <span className="flex h-9 w-9 shrink-0 items-center justify-center text-2xl">{def?.icon || "•"}</span>}
+                <div className="min-w-0 flex-1 leading-tight">
+                  <div className="truncate text-xs font-bold text-text">{who}</div>
+                  <div className="truncate text-[0.6rem] font-semibold uppercase tracking-[0.08em] text-text-muted">{target}</div>
+                </div>
+                <span className="shrink-0 font-mono text-xs tabular-nums text-text-muted">{mmss(Math.max(0, Math.ceil((d.expiresAtMs - nowMs) / 1000)))}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {mode === "player" ? (
         <>
           <div className="shrink-0 rounded-lg bg-bg-elevated p-3">
             <div className="flex items-end justify-between">
-              <div><div className="text-[0.55rem] font-semibold uppercase tracking-[0.16em] text-text-subtle">Live score</div><div className="text-3xl font-extrabold leading-none tabular-nums text-accent">{mine?.score.toLocaleString("en-US") ?? 0}</div></div>
-              <div className="text-right text-[0.7rem] text-text-muted">Rank #{myRank || "–"} / {snap.players.length}</div>
+              <div><div className="text-[0.55rem] font-semibold uppercase tracking-[0.16em] text-text-subtle">Live score</div><div className="text-2xl font-extrabold leading-none tabular-nums text-accent">{mine?.score.toLocaleString("en-US") ?? 0}</div></div>
+              <div className="text-right text-sm text-text-muted">Rank #{myRank || "–"} / {snap.players.length}</div>
             </div>
-            <div className="mt-2 grid grid-cols-4 gap-1.5 text-center">
-              {[["Kills", mine?.kills ?? 0], ["Deaths", mine?.deaths ?? 0], ["K/D", kd.toFixed(2)], ["Caps", mine?.caps ?? 0]].map(([k, v]) => (<div key={k as string} className="rounded-md bg-bg py-1.5"><div className="text-base font-bold tabular-nums">{v}</div><div className="text-[0.5rem] uppercase tracking-[0.08em] text-text-subtle">{k}</div></div>))}
+            <div className="mt-2 grid grid-cols-3 gap-1.5 text-center">
+              {[["Kills", mine?.kills ?? 0], ["Deaths", mine?.deaths ?? 0], ["K/D", kd.toFixed(2)], ["Caps", mine?.caps ?? 0], ["Dmg", Math.round(mine?.damage ?? 0)], ["Hold", mmss(Math.round(mine?.hold ?? 0))]].map(([k, v]) => (<div key={k as string} className="rounded-md bg-bg py-1.5"><div className="text-base font-bold tabular-nums">{v}</div><div className="text-[0.5rem] uppercase tracking-[0.08em] text-text-subtle">{k}</div></div>))}
             </div>
           </div>
 
@@ -140,13 +199,37 @@ export function LiveRoundView({
             </ul>
           </div>
 
-          <div className="shrink-0">
-            <div className="mb-1 px-1 text-[0.55rem] font-semibold uppercase tracking-[0.14em] text-text-subtle">Your streaks</div>
-            <div className="ls-scroll flex gap-2 overflow-x-auto pb-1">
-              {myStreaks.length === 0 && <span className="px-1 text-xs text-text-subtle">None yet — get on a run!</span>}
-              {myStreaks.map((s, i) => (<div key={i} className="flex shrink-0 flex-col items-center"><img src={cldImage(sb(s.key), { w: 96 })} alt={STREAK_NAMES[s.key] ?? s.key} className="h-11 w-11 object-contain" /><span className="mt-0.5 whitespace-nowrap text-[0.55rem] text-text-muted">{STREAK_NAMES[s.key] ?? s.key}</span></div>))}
+          {armedDef ? (
+            <button type="button" onClick={() => setArmed(null)} className="ls-armed shrink-0 bg-accent/10 px-3 py-2 text-center">
+              <div className="flex items-center justify-center gap-1.5 text-[0.55rem] font-bold uppercase tracking-[0.14em] text-accent">{armedDef.badgeUrl ? <img src={cldImage(armedDef.badgeUrl, { w: 64 })} alt="" className="h-4 w-4 object-contain" /> : <span>{armedDef.icon || "•"}</span>} {armedDef.name} armed</div>
+              <div className="mt-0.5 text-xs font-semibold text-text">{armedDef.armInstructions ?? "Tap a base to deploy, or tap here to cancel"}</div>
+            </button>
+          ) : (
+            <div className="flex shrink-0 items-start gap-2">
+              <div className="min-w-0 flex-1">
+                <div className="mb-1 px-1 text-[0.55rem] font-semibold uppercase tracking-[0.14em] text-text-subtle">Your streaks</div>
+                <div className="flex items-center -space-x-2 overflow-hidden">
+                  {myStreaks.length === 0 && <span className="px-1 text-xs text-text-subtle">None yet — get on a run!</span>}
+                  {myStreaks.slice(0, 6).map((s, i) => (<img key={i} src={cldImage(sb(s.key), { w: 160, trim: true })} alt={STREAK_NAMES[s.key] ?? s.key} title={STREAK_NAMES[s.key] ?? s.key} style={{ zIndex: 90 - i }} className="relative h-[4.5rem] w-auto shrink-0 object-contain" />))}
+                </div>
+              </div>
+              {ksAvail.length > 0 && (
+                <div className="shrink-0">
+                  <div className="mb-1 px-1 text-right text-[0.55rem] font-semibold uppercase tracking-[0.14em] text-text-subtle">Killstreaks</div>
+                  <div className="flex justify-end">
+                    <div className="flex items-center gap-0 rounded-lg border border-accent/50 bg-accent/10 p-0.5">
+                      {ksAvail.map(({ def, available }) => (
+                        <button key={def.key} type="button" onClick={() => setArmed(def.key)} title={`Deploy ${def.name}`} className="relative flex shrink-0 items-center justify-center rounded-md transition-colors hover:bg-accent/20">
+                          {def.badgeUrl ? <img src={cldImage(def.badgeUrl, { w: 160 })} alt={def.name} className="h-[4.5rem] w-[4.5rem] object-contain" /> : <span className="flex h-[4.5rem] w-[4.5rem] items-center justify-center text-4xl">{def.icon || "•"}</span>}
+                          {available > 1 && <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[0.55rem] font-bold text-bg">{available}</span>}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
+          )}
         </>
       ) : (
         <>

@@ -28,7 +28,7 @@ export function StoryPreviewGallery({ ops }: { ops: string }) {
             <img
               src={`/api/story/PREVIEW/${encodeURIComponent(ops)}?t=${t.key}`}
               alt={`${t.label} story layout`}
-              className="w-full rounded-sm border border-border-strong bg-bg-elevated transition-transform hover:scale-[1.02]"
+              className="w-full rounded-sm portal-card transition-transform hover:scale-[1.02]"
               style={{ aspectRatio: "9 / 16" }}
             />
             <div className="flex flex-col">

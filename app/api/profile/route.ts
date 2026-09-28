@@ -1,5 +1,5 @@
 /**
- * app/api/profile/route.ts  — PATCH
+ * app/api/profile/route.ts  – PATCH
  * --------------------------------------------------------------------
  * Updates the signed-in player's editable account fields: ops_tag,
  * full_name, date_of_birth, and the public-visibility toggles. Ops tag is
@@ -55,6 +55,11 @@ export async function PATCH(request: Request) {
   if ("full_name" in body) {
     const fn = typeof body.full_name === "string" ? body.full_name.trim() : "";
     updates.full_name = fn === "" ? null : fn.slice(0, 80);
+  }
+
+  if ("phone" in body) {
+    const ph = typeof body.phone === "string" ? body.phone.trim() : "";
+    updates.phone_e164 = ph === "" ? null : ph.slice(0, 32);
   }
 
   if ("date_of_birth" in body) {

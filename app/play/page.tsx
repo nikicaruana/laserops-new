@@ -9,7 +9,7 @@ import { CtaTrack } from "@/components/play/CtaTrack";
 /* ─── Destinations ─────────────────────────────────────────────────── */
 const OPEN_GAMES_HREF = "/events/open-games";
 const BOOKING_HREF = "/booking";
-/* WhatsApp community invite — same link used on /community + /outdoor-laser-tag-malta */
+/* WhatsApp community invite – same link used on /community + /outdoor-laser-tag-malta */
 const WHATSAPP_URL = "https://chat.whatsapp.com/Duox9CiCmasKsv8tcuQScZ";
 
 /* ─── Campaign clips (Cloudinary) ──────────────────────────────────────
@@ -32,7 +32,7 @@ function videoPoster(url: string): string {
 
 /* ─── SEO ──────────────────────────────────────────────────────────────
    Campaign landing page for paid traffic. `index: false` keeps it out of
-   Google so it doesn't compete with the homepage for the same terms — flip
+   Google so it doesn't compete with the homepage for the same terms – flip
    to `true` if you ever want it discoverable organically. */
 export const metadata: Metadata = {
   title: {
@@ -174,7 +174,7 @@ export default async function PlayPage() {
     <>
       {/* ── Hero (fits the first viewport) ───────────────────── */}
       <section className="relative isolate flex min-h-[calc(100svh-72px)] flex-col overflow-hidden bg-bg xl:bg-[#ffde00]">
-        {/* Background — same textured hero art as the homepage */}
+        {/* Background – same textured hero art as the homepage */}
         <div className="absolute inset-0 xl:hidden" aria-hidden>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -192,7 +192,7 @@ export default async function PlayPage() {
           />
         </div>
 
-        {/* Figure — right-anchored on desktop (room beside the text) */}
+        {/* Figure – right-anchored on desktop (room beside the text) */}
         <div
           className="pointer-events-none absolute inset-y-0 right-0 hidden items-end xl:flex"
           aria-hidden
@@ -205,7 +205,7 @@ export default async function PlayPage() {
           />
         </div>
 
-        {/* Figure — bottom-anchored on mobile (sits behind the content). */}
+        {/* Figure – bottom-anchored on mobile (sits behind the content). */}
         <div
           className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center xl:hidden"
           aria-hidden
@@ -218,7 +218,7 @@ export default async function PlayPage() {
           />
         </div>
 
-        {/* Scrim for text legibility — dark behind the top text, lighter over
+        {/* Scrim for text legibility – dark behind the top text, lighter over
             the figure's midsection so he reads, then grounded at the bottom. */}
         <div
           className="pointer-events-none absolute inset-0 xl:hidden"
@@ -237,7 +237,7 @@ export default async function PlayPage() {
           }}
         />
 
-        {/* Content — vertically centred so it stays balanced on tall phones;
+        {/* Content – vertically centred so it stays balanced on tall phones;
             the figure sits behind it, anchored to the bottom. */}
         <Container size="wide" className="relative z-10 flex flex-1 flex-col">
           <div className="w-full my-auto py-10">
@@ -247,7 +247,7 @@ export default async function PlayPage() {
             </h1>
 
             <div className="mt-8 grid max-w-3xl gap-x-6 gap-y-6 sm:grid-cols-2">
-              {/* CTA 1 — Open game (primary) + WhatsApp underneath */}
+              {/* CTA 1 – Open game (primary) + WhatsApp underneath */}
               <div className="flex flex-col gap-4">
                 <div>
                   <CtaTrack cta="hero_open_game">
@@ -278,7 +278,7 @@ export default async function PlayPage() {
                 </CtaTrack>
               </div>
 
-              {/* CTA 2 — Private game (high-contrast outline) */}
+              {/* CTA 2 – Private game (high-contrast outline) */}
               <div>
                 <CtaTrack cta="hero_private_game">
                   <Button

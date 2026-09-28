@@ -5,7 +5,7 @@
  *
  * Unlike the Kills/Damage/Score/Accuracy leaderboards which read from
  * the period-stats sheet (one row per player per month), this one
- * walks Game_Data_Lookup directly — accolades aren't pre-aggregated
+ * walks Game_Data_Lookup directly – accolades aren't pre-aggregated
  * per period, they're earned per match via the `Accolade_<Name>`
  * 0/1 columns.
  *
@@ -19,7 +19,7 @@
  *         75 XP → Tier 2
  *         50 XP → Tier 3
  *      Anything else → unrated, doesn't increment any tier counter
- *      but DOES increment the total. This is defensive — if a new
+ *      but DOES increment the total. This is defensive – if a new
  *      accolade is added with an unmapped XP value, it still counts
  *      toward the player's total but doesn't pollute a wrong tier.
  *
@@ -45,7 +45,7 @@ const DISPLAY_LIMIT = 50;
  *   - Tier 2 = 75 XP
  *   - Tier 3 = 50 XP
  * Other XP values aren't mapped to a tier and are treated as
- * "unrated" — they still count toward the player's total
+ * "unrated" – they still count toward the player's total
  * accolades but don't increment any tier-specific counter. This
  * makes the leaderboard tolerant of CMS edits where a new
  * accolade gets a non-standard XP value before its tier is
@@ -69,7 +69,7 @@ export type AccoladesRow = {
 };
 
 /**
- * Optional period filter. Both fields independent — pass year
+ * Optional period filter. Both fields independent – pass year
  * alone to filter to a year, year+month to a specific month, or
  * nothing to include all rows.
  */
@@ -82,7 +82,7 @@ export type AccoladesPeriodFilter = {
  * Run the aggregation.
  *
  * @param gameRows  All player-match rows from fetchGameDataRows().
- * @param accolades CMS metadata for every accolade — used to map
+ * @param accolades CMS metadata for every accolade – used to map
  *                  each earned-accolade column to its XP and tier.
  * @param filter    Optional period filter (year, monthNum).
  */
@@ -130,7 +130,7 @@ export function aggregateAccolades(
     }
 
     // Scan every known accolade column on this row. The match-report
-    // engine maintains the canonical list — we import it so a new
+    // engine maintains the canonical list – we import it so a new
     // accolade only needs adding in one place.
     for (const suffix of ACCOLADE_COLUMN_SUFFIXES) {
       const value = row.raw[`Accolade_${suffix}`];
@@ -149,13 +149,13 @@ export function aggregateAccolades(
         // (above) but no tier-specific increment.
       }
       // accolade missing from CMS: counted in total but no tier
-      // increment — same effect as unrated XP. Defensive: prevents
+      // increment – same effect as unrated XP. Defensive: prevents
       // a CMS-row deletion from silently dropping the player's
       // achievements from the leaderboard.
     }
   }
 
-  // Drop players with zero accolades — they shouldn't rank.
+  // Drop players with zero accolades – they shouldn't rank.
   const projected: Array<Omit<AccoladesRow, "rank">> = [];
   for (const b of buckets.values()) {
     if (b.total <= 0) continue;
@@ -191,7 +191,7 @@ export function aggregateAccolades(
  *
  * Defensive against rows with malformed yearMonth (empty string from
  * the parser when the source data was unparseable). Such rows fail
- * any positive filter and pass when no filter is set — same behaviour
+ * any positive filter and pass when no filter is set – same behaviour
  * as the period-shared filter.
  */
 function matchesPeriodFilter(
@@ -200,7 +200,7 @@ function matchesPeriodFilter(
 ): boolean {
   if (filter.year === undefined && filter.monthNum === undefined) return true;
   if (yearMonth === "") return false;
-  // yearMonth format is "YYYY-MM" — normalised by the game-data
+  // yearMonth format is "YYYY-MM" – normalised by the game-data
   // fetcher.
   const [yStr, mStr] = yearMonth.split("-");
   const y = Number(yStr);
@@ -213,7 +213,7 @@ function matchesPeriodFilter(
 
 /**
  * Parse a "flexible" boolean from a sheet cell value. Same logic as
- * the match-report engine — accepts "1"/"true"/"yes"/"y" as truthy,
+ * the match-report engine – accepts "1"/"true"/"yes"/"y" as truthy,
  * everything else as false. Inlined here rather than imported because
  * exporting it from the engine isn't strictly necessary and keeps the
  * shared surface area small.

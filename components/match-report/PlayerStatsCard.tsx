@@ -228,7 +228,7 @@ export function PlayerStatsCard({ player, ranks, matchId, canShare = true, offli
 
       {/* Streaks earned in this match. Tap a badge for its description. */}
       {(player.matchStreaks?.length ?? 0) > 0 && (
-        <div className="mt-6 rounded-sm border border-border bg-bg-elevated px-2 py-5 text-text sm:mt-8 sm:px-6 sm:py-6">
+        <div className="mt-6 rounded-sm portal-card px-2 py-5 text-text sm:mt-8 sm:px-6 sm:py-6">
           <h3 className="text-center text-base font-extrabold uppercase tracking-[0.16em] sm:text-lg">Streaks Obtained</h3>
           <div className="mt-5 grid grid-cols-3 justify-items-center gap-x-1 gap-y-4 sm:flex sm:flex-wrap sm:justify-center sm:gap-6">
             {player.matchStreaks!.map((s) => (
@@ -245,7 +245,7 @@ export function PlayerStatsCard({ player, ranks, matchId, canShare = true, offli
           aren't needed anymore – black-on-yellow-art reads cleanly
           without any wrapper. */}
       {player.earnedAccolades.length > 0 && (
-        <div className="mt-6 rounded-sm border border-border bg-bg-elevated px-5 py-5 text-text sm:mt-8 sm:px-6 sm:py-6">
+        <div className="mt-6 rounded-sm portal-card px-5 py-5 text-text sm:mt-8 sm:px-6 sm:py-6">
           <h3 className="text-center text-base font-extrabold uppercase tracking-[0.16em] sm:text-lg">
             Accolades Earned
           </h3>
@@ -262,7 +262,7 @@ export function PlayerStatsCard({ player, ranks, matchId, canShare = true, offli
 
       {/* Nemesis: the opponent this player clashed with most. */}
       {player.nemesis && (
-        <div className="mt-6 rounded-sm border border-border bg-bg-elevated px-5 py-5 sm:mt-8 sm:px-6 sm:py-6">
+        <div className="mt-6 rounded-sm portal-card px-5 py-5 sm:mt-8 sm:px-6 sm:py-6">
           <h3 className="mb-4 text-center text-base font-extrabold uppercase tracking-[0.16em] text-text sm:text-lg">Nemesis</h3>
           <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-5 sm:gap-x-14">
             <div className="flex items-center gap-4">
@@ -304,7 +304,7 @@ export function PlayerStatsCard({ player, ranks, matchId, canShare = true, offli
 
 function KillList({ title, rows, tone }: { title: string; rows: { nickname: string; count: number }[]; tone: "accent" | "red" }) {
   return (
-    <div className="rounded-sm border border-border bg-bg-elevated p-4">
+    <div className="rounded-sm portal-card p-4">
       <p className="mb-3 text-[0.6rem] font-bold uppercase tracking-[0.14em] text-text-muted">{title}</p>
       {rows.length === 0 ? (
         <p className="text-sm text-text-subtle">{tone === "red" ? "Untouchable this match." : "No kills this match."}</p>

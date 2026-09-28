@@ -34,32 +34,32 @@ export const CMS_URLS = {
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vQPMYVbKQkhZ9zvHdLAL4aryEV-7OggiuDpHh1-kzuVIlbn5tD7d260U3LNee9M86gYFXEkuLCPCwd0/pub?gid=2135585899&single=true&output=csv",
   excludedPlayers:
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vQPMYVbKQkhZ9zvHdLAL4aryEV-7OggiuDpHh1-kzuVIlbn5tD7d260U3LNee9M86gYFXEkuLCPCwd0/pub?gid=580212816&single=true&output=csv",
-  // Accolades — authoritative metadata for each accolade. Lives on the
+  // Accolades – authoritative metadata for each accolade. Lives on the
   // DATA spreadsheet (same spreadsheet as Game_Data_Lookup, ranking
-  // system, and game ID map), NOT the CMS spreadsheet — important when
+  // system, and game ID map), NOT the CMS spreadsheet – important when
   // editing this URL. Maps an accolade name (matching the suffix of
   // Accolade_<Name> columns in Game_Data_Lookup) to its display name,
   // description, badge image, and XP awarded for earning it.
   accolades:
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTLlM4fIfh52DiovbJT2b9A6UyqoiQtoG0c2HoVRCG_OCtLPZvz-uBSC6y1voM8d4jBVCNcpCGctco/pub?gid=1530769203&single=true&output=csv",
-  // Ranking system — level → score threshold + rank name + badge image.
+  // Ranking system – level → score threshold + rank name + badge image.
   // Used for the XP card's level transition animation (we need badge
   // images for any intermediate levels a player passes through during
   // a single match's XP gain).
   rankingSystem:
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTLlM4fIfh52DiovbJT2b9A6UyqoiQtoG0c2HoVRCG_OCtLPZvz-uBSC6y1voM8d4jBVCNcpCGctco/pub?gid=1047880912&single=true&output=csv",
-  // Game ID map — match-level metadata: round wins per team, team
+  // Game ID map – match-level metadata: round wins per team, team
   // ratings, winning/losing team designations, badge images.
   gameIdMap:
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTLlM4fIfh52DiovbJT2b9A6UyqoiQtoG0c2HoVRCG_OCtLPZvz-uBSC6y1voM8d4jBVCNcpCGctco/pub?gid=489613415&single=true&output=csv",
-  // Weapons — one row per gun with display name, image, stats
+  // Weapons – one row per gun with display name, image, stats
   // (mag size / damage / reload / fire rate / etc.), unlock metadata,
   // and tree-branch grouping. Lives on the DATA spreadsheet (same as
-  // accolades, ranking, gameIdMap) — important when editing this URL.
+  // accolades, ranking, gameIdMap) – important when editing this URL.
   // Consumed by /weapons (the gallery page).
   weapons:
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTLlM4fIfh52DiovbJT2b9A6UyqoiQtoG0c2HoVRCG_OCtLPZvz-uBSC6y1voM8d4jBVCNcpCGctco/pub?gid=924946993&single=true&output=csv",
-  // Player Armory — one row per (player, gun). Carries per-player stats
+  // Player Armory – one row per (player, gun). Carries per-player stats
   // with each gun PLUS precomputed unlock state (Gun_Is_Unlocked,
   // Unlock_Progress_Pct, Unlock_Progress_Text, Has_Used_Gun,
   // Gun_Player_Image). Lives on the same DATA spreadsheet as `weapons`,
@@ -67,7 +67,7 @@ export const CMS_URLS = {
   // portal Armory tab to render gun cards grouped by Gun_Tree_Branch.
   playerArmory:
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTLlM4fIfh52DiovbJT2b9A6UyqoiQtoG0c2HoVRCG_OCtLPZvz-uBSC6y1voM8d4jBVCNcpCGctco/pub?gid=583760029&single=true&output=csv",
-  // Open Games — upcoming and past open (public) matches. Editors manage
+  // Open Games – upcoming and past open (public) matches. Editors manage
   // this tab in the CMS spreadsheet. Columns: Date, Time, Type,
   // Signup_Link, Status, Match_Report, More_Info_Image, More_Info_Text.
   // NOTE: Replace REPLACE_WITH_GID with the actual gid from the published

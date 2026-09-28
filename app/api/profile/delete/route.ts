@@ -1,5 +1,5 @@
 /**
- * app/api/profile/delete/route.ts  — POST
+ * app/api/profile/delete/route.ts  – POST
  * --------------------------------------------------------------------
  * Irreversible self-service account deletion. Runs delete_my_account()
  * (unlinks match rows, hard-deletes the account PII + derived stats, and
@@ -23,11 +23,11 @@ export async function POST() {
     return Response.json({ ok: false, error: "Couldn't delete your account. Please try again." }, { status: 500 });
   }
 
-  // Session is already invalid (auth user gone) — clear the cookies too.
+  // Session is already invalid (auth user gone) – clear the cookies too.
   try {
     await supabase.auth.signOut();
   } catch {
-    // ignore — the user no longer exists server-side
+    // ignore – the user no longer exists server-side
   }
 
   return Response.json({ ok: true, reclaimCode: (reclaimCode as string | null) ?? null });

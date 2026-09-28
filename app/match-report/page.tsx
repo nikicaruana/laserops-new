@@ -81,7 +81,7 @@ export default async function MatchReportPage({
   const allMatchIds = await listAllMatchIdsSupabase(supabase);
 
   return (
-    <main className="bg-bg pb-20">
+    <main className="pb-20">
       <Container className="pt-8 sm:pt-12">
         <h1 className="mb-6 text-center text-2xl font-extrabold uppercase tracking-tight sm:mb-8 sm:text-3xl">
           Match Report
@@ -193,7 +193,7 @@ async function MatchContent({
 
 function LoadingState() {
   return (
-    <div className="mt-8 border border-border bg-bg-elevated px-6 py-16 text-center">
+    <div className="mt-8 portal-card px-6 py-16 text-center">
       <p className="text-sm font-semibold uppercase tracking-[0.14em] text-text-muted">
         Loading match report…
       </p>

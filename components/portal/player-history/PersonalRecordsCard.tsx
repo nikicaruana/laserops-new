@@ -19,18 +19,18 @@ import { AnimatedValue } from "@/components/portal/player-summary/AnimatedValue"
  * Niki feedback after pass 1:
  *   - Each tile should LINK to the match report for that record's
  *     match ID, scoped to this player. Whole tile is the link target,
- *     not just the match ID text — bigger hit area, more discoverable.
+ *     not just the match ID text – bigger hit area, more discoverable.
  *   - Match ID font got bumped up so the link target is more visually
  *     prominent (it was almost a footnote before).
  *
  * If a record has no matchId (shouldn't happen in practice but the
  * type allows it), the tile renders as a non-interactive div instead
- * — broken links are worse than non-links.
+ * – broken links are worse than non-links.
  */
 
 type Props = {
   records: PersonalRecord[];
-  /** Player's Ops Tag — passed through to the match report URL so
+  /** Player's Ops Tag – passed through to the match report URL so
    *  the linked report opens with this player's stats expanded. */
   ops: string;
 };
@@ -39,7 +39,7 @@ export function PersonalRecordsCard({ records, ops }: Props) {
   return (
     <section
       aria-label="Personal Records"
-      className="overflow-hidden rounded-sm border border-border bg-bg-elevated"
+      className="overflow-hidden rounded-sm portal-card"
     >
       <header className="bg-accent px-5 py-3 text-center sm:px-6 sm:py-4">
         <h2 className="text-lg font-extrabold uppercase tracking-tight text-bg sm:text-xl">
@@ -83,17 +83,17 @@ function RecordTile({ record, ops }: { record: PersonalRecord; ops: string }) {
     </>
   );
 
-  // Common card chrome — kept identical between link and non-link
+  // Common card chrome – kept identical between link and non-link
   // branches so the visual is the same; only the wrapper element
   // changes.
   const cardClass =
-    "flex h-full flex-col items-center gap-1 rounded-sm border border-accent/40 bg-bg p-3 text-center sm:p-4";
+    "flex h-full flex-col items-center gap-1 rounded-sm border border-accent/40 bg-bg/50 p-3 text-center sm:p-4";
 
   if (record.matchId === "") {
     return <div className={cardClass}>{tileContent}</div>;
   }
 
-  // URL-encoding the ops tag is defensive — most are plain ASCII but
+  // URL-encoding the ops tag is defensive – most are plain ASCII but
   // a player with spaces or special chars in their nickname would
   // otherwise break the URL.
   const href = `/match-report?match=${encodeURIComponent(

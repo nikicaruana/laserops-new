@@ -17,7 +17,7 @@ import { revalidateTag } from "next/cache";
  * endpoint is inert (returns 503) so it can't be abused.
  *
  * Note: this refreshes the SITE's copy of the published sheets. It can't
- * speed up Google's own "Publish to web" propagation — if the published CSV
+ * speed up Google's own "Publish to web" propagation – if the published CSV
  * itself is still behind your edits, give Google a minute, then hit this.
  */
 export const dynamic = "force-dynamic";

@@ -35,7 +35,7 @@ export type SummaryTop = {
    * True when the player has met the rating unlock criteria
    * (at least RATING_UNLOCK_MIN_MATCHES matches AND at least
    * RATING_UNLOCK_MIN_LEVEL level). Below either threshold the rating
-   * isn't statistically meaningful yet — ProfileCard / StatCards can
+   * isn't statistically meaningful yet – ProfileCard / StatCards can
    * use this to suppress the rating image and show an explainer
    * instead.
    */
@@ -61,7 +61,7 @@ export const RATING_UNLOCK_MIN_LEVEL = 4;
 
 /**
  * Project a raw row into the top-section shape. Defensive about missing or
- * malformed values — every consumer should be able to render even if a
+ * malformed values – every consumer should be able to render even if a
  * specific column is empty or junk.
  */
 export function projectSummaryTop(row: PlayerStatsRaw): SummaryTop {

@@ -95,8 +95,8 @@ const FAQ_ITEMS: FaqItem[] = [
       "how long session 3 hours standard recommended flexible booking type",
     answer: (
       <p>
-        Sessions vary by booking type. Our standard session is 3 hours long —
-        the recommended length to maximise your experience — but we can be
+        Sessions vary by booking type. Our standard session is 3 hours long –
+        the recommended length to maximise your experience – but we can be
         flexible to your needs.
       </p>
     ),
@@ -109,7 +109,7 @@ const FAQ_ITEMS: FaqItem[] = [
     answer: (
       <p>
         We handle small groups through to 16v16 games. If your group is on the
-        smaller side, get in touch and we&apos;ll let you know the options —
+        smaller side, get in touch and we&apos;ll let you know the options –
         including joining an{" "}
         <Link href="/community" className="text-accent hover:underline">
           open game
@@ -157,7 +157,7 @@ const FAQ_ITEMS: FaqItem[] = [
     answer: (
       <p>
         Yes, as an optional add on. A photographer captures the action across
-        your session and you get high quality images afterwards — the kind that
+        your session and you get high quality images afterwards – the kind that
         actually get used in speeches, slideshows, and social posts rather than
         left in a camera roll.
       </p>
@@ -320,7 +320,7 @@ export function FaqSearch() {
           ))}
         </dl>
       ) : (
-        <div className="mt-8 border border-border bg-bg-elevated px-6 py-10 text-center">
+        <div className="mt-8 portal-card px-6 py-10 text-center">
           <p className="text-sm text-text-muted">
             Nothing matched &ldquo;{query}&rdquo;.{" "}
             <button

@@ -64,7 +64,7 @@ export default async function WeaponsPage() {
   const usageStats = await fetchWeaponUsageStats(supabase, treeBranchByName, imageByName);
 
   return (
-    <main className="min-h-screen bg-bg pb-16 pt-10 sm:pb-24 sm:pt-14 lg:pb-32 lg:pt-20">
+    <main className="min-h-screen pb-16 pt-10 sm:pb-24 sm:pt-14 lg:pb-32 lg:pt-20">
       <Container size="wide">
         {/* Page heading. Mirrors the marketing-page tone of other top-
             level routes: small uppercase eyebrow + big bold heading. */}
@@ -138,7 +138,7 @@ export default async function WeaponsPage() {
  */
 function EmptyState() {
   return (
-    <div className="rounded-sm border border-border bg-bg-elevated p-8 text-center sm:p-12">
+    <div className="rounded-sm portal-card p-8 text-center sm:p-12">
       <p className="text-base text-text-muted sm:text-lg">
         Weapons data is currently unavailable. Please try again shortly.
       </p>

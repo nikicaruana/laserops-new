@@ -9,11 +9,11 @@
  *
  * Conventions:
  *   - All filter-relevant numerics (year, month_num) are parsed to integers
- *     once during fetch — defensively, since CSV values can come as floats
+ *     once during fetch – defensively, since CSV values can come as floats
  *     ("2026.00") or zero-padded strings.
  *   - YearMonth strings are normalised to "YYYY-MM" for stable grouping.
  *   - We keep the raw stat columns as strings until each leaderboard's
- *     aggregator parses them — different tables care about different stats.
+ *     aggregator parses them – different tables care about different stats.
  */
 
 import {
@@ -23,7 +23,7 @@ import {
 } from "@/lib/sheets";
 import { isUnclaimedNickname } from "@/lib/leaderboards/unclaimed";
 
-/** Public — anyone with this URL can read the leaderboard tab. */
+/** Public – anyone with this URL can read the leaderboard tab. */
 export const PERIOD_STATS_CSV_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTLlM4fIfh52DiovbJT2b9A6UyqoiQtoG0c2HoVRCG_OCtLPZvz-uBSC6y1voM8d4jBVCNcpCGctco/pub?gid=1977569856&single=true&output=csv";
 
@@ -45,7 +45,7 @@ export type PeriodStatsRaw = Record<string, string> & {
 };
 
 /**
- * Period row with parsed numerics. Use this throughout the table layer —
+ * Period row with parsed numerics. Use this throughout the table layer –
  * the raw shape is only inside the fetcher.
  */
 export type PeriodRow = {
@@ -61,7 +61,7 @@ export type PeriodRow = {
   monthName: string;
   /** Normalised "YYYY-MM" key. Useful for grouping or display. */
   yearMonth: string;
-  /** All other stat columns kept as strings — parse on demand per leaderboard. */
+  /** All other stat columns kept as strings – parse on demand per leaderboard. */
   raw: PeriodStatsRaw;
 };
 
@@ -84,7 +84,7 @@ export async function fetchPeriodRows(): Promise<SheetFetchResult<PeriodRow>> {
     )
     .map((r) => {
       const profileRaw = r.LaserOps_Profile_Image?.trim();
-      // year may arrive as "2026.00" (Sheets float formatting) — round to int.
+      // year may arrive as "2026.00" (Sheets float formatting) – round to int.
       const year = Math.trunc(parseNumericOr(r.LaserOps_Game_Year, 0));
       const monthNum = Math.trunc(parseNumericOr(r.LaserOps_Game_Month_Num, 0));
       // Normalise YearMonth to "YYYY-MM" regardless of source format.
@@ -114,7 +114,7 @@ export async function fetchPeriodRows(): Promise<SheetFetchResult<PeriodRow>> {
 /* ---------- Filter primitives ---------- */
 
 /**
- * Filter selection — both fields independently optional.
+ * Filter selection – both fields independently optional.
  *   - year: undefined means "all years"
  *   - monthNum: undefined means "all months"
  *
@@ -151,7 +151,7 @@ export type FilterOption<V> = {
  * Derive available year and month options from the actual data.
  *
  * Years come from the unique set of years present, sorted descending
- * (most recent first — most users want to see this year's stats).
+ * (most recent first – most users want to see this year's stats).
  *
  * Months come from the unique set of (monthNum → monthName) pairs present,
  * sorted by monthNum 1..12. We use the *names* from the data itself rather

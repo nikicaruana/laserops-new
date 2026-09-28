@@ -1,9 +1,10 @@
 /**
  * lib/ingestion/streaks.ts
  * --------------------------------------------------------------------
- * Layer B: detect streaks from a parsed Round (Pack 2 §7). Pure — consumes the
+ * Layer B: detect streaks from a parsed Round (Pack 2 §7). Pure – consumes the
  * facts from round-parser, computes nothing about ELO/XP/score. A streak can
- * fire multiple times per round and multiple streaks can fire from one run.
+ * fire multiple times per round (once per life), but kill-streak tiers are
+ * mutually exclusive per life – only the highest tier a run reaches fires.
  * Canonical keys here map to the admin's streak_definitions (names/points) at
  * commit. Burn-based streaks are PROVISIONAL until validated on a real burn game.
  */
@@ -67,7 +68,7 @@ export function detectStreaks(round: Round): StreakAward[] {
   const playerIds = round.players.map((p) => p.in_game_player_id);
   const teamOf = new Map(round.players.map((p) => [p.in_game_player_id, p.team]));
 
-  // Deaths per player (victim), sorted — used for "in one life" grouping.
+  // Deaths per player (victim), sorted – used for "in one life" grouping.
   const deaths = new Map<number, number[]>();
   for (const pid of playerIds) deaths.set(pid, []);
   for (const k of kills) deaths.get(k.victim_id)?.push(k.epoch);
@@ -79,20 +80,33 @@ export function detectStreaks(round: Round): StreakAward[] {
   };
 
   // --- Kill streaks (3/5/10/20): consecutive kills with no death between -----
+  // Only the highest tier reached in a single life fires – a 6-kill life gives a
+  // 5-Streak, not a 3-Streak too. Across separate lives each fires again.
+  const KILL_TIERS = [[3, "kill_streak_3"], [5, "kill_streak_5"], [10, "kill_streak_10"], [20, "kill_streak_20"]] as const;
   for (const pid of playerIds) {
     const stream = [
       ...kills.filter((k) => k.actor_id === pid).map((k) => ({ epoch: k.epoch, time: k.time, kill: true })),
       ...kills.filter((k) => k.victim_id === pid).map((k) => ({ epoch: k.epoch, time: k.time, kill: false })),
     ].sort((a, b) => a.epoch - b.epoch || (a.kill === b.kill ? 0 : a.kill ? -1 : 1));
     let run = 0;
+    const times: Record<number, string> = {};
+    const flush = () => {
+      for (let i = KILL_TIERS.length - 1; i >= 0; i--) {
+        const [n, key] = KILL_TIERS[i];
+        if (run >= n) {
+          add(pid, key, times[n]);
+          break;
+        }
+      }
+      run = 0;
+    };
     for (const ev of stream) {
       if (ev.kill) {
         run++;
-        for (const [n, key] of [[3, "kill_streak_3"], [5, "kill_streak_5"], [10, "kill_streak_10"], [20, "kill_streak_20"]] as const) {
-          if (run === n) add(pid, key, ev.time);
-        }
-      } else run = 0;
+        times[run] = ev.time;
+      } else flush();
     }
+    flush();
   }
 
   // --- First / Last blood ---------------------------------------------------
@@ -217,9 +231,12 @@ export function detectStreaks(round: Round): StreakAward[] {
     );
     if (cap?.capturing_player_id == null) continue;
     const pid = cap.capturing_player_id;
-    if (period.held_seconds >= 180) add(pid, "hold_base_3min", period.from_time, `base ${period.base_id}`);
-    if (period.held_seconds >= 300) add(pid, "hold_base_5min", period.from_time, `base ${period.base_id}`);
+    // Tiers are mutually exclusive: a single continuous hold fires only its
+    // highest tier (a 10-min hold is not also a 5- and 3-min). Separate holds
+    // each still fire their own tier.
     if (period.held_seconds >= 600) add(pid, "hold_base_10min", period.from_time, `base ${period.base_id}`);
+    else if (period.held_seconds >= 300) add(pid, "hold_base_5min", period.from_time, `base ${period.base_id}`);
+    else if (period.held_seconds >= 180) add(pid, "hold_base_3min", period.from_time, `base ${period.base_id}`);
   }
 
   // --- Burner: cumulative team hold per base reaches 600s (PROVISIONAL) ------

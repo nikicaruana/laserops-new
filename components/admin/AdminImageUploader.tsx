@@ -10,17 +10,21 @@
  */
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { BadgePreview } from "@/components/admin/BadgePreview";
 
 export function AdminImageUploader({
   value,
   onChange,
   kind,
   previewClass = "h-16 w-28",
+  expandable = false,
 }: {
   value: string | null;
   onChange: (url: string) => void;
-  kind: "gun" | "accolade" | "team" | "rank" | "tier" | "streak";
+  kind: "gun" | "accolade" | "team" | "rank" | "tier" | "streak" | "killstreak" | "reward";
   previewClass?: string;
+  /** When true, clicking the current image opens a full-size lightbox. */
+  expandable?: boolean;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -58,8 +62,12 @@ export function AdminImageUploader({
           className={`flex ${previewClass} shrink-0 items-center justify-center border border-border-strong bg-bg`}
         >
           {value ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={value} alt="" className="max-h-full max-w-full object-contain" />
+            expandable ? (
+              <BadgePreview src={value} alt="Badge" className="h-full w-full" />
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={value} alt="" className="max-h-full max-w-full object-contain" />
+            )
           ) : (
             <span className="text-[0.6rem] uppercase tracking-wide text-text-subtle">No image</span>
           )}

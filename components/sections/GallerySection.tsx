@@ -9,7 +9,7 @@ import { cn } from "@/lib/cn";
 import { brand } from "@/lib/brand";
 
 /**
- * Gallery section — mixed-content social proof.
+ * Gallery section – mixed-content social proof.
  *
  * MOBILE/TABLET (< xl): two horizontal scroll rows with scroll-snap-center
  *   Row 1: Instagram posts (swipe through)
@@ -26,7 +26,7 @@ import { brand } from "@/lib/brand";
  *   - Preferred: CMS-driven via props from the server. The homepage
  *     page.tsx fetches Instagram_Posts and Google_Reviews from the CMS
  *     and passes them in.
- *   - Fallback: hardcoded sample data baked into this component —
+ *   - Fallback: hardcoded sample data baked into this component –
  *     used when the CMS has no data yet (e.g. during initial staging,
  *     or if the CMS fetch fails). Lets the section render meaningfully
  *     in dev / preview environments without requiring an active CMS.
@@ -62,7 +62,7 @@ const sampleInstagramItems: InstagramItem[] = [
   {
     id: "ig2",
     imageSrc: "/images/gallery/action-2.jpg",
-    caption: "Capture the flag — final round chaos.",
+    caption: "Capture the flag – final round chaos.",
     postUrl: brand.social.instagram,
   },
   {
@@ -123,7 +123,7 @@ const sampleReviewItems: ReviewItem[] = [
     id: "gr4",
     rating: 5,
     quote:
-      "Game changer. Way more thrilling than paintball — no bruises and the missions are properly tactical.",
+      "Game changer. Way more thrilling than paintball – no bruises and the missions are properly tactical.",
     reviewer: "Daniel B.",
     relativeTime: "2 months ago",
     reviewsUrl: "https://www.google.com/maps/place/LaserOps+Malta/@35.9351506,14.0734794,11z/data=!4m12!1m2!2m1!1slaserops+malta!3m8!1s0x130e4ddaeadfe003:0xda30f052e79ffef8!8m2!3d35.9351506!4d14.37835!9m1!1b1!15sCg5sYXNlcm9wcyBtYWx0YVoQIg5sYXNlcm9wcyBtYWx0YZIBGm91dGRvb3JfYWN0aXZpdHlfb3JnYW5pemVymgFEQ2k5RFFVbFJRVU52WkVOb2RIbGpSamx2VDJwc2EyUkZSa3haYm1SYVpVaENTbVZHYkZWV1JscHlWVWRXTlZSSVl4QULgAQD6AQQIQBA6!16s%2Fg%2F11z6lk5clw!5m2!1e4!1e1?entry=ttu&g_ep=EgoyMDI2MDUwNi4wIKXMDSoASAFQAw%3D%3D",
@@ -131,7 +131,7 @@ const sampleReviewItems: ReviewItem[] = [
 ];
 
 /**
- * Props for GallerySection. Both arrays are optional — when omitted or
+ * Props for GallerySection. Both arrays are optional – when omitted or
  * empty, the component falls back to its baked-in sample data so the
  * homepage stays visually populated regardless of CMS state.
  */
@@ -146,7 +146,7 @@ export function GallerySection({
 }: GallerySectionProps = {}) {
   // Use CMS data if provided AND non-empty; otherwise fall back to
   // sample. The "and non-empty" check matters because an empty CMS
-  // returns [] not undefined — we want the fallback in either case.
+  // returns [] not undefined – we want the fallback in either case.
   const instagramItems =
     instagramItemsProp && instagramItemsProp.length > 0
       ? instagramItemsProp
@@ -159,7 +159,7 @@ export function GallerySection({
   return (
     <section
       aria-labelledby="gallery-heading"
-      // Yellow band — the "social proof" section is the only yellow-bg
+      // Yellow band – the "social proof" section is the only yellow-bg
       // beat on the homepage, anchoring it as a deliberate visual break
       // from the rest of the dark site. The cards inside (Instagram +
       // reviews) stay dark so they read as discrete content tiles
@@ -274,7 +274,7 @@ export function GallerySection({
 //
 // Renders the items 3× in a continuous track, scroll-snap-center,
 // and on mount scrolls to the middle copy. Result: user has many cards
-// to swipe through in either direction before "hitting the end" — feels
+// to swipe through in either direction before "hitting the end" – feels
 // effectively infinite for normal swipe distances.
 //
 // Cards are 75vw wide; the track has 12.5vw padding on each side, so
@@ -328,7 +328,7 @@ function ScrollRow<T extends { id: string }>({
   return (
     <div>
       {/* Row header.
-          Colors are dark — this component is currently used only inside
+          Colors are dark – this component is currently used only inside
           the yellow Gallery section, so dark text reads against the
           yellow background. If reused elsewhere, parameterize the tone. */}
       <Container size="wide" className="mb-4 flex items-baseline justify-between gap-4 sm:mb-5">
@@ -436,7 +436,7 @@ function GoogleReviewCard({
         // cards' shape and the row stays visually balanced. The square
         // shape at desktop column width (~410px on a 3-col grid in a
         // wide container) gives roughly 410×410px, with ~290px of
-        // text-area room — comfortably fitting line-clamp-12 below.
+        // text-area room – comfortably fitting line-clamp-12 below.
         // Earlier iterations let cards grow vertically based on content,
         // which broke the row alignment when one review was much longer
         // than another. Bound shape > unbounded text.
@@ -457,7 +457,7 @@ function GoogleReviewCard({
       <blockquote className="my-4 flex-1 overflow-hidden">
         {/* Mobile: 6 lines (square card at 75vw). Desktop: 12 lines
             (square card at ~410px is bigger so more lines fit naturally).
-            Both bounded — long reviews truncate with an ellipsis. The
+            Both bounded – long reviews truncate with an ellipsis. The
             full review opens via the card's link to the Google reviews
             page where the user can read it in its entirety. */}
         <p
@@ -492,7 +492,7 @@ type GridCell =
  * Build a stable interleaved sequence for the desktop grid.
  *
  * Pattern: 2 instagram items, then 1 review, repeat. Falls back
- * gracefully when one stream is shorter than the other — uses whatever
+ * gracefully when one stream is shorter than the other – uses whatever
  * stream still has items left. Caps at `maxCells` total to keep the
  * section a fixed visual height.
  *

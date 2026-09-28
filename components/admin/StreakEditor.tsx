@@ -70,7 +70,7 @@ export function StreakEditor({
       name: (f.name ?? "").trim(),
       description: f.description,
       badge_url: f.badge_url,
-      xp: f.points ?? 0, // points contribute to XP — keep them aligned
+      xp: f.points ?? 0, // points contribute to XP – keep them aligned
       points: f.points ?? 0,
       tier: f.tier,
       is_active: f.is_active ?? true,
@@ -127,6 +127,7 @@ export function StreakEditor({
               onChange={(url) => set("badge_url", url)}
               kind="streak"
               previewClass="h-16 w-16"
+              expandable
             />
           </div>
 

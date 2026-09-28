@@ -3,7 +3,7 @@
  * --------------------------------------------------------------------
  * A signed-up player joins a live match. Auth-gated. Shows the join form (code
  * + headband + gun from their unlocked armory). Guards: the game must be live
- * and the player must have a registered signup — otherwise a clear message.
+ * and the player must have a registered signup – otherwise a clear message.
  */
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -39,10 +39,17 @@ export default async function JoinMatchPage({ params }: { params: Promise<{ id: 
 
   const { data: match } = await supabase
     .from("matches")
-    .select("id, title, status")
+    .select("id, title, status, is_double_xp")
     .eq("id", id)
     .maybeSingle();
   if (!match) notFound();
+
+  const { data: boostRows } = await supabase.rpc("my_xp_boosts");
+  const boosts = { double: 0, one_five: 0 };
+  for (const b of (boostRows ?? []) as { boost_type: string; balance: number }[]) {
+    if (b.boost_type === "double") boosts.double = Number(b.balance) || 0;
+    if (b.boost_type === "one_five") boosts.one_five = Number(b.balance) || 0;
+  }
 
   const [{ data: signup }, guns, { data: participant }] = await Promise.all([
     supabase
@@ -73,7 +80,7 @@ export default async function JoinMatchPage({ params }: { params: Promise<{ id: 
         </div>
 
         {match.status !== "live" ? (
-          <div className="border border-border bg-bg-elevated px-5 py-8 text-center">
+          <div className="portal-card px-5 py-8 text-center">
             <p className="text-sm text-text-muted">
               This game isn&apos;t live yet. The join code goes live about 30 minutes before the
               start &mdash; check back then.
@@ -83,7 +90,7 @@ export default async function JoinMatchPage({ params }: { params: Promise<{ id: 
             </Link>
           </div>
         ) : !isRegistered ? (
-          <div className="border border-border bg-bg-elevated px-5 py-8 text-center">
+          <div className="portal-card px-5 py-8 text-center">
             <p className="text-sm text-text-muted">
               You&apos;re not signed up for this game, so you can&apos;t join it. If you&apos;re here
               to play, ask a marshal to add you.
@@ -93,11 +100,13 @@ export default async function JoinMatchPage({ params }: { params: Promise<{ id: 
             </Link>
           </div>
         ) : (
-          <div className="border border-border bg-bg-elevated px-5 py-6 sm:px-6">
+          <div className="portal-card px-5 py-6 sm:px-6">
             <JoinMatchForm
               matchId={match.id}
               guns={guns}
               bookedGun={signup?.booked_gun ?? null}
+              isDoubleXp={match.is_double_xp === true}
+              boosts={boosts}
               initial={
                 participant
                   ? { headband: participant.headset_label ?? null, gun: participant.gun_used ?? null }

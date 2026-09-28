@@ -5,27 +5,27 @@
  * --------------------------------------------------------------------
  * Lifecycle actions for a match in the admin detail view. Which buttons show
  * depends on the current status:
- *   tentative / awaiting_confirm -> Confirm game, Cancel
- *   confirmed                    -> Start match (generates the 4-digit entry
- *                                   code + goes live), Cancel
- *   live                         -> Complete match
+ *   tentative / awaiting_confirm -> Confirm game, Cancel*
+ *   confirmed                    -> Start match, Cancel*
+ *   live                         -> Complete match*, End early (weather refund)*
  *   cancelled                    -> Reopen
- * Writes matches.status (+ entry_code / went_live_at / played_on) via the admin
- * session (admin_all RLS). The match ID (LO-YYYY-NN) is stamped on go-live by a
- * DB trigger.
+ * ENDING a game - completing it, ending it early, or cancelling it - moves money
+ * (refunds) and is irreversible, so each of those (*) requires a 2FA-elevated
+ * session: the action opens TotpGate, and only runs once the code is verified.
+ * The matching API routes also enforce aal2 server-side. Confirm / Start / Reopen
+ * are unchanged (direct writes via admin_all RLS).
  */
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { TotpGate } from "@/components/admin/TotpGate";
 
-function gen4() {
-  return String(Math.floor(1000 + Math.random() * 9000));
-}
+type Gate = { kind: "complete" } | { kind: "cancel" } | { kind: "endEarly"; percent: number };
 
 export function MatchAdminActions({
   matchId,
   status,
-  scheduledAt,
+  scheduledAt: _scheduledAt,
 }: {
   matchId: string;
   status: string | null;
@@ -34,6 +34,8 @@ export function MatchAdminActions({
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showEndEarly, setShowEndEarly] = useState(false);
+  const [gate, setGate] = useState<Gate | null>(null);
 
   async function patch(fields: Record<string, unknown>, confirmMsg?: string) {
     if (confirmMsg && !window.confirm(confirmMsg)) return;
@@ -49,8 +51,20 @@ export function MatchAdminActions({
     router.refresh();
   }
 
-  // Confirming goes through an API route so signed-up players get the
-  // "payment is open" email.
+  async function callRpc(fn: string, confirmMsg: string) {
+    if (!window.confirm(confirmMsg)) return;
+    setBusy(true);
+    setError(null);
+    const supabase = createClient();
+    const { error: err } = await supabase.rpc(fn, { p_match_id: matchId });
+    setBusy(false);
+    if (err) {
+      setError(err.message);
+      return;
+    }
+    router.refresh();
+  }
+
   async function confirmGame() {
     setBusy(true);
     setError(null);
@@ -63,6 +77,44 @@ export function MatchAdminActions({
     }
     router.refresh();
   }
+
+  // The three game-ending actions all run only after 2FA (TotpGate.onVerified).
+  async function runGated() {
+    if (!gate) return;
+    setBusy(true);
+    setError(null);
+    let url: string;
+    let body: string | undefined;
+    if (gate.kind === "complete") url = `/api/matches/${matchId}/complete`;
+    else if (gate.kind === "cancel") url = `/api/matches/${matchId}/cancel`;
+    else {
+      url = `/api/matches/${matchId}/end-early`;
+      body = JSON.stringify({ percent: gate.percent });
+    }
+    const res = await fetch(url, {
+      method: "POST",
+      headers: body ? { "Content-Type": "application/json" } : undefined,
+      body,
+    });
+    const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+    setBusy(false);
+    setGate(null);
+    if (!res.ok || !data.ok) {
+      setError(data.error || "Something went wrong.");
+      return;
+    }
+    setShowEndEarly(false);
+    router.refresh();
+  }
+
+  const gateAction =
+    gate?.kind === "complete"
+      ? "complete this game"
+      : gate?.kind === "cancel"
+        ? "cancel this game and refund everyone in full"
+        : gate
+          ? `end this game early and refund everyone ${gate.percent}%`
+          : "this change";
 
   const s = status ?? "tentative";
 
@@ -82,12 +134,7 @@ export function MatchAdminActions({
       {s === "confirmed" && (
         <button
           type="button"
-          onClick={() =>
-            patch(
-              { status: "live", entry_code: gen4(), went_live_at: new Date().toISOString() },
-              "Start this match now? It goes live and gets a join code for players.",
-            )
-          }
+          onClick={() => callRpc("admin_start_match", "Start this match now? It goes live and gets a join code for players.")}
           disabled={busy}
           className="border border-accent bg-accent px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-bg transition-transform active:scale-[0.98] disabled:opacity-50"
         >
@@ -96,25 +143,56 @@ export function MatchAdminActions({
       )}
 
       {s === "live" && (
-        <button
-          type="button"
-          onClick={() =>
-            patch(
-              { status: "completed", played_on: (scheduledAt ?? new Date().toISOString()).slice(0, 10) },
-              "Mark this match completed? Players can no longer join.",
-            )
-          }
-          disabled={busy}
-          className="border border-accent bg-accent px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-bg transition-transform active:scale-[0.98] disabled:opacity-50"
-        >
-          Complete match
-        </button>
+        <>
+          <button
+            type="button"
+            onClick={() => setGate({ kind: "complete" })}
+            disabled={busy}
+            className="border border-accent bg-accent px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-bg transition-transform active:scale-[0.98] disabled:opacity-50"
+          >
+            Complete match
+          </button>
+
+          {!showEndEarly ? (
+            <button
+              type="button"
+              onClick={() => setShowEndEarly(true)}
+              disabled={busy}
+              className="border border-amber-700 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-amber-400 hover:bg-amber-950/30 disabled:opacity-50"
+            >
+              End early (weather)
+            </button>
+          ) : (
+            <span className="flex items-center gap-2 border border-amber-800/60 bg-amber-950/20 px-3 py-1.5">
+              <span className="text-[0.65rem] font-bold uppercase tracking-[0.12em] text-amber-300">Refund each player</span>
+              {[25, 50, 75].map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setGate({ kind: "endEarly", percent: p })}
+                  disabled={busy}
+                  className="border border-amber-600 px-2.5 py-1 text-xs font-bold text-amber-200 hover:bg-amber-600 hover:text-bg disabled:opacity-50"
+                >
+                  {p}%
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => setShowEndEarly(false)}
+                disabled={busy}
+                className="px-2 py-1 text-xs font-bold uppercase tracking-[0.1em] text-text-muted hover:text-text disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </span>
+          )}
+        </>
       )}
 
-      {s !== "completed" && s !== "cancelled" && (
+      {s !== "completed" && s !== "cancelled" && s !== "live" && (
         <button
           type="button"
-          onClick={() => patch({ status: "cancelled" }, "Cancel this game? Players who signed up will need to be told.")}
+          onClick={() => setGate({ kind: "cancel" })}
           disabled={busy}
           className="border border-red-800 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-red-400 hover:bg-red-950/40 disabled:opacity-50"
         >
@@ -134,6 +212,13 @@ export function MatchAdminActions({
       )}
 
       {error && <span className="text-xs text-red-400">{error}</span>}
+
+      <TotpGate
+        open={gate !== null}
+        action={gateAction}
+        onCancel={() => setGate(null)}
+        onVerified={runGated}
+      />
     </div>
   );
 }

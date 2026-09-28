@@ -41,7 +41,7 @@ export function WaiverGateForm({ initialMarketing }: { initialMarketing: boolean
   }
 
   return (
-    <form onSubmit={submit} className="space-y-5 border border-border bg-bg-elevated px-6 py-8 sm:px-8">
+    <form onSubmit={submit} className="space-y-5 portal-card px-6 py-8 sm:px-8">
       <div>
         <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">
           {WAIVER_TITLE} <span className="text-accent">*</span>

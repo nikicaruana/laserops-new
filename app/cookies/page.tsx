@@ -29,7 +29,7 @@ export default function CookiesPage() {
           <p className="mt-5 text-base leading-relaxed text-text-muted sm:text-lg">
             Cookies are small text files stored on your device when you visit a
             website. This page explains which cookies this site uses, what they
-            do, and how you can control them. You are always in control — you
+            do, and how you can control them. You are always in control – you
             can update your preferences at any time using the Cookie Settings
             link in the footer.
           </p>
@@ -37,7 +37,7 @@ export default function CookiesPage() {
       </section>
 
       {/* ── Necessary ────────────────────────────────────────── */}
-      <section className="border-b border-border bg-bg-elevated">
+      <section className="border-b border-border portal-surface">
         <Container size="narrow" className="py-14 sm:py-16">
           <SectionLabel>Always Active</SectionLabel>
           <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
@@ -69,7 +69,7 @@ export default function CookiesPage() {
             <p className="leading-relaxed">
               <strong className="font-semibold text-text">Google Analytics 4</strong>{" "}
               uses cookies to collect anonymised information about how visitors
-              use this site — which pages are visited, how long sessions last,
+              use this site – which pages are visited, how long sessions last,
               what type of device is used, and the general geographic region of
               visitors. No personally identifiable information is collected.
             </p>
@@ -84,7 +84,7 @@ export default function CookiesPage() {
       </section>
 
       {/* ── Marketing ────────────────────────────────────────── */}
-      <section className="border-b border-border bg-bg-elevated">
+      <section className="border-b border-border portal-surface">
         <Container size="narrow" className="py-14 sm:py-16">
           <SectionLabel>Optional</SectionLabel>
           <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
@@ -128,7 +128,7 @@ export default function CookiesPage() {
               You can revisit and change your preferences at any time using the{" "}
               <strong className="font-semibold text-text">Cookie Settings</strong>{" "}
               link in the footer of every page. You can also control cookies
-              through your browser settings — most browsers allow you to block
+              through your browser settings – most browsers allow you to block
               or delete cookies entirely, though this may affect how some sites
               function.
             </p>

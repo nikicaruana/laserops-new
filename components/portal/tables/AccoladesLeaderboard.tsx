@@ -5,15 +5,15 @@ import { getPeriodRowsFromSupabase } from "@/lib/leaderboards/supabase-period";
 import { AccoladesLeaderboardTable } from "@/components/portal/tables/AccoladesLeaderboardTable";
 
 /**
- * AccoladesLeaderboard — server-side wrapper.
+ * AccoladesLeaderboard – server-side wrapper.
  *
  * Three parallel fetches:
  *   1. Synthetic per-match accolade rows from Supabase (match_awards),
- *      shaped as GameDataRow with the Accolade_<Name> flag columns — the
+ *      shaped as GameDataRow with the Accolade_<Name> flag columns – the
  *      source of truth for "who earned what accolade in which match".
- *   2. CMS Accolades (canonical metadata: name, XP) — used to derive each
+ *   2. CMS Accolades (canonical metadata: name, XP) – used to derive each
  *      accolade's tier from its XP value (100=T1, 75=T2, 50=T3).
- *   3. Period rows (Supabase) — used ONLY to derive the year/month filter
+ *   3. Period rows (Supabase) – used ONLY to derive the year/month filter
  *      options so the accolades dropdown matches the other all-time boards.
  *
  * The synthetic rows already exclude unclaimed "Head NN" scores, so they're

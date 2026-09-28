@@ -69,7 +69,7 @@ export default async function ScoringHistoryPage({
         </h1>
         <p className="mt-2 text-sm text-text-muted">
           {selected?.name ?? modeSlug} · every saved version. Restoring re-applies that formula
-          going forward — it does not undo scoring already done.
+          going forward – it does not undo scoring already done.
         </p>
       </header>
 
@@ -99,7 +99,7 @@ export default async function ScoringHistoryPage({
           {rows.map((r, i) => {
             const expr = r.new_data?.structure
               ? formulaExpression(parseFormula(r.new_data.structure))
-              : "—";
+              : "–";
             return (
               <li key={r.id} className="border border-border bg-bg-elevated px-4 py-4">
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-3">

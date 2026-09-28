@@ -3,7 +3,7 @@ import { getPeriodRowsFromSupabase } from "@/lib/leaderboards/supabase-period";
 import { KillsLeaderboardTable } from "@/components/portal/tables/KillsLeaderboardTable";
 
 /**
- * KillsLeaderboard — server-side wrapper for the Kills leaderboard.
+ * KillsLeaderboard – server-side wrapper for the Kills leaderboard.
  *
  * Reads monthly period rows from Supabase (leaderboard_period_stats);
  * the client filters by Year/Month and aggregates on filter change.

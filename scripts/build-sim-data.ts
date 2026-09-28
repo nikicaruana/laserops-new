@@ -53,6 +53,22 @@ function buildRound(file: string, roundNo: number, gunImage: (w: string) => { na
   events.sort((a, b) => a.t - b.t);
 
   const flips = r.base_ownership.map((p) => ({ t: Math.max(0, ep(p.from_time) - start), baseId: p.base_id, team: p.team })).sort((a, b) => a.t - b.t);
+
+  const damageEvents = r.events.damage
+    .filter((d) => d.damage > 0 && name[d.actor_id])
+    .map((d) => ({ t: Math.max(0, ep(d.time) - start), actor: name[d.actor_id], amount: d.damage }))
+    .sort((a, b) => a.t - b.t);
+  const capByBaseTime = new Map();
+  for (const c of r.events.captures) if (c.capturing_player_id != null && c.base_id >= 0) capByBaseTime.set(`${c.base_id}|${c.time}`, c.capturing_player_id);
+  const holdPeriods = r.base_ownership
+    .map((per) => {
+      const pid = capByBaseTime.get(`${per.base_id}|${per.from_time}`);
+      if (pid == null || !name[pid]) return null;
+      const from = Math.max(0, ep(per.from_time) - start);
+      const to = per.to_time ? Math.max(from, ep(per.to_time) - start) : 1e9;
+      return { pid: name[pid], from, to };
+    })
+    .filter((x) => x !== null);
   // Bases keyed by device ID (default names can repeat across bases — disambiguate).
   const nameCounts: Record<string, number> = {};
   for (const b of r.bases) nameCounts[baseName[b.device_id]] = (nameCounts[baseName[b.device_id]] ?? 0) + 1;
@@ -72,6 +88,8 @@ function buildRound(file: string, roundNo: number, gunImage: (w: string) => { na
     burns: computeBurns(r.base_ownership, start, r.result.burn_threshold_seconds),
     burnThresholdSeconds: r.result.burn_threshold_seconds,
     events,
+    damageEvents,
+    holdPeriods,
   };
 }
 

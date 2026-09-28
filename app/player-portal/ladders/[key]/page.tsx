@@ -85,7 +85,7 @@ export default async function LadderPage({ params }: { params: Promise<{ key: st
       </div>
 
       {ladder.image_url && (
-        <div className="mb-6 aspect-[4/1] w-full overflow-hidden border border-border bg-bg-overlay">
+        <div className="mb-6 aspect-[4/1] w-full overflow-hidden portal-card">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={cldImage(ladderBannerUrl(ladder.image_url, 1600), { w: 384 })}
@@ -118,7 +118,7 @@ export default async function LadderPage({ params }: { params: Promise<{ key: st
         <div className="overflow-x-auto border border-border">
           <table className="w-full min-w-[520px] text-left text-sm">
             <thead>
-              <tr className="border-b border-border bg-bg-elevated text-[0.6rem] uppercase tracking-[0.14em] text-text-muted">
+              <tr className="border-b border-border portal-surface text-[0.6rem] uppercase tracking-[0.14em] text-text-muted">
                 <th className="px-4 py-3 font-semibold">#</th>
                 <th className="px-4 py-3 font-semibold">Squad</th>
                 <th className="px-4 py-3 text-right font-semibold">Roster XP</th>

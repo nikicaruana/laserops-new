@@ -17,7 +17,7 @@ import { brand } from "@/lib/brand";
  *
  * Icon design: black target silhouette on solid yellow square. Solid
  * background (rather than transparent) means the icon looks the same
- * on every phone regardless of light/dark theme — no system-coloured
+ * on every phone regardless of light/dark theme – no system-coloured
  * tile bleeding through. Yellow square is also the most distinctive
  * brand cue, so the icon reads as LASEROPS at a glance even at small
  * sizes.
@@ -28,14 +28,14 @@ import { brand } from "@/lib/brand";
  * background_color: matches theme_color so PWA install splash stays
  * cohesive with the dark site aesthetic.
  *
- * display: 'standalone' — when installed as a PWA, opens in its own
+ * display: 'standalone' – when installed as a PWA, opens in its own
  * window without browser chrome. Most native-feeling option.
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "LaserOps Malta",
     short_name: "LaserOps",
-    description: "Outdoor tactical laser tag in Malta — player portal and stats.",
+    description: "Outdoor tactical laser tag in Malta – player portal and stats.",
     start_url: "/",
     display: "standalone",
     background_color: "#ffde00",

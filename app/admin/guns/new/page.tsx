@@ -45,6 +45,7 @@ export default async function NewGunPage() {
     unlock_display_text: "",
     unlock_tier: "",
     mag_size: null,
+    stock: null,
     reload: null,
     fire_rate: "",
     difficulty: "",

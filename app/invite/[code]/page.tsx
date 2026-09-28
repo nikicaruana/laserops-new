@@ -197,6 +197,8 @@ export default async function GameInvitePage({ params }: { params: Promise<{ cod
                   mySignup={mySignup}
                   guns={guns}
                   align="center"
+                  priceEur={g.pricing_mode === "per_player" ? Number(g.price_eur) : null}
+                  isPrivate={Boolean(g.is_private)}
                 />
               </div>
             )

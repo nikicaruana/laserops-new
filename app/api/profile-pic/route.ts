@@ -5,7 +5,7 @@
  * this route:
  *   1. Verifies the caller is signed in (server Supabase client).
  *   2. Finds their own account (RLS scopes this to their row).
- *   3. Uploads the image to Cloudinary via a server-signed REST call —
+ *   3. Uploads the image to Cloudinary via a server-signed REST call –
  *      the API secret never leaves the server. public_id = account id so a
  *      re-upload overwrites the previous avatar (with cache invalidation).
  *   4. Writes the returned URL to accounts.profile_pic_url. The "update
@@ -54,23 +54,39 @@ export async function POST(request: Request) {
     );
   }
 
-  // 3. Read the uploaded file.
+  // 3. Read the source: either an uploaded file (crop flow) or a sourceUrl of an
+  //    existing Cloudinary photo the player is tagged in (Cloudinary fetches it).
   let file: File | null = null;
-  try {
-    const form = await request.formData();
-    const f = form.get("file");
-    if (f instanceof File) file = f;
-  } catch {
-    return Response.json({ ok: false, error: "Invalid upload." }, { status: 400 });
-  }
-  if (!file) {
-    return Response.json({ ok: false, error: "No file provided." }, { status: 400 });
-  }
-  if (!file.type.startsWith("image/")) {
-    return Response.json({ ok: false, error: "File must be an image." }, { status: 400 });
-  }
-  if (file.size > MAX_BYTES) {
-    return Response.json({ ok: false, error: "Image is too large (max 6 MB)." }, { status: 400 });
+  let sourceUrl: string | null = null;
+  const contentType = request.headers.get("content-type") ?? "";
+  if (contentType.includes("application/json")) {
+    try {
+      const body = (await request.json()) as { sourceUrl?: string };
+      sourceUrl = (body.sourceUrl ?? "").trim();
+    } catch {
+      return Response.json({ ok: false, error: "Invalid request." }, { status: 400 });
+    }
+    // Only allow copying from our own Cloudinary (no arbitrary remote fetch).
+    if (!/^https:\/\/res\.cloudinary\.com\//.test(sourceUrl)) {
+      return Response.json({ ok: false, error: "That photo can't be used." }, { status: 400 });
+    }
+  } else {
+    try {
+      const form = await request.formData();
+      const f = form.get("file");
+      if (f instanceof File) file = f;
+    } catch {
+      return Response.json({ ok: false, error: "Invalid upload." }, { status: 400 });
+    }
+    if (!file) {
+      return Response.json({ ok: false, error: "No file provided." }, { status: 400 });
+    }
+    if (!file.type.startsWith("image/")) {
+      return Response.json({ ok: false, error: "File must be an image." }, { status: 400 });
+    }
+    if (file.size > MAX_BYTES) {
+      return Response.json({ ok: false, error: "Image is too large (max 6 MB)." }, { status: 400 });
+    }
   }
 
   // 4. Server-signed Cloudinary upload. Sign the alphabetically-sorted
@@ -94,7 +110,8 @@ export async function POST(request: Request) {
     .digest("hex");
 
   const uploadForm = new FormData();
-  uploadForm.append("file", file);
+  // Cloudinary accepts either a binary file or a remote URL as `file`.
+  uploadForm.append("file", file ?? (sourceUrl as string));
   uploadForm.append("api_key", apiKey);
   uploadForm.append("timestamp", String(timestamp));
   uploadForm.append("folder", FOLDER);
@@ -140,7 +157,7 @@ export async function POST(request: Request) {
 }
 
 /**
- * DELETE — reset the avatar to the default (clear profile_pic_url). The
+ * DELETE – reset the avatar to the default (clear profile_pic_url). The
  * Cloudinary asset is left in place (it's keyed by account id and is
  * overwritten on the next upload); only the reference is cleared.
  */

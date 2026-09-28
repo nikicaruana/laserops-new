@@ -17,7 +17,7 @@ export const metadata: Metadata = {
  * match history; otherwise renders an empty state.
  *
  * The PlayerSearch bar lives in the player-stats layout (PlayerStatsShell),
- * so it appears above the sub-tabs for all player-stats pages — no separate
+ * so it appears above the sub-tabs for all player-stats pages – no separate
  * search bar here.
  */
 
@@ -40,7 +40,7 @@ export default async function PlayerHistoryPage({
         <Suspense
           key={ops}
           fallback={
-            <div className="mt-8 border border-border bg-bg-elevated px-6 py-16 text-center">
+            <div className="mt-8 portal-card px-6 py-16 text-center">
               <p className="text-sm font-semibold uppercase tracking-[0.14em] text-text-muted">
                 Loading history…
               </p>
@@ -67,7 +67,7 @@ async function HistoryContent({ ops }: { ops: string }) {
           </p>
           <p className="mx-auto mt-3 max-w-md text-sm text-text-muted sm:text-base">
             No player named &ldquo;{ops}&rdquo; has match data yet.
-            Double-check the Ops Tag — recent players appear in the
+            Double-check the Ops Tag – recent players appear in the
             search bar above.
           </p>
         </div>

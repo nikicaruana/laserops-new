@@ -9,7 +9,7 @@ import { cn } from "@/lib/cn";
  * --------------------------------------------------------------------
  * A small "(i)" glyph rendered next to a column header label. Click
  * (mobile) or hover (desktop) reveals a small popover with explanatory
- * text — what does "Match Rating" mean, how is "ELO ±" computed, etc.
+ * text – what does "Match Rating" mean, how is "ELO ±" computed, etc.
  *
  * Sits next to the label so it doesn't conflict with the column's
  * sort affordance (clicking the label sorts; clicking the icon
@@ -39,7 +39,7 @@ import { cn } from "@/lib/cn";
  *      - Try below-left first (preferred).
  *      - If overflowing the right edge, flip to below-right.
  *      - If overflowing the bottom edge, flip vertically to above.
- *    No external positioning library — the rules are simple enough
+ *    No external positioning library – the rules are simple enough
  *    that 30 lines of measurement code does the job and avoids a
  *    floating-ui dependency.
  *
@@ -51,12 +51,12 @@ import { cn } from "@/lib/cn";
  *
  * 4. Dismissal. Outside-click (pointerdown listener on document),
  *    Escape key, and a second click of the icon all close it. The
- *    popover itself is non-modal — no backdrop, no focus trap,
+ *    popover itself is non-modal – no backdrop, no focus trap,
  *    nothing intrusive. It's an inline aside, not a dialog.
  *
  * 5. Hover behaviour. On devices with hover (desktop), pointer-enter
  *    on the icon also opens. We don't auto-close on pointer-leave
- *    immediately — there's a small grace period so the user can move
+ *    immediately – there's a small grace period so the user can move
  *    their cursor onto the popover itself if they want to read it
  *    carefully. Click-outside still closes it.
  * --------------------------------------------------------------------
@@ -76,12 +76,12 @@ type Props = {
  *  popover feels attached to the icon, not floating freely. */
 const POPOVER_GAP = 6;
 
-/** Approx popover width — used for clamp/flip calculations. The actual
+/** Approx popover width – used for clamp/flip calculations. The actual
  *  rendered popover uses max-w in CSS so it can be narrower if the
  *  text is short. */
 const POPOVER_MAX_WIDTH = 240;
 
-/** Margin between the popover and the viewport edge — never butts up
+/** Margin between the popover and the viewport edge – never butts up
  *  flush against the screen edge on mobile. */
 const VIEWPORT_PAD = 8;
 
@@ -100,7 +100,7 @@ export function HeaderInfoIcon({ tooltip, ariaLabel }: Props) {
     placement: "below" | "above";
   } | null>(null);
   const popoverId = useId();
-  // Hover-close timeout handle — kept across renders so we can cancel
+  // Hover-close timeout handle – kept across renders so we can cancel
   // it if the pointer comes back into the icon/popover.
   const hoverCloseTimer = useRef<number | null>(null);
 
@@ -138,7 +138,7 @@ export function HeaderInfoIcon({ tooltip, ariaLabel }: Props) {
       }
 
       // Bottom-edge flip: if there's not enough room below, render
-      // above. Best-effort — we don't know the popover's actual
+      // above. Best-effort – we don't know the popover's actual
       // height before render, so we estimate ~120px (covers most
       // 1-3 line tooltips). If a particular tooltip is taller, the
       // popover's own max-height (in CSS below) prevents it from
@@ -151,7 +151,7 @@ export function HeaderInfoIcon({ tooltip, ariaLabel }: Props) {
           placement = "above";
         }
         // If neither below nor above fully fits (very short viewport),
-        // keep below — partial visibility beats off-screen.
+        // keep below – partial visibility beats off-screen.
       }
 
       setPosition({ top, left, placement });
@@ -171,14 +171,14 @@ export function HeaderInfoIcon({ tooltip, ariaLabel }: Props) {
 
   // Outside-click + Escape to close. pointerdown (rather than click)
   // so the popover dismisses promptly on the press, not after the
-  // release — feels snappier on mobile.
+  // release – feels snappier on mobile.
   useEffect(() => {
     if (!isOpen) return;
     function onPointerDown(e: PointerEvent) {
       const target = e.target as Node | null;
       if (!target) return;
       // Click on the icon itself is handled by the button's own
-      // toggle — let it through.
+      // toggle – let it through.
       if (buttonRef.current && buttonRef.current.contains(target)) return;
       // Click inside the popover doesn't close it (e.g. user
       // selecting text).
@@ -220,7 +220,7 @@ export function HeaderInfoIcon({ tooltip, ariaLabel }: Props) {
     }, HOVER_CLOSE_DELAY_MS);
   }
 
-  // Stop propagation on the click — without this, the click would
+  // Stop propagation on the click – without this, the click would
   // bubble up to the parent header button and trigger a column sort
   // before opening the tooltip. We want sort and tooltip to be
   // independent affordances.
@@ -292,7 +292,7 @@ export function HeaderInfoIcon({ tooltip, ariaLabel }: Props) {
                 // headers) so it reads as prose rather than a label.
                 "text-xs leading-snug text-text",
                 // Cap height with internal scroll for very long copy
-                // — shouldn't happen with good tooltip writing but
+                // – shouldn't happen with good tooltip writing but
                 // defensive.
                 "max-h-[12rem] overflow-auto",
               )}
@@ -308,7 +308,7 @@ export function HeaderInfoIcon({ tooltip, ariaLabel }: Props) {
 
 /**
  * Small inline SVG for the (i) glyph. Inline (rather than imported
- * from a library) because it's a single 14px icon — adding lucide-react
+ * from a library) because it's a single 14px icon – adding lucide-react
  * just for this would be a big dependency for a small thing, and we
  * don't currently import lucide elsewhere on the History page.
  *

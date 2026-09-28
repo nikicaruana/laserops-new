@@ -4,7 +4,7 @@
  * Fetches all per-player match rows and shapes them for the History
  * page: chart series, personal records, match summary table.
  *
- * Source: Game_Data_Lookup_Public — one row per player per match. We
+ * Source: Game_Data_Lookup_Public – one row per player per match. We
  * filter to a single player's rows here.
  *
  * Result is shaped so the page can render directly without further
@@ -47,6 +47,11 @@ export type PlayerMatch = {
   isWinner: boolean;
   roundsWon: number;
   roundsLost: number;
+  // Objective play (from ingestion; optional until the ingestion commit
+  // populates per-match capture stats). objCaps = number of base captures;
+  // capTime = seconds spent holding bases.
+  objCaps?: number;
+  capTime?: number;
   // ELO
   eloBefore: number;
   eloAfter: number;
@@ -71,7 +76,7 @@ export type PersonalRecord = {
 export type PlayerHistory = {
   matches: PlayerMatch[];
   records: PersonalRecord[];
-  /** Most recent rank badge URL — for the profile card. */
+  /** Most recent rank badge URL – for the profile card. */
   currentRankBadgeUrl: string;
   /** Most recent rank name. */
   currentRankName: string;
@@ -127,7 +132,7 @@ export async function fetchPlayerHistory(
   const records = computePersonalRecords(matches);
 
   // Most recent match (last in sorted order) is the source of "current"
-  // identity fields like the rank badge — these change over time.
+  // identity fields like the rank badge – these change over time.
   const mostRecent = matches[matches.length - 1];
   const currentRank: RankLevel | undefined = getRankByLevel(ranks, mostRecent.level);
   return {

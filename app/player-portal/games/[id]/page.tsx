@@ -154,7 +154,7 @@ export default async function GameDetailPage({
       <section className="mt-6">
         {match.status === "completed" ? (
           <div className="flex flex-col items-start gap-3">
-            <span className="inline-flex items-center gap-2 border border-border-strong bg-bg-elevated px-3 py-1.5 text-xs font-bold uppercase tracking-[0.12em] text-text-muted">
+            <span className="inline-flex items-center gap-2 portal-card px-3 py-1.5 text-xs font-bold uppercase tracking-[0.12em] text-text-muted">
               This game has finished
             </span>
             {match.match_code && (
@@ -231,7 +231,7 @@ export default async function GameDetailPage({
               const inner = (
                 <>
                   <span className="block w-full truncate text-center text-sm font-bold uppercase tracking-[0.06em] text-text">{name}</span>
-                  <span className="flex h-20 w-20 shrink-0 overflow-hidden rounded-sm border border-border bg-bg-overlay">
+                  <span className="flex h-20 w-20 shrink-0 overflow-hidden rounded-sm portal-card">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={cldImage(avatarOrDefault(s.profile_pic_url), { w: 384 })} alt={name} className="h-full w-full object-cover" />
                   </span>

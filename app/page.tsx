@@ -21,7 +21,7 @@ import { fetchSiteConfig, configString } from "@/lib/cms/site-config";
  * happens here (server) so it doesn't run client-side on every render.
  *
  * If the CMS returns no data (empty tabs, fetch fails), GallerySection
- * falls back to its baked-in sample data — homepage stays meaningful.
+ * falls back to its baked-in sample data – homepage stays meaningful.
  */
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
@@ -40,7 +40,7 @@ export default async function HomePage() {
   // `google_reviews_url` in the Site_Config CMS sheet to whatever
   // URL Google's "Write a review" / business profile page is at for
   // LaserOps Malta. If it's not set, we fall back to a generic
-  // search URL — better than a broken cid=laserops link, but ideally
+  // search URL – better than a broken cid=laserops link, but ideally
   // the editor sets the real URL once and forgets it.
   const googleReviewsUrl = configString(
     siteConfig,
@@ -69,7 +69,7 @@ export default async function HomePage() {
     quote: review.reviewText,
     reviewer: review.reviewerName,
     relativeTime: formatRelativeTime(review.date),
-    // All review cards link to the same Google reviews destination —
+    // All review cards link to the same Google reviews destination –
     // Google Reviews don't expose stable per-review URLs anyway. The
     // URL is configured via Site_Config so it can be updated without
     // a code change if Google's link format changes.
@@ -80,13 +80,13 @@ export default async function HomePage() {
     <>
       <HomeHero />
       <WeaponsSection />
-      {/* SeasonLeadersSection is async — fetches CMS + leaderboard data
+      {/* SeasonLeadersSection is async – fetches CMS + leaderboard data
           server-side. Auto-hides itself if no active season is configured
           or if the homepage_show_season_leaders flag is off in
           Site_Config. Sits between Weapons (marketing hooks) and Gallery
-          (social proof) — a "see the action in progress" beat. */}
+          (social proof) – a "see the action in progress" beat. */}
       <SeasonLeadersSection />
-      {/* Cloudinary photo preview — shows up to 9 images tagged "featured".
+      {/* Cloudinary photo preview – shows up to 9 images tagged "featured".
           Returns null if Cloudinary isn't configured or no featured photos exist,
           so the homepage stays clean during initial setup. */}
       <GalleryPreview />
@@ -129,10 +129,10 @@ export default async function HomePage() {
 
 /**
  * Coarse "X ago" formatter. Takes a YYYY-MM-DD string and returns
- * a casual relative time. Doesn't try to be precise — Google Reviews
+ * a casual relative time. Doesn't try to be precise – Google Reviews
  * uses similar coarseness ("3 weeks ago", "1 month ago").
  *
- * Returns the raw string if it can't parse — defensive.
+ * Returns the raw string if it can't parse – defensive.
  */
 function formatRelativeTime(yyyyMmDd: string): string {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(yyyyMmDd)) return yyyyMmDd;
@@ -143,7 +143,7 @@ function formatRelativeTime(yyyyMmDd: string): string {
   const diffMs = now.getTime() - reviewDate.getTime();
   const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-  if (days < 0) return yyyyMmDd; // future date — leave raw
+  if (days < 0) return yyyyMmDd; // future date – leave raw
   if (days === 0) return "today";
   if (days === 1) return "1 day ago";
   if (days < 7) return `${days} days ago`;

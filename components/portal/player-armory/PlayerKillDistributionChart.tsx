@@ -34,7 +34,7 @@ const TOP_N = 7;
  * "Other" always uses the trailing neutral grey.
  */
 const SLICE_COLOURS = [
-  "#ffde00", // accent yellow — biggest gun
+  "#ffde00", // accent yellow – biggest gun
   "#facc15", // amber-400
   "#f59e0b", // amber-500
   "#ef4444", // red-500
@@ -90,7 +90,7 @@ export function PlayerKillDistributionChart({ entries }: Props) {
       >
         <div className="flex h-[200px] items-center justify-center sm:h-[280px]">
           <p className="text-sm text-text-muted">
-            No kills recorded yet — play a match to populate this chart.
+            No kills recorded yet – play a match to populate this chart.
           </p>
         </div>
       </ChartCard>

@@ -20,7 +20,7 @@
  * common metrics available across all source modes. If a particular
  * tie-break needs a metric that isn't present (e.g. round_win_rate
  * applied to a match_top challenge that doesn't track wins/losses),
- * the function should return 0 — the engine treats 0 as no preference
+ * the function should return 0 – the engine treats 0 as no preference
  * and falls through to the next tie-break or the source order.
  */
 
@@ -29,7 +29,7 @@
  * populates this from the source rows after applying the challenge's
  * primary metric/aggregation.
  *
- * Fields are nullable — challenges that don't aggregate per-player
+ * Fields are nullable – challenges that don't aggregate per-player
  * (e.g. match_top) won't have season-wide totals; only the underlying
  * raw row's fields will be populated.
  */
@@ -58,7 +58,7 @@ export type TiebreakFunction = (input: TiebreakInput) => number;
 const TIEBREAK_REGISTRY: Record<string, TiebreakFunction> = {
   /**
    * Round win rate: rounds_won / (rounds_won + rounds_lost), descending.
-   * Used for the Round Wins challenge — a player who won 5/5 rounds
+   * Used for the Round Wins challenge – a player who won 5/5 rounds
    * beats a player who won 5/10.
    */
   round_win_rate_descending: ({ seasonRoundsWon, seasonRoundsLost }) => {
@@ -71,13 +71,13 @@ const TIEBREAK_REGISTRY: Record<string, TiebreakFunction> = {
 
   /**
    * Kill/death ratio for a single match. Used by the Killing Machines
-   * challenge to break ties on PlayerFragsCount — among matches with
+   * challenge to break ties on PlayerFragsCount – among matches with
    * the same kill count, the one with the higher KD wins.
    */
   kd_ratio_descending: ({ matchKills, matchDeaths }) => {
     const kills = matchKills ?? 0;
     const deaths = matchDeaths ?? 0;
-    if (deaths === 0) return kills * 1000; // unbeatable — never died
+    if (deaths === 0) return kills * 1000; // unbeatable – never died
     return kills / deaths;
   },
 
@@ -98,7 +98,7 @@ const TIEBREAK_REGISTRY: Record<string, TiebreakFunction> = {
 };
 
 /**
- * Look up a tie-break function by name. Returns null for unknown names —
+ * Look up a tie-break function by name. Returns null for unknown names –
  * the engine treats null as "no further tie-breaking" and falls through.
  */
 export function getTiebreak(name: string): TiebreakFunction | null {

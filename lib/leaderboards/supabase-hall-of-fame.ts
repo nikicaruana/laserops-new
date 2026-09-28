@@ -118,7 +118,7 @@ export async function getAccoladeLeaders(
     .select("accolade, ops_tag, profile_pic_url, times_won");
 
   // Key by accoladeKey (case/separator-insensitive) so catalogue names match
-  // the view's stored names even when they differ in casing/spelling — e.g.
+  // the view's stored names even when they differ in casing/spelling – e.g.
   // catalogue "Spray N Pray" vs view "Spray n Pray".
   const byAccolade = new Map<string, AccoladeRow[]>();
   for (const r of (data ?? []) as AccoladeRow[]) {

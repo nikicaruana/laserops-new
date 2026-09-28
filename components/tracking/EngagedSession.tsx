@@ -13,7 +13,7 @@ import { useEffect } from "react";
  * tab doesn't count. Fires at most once per browser session (sessionStorage
  * flag) so SPA navigations and reloads don't re-fire it.
  *
- * Rendered once in the root layout — this is a site-wide signal, not a
+ * Rendered once in the root layout – this is a site-wide signal, not a
  * per-page one.
  */
 const ACTIVE_SECONDS = 30;
@@ -25,7 +25,7 @@ export function EngagedSessionTracker() {
     try {
       if (sessionStorage.getItem(SESSION_KEY)) return;
     } catch {
-      // sessionStorage unavailable (private mode) — run without the guard.
+      // sessionStorage unavailable (private mode) – run without the guard.
     }
 
     let activeSeconds = 0;

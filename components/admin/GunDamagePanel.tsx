@@ -8,7 +8,7 @@
  * chosen date onward ("from DD-MM-YYYY onwards") via the set_gun_damage RPC.
  *
  * Why date-scoped: scoring resolves the damage in effect on a game's date
- * (gun_damage_at), so re-tuning damage never rewrites past games — and an
+ * (gun_damage_at), so re-tuning damage never rewrites past games – and an
  * admin can retroactively correct a mistake from a specific point only.
  */
 import { useState } from "react";
@@ -97,7 +97,7 @@ export function GunDamagePanel({
           Current damage
         </p>
         <p className="mt-1 font-mono text-4xl font-bold tabular-nums text-accent">
-          {currentDamage ?? "—"}
+          {currentDamage ?? "–"}
         </p>
       </div>
 
@@ -175,7 +175,7 @@ export function GunDamagePanel({
             >
               <div className="min-w-0">
                 <p className="font-mono text-sm font-bold tabular-nums text-text">
-                  {w.damage ?? "—"} dmg
+                  {w.damage ?? "–"} dmg
                   {w.effective_to === null && (
                     <span className="ml-2 text-[0.55rem] font-bold uppercase tracking-[0.14em] text-accent">
                       current

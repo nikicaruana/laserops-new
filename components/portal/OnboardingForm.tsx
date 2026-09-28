@@ -20,7 +20,7 @@ import {
 } from "@/lib/waiver";
 
 const inputStyles =
-  "h-14 w-full rounded-none border border-border-strong bg-bg-elevated px-4 text-sm text-text placeholder:text-text-subtle focus:border-accent focus:outline-none";
+  "h-14 w-full rounded-none border border-border bg-bg-overlay px-4 text-sm text-text placeholder:text-text-subtle focus:border-accent focus:outline-none";
 
 export function OnboardingForm({
   initialFullName,
@@ -31,6 +31,7 @@ export function OnboardingForm({
 }) {
   const [opsTag, setOpsTag] = useState("");
   const [fullName, setFullName] = useState(initialFullName ?? "");
+  const [phone, setPhone] = useState("");
   const [dob, setDob] = useState("");
   const [acceptWaiver, setAcceptWaiver] = useState(false);
   const [marketingOptIn, setMarketingOptIn] = useState(false);
@@ -80,6 +81,7 @@ export function OnboardingForm({
       body: JSON.stringify({
         ops_tag: opsTag,
         full_name: fullName,
+        phone: phone || null,
         date_of_birth: dob || null,
         accept_waiver: true,
         marketing_opt_in: marketingOptIn,
@@ -97,7 +99,7 @@ export function OnboardingForm({
   return (
     <div className="space-y-8">
       {/* Returning player? Restore old stats with a reclaim key. */}
-      <div className="border border-border bg-bg-elevated px-5 py-4 text-center">
+      <div className="portal-card px-5 py-4 text-center">
         {!reclaimOpen ? (
           <button
             type="button"
@@ -175,6 +177,22 @@ export function OnboardingForm({
             placeholder="Your name"
             className={inputStyles}
           />
+        </div>
+
+        <div>
+          <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">
+            Phone <span className="text-text-subtle">(optional)</span>
+          </label>
+          <input
+            type="tel"
+            inputMode="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            maxLength={32}
+            placeholder="e.g. +356 7900 0000"
+            className={inputStyles}
+          />
+          <p className="mt-1.5 text-xs text-text-subtle">So we can reach you about your games.</p>
         </div>
 
         <div>

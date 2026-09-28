@@ -32,7 +32,7 @@ export function postAuthPath(account: GateAccount | null): string {
   // Go straight to their own stats summary. Returning the final ?ops=<tag>
   // URL (rather than the /player-portal/player-stats entry, which would then
   // server-redirect again) avoids an extra redirect hop during the auth
-  // transition — that double-redirect surfaced a brief client-side exception
+  // transition – that double-redirect surfaced a brief client-side exception
   // flash before the page settled.
   return `/player-portal/player-stats/summary?ops=${encodeURIComponent(account.ops_tag)}`;
 }

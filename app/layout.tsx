@@ -4,13 +4,14 @@ import "./globals.css";
 
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { SiteAmbientBackground } from "@/components/layout/SiteAmbientBackground";
 import { ChromeGate } from "@/components/layout/ChromeGate";
 import { GTM, GTMNoScript } from "@/components/tracking/GTM";
 import { CookieConsent } from "@/components/tracking/CookieConsent";
 import { EngagedSessionTracker } from "@/components/tracking/EngagedSession";
 import { brand } from "@/lib/brand";
 
-// Self-hosted via next/font — no external CDN call, GDPR-friendly
+// Self-hosted via next/font – no external CDN call, GDPR-friendly
 const montserrat = Montserrat({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
@@ -68,7 +69,7 @@ export const metadata: Metadata = {
     },
   },
   // Site icons. Files live in /public/icons/. Next.js emits the right
-  // <link> tags from this metadata — no need to write them manually.
+  // <link> tags from this metadata – no need to write them manually.
   //
   //   - icon: browser tab favicons. Multiple sizes so browsers pick the
   //     best fit. The .ico is a fallback for older browsers and offline
@@ -100,7 +101,7 @@ export const viewport: Viewport = {
 /**
  * LocalBusiness + SportsActivityLocation JSON-LD schema.
  * Improves rich-snippet eligibility in Google Search.
- * Values are sourced from lib/brand.ts — update that file to keep this
+ * Values are sourced from lib/brand.ts – update that file to keep this
  * in sync automatically.
  */
 const jsonLd = {
@@ -131,8 +132,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className="flex min-h-svh flex-col bg-bg text-text antialiased">
+      <body className="flex min-h-svh flex-col text-text antialiased">
         <GTMNoScript />
+        <SiteAmbientBackground />
         {/* Skip link for keyboard / screen reader users */}
         <a
           href="#main"

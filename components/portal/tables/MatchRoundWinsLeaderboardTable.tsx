@@ -46,7 +46,7 @@ type Props = {
 export function MatchRoundWinsLeaderboardTable({ allRows }: Props) {
   const searchParams = useSearchParams();
 
-  // Derive dropdown options from the data — show only years/months that
+  // Derive dropdown options from the data – show only years/months that
   // actually appear in the sheet, so users can't pick combinations that
   // would yield an empty leaderboard.
   const { years, months } = useMemo(
@@ -149,7 +149,7 @@ export function MatchRoundWinsLeaderboardTable({ allRows }: Props) {
         widthSm: "110px",
         cell: (row) =>
           row.roundWinRate === null
-            ? "—"
+            ? "–"
             : `${Math.round(row.roundWinRate)}%`,
       },
     ],
@@ -184,12 +184,12 @@ export function MatchRoundWinsLeaderboardTable({ allRows }: Props) {
 
 /**
  * Shown when the filter produces zero matching rows. Distinct from the
- * server-side error state — this means "data loaded fine but the filter
+ * server-side error state – this means "data loaded fine but the filter
  * window has no players."
  */
 function EmptyResults() {
   return (
-    <div className="border border-border bg-bg-elevated px-6 py-12 text-center">
+    <div className="portal-card px-6 py-12 text-center">
       <p className="text-sm font-semibold uppercase tracking-[0.14em] text-text-muted">
         No matches found
       </p>

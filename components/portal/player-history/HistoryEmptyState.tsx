@@ -2,7 +2,7 @@
  * HistoryEmptyState
  * --------------------------------------------------------------------
  * Rendered on the History page when no player is selected. Mirrors the
- * Match Report's empty state pattern — soft prompt + hint about how
+ * Match Report's empty state pattern – soft prompt + hint about how
  * to find a player.
  */
 export function HistoryEmptyState() {

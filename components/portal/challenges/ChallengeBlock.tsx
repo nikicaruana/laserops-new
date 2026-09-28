@@ -11,7 +11,7 @@ import { cn } from "@/lib/cn";
  * and whose body is the yellow info card (criteria, prize, priority)
  * followed by the leaderboard table.
  *
- * Server component — wraps the client-side ChallengeLeaderboardTable.
+ * Server component – wraps the client-side ChallengeLeaderboardTable.
  *
  * Variant detection: we infer the table variant from the challenge's
  * metric column rather than its source mode, because the metric is what
@@ -30,12 +30,14 @@ type ChallengeBlockProps = {
 };
 
 export function ChallengeBlock({ challenge, entries, defaultOpen = true }: ChallengeBlockProps) {
-  const variant: "xp" | "match_top" | "default" =
+  const variant: "xp" | "match_top" | "guns" | "default" =
     challenge.metric === "XP_Total"
       ? "xp"
-      : challenge.sourceMode === "match_top"
-        ? "match_top"
-        : "default";
+      : challenge.sourceMode === "gun_threshold_count"
+        ? "guns"
+        : challenge.sourceMode === "match_top"
+          ? "match_top"
+          : "default";
 
   const metricLabel = deriveMetricLabel(challenge);
 
@@ -82,7 +84,7 @@ export function ChallengeBlock({ challenge, entries, defaultOpen = true }: Chall
             determines the max-width: tables with fewer columns are
             capped narrower so the cells don't end up rattling around
             with vast empty space between rank, name, and metric on
-            wide desktops. Mobile is always full-width regardless —
+            wide desktops. Mobile is always full-width regardless –
             phone screens don't have the stretching problem. */}
         <div className="mt-3">
           {entries.length === 0 ? (
@@ -106,6 +108,9 @@ export function ChallengeBlock({ challenge, entries, defaultOpen = true }: Chall
  * unknown metrics.
  */
 function deriveMetricLabel(challenge: Challenge): string {
+  // Gun-threshold challenges rank by how many distinct guns cleared the kill
+  // threshold, so the column is the guns, not the kills.
+  if (challenge.sourceMode === "gun_threshold_count") return "Guns";
   switch (challenge.metric) {
     case "XP_Total":
       return "Total XP";
@@ -125,10 +130,10 @@ function deriveMetricLabel(challenge: Challenge): string {
 /**
  * Per-variant max-width for the challenge block (yellow info card +
  * leaderboard table). Without this, blocks stretch to fill the parent's
- * full width — causing tables with few columns (Round Wins: 4 cols) to
+ * full width – causing tables with few columns (Round Wins: 4 cols) to
  * have huge empty gutters between the rank, name, and metric on desktop.
  *
- * Tailwind v4 max-w utilities — these are the responsive caps:
+ * Tailwind v4 max-w utilities – these are the responsive caps:
  *   - default (4 cols: rank, photo, name, metric) → narrowest
  *   - match_top (5 cols: + match id) → medium
  *   - xp (6 cols: + rank badge + level) → widest
@@ -137,14 +142,16 @@ function deriveMetricLabel(challenge: Challenge): string {
  * the entire content uses the parent's width because phones never have
  * enough room to need a cap.
  */
-function maxWidthForVariant(variant: "xp" | "match_top" | "default"): string {
+function maxWidthForVariant(variant: "xp" | "match_top" | "guns" | "default"): string {
   switch (variant) {
     case "xp":
-      return "sm:max-w-3xl"; // 48rem — accommodates 6 columns with breathing room
+      return "sm:max-w-3xl"; // 48rem – accommodates 6 columns with breathing room
     case "match_top":
-      return "sm:max-w-2xl"; // 42rem — 5 columns
+      return "sm:max-w-2xl"; // 42rem – 5 columns
+    case "guns":
+      return "sm:max-w-2xl"; // 42rem – the gun-names column needs room
     case "default":
-      return "sm:max-w-xl"; // 36rem — 4 columns, kept tight
+      return "sm:max-w-xl"; // 36rem – 4 columns, kept tight
   }
 }
 

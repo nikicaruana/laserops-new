@@ -3,7 +3,7 @@
  * --------------------------------------------------------------------
  * Server-side Supabase client (Server Components, Route Handlers, Server
  * Actions). Reads/writes the auth session from the request cookies so the
- * signed-in user's identity flows into every query — meaning RLS runs as
+ * signed-in user's identity flows into every query – meaning RLS runs as
  * that user (they see/edit only their own account row, etc.).
  *
  * Still the anon key, not the service role: we want RLS enforced here.
@@ -31,7 +31,7 @@ export async function createClient() {
             );
           } catch {
             // Called from a Server Component (cookies are read-only there).
-            // Safe to ignore — the middleware refreshes the session cookie.
+            // Safe to ignore – the middleware refreshes the session cookie.
           }
         },
       },

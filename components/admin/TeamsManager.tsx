@@ -195,7 +195,7 @@ export function TeamsManager({ initial }: { initial: TeamItem[] }) {
         <p className="mt-3 border border-red-800 bg-red-950/40 px-3 py-2 text-xs text-red-400">{error}</p>
       )}
       <p className="mt-3 text-[0.65rem] text-text-subtle">
-        Colour is the team identity matches are recorded against — rename with care. Add / delete
+        Colour is the team identity matches are recorded against – rename with care. Add / delete
         apply immediately; other edits save with the button.
       </p>
     </div>

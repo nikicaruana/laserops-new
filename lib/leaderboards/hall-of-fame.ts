@@ -3,15 +3,15 @@
  * --------------------------------------------------------------------
  * Data engine for the Hall of Fame page. Three independent datasets:
  *
- *   1. Season Champions — reuses the seasonal-challenge engine for every
+ *   1. Season Champions – reuses the seasonal-challenge engine for every
  *      COMPLETED season and keeps the top 2 finishers per challenge.
  *      (Champions = prize winners, so the existing admin/excluded-player
  *      exclusion in that engine is intentional and preserved.)
  *
- *   2. All-Time Records — single-game (one-off) bests across EVERY match
+ *   2. All-Time Records – single-game (one-off) bests across EVERY match
  *      row in Game_Data_Lookup. Includes everyone (no admin exclusion).
  *
- *   3. Weapon Masters — per gun: the career-score "master" (from the
+ *   3. Weapon Masters – per gun: the career-score "master" (from the
  *      Player_Armory aggregate sheet) plus single-game gun records
  *      (computed from Game_Data_Lookup grouped by the gun used).
  */
@@ -39,7 +39,7 @@ export type RecordEntry = {
   profilePicUrl: string;
   value: number;
   formatted: string;
-  /** Match the record was set in — links to the match report. May be "". */
+  /** Match the record was set in – links to the match report. May be "". */
   matchId: string;
 };
 
@@ -157,7 +157,7 @@ const ALL_TIME_SPECS: RecordSpec[] = [
   },
 ];
 
-/** Single-game gun records — same metrics minus damage / rating. */
+/** Single-game gun records – same metrics minus damage / rating. */
 const WEAPON_SPECS: RecordSpec[] = [
   { key: "score", label: "Top Score", value: readScore, format: fmtInt },
   {
@@ -199,7 +199,7 @@ const WEAPON_SPECS: RecordSpec[] = [
 /**
  * Rank rows by a spec, keep the top 3 (value > 0, eligibility applied).
  * One entry per player: rows are sorted best-first, so the first row seen
- * for a nickname is that player's best in this category — later rows for
+ * for a nickname is that player's best in this category – later rows for
  * the same player are dropped before taking the top 3.
  */
 function topThree(rows: GameDataRow[], spec: RecordSpec): RecordEntry[] {
@@ -236,7 +236,7 @@ function topThree(rows: GameDataRow[], spec: RecordSpec): RecordEntry[] {
 async function computeAllTimeRecords(): Promise<RecordCategory[]> {
   const result = await fetchGameDataRows();
   // Throw (rather than return []) on fetch failure so unstable_cache does NOT
-  // persist an empty result — a thrown error is never cached, so the next
+  // persist an empty result – a thrown error is never cached, so the next
   // request retries. Returning [] here would poison the cache for a full
   // revalidate window if the sheet hiccuped during a cold recompute.
   if (!result.ok) throw new Error(`[hall-of-fame] all-time: ${result.error}`);
@@ -437,7 +437,7 @@ function isAccoladeEarned(value: string | undefined): boolean {
 async function computeAccoladeLeaders(): Promise<AccoladeLeaders[]> {
   const result = await fetchGameDataRows();
   // Throw (not return []) on failure so unstable_cache never persists an empty
-  // result — see computeAllTimeRecords for the full rationale.
+  // result – see computeAllTimeRecords for the full rationale.
   if (!result.ok) throw new Error(`[hall-of-fame] accolades: ${result.error}`);
   const rows = result.rows;
 
@@ -510,7 +510,7 @@ export const fetchAccoladeLeaders = unstable_cache(
 /**
  * All-Time Records and Weapon Masters are cached the same way. Weapon Masters
  * especially benefits: it reads the ~3MB Player_Armory sheet, which is over
- * Next's 2MB fetch-cache limit and so re-fetches on every load — caching the
+ * Next's 2MB fetch-cache limit and so re-fetches on every load – caching the
  * computed result means that only happens once per revalidate window.
  */
 export const fetchAllTimeRecords = unstable_cache(

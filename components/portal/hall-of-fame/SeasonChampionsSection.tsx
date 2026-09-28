@@ -32,7 +32,7 @@ export function SeasonChampionsSection({
             {season.challenges.map((c) => (
               <div
                 key={c.challengeNumber}
-                className="border border-border bg-bg-elevated p-4 sm:p-6"
+                className="portal-card p-4 sm:p-6"
               >
                 <p className="text-[0.65rem] font-bold uppercase tracking-[0.16em] text-accent">
                   Challenge {c.challengeNumber}

@@ -94,7 +94,7 @@ const ROLE_LABEL: Record<string, string> = { captain: "Captain", officer: "Offic
 
 function SquadsSection({ opsTag, squads }: { opsTag: string; squads: SquadChip[] }) {
   return (
-    <div className="space-y-5 border border-border bg-bg-elevated p-5">
+    <div className="space-y-5 portal-card p-5">
       {squads.length > 0 ? (
         <ul className="grid gap-3 sm:grid-cols-2">
           {squads.map((s) => (
@@ -196,7 +196,7 @@ function SummaryBody({
 
 function SearchPrompt() {
   return (
-    <div className="border border-border bg-bg-elevated px-6 py-12 text-center">
+    <div className="portal-card px-6 py-12 text-center">
       <p className="text-sm font-semibold uppercase tracking-[0.14em] text-text-muted">
         Enter an ops tag to view stats
       </p>
@@ -209,7 +209,7 @@ function SearchPrompt() {
 
 function PlayerNotFound({ opsTag }: { opsTag: string }) {
   return (
-    <div className="border border-border bg-bg-elevated px-6 py-12 text-center">
+    <div className="portal-card px-6 py-12 text-center">
       <p className="text-sm font-semibold uppercase tracking-[0.14em] text-text-muted">
         No stats found
       </p>

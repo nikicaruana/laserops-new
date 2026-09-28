@@ -36,7 +36,7 @@ export function SquadInvitesInbox({ invites }: { invites: SquadInvite[] }) {
       {error && <p className="mb-3 text-xs text-red-400">{error}</p>}
       <ul className="space-y-2">
         {invites.map((i) => (
-          <li key={i.invite_id} className="flex flex-wrap items-center justify-between gap-3 border border-border bg-bg-elevated px-4 py-2.5">
+          <li key={i.invite_id} className="flex flex-wrap items-center justify-between gap-3 portal-card px-4 py-2.5">
             <span className="flex items-center gap-2.5">
               <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-bg-overlay text-[0.6rem] font-bold text-text-muted">
                 {/* eslint-disable-next-line @next/next/no-img-element */}

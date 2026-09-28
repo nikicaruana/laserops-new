@@ -20,7 +20,7 @@ export const metadata: Metadata = {
  * One leaderboard is shown at a time. The user cycles through them with
  * ← / → buttons flanking the table title. All leaderboard components are
  * rendered server-side (data is fetched on load); only the active one is
- * visible — no remounting on navigation.
+ * visible – no remounting on navigation.
  */
 export default async function AllTimeLeaderboardPage() {
   return (

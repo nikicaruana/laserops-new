@@ -51,7 +51,7 @@ export default async function PlayerArmoryPage({
         <Suspense
           key={ops}
           fallback={
-            <div className="mt-8 border border-border bg-bg-elevated px-6 py-16 text-center">
+            <div className="mt-8 portal-card px-6 py-16 text-center">
               <p className="text-sm font-semibold uppercase tracking-[0.14em] text-text-muted">
                 Loading armory…
               </p>

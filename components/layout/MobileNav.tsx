@@ -21,7 +21,7 @@ import { useAccount } from "@/lib/hooks/useAccount";
  * Panel uses semi-transparent bg + backdrop-blur for a frosted-glass look
  * over whatever content is behind it.
  *
- * Items with `children` are rendered as accordion buttons — tapping the
+ * Items with `children` are rendered as accordion buttons – tapping the
  * parent row toggles the sub-list inline; tapping a sub-link closes the
  * menu. Items without children navigate directly.
  */
@@ -29,7 +29,7 @@ export function MobileNav() {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [openIndex, setOpenIndex] = useState<number | null>(null);
-  const { signedIn, opsTag } = useAccount();
+  const { signedIn } = useAccount();
 
   // Portal target only exists after client mount; gate render with mounted flag
   // to avoid SSR/hydration mismatch.
@@ -73,10 +73,12 @@ export function MobileNav() {
   for (const link of primaryNav) {
     if (link.hidden) continue;
     if (link.mobileExpand && link.children) {
-      // Explode children as individual links — each child uses its own
+      // Explode children as individual links – each child uses its own
       // highlight/redHighlight colour, falling back to the parent's colour.
       const parentColor = link.highlight ? "#ffde00" : link.redHighlight ? "#b91c1c" : "#f5f5f5";
       for (const child of link.children) {
+        // Game Portal lives in the bottom CTA cluster on mobile, not the list.
+        if (child.href === "/player-portal/games") continue;
         const childColor = child.highlight
           ? "#ffde00"
           : child.redHighlight
@@ -109,7 +111,7 @@ export function MobileNav() {
         height: "100vh",
         zIndex: 50,
         // Frosted-glass background: dark semi-transparent + backdrop blur
-        backgroundColor: "rgba(10, 10, 10, 0.82)",
+        backgroundColor: "rgba(18, 15, 10, 0.85)",
         backdropFilter: "blur(20px) saturate(140%)",
         WebkitBackdropFilter: "blur(20px) saturate(140%)",
         color: "#f5f5f5",
@@ -177,8 +179,8 @@ export function MobileNav() {
       <nav aria-label="Primary" style={{ padding: "1rem 1.25rem 0", flexShrink: 0 }}>
         {mobileItems.map((item, idx) => {
           if (item.kind === "link") {
-            /* Flat link — used for mobileExpand children (e.g. Leaderboards,
-               Player Stats, Match Report) — yellow color inherited from parent */
+            /* Flat link – used for mobileExpand children (e.g. Leaderboards,
+               Player Stats, Match Report) – yellow color inherited from parent */
             return (
               <div
                 key={item.href}
@@ -205,7 +207,7 @@ export function MobileNav() {
             );
           }
 
-          /* Accordion item — parent link or plain link */
+          /* Accordion item – parent link or plain link */
           const link = item.link;
           const i = item.index;
           const linkColor = link.highlight
@@ -326,24 +328,54 @@ export function MobileNav() {
           gap: "0.75rem",
         }}
       >
-        <Button
-          href={signedIn ? "/player-portal/profile" : "/player-portal/login"}
-          variant="secondary"
-          size="lg"
-          onClick={close}
-          className="w-full max-w-[18rem]"
-        >
-          {signedIn ? (opsTag ? `${opsTag} — Profile` : "My Profile") : "Log In / Sign Up"}
-        </Button>
-        <Button
-          href={ctaLinks.primary.href}
-          variant="primary"
-          size="lg"
-          onClick={close}
-          className="w-full max-w-[18rem]"
-        >
-          {ctaLinks.primary.label}
-        </Button>
+        {signedIn ? (
+          <>
+            <Button
+              href="/player-portal/games"
+              variant="primary"
+              size="lg"
+              onClick={close}
+              className="w-full max-w-[18rem]"
+            >
+              Game Portal
+            </Button>
+            <Button
+              href="/player-portal/profile"
+              variant="secondary"
+              size="lg"
+              onClick={close}
+              className="w-full max-w-[18rem]"
+            >
+              Account Settings
+            </Button>
+            <form action="/auth/signout" method="post" className="w-full max-w-[18rem]">
+              <Button type="submit" variant="ghost" size="lg" onClick={close} className="w-full">
+                Sign Out
+              </Button>
+            </form>
+          </>
+        ) : (
+          <>
+            <Button
+              href="/player-portal/login"
+              variant="secondary"
+              size="lg"
+              onClick={close}
+              className="w-full max-w-[18rem]"
+            >
+              Log In / Sign Up
+            </Button>
+            <Button
+              href={ctaLinks.primary.href}
+              variant="primary"
+              size="lg"
+              onClick={close}
+              className="w-full max-w-[18rem]"
+            >
+              {ctaLinks.primary.label}
+            </Button>
+          </>
+        )}
       </div>
 
       {/* Utility links */}
@@ -390,7 +422,7 @@ export function MobileNav() {
 
   return (
     <>
-      {/* Hamburger trigger — stays inline in header */}
+      {/* Hamburger trigger – stays inline in header */}
       <button
         type="button"
         aria-label={open ? "Close menu" : "Open menu"}

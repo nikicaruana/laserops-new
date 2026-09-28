@@ -21,7 +21,7 @@ import { useInView } from "@/lib/hooks/useInView";
  * --------------------------------------------------------------------
  * Per-match: yellow bar (player's score) alongside grey bar (average
  * score across all players in that match). A red line on the
- * secondary axis tracks the player's "match rating" — the ratio of
+ * secondary axis tracks the player's "match rating" – the ratio of
  * player score to avg match score.
  *
  * --------------------------------------------------------------------

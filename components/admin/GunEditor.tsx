@@ -5,7 +5,7 @@
  * --------------------------------------------------------------------
  * Details form for one gun (everything except damage, which the
  * GunDamagePanel owns because it's effective-dated). Writes the guns row via
- * the admin's authenticated Supabase session — the guns_admin_write RLS
+ * the admin's authenticated Supabase session – the guns_admin_write RLS
  * policy enforces is_admin().
  */
 import { useState } from "react";
@@ -31,6 +31,7 @@ export type GunRecord = {
   unlock_display_text: string | null;
   unlock_tier: string | null;
   mag_size: number | null;
+  stock: number | null;
   reload: number | null;
   fire_rate: string | null;
   difficulty: string | null;
@@ -133,6 +134,7 @@ export function GunEditor({
       unlock_display_text: f.unlock_display_text,
       unlock_tier: f.unlock_tier,
       mag_size: f.mag_size,
+      stock: f.stock,
       reload: f.reload,
       fire_rate: f.fire_rate,
       difficulty: f.difficulty,
@@ -173,7 +175,7 @@ export function GunEditor({
         </Field>
         <Field label="Class" hint="Manage the list in Classes & Trees">
           <select className={input} value={f.class ?? ""} onChange={(e) => set("class", e.target.value || null)}>
-            <option value="">—</option>
+            <option value="">–</option>
             {withCurrent(classOptions, f.class).map((o) => (
               <option key={o} value={o}>{o}</option>
             ))}
@@ -185,7 +187,7 @@ export function GunEditor({
         </div>
         <Field label="Tree branch">
           <select className={input} value={f.tree_branch ?? ""} onChange={(e) => set("tree_branch", e.target.value || null)}>
-            <option value="">—</option>
+            <option value="">–</option>
             {withCurrent(treeOptions, f.tree_branch).map((o) => (
               <option key={o} value={o}>{o}</option>
             ))}
@@ -213,11 +215,14 @@ export function GunEditor({
           </Field>
         ) : (
           <Field label="Damage" hint="Managed in the Damage panel →">
-            <input className={`${input} opacity-60`} value={f.damage ?? "—"} disabled readOnly />
+            <input className={`${input} opacity-60`} value={f.damage ?? "–"} disabled readOnly />
           </Field>
         )}
         <Field label="Mag size">
           <input type="number" className={input} value={f.mag_size ?? ""} onChange={(e) => set("mag_size", num(e.target.value))} />
+        </Field>
+        <Field label="Stock" hint="Physical units available. Blank = unlimited. Games mark it fully booked at this count.">
+          <input type="number" min="0" className={input} value={f.stock ?? ""} onChange={(e) => set("stock", num(e.target.value))} placeholder="Unlimited" />
         </Field>
         <Field label="Reload (seconds)">
           <input type="number" step="0.1" className={input} value={f.reload ?? ""} onChange={(e) => set("reload", num(e.target.value))} />
@@ -236,7 +241,7 @@ export function GunEditor({
       <Group title="Unlock rules">
         <Field label="Unlock type" hint="Default / Class / Gun">
           <select className={input} value={f.unlock_type ?? ""} onChange={(e) => set("unlock_type", e.target.value || null)}>
-            <option value="">—</option>
+            <option value="">–</option>
             <option value="Default">Default</option>
             <option value="Class">Class</option>
             <option value="Gun">Gun</option>

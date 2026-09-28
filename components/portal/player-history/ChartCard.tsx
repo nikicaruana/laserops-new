@@ -11,7 +11,7 @@ import type { ReactNode } from "react";
  * to detect when it scrolls into the viewport, then flips
  * `isAnimationActive` and changes the Recharts root `key` to force a
  * remount + replay of the entrance animation. ChartCard itself is a
- * plain server component — all animation logic lives in the chart files.
+ * plain server component – all animation logic lives in the chart files.
  *
  * --------------------------------------------------------------------
  * MOBILE PADDING (post pass-10)
@@ -22,7 +22,7 @@ import type { ReactNode } from "react";
  * and the rightmost data labels on the ELO chart clipped against
  * the right edge.
  *
- * The fix is a thin horizontal pad on mobile — 8px left, 4px right.
+ * The fix is a thin horizontal pad on mobile – 8px left, 4px right.
  * Asymmetric because:
  *   - Y-axis ticks live on the LEFT (need a hairline of breathing
  *     room from the card border to be readable).
@@ -44,7 +44,7 @@ type Props = {
 
 export function ChartCard({ title, subtitle, children }: Props) {
   return (
-    <section className="overflow-hidden rounded-sm border border-border bg-bg-elevated">
+    <section className="overflow-hidden rounded-sm portal-card">
       <header className="bg-accent px-5 py-3 text-center sm:px-6 sm:py-4">
         <h2 className="text-lg font-extrabold tracking-tight text-bg sm:text-xl">
           {title}
@@ -55,7 +55,7 @@ export function ChartCard({ title, subtitle, children }: Props) {
           {subtitle}
         </p>
       )}
-      {/* Chart body. Mobile: pl-2 pr-1 (8 / 4px) — minimal inset so
+      {/* Chart body. Mobile: pl-2 pr-1 (8 / 4px) – minimal inset so
           axis labels don't kiss the card border but charts get most
           of the width. Desktop: px-5 unchanged. */}
       <div className="pb-3 pl-2 pr-1 pt-3 sm:px-5 sm:pb-5 sm:pt-4">

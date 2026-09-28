@@ -59,7 +59,7 @@ export async function POST(request: Request) {
     return Response.json({ ok: false, error: "Image is too large (max 6 MB)." }, { status: 400 });
   }
 
-  // Server-signed upload. No fixed public_id — each image is its own asset.
+  // Server-signed upload. No fixed public_id – each image is its own asset.
   const timestamp = Math.floor(Date.now() / 1000);
   const paramsToSign: Record<string, string | number | boolean> = { folder, timestamp };
   const signatureBase = Object.keys(paramsToSign)

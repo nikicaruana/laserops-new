@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 /**
- * RatingPill — animated rating display.
+ * RatingPill – animated rating display.
  *
  * Renders 5 individual circular icons in a 3+2 grid (matching the original
  * PNG layout). On first scroll-into-view, icons count up from 0 → the
@@ -133,7 +133,7 @@ export function RatingPill({
   if (!ratingImageUrl) return null;
 
   // Locked rating (or an unrecognised URL): render the raw image. For locked
-  // players the source supplies a dedicated locked rating image — show it as-is
+  // players the source supplies a dedicated locked rating image – show it as-is
   // rather than the animated icon grid (which would read as a 0-star rating).
   if (locked || target === -1) {
     return (

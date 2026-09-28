@@ -7,6 +7,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { RecomputeButton } from "@/components/admin/RecomputeButton";
+import { AdminNotificationSummary } from "@/components/admin/AdminNotificationSummary";
+import { FinancialSummary } from "@/components/admin/FinancialSummary";
 
 function whenText(iso: string | null): string {
   if (!iso) return "never";
@@ -19,37 +21,37 @@ function whenText(iso: string | null): string {
   });
 }
 
-async function countOf(
+async function countByStatus(
   supabase: Awaited<ReturnType<typeof createClient>>,
-  table: string,
-): Promise<number | null> {
-  const { count, error } = await supabase
-    .from(table)
-    .select("*", { count: "exact", head: true });
-  return error ? null : (count ?? 0);
+  status: string,
+): Promise<number> {
+  const { count } = await supabase
+    .from("matches")
+    .select("*", { count: "exact", head: true })
+    .eq("status", status);
+  return count ?? 0;
 }
 
 export default async function AdminDashboard() {
   const supabase = await createClient();
-  const [guns, accolades, seasons, challenges, { data: status }] = await Promise.all([
-    countOf(supabase, "guns"),
-    countOf(supabase, "accolade_definitions"),
-    countOf(supabase, "seasons"),
-    countOf(supabase, "challenges"),
+  const [{ data: status }, tentative, awaiting, confirmed, { data: live }] = await Promise.all([
     supabase.from("read_model_status").select("last_recomputed_at").maybeSingle(),
+    countByStatus(supabase, "tentative"),
+    countByStatus(supabase, "awaiting_confirm"),
+    countByStatus(supabase, "confirmed"),
+    supabase
+      .from("matches")
+      .select("id, title, match_code, scheduled_at")
+      .eq("status", "live")
+      .order("went_live_at", { ascending: false, nullsFirst: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
 
-  const cards: {
-    label: string;
-    href?: string;
-    count: number | null;
-    hint: string;
-  }[] = [
-    { label: "Guns", href: "/admin/guns", count: guns, hint: "Catalogue, specs, damage timeline" },
-    { label: "Accolades", href: "/admin/accolades", count: accolades, hint: "Definitions, XP tiers, badges" },
-    { label: "Scoring formula", href: "/admin/scoring", count: null, hint: "Weights + live preview" },
-    { label: "Seasons", href: "/admin/seasons", count: seasons, hint: "Windows + status" },
-    { label: "Challenges", href: "/admin/challenges", count: challenges, hint: "Per-season leaderboards" },
+  const matchStats: { label: string; count: number; status: string }[] = [
+    { label: "Tentative", count: tentative, status: "tentative" },
+    { label: "Awaiting OK", count: awaiting, status: "awaiting_confirm" },
+    { label: "Confirmed", count: confirmed, status: "confirmed" },
   ];
 
   return (
@@ -64,46 +66,53 @@ export default async function AdminDashboard() {
         </p>
       </header>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {cards.map((c) => {
-          const inner = (
-            <>
-              <div className="flex items-baseline justify-between">
-                <h2 className="text-sm font-bold uppercase tracking-[0.12em] text-text">
-                  {c.label}
-                </h2>
-                {c.count !== null && (
-                  <span className="font-mono text-lg font-bold tabular-nums text-accent">
-                    {c.count}
-                  </span>
-                )}
-              </div>
-              <p className="mt-2 text-xs text-text-muted">{c.hint}</p>
-              {!c.href && (
-                <span className="mt-3 inline-block text-[0.55rem] font-bold uppercase tracking-[0.16em] text-text-subtle/60">
-                  Coming soon
-                </span>
-              )}
-            </>
-          );
-          return c.href ? (
+      {/* Recent notifications (scrollable summary) */}
+      <AdminNotificationSummary />
+
+      {/* Match Manager summary */}
+      <section className="mb-8 border border-border bg-bg-elevated px-5 py-5">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="text-sm font-bold uppercase tracking-[0.12em] text-accent">Match Manager</h2>
+          <Link href="/admin/matches" className="text-[0.65rem] font-bold uppercase tracking-[0.12em] text-text-muted hover:text-accent">
+            Open →
+          </Link>
+        </div>
+
+        {live && (
+          <Link
+            href={`/admin/matches/${live.id}`}
+            className="mb-5 flex flex-wrap items-center justify-between gap-3 border border-accent bg-accent/10 px-5 py-4 transition-colors hover:bg-accent/20"
+          >
+            <span className="flex items-center gap-3">
+              <span className="inline-block h-2.5 w-2.5 animate-pulse rounded-full bg-accent" aria-hidden />
+              <span className="text-sm font-bold uppercase tracking-[0.1em] text-accent">
+                Live now: {live.title || live.match_code || "Match in play"}
+              </span>
+            </span>
+            <span className="text-xs font-bold uppercase tracking-[0.12em] text-accent">Go to live match →</span>
+          </Link>
+        )}
+
+        <div className="grid gap-4 sm:grid-cols-3">
+          {matchStats.map((s) => (
             <Link
-              key={c.label}
-              href={c.href}
-              className="group border border-border bg-bg-elevated px-5 py-5 transition-colors hover:border-accent"
+              key={s.status}
+              href={`/admin/matches?status=${s.status}`}
+              className="group border border-border bg-bg px-5 py-4 transition-colors hover:border-accent"
             >
-              {inner}
+              <div className="flex items-baseline justify-between">
+                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-text-muted group-hover:text-accent">
+                  {s.label}
+                </span>
+                <span className="font-mono text-2xl font-bold tabular-nums text-accent">{s.count}</span>
+              </div>
             </Link>
-          ) : (
-            <div
-              key={c.label}
-              className="border border-dashed border-border bg-bg-elevated/50 px-5 py-5 opacity-70"
-            >
-              {inner}
-            </div>
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Financial summary (period-comparable) */}
+      <FinancialSummary />
 
       {/* Maintenance */}
       <section className="mt-8 border border-border bg-bg-elevated px-5 py-5">

@@ -60,6 +60,26 @@ export function buildLiveRound(raw: string, roundNo: number, res: RoundResolvers
 
   const baseFlips = r.base_ownership.map((p) => ({ t: Math.max(0, ep(p.from_time) - start), baseId: p.base_id, team: p.team })).sort((a, b) => a.t - b.t);
 
+  // Per-hit damage (for the live "damage dealt" stat), sorted by time.
+  const damageEvents = r.events.damage
+    .filter((d) => d.damage > 0 && name[d.actor_id])
+    .map((d) => ({ t: Math.max(0, ep(d.time) - start), actor: name[d.actor_id], amount: d.damage }))
+    .sort((a, b) => a.t - b.t);
+
+  // Per-player hold periods: join each base-ownership period to the capture that
+  // started it, so hold time is credited to the capturing player.
+  const capByBaseTime = new Map<string, number>();
+  for (const c of r.events.captures) if (c.capturing_player_id != null && c.base_id >= 0) capByBaseTime.set(`${c.base_id}|${c.time}`, c.capturing_player_id);
+  const holdPeriods = r.base_ownership
+    .map((per) => {
+      const pid = capByBaseTime.get(`${per.base_id}|${per.from_time}`);
+      if (pid == null || !name[pid]) return null;
+      const from = Math.max(0, ep(per.from_time) - start);
+      const to = per.to_time ? Math.max(from, ep(per.to_time) - start) : 1e9; // ongoing -> grows to t
+      return { pid: name[pid], from, to };
+    })
+    .filter((x): x is { pid: string; from: number; to: number } => x !== null);
+
   const nameCounts: Record<string, number> = {};
   for (const b of r.bases) nameCounts[baseName[b.device_id]] = (nameCounts[baseName[b.device_id]] ?? 0) + 1;
   const bases = r.bases
@@ -77,6 +97,8 @@ export function buildLiveRound(raw: string, roundNo: number, res: RoundResolvers
     burns: computeBurns(r.base_ownership, start, r.result.burn_threshold_seconds),
     burnThresholdSeconds: r.result.burn_threshold_seconds,
     events,
+    damageEvents,
+    holdPeriods,
   };
   return { round, startEpoch: start };
 }

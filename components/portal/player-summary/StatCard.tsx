@@ -25,7 +25,7 @@ import { RatingPill } from "./RatingPill";
 
 type StatCardProps = {
   card: StatCardData;
-  /** When false, the rating isn't unlocked yet — show the locked rating
+  /** When false, the rating isn't unlocked yet – show the locked rating
    *  image instead of the animated icon grid. */
   ratingUnlocked: boolean;
 };
@@ -37,19 +37,19 @@ export function StatCard({ card, ratingUnlocked }: StatCardProps) {
   return (
     // relative is required so the absolutely-positioned pill can be
     // placed against the card's bottom edge.
-    <div className="relative flex flex-col items-center gap-2 border border-border bg-bg-elevated p-4 text-center sm:gap-3 sm:p-5">
-      {/* Top label — small, muted, uppercase. */}
+    <div className="relative flex flex-col items-center gap-2 portal-card p-4 text-center sm:gap-3 sm:p-5">
+      {/* Top label – small, muted, uppercase. */}
       <span className="text-[0.6rem] font-bold uppercase leading-tight tracking-[0.14em] text-text-muted sm:text-[0.7rem]">
         {card.label}
       </span>
 
-      {/* Primary number — accent yellow, bold, monospace + tabular-nums. */}
+      {/* Primary number – accent yellow, bold, monospace + tabular-nums. */}
       <AnimatedValue
         value={card.primaryValue}
         className="font-mono text-3xl font-extrabold leading-none tabular-nums text-accent sm:text-4xl"
       />
 
-      {/* Secondary content — three variants depending on the card type. */}
+      {/* Secondary content – three variants depending on the card type. */}
       {sec.kind === "stat" && (
         <div className="mt-1 flex items-baseline gap-1.5">
           {sec.prefix !== "" && (
@@ -58,7 +58,7 @@ export function StatCard({ card, ratingUnlocked }: StatCardProps) {
             </span>
           )}
           {/* Value: full text colour and bold so the rate carries weight
-              equal to or greater than the primary count — appropriate
+              equal to or greater than the primary count – appropriate
               because the rating measures this number, not the count. */}
           <AnimatedValue
             value={sec.value}
@@ -75,7 +75,7 @@ export function StatCard({ card, ratingUnlocked }: StatCardProps) {
         </p>
       )}
 
-      {/* Bottom spacer — reserves vertical space so the overhanging pill
+      {/* Bottom spacer – reserves vertical space so the overhanging pill
           has card content to half-cover. Without this the secondary line
           (or primary, for "none" cards) sits flush against the card
           bottom and the pill has no card surface to overlap with. */}

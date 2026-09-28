@@ -7,7 +7,7 @@
  *
  * guns.fire_rate is TEXT (holds either an RPM string like "725" or
  * "Semi Auto"), so we reuse the exact parseFireRate() discriminator from
- * lib/cms/weapons — semi-auto weapons stay semi-auto. Uses the cookieless
+ * lib/cms/weapons – semi-auto weapons stay semi-auto. Uses the cookieless
  * public client so static / ISR pages keep static rendering.
  */
 import { createPublicClient } from "@/lib/supabase/public";
@@ -57,7 +57,7 @@ export async function getWeaponsFromSupabase(): Promise<Weapon[]> {
   const out: Weapon[] = [];
   for (const r of (data ?? []) as Row[]) {
     const name = s(r.name);
-    // Drop the synthetic "Unknown" / "None" fallback gun rows — same filter
+    // Drop the synthetic "Unknown" / "None" fallback gun rows – same filter
     // the sheet path applies so the gallery + usage-stats stay in sync.
     if (name === "" || isFallbackGunName(name)) continue;
 

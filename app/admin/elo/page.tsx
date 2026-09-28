@@ -87,7 +87,7 @@ export default async function AdminEloPage() {
       </header>
 
       <div className="mb-6 border-l-4 border-amber-500 bg-amber-500/10 px-4 py-3 text-sm text-amber-200/90">
-        <span className="font-semibold text-amber-300">Heads up —</span> these settings are finely
+        <span className="font-semibold text-amber-300">Heads up –</span> these settings are finely
         tuned for balanced, fair skill ratings. Changing them affects how every future match moves
         players&apos; ELO, so adjust deliberately. Past matches keep the ELO they were snapshotted
         with; re-scoring history is a separate re-snapshot action.

@@ -3,7 +3,7 @@
  * --------------------------------------------------------------------
  * Cookieless Supabase client for PUBLIC, read-only config (anon key, no
  * session). Because it never touches request cookies, it does NOT opt a
- * page into dynamic rendering — so static / ISR marketing pages can read
+ * page into dynamic rendering – so static / ISR marketing pages can read
  * public config (e.g. the weapons catalogue) from Supabase and still be
  * statically generated.
  *

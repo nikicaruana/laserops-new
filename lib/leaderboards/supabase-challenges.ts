@@ -165,6 +165,8 @@ type StandingRow = {
   metric_value: number | null;
   match_code: string | null;
   is_prize_winning: boolean | null;
+  /** gun_threshold_count: the qualifying gun names, best gun first. */
+  metric_detail: string[] | null;
 };
 
 type LifetimeLite = {
@@ -177,7 +179,7 @@ type LifetimeLite = {
  * Build ChallengeWithEntries[] for a season from the precomputed
  * standings, enriched with each player's level + rank badge. Challenges
  * with no standings rows (e.g. a not-yet-played season, or a source mode
- * the SQL engine doesn't compute) come back with an empty entries list —
+ * the SQL engine doesn't compute) come back with an empty entries list –
  * the view renders its own empty state, exactly as before.
  */
 export async function getSeasonChallengeData(
@@ -188,7 +190,7 @@ export async function getSeasonChallengeData(
   const [standingsRes, lifetimeRes, ranksRes] = await Promise.all([
     supabase
       .from("season_challenge_standings")
-      .select("challenge_number, account_id, nickname, rank, metric_value, match_code, is_prize_winning")
+      .select("challenge_number, account_id, nickname, rank, metric_value, match_code, is_prize_winning, metric_detail")
       .eq("season_number", season.number)
       .order("rank"),
     supabase
@@ -236,6 +238,7 @@ export async function getSeasonChallengeData(
         rankBadgeUrl: badgeByLevel.get(level) ?? "",
         level,
         metricValue: s.metric_value ?? 0,
+        qualifyingGuns: s.metric_detail ?? undefined,
         matchId: s.match_code ?? undefined,
         isPrizeWinning: rank <= challenge.prizeCutoff,
       };

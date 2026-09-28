@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/Button";
  *   - Each row contains TWO copies of the strip in a flex container with
  *     `width: max-content`. This forces the container to size to the natural
  *     sum of children's widths (not parent width), so translateX(-50%) maps
- *     to exactly one strip width — perfect seamless loop.
+ *     to exactly one strip width – perfect seamless loop.
  *   - Negative animation-delay values stagger each row's starting position
  *     without waiting (CSS treats a -10s delay as "start as if you've been
  *     running for 10 seconds").
@@ -33,7 +33,7 @@ export function WeaponsSection() {
   // Branded (BW) by default. Color reveals on:
   //   - Desktop: mouse hover anywhere in the section
   //   - Mobile: touch (tap-and-hold) anywhere in the section
-  // Touch interaction mirrors the user's request for "drag" — finger contact
+  // Touch interaction mirrors the user's request for "drag" – finger contact
   // reveals color, releasing returns to BW.
   const [isActive, setIsActive] = useState(false);
 
@@ -88,7 +88,7 @@ export function WeaponsSection() {
         >
           <Rows brandedOpacity={brandedOpacity} />
 
-          {/* OVERLAID CTA — centered, just the button */}
+          {/* OVERLAID CTA – centered, just the button */}
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             <div className="pointer-events-auto">
               <Button
@@ -102,7 +102,7 @@ export function WeaponsSection() {
             </div>
           </div>
 
-          {/* Edge fades — narrower on mobile so they don't encroach on the CTA */}
+          {/* Edge fades – narrower on mobile so they don't encroach on the CTA */}
           <div
             aria-hidden
             className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-10 sm:w-24 lg:w-40"

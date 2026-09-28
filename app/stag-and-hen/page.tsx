@@ -80,7 +80,7 @@ export default async function StagAndHenPage() {
       )}
 
       {/* ── A Proper Activity ────────────────────────────────── */}
-      <section className="border-b border-border bg-bg-elevated">
+      <section className="border-b border-border portal-surface">
         <Container size="narrow" className="py-14 sm:py-16">
           <SectionLabel>The Activity</SectionLabel>
           <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
@@ -134,7 +134,7 @@ export default async function StagAndHenPage() {
       </section>
 
       {/* ── Stats ────────────────────────────────────────────── */}
-      <section className="border-b border-border bg-bg-elevated">
+      <section className="border-b border-border portal-surface">
         <Container size="narrow" className="py-14 sm:py-16">
           <SectionLabel>Player Portal</SectionLabel>
           <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
@@ -185,7 +185,7 @@ export default async function StagAndHenPage() {
       </section>
 
       {/* ── Catering & Drinks ────────────────────────────────── */}
-      <section className="border-b border-border bg-bg-elevated">
+      <section className="border-b border-border portal-surface">
         <Container size="narrow" className="py-14 sm:py-16">
           <SectionLabel>Add-On</SectionLabel>
           <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
@@ -238,7 +238,7 @@ export default async function StagAndHenPage() {
       )}
 
       {/* ── Group Sizes & Booking CTA ────────────────────────── */}
-      <section className="border-b border-border bg-bg-elevated">
+      <section className="border-b border-border portal-surface">
         <Container size="narrow" className="py-14 sm:py-16">
           <SectionLabel>What&apos;s Included</SectionLabel>
           <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
@@ -292,7 +292,7 @@ export default async function StagAndHenPage() {
       </section>
 
       {/* ── Booking CTA ──────────────────────────────────────── */}
-      <section className="border-b border-border bg-bg-elevated">
+      <section className="border-b border-border portal-surface">
         <Container size="narrow" className="py-14 sm:py-16">
           <SectionLabel>Book Your Event</SectionLabel>
           <h2 className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl">
@@ -304,7 +304,7 @@ export default async function StagAndHenPage() {
               that don&apos;t make you cringe, get in touch and we&apos;ll build a session
               that suits your group. Tell us roughly how many people, what the
               energy is meant to be, and whether the stag or hen needs to be
-              specifically targeted — they usually do — and we&apos;ll handle the
+              specifically targeted – they usually do – and we&apos;ll handle the
               rest.
             </p>
           </div>

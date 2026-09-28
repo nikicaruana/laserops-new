@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     "Answers to the most common questions about laser tag at LaserOps Malta. Costs, group sizes, what to wear, stats, photography, catering, and how to book.",
 };
 
-// FAQPage structured data — makes the Q&As eligible for FAQ rich results.
+// FAQPage structured data – makes the Q&As eligible for FAQ rich results.
 const faqJsonLd = {
   "@context": "https://schema.org",
   "@type": "FAQPage",

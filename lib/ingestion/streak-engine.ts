@@ -3,7 +3,7 @@
  * --------------------------------------------------------------------
  * Data-driven streak engine. A streak is defined by a RULE (composable
  * building blocks); one generic evaluator runs any rule against the parsed
- * round facts. This is what makes streaks fully configurable (resell-ready) —
+ * round facts. This is what makes streaks fully configurable (resell-ready) –
  * the 23 built-ins are just seed configs (BUILTIN_STREAK_RULES), not code.
  *
  * The hardcoded lib/ingestion/streaks.ts stays as the reference oracle: the
@@ -13,9 +13,23 @@ import type { Round } from "@/lib/ingestion/round-parser";
 
 // --- Rule building blocks --------------------------------------------------
 
-export type StreakRuleConfig =
+// How often a streak may be awarded to the same player in one round. Applies to
+// EVERY rule kind as a final cap: "per_life" keeps only the first award in each
+// life, "per_round" only the first in the whole round. Omit/null = uncapped
+// (a streak may fire every time its rule is satisfied). Several streaks read
+// best as once-per-life achievements, so this is the toggle for that.
+export type StreakLimit = "per_life" | "per_round";
+
+export type StreakRuleConfig = StreakRuleVariant & { limit?: StreakLimit | null };
+
+type StreakRuleVariant =
   // N of `event` in a row, reset by any `reset_on` event (kill streaks).
-  | { kind: "consecutive"; event: EventName; count: number; reset_on: EventName[] }
+  // `up_to` caps the tier: a run fires this streak only if it reaches `count`
+  // but stays BELOW `up_to` (the next tier). This makes the tiers mutually
+  // exclusive per run, so one life awards only the highest tier reached (a
+  // 6-kill life gives a 5-Streak, not a 3-Streak AND a 5-Streak). Omit/null =
+  // no upper bound (the top tier).
+  | { kind: "consecutive"; event: EventName; count: number; reset_on: EventName[]; up_to?: number | null }
   // N of `event` within a scope, optionally only when the actor's HP <= cap.
   | { kind: "count"; event: EventName; count: number; scope: Scope; actor_hp_max?: number | null }
   // N DISTINCT `distinct_by` values captured/killed within a scope.
@@ -31,11 +45,17 @@ export type StreakRuleConfig =
   // All `requirements` met within a rolling window (Clutch Move).
   | { kind: "combo_window"; window_seconds: number; requirements: { event: EventName; count: number }[] }
   // A continuous base hold of >= min_seconds, credited to the capturer.
-  | { kind: "hold_duration"; min_seconds: number }
+  | { kind: "hold_duration"; min_seconds: number; up_to?: number | null }
   // Burn `count` bases (advanced: cumulative per-team hold reaches 10 min).
   | { kind: "burn"; count: number }
   // Survive the whole round (0 deaths) with >= require_count of require_event.
-  | { kind: "survive_round"; require_event: EventName; require_count: number };
+  | { kind: "survive_round"; require_event: EventName; require_count: number }
+  // Kill the player who most recently killed you (Revenge). Each avenged killer
+  // fires once; the actor must be killed again before it can fire on them anew.
+  | { kind: "revenge" }
+  // Get a kill after dying `deaths_required` times in a row with no kills in
+  // between (Redemption). The redeeming kill resets the death run.
+  | { kind: "redemption"; deaths_required: number };
 
 export type EventName = "kill" | "capture" | "death";
 export type Scope = "round" | "life";
@@ -46,10 +66,10 @@ export type StreakAward = { player_id: number; key: string; name: string; time: 
 // --- The 23 built-ins as configs -------------------------------------------
 
 export const BUILTIN_STREAK_RULES: Record<string, StreakRuleConfig> = {
-  kill_streak_3: { kind: "consecutive", event: "kill", count: 3, reset_on: ["death"] },
-  kill_streak_5: { kind: "consecutive", event: "kill", count: 5, reset_on: ["death"] },
-  kill_streak_10: { kind: "consecutive", event: "kill", count: 10, reset_on: ["death"] },
-  kill_streak_20: { kind: "consecutive", event: "kill", count: 20, reset_on: ["death"] },
+  kill_streak_3: { kind: "consecutive", event: "kill", count: 3, reset_on: ["death"], up_to: 5 },
+  kill_streak_5: { kind: "consecutive", event: "kill", count: 5, reset_on: ["death"], up_to: 10 },
+  kill_streak_10: { kind: "consecutive", event: "kill", count: 10, reset_on: ["death"], up_to: 20 },
+  kill_streak_20: { kind: "consecutive", event: "kill", count: 20, reset_on: ["death"], up_to: null },
   survivor: { kind: "count", event: "kill", count: 3, scope: "life", actor_hp_max: 50 },
   first_blood: { kind: "first_of", event: "kill" },
   last_blood: { kind: "last_of", event: "kill" },
@@ -60,9 +80,9 @@ export const BUILTIN_STREAK_RULES: Record<string, StreakRuleConfig> = {
   grim_reaper: { kind: "cover_set", event: "kill", set: "opponents", scope: "life" },
   streak_ender: { kind: "victim_streak", event: "kill", min_streak: 5 },
   bully: { kind: "per_target", event: "kill", count: 10, scope: "round", target: "victim" },
-  hold_base_3min: { kind: "hold_duration", min_seconds: 180 },
-  hold_base_5min: { kind: "hold_duration", min_seconds: 300 },
-  hold_base_10min: { kind: "hold_duration", min_seconds: 600 },
+  hold_base_3min: { kind: "hold_duration", min_seconds: 180, up_to: 300 },
+  hold_base_5min: { kind: "hold_duration", min_seconds: 300, up_to: 600 },
+  hold_base_10min: { kind: "hold_duration", min_seconds: 600, up_to: null },
   captures_3: { kind: "count", event: "capture", count: 3, scope: "round" },
   captures_5: { kind: "count", event: "capture", count: 5, scope: "round" },
   captures_10: { kind: "count", event: "capture", count: 10, scope: "round" },
@@ -126,6 +146,19 @@ export function evaluateBuiltins(round: Round, nameFor: (key: string) => string)
 
 type Hit = { player_id: number; time: string; detail?: string };
 
+/** Keep only the first award per player per life (or per round). */
+function applyLimit(ctx: Ctx, hits: Hit[], limit: StreakLimit): Hit[] {
+  const seen = new Set<string>();
+  const out: Hit[] = [];
+  for (const h of [...hits].sort((a, b) => toEpoch(a.time) - toEpoch(b.time))) {
+    const key = limit === "per_round" ? `${h.player_id}` : `${h.player_id}:${ctx.lifeIndex(h.player_id, toEpoch(h.time))}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(h);
+  }
+  return out;
+}
+
 function runRule(ctx: Ctx, rule: StreakRuleConfig): Hit[] {
   const hits: Hit[] = [];
   const emit = (player_id: number, time: string, detail?: string) => hits.push({ player_id, time, detail });
@@ -137,13 +170,27 @@ function runRule(ctx: Ctx, rule: StreakRuleConfig): Hit[] {
           ...eventsFor(ctx, pid, rule.event).map((e) => ({ epoch: e.epoch, time: e.time, hit: true })),
           ...rule.reset_on.flatMap((r) => eventsFor(ctx, pid, r).map((e) => ({ epoch: e.epoch, time: e.time, hit: false }))),
         ].sort((a, b) => a.epoch - b.epoch || (a.hit === b.hit ? 0 : a.hit ? -1 : 1));
+        // Walk each maximal run of consecutive events (a run ends at a reset,
+        // i.e. a life). Record when the `count`-th event landed, then at the
+        // end of the run fire only if the run peaked in this tier's band
+        // [count, up_to) – so a life awards its single highest tier, not every
+        // tier it passed through.
         let run = 0;
+        let reachedTime: string | null = null;
+        const flush = () => {
+          if (run >= rule.count && (rule.up_to == null || run < rule.up_to) && reachedTime) {
+            emit(pid, reachedTime);
+          }
+          run = 0;
+          reachedTime = null;
+        };
         for (const ev of stream) {
           if (ev.hit) {
             run++;
-            if (run === rule.count) emit(pid, ev.time);
-          } else run = 0;
+            if (run === rule.count) reachedTime = ev.time;
+          } else flush();
         }
+        flush();
       }
       break;
     }
@@ -250,6 +297,7 @@ function runRule(ctx: Ctx, rule: StreakRuleConfig): Hit[] {
     case "hold_duration": {
       for (const period of ctx.round.base_ownership) {
         if (period.held_seconds < rule.min_seconds) continue;
+        if (rule.up_to != null && period.held_seconds >= rule.up_to) continue; // a higher tier owns this hold
         const cap = ctx.round.events.captures.find(
           (c) => c.base_id === period.base_id && c.time === period.from_time && c.capturing_player_id != null,
         );
@@ -296,6 +344,31 @@ function runRule(ctx: Ctx, rule: StreakRuleConfig): Hit[] {
       }
       break;
     }
+    case "revenge": {
+      // Walk kills in time order tracking each player's most recent killer.
+      // When a player kills that exact person, it's a revenge (then cleared so
+      // they must be killed again before avenging the same player anew).
+      const lastKiller = new Map<number, number>(); // victim -> who last killed them
+      for (const k of ctx.kills) {
+        if (lastKiller.get(k.actor_id) === k.victim_id) {
+          emit(k.actor_id, k.time, `on ${k.victim_id}`);
+          lastKiller.delete(k.actor_id);
+        }
+        lastKiller.set(k.victim_id, k.actor_id);
+      }
+      break;
+    }
+    case "redemption": {
+      // Per player: consecutive deaths with no kills in between. A kill while
+      // that run is >= deaths_required redeems; the kill resets the run.
+      const deathRun = new Map<number, number>(); // player -> deaths since their last kill
+      for (const k of ctx.kills) {
+        if ((deathRun.get(k.actor_id) ?? 0) >= rule.deaths_required) emit(k.actor_id, k.time);
+        deathRun.set(k.actor_id, 0); // the actor got a kill
+        deathRun.set(k.victim_id, (deathRun.get(k.victim_id) ?? 0) + 1); // the victim died
+      }
+      break;
+    }
   }
-  return hits;
+  return rule.limit ? applyLimit(ctx, hits, rule.limit) : hits;
 }

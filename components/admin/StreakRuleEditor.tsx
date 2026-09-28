@@ -3,7 +3,7 @@
 /**
  * components/admin/StreakRuleEditor.tsx
  * --------------------------------------------------------------------
- * Editor for a streak's firing rule (streak_rules) — how the ingestion engine
+ * Editor for a streak's firing rule (streak_rules) – how the ingestion engine
  * decides when the streak fires within a round:
  *   - streak:       N consecutive events of one type (breaks on other events)
  *   - time_window:  a count of events within a rolling window of seconds

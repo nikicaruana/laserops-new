@@ -105,7 +105,7 @@ export function PlayersTable({ players, matchId, selectedPlayer, linkNamesToProf
   const selectedLower = selectedPlayer.toLowerCase();
 
   return (
-    <div className="border border-border bg-bg-elevated">
+    <div className="portal-card">
       {/* Yellow accent strip at top – matches LeaderboardTable styling */}
       <div aria-hidden className="h-1 w-full bg-accent" />
 

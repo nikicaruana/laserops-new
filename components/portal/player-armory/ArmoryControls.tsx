@@ -11,9 +11,9 @@ import { ArmoryCard } from "./ArmoryCard";
  * Client wrapper for the armory card list. Owns three pieces of
  * filter/sort state and renders the controls bar above the cards:
  *
- *   1. Show Locked toggle — hides locked guns when off
- *   2. Tree filter — checkbox dropdown, all branches selected by default
- *   3. Sort by — select, defaults to "Gun Tree" (branch + sortOrder)
+ *   1. Show Locked toggle – hides locked guns when off
+ *   2. Tree filter – checkbox dropdown, all branches selected by default
+ *   3. Sort by – select, defaults to "Gun Tree" (branch + sortOrder)
  *
  * Always renders a flat list. Gun Tree sort preserves the original
  * branch + sortOrder ordering; other sorts order by the chosen stat
@@ -143,7 +143,7 @@ export function ArmoryControls({ branches }: Props) {
           </span>
         </button>
 
-        {/* Tree filter — only shown when there are multiple branches */}
+        {/* Tree filter – only shown when there are multiple branches */}
         {branchNames.length > 1 && (
           <div className="relative">
             <button
@@ -181,7 +181,7 @@ export function ArmoryControls({ branches }: Props) {
                   onClick={() => setTreeOpen(false)}
                 />
                 {/* Panel */}
-                <div className="absolute left-0 top-full z-20 mt-1 min-w-[140px] rounded-sm border border-border bg-bg-elevated py-1 shadow-lg">
+                <div className="absolute left-0 top-full z-20 mt-1 min-w-[140px] rounded-sm portal-card py-1 shadow-lg">
                   {/* All / none */}
                   <label className="flex cursor-pointer items-center gap-2.5 px-3 py-2 hover:bg-bg-overlay">
                     <input
@@ -225,7 +225,7 @@ export function ArmoryControls({ branches }: Props) {
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as SortKey)}
-            className="rounded-sm border border-border bg-bg-elevated px-2 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.12em] text-text-muted focus:border-accent focus:outline-none"
+            className="rounded-sm portal-card px-2 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.12em] text-text-muted focus:border-accent focus:outline-none"
           >
             {SORT_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -236,7 +236,7 @@ export function ArmoryControls({ branches }: Props) {
         </div>
       </div>
 
-      {/* ── Card list — always a flat list ───────────────────── */}
+      {/* ── Card list – always a flat list ───────────────────── */}
       <div className="flex flex-col gap-3">
         {sortedEntries.map((entry) => (
           <ArmoryCard

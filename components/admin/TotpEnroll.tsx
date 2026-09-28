@@ -5,7 +5,7 @@
  * --------------------------------------------------------------------
  * Manage the admin's own two-factor authentication (TOTP). Enroll an
  * authenticator app (scan the QR or type the secret, then confirm a code) and
- * remove factors. Uses Supabase Auth MFA — no DB work; factors live in auth.
+ * remove factors. Uses Supabase Auth MFA – no DB work; factors live in auth.
  */
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";

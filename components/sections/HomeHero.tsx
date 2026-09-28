@@ -51,7 +51,7 @@ export function HomeHero() {
       ref={sectionRef}
       // Section is content-driven on mobile/tablet (default) and on
       // large monitors (2xl). On xl (laptops, 1280-1535px wide) we
-      // pin the aspect ratio to 16:9 — same as the hero image — so
+      // pin the aspect ratio to 16:9 – same as the hero image – so
       // the image renders at its natural framing instead of being
       // zoomed-in by object-cover when the section happens to be
       // shorter than 16:9 due to compact content.
@@ -60,14 +60,14 @@ export function HomeHero() {
       // the section becomes content-height (~600-700px from the
       // pass-23 dialed-down content), giving the section a ~15:6
       // aspect against the image's 16:9. Object-cover compensates
-      // by zooming the image vertically to fill — which scales the
+      // by zooming the image vertically to fill – which scales the
       // figure up enormously and pushes their head out of frame.
       //
       // max-h prevents the 16:9 ratio from making the section
       // TALLER than the viewport on roomy xl widths (e.g. a 1500px
       // viewport at 16:9 → 844px section, slightly over an 800px
       // viewport). When the cap kicks in, aspect mismatch returns
-      // but at most by ~5-10% — far less aggressive than the
+      // but at most by ~5-10% – far less aggressive than the
       // unconstrained case and barely visible.
       //
       // 2xl restores `aspect-auto` so the original full-svh
@@ -94,7 +94,7 @@ export function HomeHero() {
         />
       </div>
 
-      {/* Layer 2 + 3: FIGURE — anchored to bottom, height-capped via .hero-figure
+      {/* Layer 2 + 3: FIGURE – anchored to bottom, height-capped via .hero-figure
           class which uses media queries to vary cap by viewport height:
           50vh on short phones (iPhone SE) so layout fits;
           60vh on taller phones for stronger figure presence. */}
@@ -139,7 +139,7 @@ export function HomeHero() {
           DESKTOP LAYERS (hidden xl:block)
           =================================================================== */}
 
-      {/* Layer 1: BACKGROUND — yellow textured fill, always full-bleed */}
+      {/* Layer 1: BACKGROUND – yellow textured fill, always full-bleed */}
       <div className="absolute inset-0 hidden xl:block" aria-hidden>
         <Image
           src="/images/hero/desktop-hero-01-bg.png"
@@ -152,10 +152,10 @@ export function HomeHero() {
         />
       </div>
 
-      {/* Layer 2 + 3: FIGURE — transparent PNG pair, right-anchored.
+      {/* Layer 2 + 3: FIGURE – transparent PNG pair, right-anchored.
           Container spans full height and sticks to the right edge.
           h-full w-auto on the images scales them to the section height
-          while letting width be proportional — figure is never cropped.
+          while letting width be proportional – figure is never cropped.
           Any left-side overflow sits behind the text/scrim area. */}
       <div className="absolute inset-y-0 right-0 hidden xl:flex items-end pointer-events-none" aria-hidden>
         <div className="relative h-full">
@@ -208,7 +208,7 @@ export function HomeHero() {
           reservation needed.
         */}
         <div className="hero-content flex h-[calc(100svh-72px)] flex-col items-stretch pt-8 sm:pt-12 xl:h-full xl:min-h-0 xl:py-10 2xl:min-h-[calc(100svh-72px)] 2xl:py-28">
-          {/* DESKTOP CONTENT BLOCK — vertically centered with my-auto.
+          {/* DESKTOP CONTENT BLOCK – vertically centered with my-auto.
               Two desktop tiers:
                 xl  (1280-1535px, typical laptop): content sized to fit
                                                     on a 13-15" screen
@@ -262,7 +262,7 @@ export function HomeHero() {
             </dl>
           </div>
 
-          {/* MOBILE TEXT BLOCK — centered in the yellow zone above the figure */}
+          {/* MOBILE TEXT BLOCK – centered in the yellow zone above the figure */}
           <div className="max-w-2xl xl:hidden">
             <h1 className="text-balance text-4xl font-extrabold leading-[1.02] sm:text-5xl">
               Malta&rsquo;s Ultimate Outdoor Laser Tag Experience.{" "}
@@ -286,7 +286,7 @@ export function HomeHero() {
         </div>
       </Container>
 
-      {/* MOBILE CTAs — absolutely positioned at bottom of section, over figure */}
+      {/* MOBILE CTAs – absolutely positioned at bottom of section, over figure */}
       <div className="absolute inset-x-0 bottom-0 z-20 xl:hidden">
         <Container size="wide">
           <div className="flex flex-col gap-2 pb-4">

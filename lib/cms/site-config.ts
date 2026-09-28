@@ -16,7 +16,7 @@ type SiteConfigRaw = Record<string, string> & {
  *   - homepage_season_leaders_count: integer
  *
  * Returned as a Map<string, string> so callers can use .get() with
- * defaults. Type coercion is each caller's responsibility — the CMS
+ * defaults. Type coercion is each caller's responsibility – the CMS
  * editor sees plain strings, and different keys may need different
  * coercions (booleans, numbers, etc).
  */

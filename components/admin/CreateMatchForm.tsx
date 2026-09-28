@@ -19,20 +19,20 @@ import { createClient } from "@/lib/supabase/client";
 
 type MatchType = "open" | "double_xp" | "private";
 
-const TYPE_META: Record<MatchType, { label: string; titlePrefix: string; hint: string }> = {
+const TYPE_META: Record<MatchType, { label: string; title: string; hint: string }> = {
   open: {
     label: "Open match",
-    titlePrefix: "Open Match",
+    title: "LaserOps Open Match",
     hint: "Public. Players sign up; confirms for your sign-off once it hits the minimum.",
   },
   double_xp: {
     label: "Double XP open match",
-    titlePrefix: "Double XP Match",
+    title: "LaserOps Double XP Event",
     hint: "Public open match where all XP is doubled.",
   },
   private: {
     label: "Private booking",
-    titlePrefix: "Private Booking",
+    title: "Private Booking",
     hint: "Not shown on the public games list. Created already confirmed (a direct booking).",
   },
 };
@@ -77,16 +77,12 @@ export function CreateMatchForm() {
   const effectiveMode = isPrivate ? pricingMode : "per_player";
   const priceLabel = effectiveMode === "flat" ? "Flat rate (EUR)" : "Price per player (EUR, optional)";
 
-  // Auto-generate the title from the setup params until the admin edits it.
+  // Title is a fixed label per type (the date/time show in the subtext), until
+  // the admin edits it.
   useEffect(() => {
     if (titleDirty) return;
-    if (!date || !startTime || !endTime) {
-      setTitle("");
-      return;
-    }
-    const [y, m, d] = date.split("-");
-    setTitle(`${TYPE_META[matchType].titlePrefix} - ${d}/${m}/${y} ${startTime} - ${endTime}`);
-  }, [date, startTime, endTime, matchType, titleDirty]);
+    setTitle(TYPE_META[matchType].title);
+  }, [matchType, titleDirty]);
 
   function onStart(v: string) {
     setStartTime(v);

@@ -1,7 +1,7 @@
 /**
  * lib/game-data/lookup.ts
  * --------------------------------------------------------------------
- * Fetch and parse Game_Data_Lookup_PUBLIC — the per-match data sheet.
+ * Fetch and parse Game_Data_Lookup_PUBLIC – the per-match data sheet.
  *
  * One row per player per match, fully granular. Used for challenges
  * where individual match performances matter (e.g. "highest kills in
@@ -19,7 +19,7 @@ import {
 } from "@/lib/sheets";
 import { FALLBACK_PROFILE_PIC } from "@/lib/leaderboards/period-shared";
 
-/** Public — same spreadsheet as the period stats / player stats sheets. */
+/** Public – same spreadsheet as the period stats / player stats sheets. */
 export const GAME_DATA_LOOKUP_CSV_URL =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTLlM4fIfh52DiovbJT2b9A6UyqoiQtoG0c2HoVRCG_OCtLPZvz-uBSC6y1voM8d4jBVCNcpCGctco/pub?gid=116322811&single=true&output=csv";
 
@@ -38,7 +38,7 @@ export type GameDataRaw = Record<string, string> & {
 /**
  * Parsed game data row. The raw row is preserved so per-challenge
  * metric extraction can read arbitrary columns by name (since the CMS
- * specifies which column to rank by — could be any of dozens).
+ * specifies which column to rank by – could be any of dozens).
  */
 export type GameDataRow = {
   nickname: string;
@@ -51,7 +51,7 @@ export type GameDataRow = {
 
 /**
  * Fetch and normalise the game data lookup sheet.
- * Cached 5 min (matches the data sheets — granular match data could
+ * Cached 5 min (matches the data sheets – granular match data could
  * grow as new matches are recorded).
  */
 export async function fetchGameDataRows(): Promise<SheetFetchResult<GameDataRow>> {
@@ -63,7 +63,7 @@ export async function fetchGameDataRows(): Promise<SheetFetchResult<GameDataRow>
     .map((r) => {
       const profileRaw = r.LaserOps_Profile_Image?.trim();
       const sourceYearMonth = r.LaserOps_Game_YearMonth?.trim() ?? "";
-      // YearMonth normalisation — same logic as period-shared. If the
+      // YearMonth normalisation – same logic as period-shared. If the
       // source isn't already YYYY-MM, leave it as-is and let filtering
       // miss it (defensive: better than fabricating dates).
       const yearMonth = /^\d{4}-\d{2}$/.test(sourceYearMonth) ? sourceYearMonth : "";

@@ -92,7 +92,7 @@ export function CompareView({ allRows, uniqueGunsMap }: Props) {
   // ── No main player selected ──────────────────────────────
   if (!opsParam) {
     return (
-      <div className="border border-border bg-bg-elevated px-6 py-12 text-center">
+      <div className="portal-card px-6 py-12 text-center">
         <p className="text-sm font-semibold uppercase tracking-[0.14em] text-text-muted">
           Select a player to compare
         </p>
@@ -106,7 +106,7 @@ export function CompareView({ allRows, uniqueGunsMap }: Props) {
 
   if (opsParam && !playerA) {
     return (
-      <div className="border border-border bg-bg-elevated px-6 py-12 text-center">
+      <div className="portal-card px-6 py-12 text-center">
         <p className="text-sm font-semibold uppercase tracking-[0.14em] text-text-muted">
           Player not found
         </p>
@@ -478,7 +478,7 @@ function cellHighlight(side: "a" | "b", winner: StatWinner): string {
   const isWinner = winner === side || winner === "tie";
   return isWinner
     ? "border-2 border-accent bg-accent/10 shadow-[0_0_0_1px_rgba(255,222,0,0.2)]"
-    : "border border-border bg-bg-elevated";
+    : "portal-card";
 }
 
 /* ============================================================
@@ -487,7 +487,7 @@ function cellHighlight(side: "a" | "b", winner: StatWinner): string {
 
 function ProfileCell({ data }: { data: ComparePlayerData }) {
   return (
-    <div className="flex flex-col items-center gap-2 border border-border bg-bg-elevated p-3 sm:p-4">
+    <div className="flex flex-col items-center gap-2 portal-card p-3 sm:p-4">
       {/* Profile photo – square, fills cell width */}
       <img
         src={cldImage(data.profilePicUrl, { w: 384 })}
@@ -521,7 +521,7 @@ function ProfileCell({ data }: { data: ComparePlayerData }) {
 
 function LevelCell({ data }: { data: ComparePlayerData }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-2 border border-border bg-bg-elevated p-3 sm:p-4">
+    <div className="flex flex-col items-center justify-center gap-2 portal-card p-3 sm:p-4">
       {data.rankBadgeUrl !== "" && (
         <img
           src={cldImage(data.rankBadgeUrl, { w: 384 })}

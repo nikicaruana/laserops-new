@@ -1,7 +1,7 @@
 /**
  * app/admin/changelog/page.tsx
  * --------------------------------------------------------------------
- * Admin change log — who changed what config, when. Optionally filtered to one
+ * Admin change log – who changed what config, when. Optionally filtered to one
  * section via ?table=<name>. Reads admin_audit_log (admin-read RLS).
  */
 import Link from "next/link";
@@ -31,6 +31,7 @@ const GROUPS: { key: string; label: string; tables: string[] }[] = [
     ],
   },
   { key: "exploit", label: "Exploit control", tables: ["spawn_camp_config", "base_trading_config"] },
+  { key: "bookings", label: "Bookings & signups", tables: ["match_signups", "match_participants"] },
 ];
 
 export default async function ChangeLogPage({
@@ -57,7 +58,7 @@ export default async function ChangeLogPage({
           Change log
         </h1>
         <p className="mt-2 text-sm text-text-muted">
-          Every config change, most recent first — who made it and when.
+          Every config change, most recent first – who made it and when.
         </p>
       </header>
 

@@ -24,7 +24,7 @@ export type GoogleReview = {
  * Fetch published Google reviews from the CMS, sorted by display order.
  * Hidden reviews (Status !== "published") are filtered out.
  *
- * No rendering yet — wire this into a component when the reviews
+ * No rendering yet – wire this into a component when the reviews
  * section is built.
  */
 export async function fetchGoogleReviews(): Promise<GoogleReview[]> {

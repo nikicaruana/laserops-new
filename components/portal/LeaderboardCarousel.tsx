@@ -11,13 +11,13 @@ import React from "react";
  * through with ← / → buttons flanking the table title.
  *
  * All children are rendered (keeping server-component data-fetching
- * intact) but only the active one is visible — this avoids remounting
+ * intact) but only the active one is visible – this avoids remounting
  * async subtrees on navigation and keeps the content available for
  * screen readers.
  *
  * Props:
- *   labels   — ordered list of table titles, one per child
- *   children — one React node per label (order must match)
+ *   labels   – ordered list of table titles, one per child
+ *   children – one React node per label (order must match)
  */
 
 type Props = {
@@ -94,7 +94,7 @@ export function LeaderboardCarousel({ labels, children }: Props) {
         </button>
       </div>
 
-      {/* Table area — all children mounted, only active one visible */}
+      {/* Table area – all children mounted, only active one visible */}
       <div className="pt-2">
         {childArray.map((child, i) => (
           <div key={i} className={i === active ? "block" : "hidden"}>

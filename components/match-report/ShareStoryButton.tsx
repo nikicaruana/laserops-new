@@ -119,7 +119,7 @@ function ShareStoryModal({ matchId, ops, onClose }: { matchId: string; ops: stri
           key={src}
           src={src}
           alt="Story preview"
-          className="max-h-[52vh] w-auto rounded-sm border border-border-strong bg-bg-elevated"
+          className="max-h-[52vh] w-auto rounded-sm portal-card"
           style={{ aspectRatio: "9 / 16" }}
         />
       </div>

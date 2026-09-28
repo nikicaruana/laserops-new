@@ -22,7 +22,7 @@ export const metadata: Metadata = {
  * URL state: ?ops=<OpsTag>  (forwarded from SubTabs via forwardParams).
  *
  * The PlayerSearch bar lives in the player-stats layout (PlayerStatsShell)
- * above the sub-tabs row — no search bar needed here.
+ * above the sub-tabs row – no search bar needed here.
  */
 
 type SearchParams = Promise<{ ops?: string }>;
@@ -50,7 +50,7 @@ export default async function LastMatchPage({
       <Suspense
         key={ops}
         fallback={
-          <div className="mt-8 border border-border bg-bg-elevated px-6 py-16 text-center">
+          <div className="mt-8 portal-card px-6 py-16 text-center">
             <p className="text-sm font-semibold uppercase tracking-[0.14em] text-text-muted">
               Loading last match…
             </p>
@@ -76,7 +76,7 @@ async function LastMatchContent({ ops }: { ops: string }) {
 
   if (!matchResult.ok) {
     return (
-      <div className="mt-8 border border-border bg-bg-elevated px-6 py-14 text-center">
+      <div className="mt-8 portal-card px-6 py-14 text-center">
         <p className="text-sm font-semibold uppercase tracking-[0.14em] text-text-muted">
           Match report unavailable
         </p>
@@ -102,7 +102,7 @@ async function LastMatchContent({ ops }: { ops: string }) {
       {player ? (
         <PlayerStatsCard player={player} ranks={report.ranks} />
       ) : (
-        <div className="border border-border bg-bg-elevated px-6 py-10 text-center">
+        <div className="portal-card px-6 py-10 text-center">
           <p className="text-sm font-semibold uppercase tracking-[0.14em] text-text-muted">
             Player stats not available for this match
           </p>
@@ -114,7 +114,7 @@ async function LastMatchContent({ ops }: { ops: string }) {
 
 function EmptyState() {
   return (
-    <div className="mt-8 border border-border bg-bg-elevated px-6 py-12 text-center">
+    <div className="mt-8 portal-card px-6 py-12 text-center">
       <p className="text-sm font-semibold uppercase tracking-[0.14em] text-text-muted">
         Search for a player to see their last match
       </p>

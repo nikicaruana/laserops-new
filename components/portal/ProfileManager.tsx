@@ -18,11 +18,12 @@ import { MARKETING_CONSENT_TEXT } from "@/lib/waiver";
 import { createClient } from "@/lib/supabase/client";
 
 const inputStyles =
-  "h-14 w-full rounded-none border border-border-strong bg-bg-elevated px-4 text-sm text-text placeholder:text-text-subtle focus:border-accent focus:outline-none";
+  "h-14 w-full rounded-none border border-border bg-bg-overlay px-4 text-sm text-text placeholder:text-text-subtle focus:border-accent focus:outline-none";
 
 type Props = {
   opsTag: string | null;
   fullName: string | null;
+  phone: string | null;
   dateOfBirth: string | null; // YYYY-MM-DD
   showFullName: boolean;
   showDateOfBirth: boolean;
@@ -32,6 +33,10 @@ type Props = {
   hasPassword: boolean;
   /** OAuth/email providers currently linked to this login, e.g. ["email","google"]. */
   linkedProviders: string[];
+  /** Photos this player is tagged in – selectable as their avatar. */
+  taggedPhotos?: { id: string; url: string }[];
+  /** Server-rendered game-token wallet, slotted in above the password section. */
+  tokenWallet?: React.ReactNode;
 };
 
 function GoogleGlyph() {
@@ -47,7 +52,7 @@ function GoogleGlyph() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="border border-border bg-bg-elevated px-5 py-6 sm:px-7">
+    <section className="portal-card px-5 py-6 sm:px-7">
       <h2 className="mb-5 text-sm font-semibold uppercase tracking-[0.12em] text-accent">{title}</h2>
       {children}
     </section>
@@ -82,6 +87,7 @@ export function ProfileManager(props: Props) {
   // Account fields
   const [opsTag, setOpsTag] = useState(props.opsTag ?? "");
   const [fullName, setFullName] = useState(props.fullName ?? "");
+  const [phone, setPhone] = useState(props.phone ?? "");
   const [dob, setDob] = useState(props.dateOfBirth ?? "");
   const [showFullName, setShowFullName] = useState(props.showFullName);
   const [showDob, setShowDob] = useState(props.showDateOfBirth);
@@ -166,6 +172,7 @@ export function ProfileManager(props: Props) {
       body: JSON.stringify({
         ops_tag: opsTag,
         full_name: fullName,
+        phone: phone || null,
         date_of_birth: dob || null,
         show_full_name: showFullName,
         show_date_of_birth: showDob,
@@ -236,7 +243,7 @@ export function ProfileManager(props: Props) {
       {/* Avatar + identity */}
       <Section title="Photo">
         <div className="flex flex-col items-center gap-4">
-          <AvatarUploader initialUrl={props.profilePicUrl} opsTag={props.opsTag} />
+          <AvatarUploader initialUrl={props.profilePicUrl} opsTag={props.opsTag} taggedPhotos={props.taggedPhotos ?? []} />
           {props.email && (
             <p className="text-xs text-text-subtle">
               Signed in as <span className="text-text-muted">{props.email}</span>
@@ -277,6 +284,22 @@ export function ProfileManager(props: Props) {
               className={inputStyles}
             />
             <VisibilityToggle checked={showFullName} onChange={setShowFullName} label="Show on my public profile" />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">
+              Phone <span className="text-text-subtle">(optional)</span>
+            </label>
+            <input
+              type="tel"
+              inputMode="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              maxLength={32}
+              placeholder="e.g. +356 7900 0000"
+              className={inputStyles}
+            />
+            <p className="mt-1.5 text-xs text-text-subtle">So we can reach you about your games. Never shown publicly.</p>
           </div>
 
           <div>
@@ -325,6 +348,9 @@ export function ProfileManager(props: Props) {
           </Button>
         </form>
       </Section>
+
+      {/* Game-token wallet – slotted above the password section */}
+      {props.tokenWallet}
 
       {/* Password */}
       <Section title={props.hasPassword ? "Change password" : "Set a password"}>
@@ -441,7 +467,7 @@ export function ProfileManager(props: Props) {
         {reclaimCode ? (
           <div className="space-y-4 text-center">
             <p className="text-sm text-text">
-              Your account has been deleted. Save this <strong>reclaim key</strong> — it&apos;s the
+              Your account has been deleted. Save this <strong>reclaim key</strong> – it&apos;s the
               only way to restore your stats if you ever come back:
             </p>
             <div className="select-all border border-accent bg-bg px-4 py-4 font-mono text-lg font-bold tracking-widest text-accent">
@@ -451,7 +477,7 @@ export function ProfileManager(props: Props) {
               We can&apos;t show this again. Store it somewhere safe (a note or password manager).
             </p>
             <Button type="button" size="md" onClick={() => window.location.assign("/")}>
-              I&apos;ve saved it — done
+              I&apos;ve saved it – done
             </Button>
           </div>
         ) : !deleteOpen ? (
@@ -474,7 +500,7 @@ export function ProfileManager(props: Props) {
               <p className="mt-2 text-red-400/90">
                 Your personal details (email, name, photo) and login are permanently removed. Your
                 game stats stay in the records but become unclaimed. We&apos;ll give you a reclaim
-                key so you can restore them if you ever come back — save it, or they&apos;re gone.
+                key so you can restore them if you ever come back – save it, or they&apos;re gone.
               </p>
             </div>
             <div>

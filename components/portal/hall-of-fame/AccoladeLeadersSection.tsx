@@ -28,7 +28,7 @@ export function AccoladeLeadersSection({
         {accolades.map((acc) => (
           <div
             key={acc.name}
-            className="border border-border bg-bg-elevated p-4 sm:p-5"
+            className="portal-card p-4 sm:p-5"
           >
             {/* Accolade header – badge + name + what it's for */}
             <div className="flex items-center gap-3">

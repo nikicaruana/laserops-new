@@ -2,7 +2,7 @@
  * lib/cloudinary.ts
  * --------------------------------------------------------------------
  * Cloudinary gallery image fetcher. Uses the Cloudinary REST API
- * directly (no SDK) so Next.js ISR caching works natively — the same
+ * directly (no SDK) so Next.js ISR caching works natively – the same
  * pattern as lib/sheets.ts.
  *
  * Required env vars:
@@ -11,7 +11,7 @@
  *   CLOUDINARY_API_SECRET
  *
  * Optional env var:
- *   CLOUDINARY_GALLERY_FOLDER — restrict results to this folder and its
+ *   CLOUDINARY_GALLERY_FOLDER – restrict results to this folder and its
  *   subfolders (e.g. "laseropsmalta.com/Gallery"). Uses asset_folder
  *   matching, which works in Cloudinary's dynamic folder mode where the
  *   folder path is NOT part of the public_id.
@@ -29,7 +29,7 @@ export type CloudinaryImage = {
   /**
    * The asset_folder from Cloudinary (dynamic folder mode), e.g.
    * "laseropsmalta.com/Gallery/Open_Game_2026-04-11". Used for filter
-   * pills — folderLabel() extracts the last path segment for display.
+   * pills – folderLabel() extracts the last path segment for display.
    */
   folder: string;
   /** Optional: populated from context metadata (alt / caption). */
@@ -38,15 +38,17 @@ export type CloudinaryImage = {
   tags: string[];
 };
 
-/** Revalidate every 30 minutes — same as CMS_REVALIDATE_SECONDS. */
+/** Revalidate every 30 minutes – same as CMS_REVALIDATE_SECONDS. */
 const GALLERY_REVALIDATE_SECONDS = 1800;
 
 /**
  * Folder where player profile pictures are stored (see app/api/profile-pic).
- * These must NEVER appear in the public gallery — the gallery fetchers below
+ * These must NEVER appear in the public gallery – the gallery fetchers below
  * exclude this folder unconditionally, independent of CLOUDINARY_GALLERY_FOLDER.
  */
 export const PROFILE_PICS_FOLDER = "laseropsmalta.com/profile-pics";
+export const SQUAD_BADGES_FOLDER = "laseropsmalta.com/squad-badges";
+export const LADDER_BANNERS_FOLDER = "laseropsmalta.com/ladder-banners";
 
 /** Folders for admin-uploaded config images (see app/api/admin/image). */
 export const GUNS_FOLDER = "laseropsmalta.com/guns";
@@ -55,6 +57,8 @@ export const TEAMS_FOLDER = "laseropsmalta.com/team-badges";
 export const RANK_BADGES_FOLDER = "laseropsmalta.com/rank-badges";
 export const TIER_BADGES_FOLDER = "laseropsmalta.com/tier-badges";
 export const STREAK_BADGES_FOLDER = "laseropsmalta.com/streak-badges";
+export const KILLSTREAK_BADGES_FOLDER = "laseropsmalta.com/killstreak-badges";
+export const REWARD_IMAGES_FOLDER = "laseropsmalta.com/reward-images";
 
 /** Allowed image-upload kinds -> Cloudinary folder. */
 export const ADMIN_IMAGE_FOLDERS: Record<string, string> = {
@@ -64,6 +68,8 @@ export const ADMIN_IMAGE_FOLDERS: Record<string, string> = {
   rank: RANK_BADGES_FOLDER,
   tier: TIER_BADGES_FOLDER,
   streak: STREAK_BADGES_FOLDER,
+  killstreak: KILLSTREAK_BADGES_FOLDER,
+  reward: REWARD_IMAGES_FOLDER,
 };
 
 function isProfilePic(folder: string): boolean {
@@ -80,7 +86,7 @@ function isProfilePic(folder: string): boolean {
  * When CLOUDINARY_GALLERY_FOLDER is set, only images whose asset_folder
  * matches that path (or a subfolder of it) are returned. This works in
  * Cloudinary's dynamic folder mode where folder info lives in asset_folder,
- * not in the public_id — so the old `prefix` parameter on /resources/image
+ * not in the public_id – so the old `prefix` parameter on /resources/image
  * doesn't apply.
  *
  * Returns [] on any error so the gallery page renders an empty state.
@@ -131,7 +137,7 @@ export async function fetchGalleryImages(): Promise<CloudinaryImage[]> {
       .filter((img) => !isProfilePic(img.folder))
       // Filter by asset_folder when configured. Keeps images whose folder
       // exactly matches OR is a subfolder of CLOUDINARY_GALLERY_FOLDER.
-      // This is the correct approach for dynamic folder mode — the prefix
+      // This is the correct approach for dynamic folder mode – the prefix
       // parameter on /resources/image only matches public_id, which in
       // dynamic folder mode is just the filename, not the folder path.
       .filter((img) => {
@@ -159,11 +165,11 @@ export async function fetchGalleryImages(): Promise<CloudinaryImage[]> {
  *   .../upload/w_800,c_fill,q_auto,f_auto/v123/my-image.jpg
  *
  * Common transform building blocks:
- *   w_{n}        — resize to width n px
- *   ar_{w}:{h}   — enforce aspect ratio (used with c_fill)
- *   c_fill       — crop to fill the requested dimensions
- *   q_auto       — Cloudinary picks the best quality for the content
- *   f_auto       — serve WebP/AVIF to browsers that support it
+ *   w_{n}        – resize to width n px
+ *   ar_{w}:{h}   – enforce aspect ratio (used with c_fill)
+ *   c_fill       – crop to fill the requested dimensions
+ *   q_auto       – Cloudinary picks the best quality for the content
+ *   f_auto       – serve WebP/AVIF to browsers that support it
  *
  * @param secureUrl  The original https://res.cloudinary.com/… URL
  * @param transform  Transformation string, e.g. "w_800,ar_4:3,c_fill,q_auto,f_auto"
@@ -176,7 +182,7 @@ export function cloudinaryTransform(secureUrl: string, transform: string): strin
 
 /**
  * Fetch images by tag from Cloudinary. Uses the dedicated tags endpoint
- * so only images carrying that tag are returned — much more efficient
+ * so only images carrying that tag are returned – much more efficient
  * than fetching everything and filtering client-side.
  *
  * Returns [] on any error or missing credentials.

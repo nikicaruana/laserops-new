@@ -61,7 +61,7 @@ function writeStorage(state: ConsentState) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch {
-    // localStorage unavailable (private mode, storage full) — silent fail
+    // localStorage unavailable (private mode, storage full) – silent fail
   }
 }
 
@@ -101,7 +101,7 @@ export function CookieConsent() {
     const saved = readStorage();
     if (saved) {
       pushConsentUpdate(buildConsentParams(saved));
-      // Don't show banner — user already decided.
+      // Don't show banner – user already decided.
     } else {
       setVisible(true);
     }
@@ -128,8 +128,8 @@ export function CookieConsent() {
     pushConsentUpdate(buildConsentParams(state));
     // Signal an *active* consent choice so GTM can fire consent-gated tags
     // (e.g. the Meta Pixel, held while ad_storage was denied) immediately on
-    // THIS page. Pushed only on a real user choice — never on the silent mount
-    // re-apply — so returning visitors, whose pixel already fires at page load
+    // THIS page. Pushed only on a real user choice – never on the silent mount
+    // re-apply – so returning visitors, whose pixel already fires at page load
     // via the early consent script in GTM.tsx, don't get a duplicate PageView.
     if (typeof window !== "undefined") {
       window.dataLayer = window.dataLayer || [];
@@ -262,7 +262,7 @@ function ToggleRow({
 }) {
   return (
     <div className="flex items-start gap-4">
-      {/* Toggle switch — standalone button, no label association so
+      {/* Toggle switch – standalone button, no label association so
           clicking the text area doesn't double-fire the toggle. */}
       <button
         type="button"
@@ -284,7 +284,7 @@ function ToggleRow({
         <span className="sr-only">{checked ? "On" : "Off"}</span>
       </button>
 
-      {/* Text area — separate onClick so clicking the description
+      {/* Text area – separate onClick so clicking the description
           also toggles, without any htmlFor double-fire issue. */}
       <div className="cursor-pointer" onClick={() => onChange(!checked)}>
         <p className="text-xs font-bold uppercase tracking-[0.12em] text-text">

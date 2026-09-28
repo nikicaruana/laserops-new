@@ -10,7 +10,7 @@
  * yet, it points the admin to set up 2FA first (can't gate without a factor).
  *
  * A code from the admin's phone can't be produced by someone merely sitting at
- * the device — that's the whole point.
+ * the device – that's the whole point.
  */
 import { useEffect, useState } from "react";
 import Link from "next/link";

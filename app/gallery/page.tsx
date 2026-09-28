@@ -18,21 +18,21 @@ export const metadata: Metadata = {
  * (ISR-cached for 30 min) and passes them to GalleryGrid.
  *
  * Empty state: fetchGalleryImages() returns [] on missing credentials
- * or any API error — the page renders a non-alarming placeholder.
+ * or any API error – the page renders a non-alarming placeholder.
  */
 
 export default async function GalleryPage() {
   const images = await fetchGalleryImages();
 
   // Derive unique folder names for the filter pills. Sort descending
-  // so newest matches (YYYY-MM-DD suffix) appear first — reverse
+  // so newest matches (YYYY-MM-DD suffix) appear first – reverse
   // lexicographic order works because ISO dates sort correctly.
   const folders = Array.from(new Set(images.map((img) => img.folder)))
     .filter(Boolean)
     .sort((a, b) => b.localeCompare(a));
 
   return (
-    <main className="min-h-screen bg-bg pb-16 pt-10 sm:pb-24 sm:pt-14 lg:pb-32 lg:pt-20">
+    <main className="min-h-screen pb-16 pt-10 sm:pb-24 sm:pt-14 lg:pb-32 lg:pt-20">
       <Container size="wide">
         {/* Page heading */}
         <header className="mb-8 sm:mb-12 lg:mb-16">
@@ -64,7 +64,7 @@ export default async function GalleryPage() {
 
 function EmptyState() {
   return (
-    <div className="rounded-sm border border-border bg-bg-elevated p-8 text-center sm:p-12">
+    <div className="rounded-sm portal-card p-8 text-center sm:p-12">
       <p className="text-base text-text-muted sm:text-lg">
         Gallery photos are on their way. Check back soon.
       </p>

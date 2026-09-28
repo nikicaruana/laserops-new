@@ -3,7 +3,7 @@
 /**
  * components/admin/AccoladeRuleEditor.tsx
  * --------------------------------------------------------------------
- * Editor for an accolade's award rule (accolade_rules) — the logic that
+ * Editor for an accolade's award rule (accolade_rules) – the logic that
  * decides who earns it when a match is ingested:
  *   - match_superlative: the player with the max/min of a stat
  *   - threshold:         any player whose stat meets comparator + value

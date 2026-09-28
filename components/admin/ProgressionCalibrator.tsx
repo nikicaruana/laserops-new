@@ -37,6 +37,61 @@ const RANGE: Record<keyof XpConfig, { min: number; max: number; step: number }> 
   ratingCap: { min: 1, max: 8, step: 0.1 },
 };
 
+// Legacy (pre-v2) level thresholds — the old Ranking_System map. Legacy XP is
+// placed on THIS map so "Leg L" is the level each player was under the old system.
+const LEGACY_LEVELS: { level: number; x: number }[] = [
+  { level: 1, x: 0 },
+  { level: 2, x: 1000 },
+  { level: 3, x: 3500 },
+  { level: 4, x: 7500 },
+  { level: 5, x: 12900 },
+  { level: 6, x: 19600 },
+  { level: 7, x: 27600 },
+  { level: 8, x: 36900 },
+  { level: 9, x: 47400 },
+  { level: 10, x: 59100 },
+  { level: 11, x: 72100 },
+  { level: 12, x: 86200 },
+  { level: 13, x: 101500 },
+  { level: 14, x: 118000 },
+  { level: 15, x: 135700 },
+  { level: 16, x: 154400 },
+  { level: 17, x: 174400 },
+  { level: 18, x: 195400 },
+  { level: 19, x: 217600 },
+  { level: 20, x: 240900 },
+  { level: 21, x: 265300 },
+  { level: 22, x: 290700 },
+  { level: 23, x: 317300 },
+  { level: 24, x: 345000 },
+  { level: 25, x: 373700 },
+  { level: 26, x: 403500 },
+  { level: 27, x: 434400 },
+  { level: 28, x: 466300 },
+  { level: 29, x: 499300 },
+  { level: 30, x: 533400 },
+  { level: 31, x: 568500 },
+  { level: 32, x: 604600 },
+  { level: 33, x: 641800 },
+  { level: 34, x: 680000 },
+  { level: 35, x: 719300 },
+  { level: 36, x: 759600 },
+  { level: 37, x: 800900 },
+  { level: 38, x: 843200 },
+  { level: 39, x: 886600 },
+  { level: 40, x: 930900 },
+  { level: 41, x: 976300 },
+  { level: 42, x: 1022700 },
+  { level: 43, x: 1070100 },
+  { level: 44, x: 1118500 },
+  { level: 45, x: 1167900 },
+  { level: 46, x: 1218300 },
+  { level: 47, x: 1269700 },
+  { level: 48, x: 1322100 },
+  { level: 49, x: 1375500 },
+  { level: 50, x: 1429900 },
+];
+
 const rangeCls = "w-full cursor-pointer accent-[var(--color-accent)]";
 const numCls = "w-24 rounded border border-border-strong bg-bg px-2 py-1 text-right font-mono text-text";
 
@@ -72,13 +127,17 @@ export function ProgressionCalibrator({ config, levels, rows }: { config: CfgRow
   }, [rows]);
 
   const players = useMemo(() => {
-    const agg: Record<string, { name: string; g: number; dxp: number; oldTot: number; newTot: number }> = {};
+    const agg: Record<string, { name: string; g: number; dxp: number; legacyTot: number; oldTot: number; newTot: number }> = {};
     for (const r of rows) {
       const key = r.account_id ?? "hb:" + (r.nickname ?? "?");
-      const a = (agg[key] ??= { name: r.nickname ?? "?", g: 0, dxp: 0, oldTot: 0, newTot: 0 });
+      const a = (agg[key] ??= { name: r.nickname ?? "?", g: 0, dxp: 0, legacyTot: 0, oldTot: 0, newTot: 0 });
       a.g++;
       if (r.is_double_xp) a.dxp++;
       a.oldTot += r.xp_total ?? 0;
+      // Legacy (pre-v2) XP: raw score IS the performance term (doubled on a
+      // match-wide double-XP night), plus the fixed 750/round-win + 500/match-win
+      // + accolade XP. Fixed historical reference — never moves with the sliders.
+      a.legacyTot += (r.score ?? 0) * (r.is_double_xp ? 2 : 1) + 750 * (r.rounds_won ?? 0) + 500 * (r.was_winner ? 1 : 0) + (r.xp_from_accolades ?? 0);
       const avg = matchAvg[r.match_id] ?? 0;
       const rating = avg > 0 ? (r.score ?? 0) / avg : 0;
       // Preview uses the modelled cadence when set, else each row's real
@@ -88,11 +147,32 @@ export function ProgressionCalibrator({ config, levels, rows }: { config: CfgRow
     }
     const curveXY = curve.map((c) => ({ level: c.level, x: c.x }));
     return Object.values(agg)
-      .map((a) => ({ ...a, oldLvl: levelForXp(a.oldTot, dbLevels), newLvl: levelForXp(a.newTot, curveXY) }))
+      .map((a) => ({ ...a, legacyLvl: levelForXp(a.legacyTot, LEGACY_LEVELS), oldLvl: levelForXp(a.oldTot, dbLevels), newLvl: levelForXp(a.newTot, curveXY) }))
       .sort((x, y) => y.newTot - x.newTot);
   }, [rows, cfg, curve, dbLevels, matchAvg, modelling, effMult]);
 
   const regulars = players.filter((p) => p.g >= minGames);
+
+  // Games-to-level planner. Player TYPES are derived from the real spread of
+  // per-game XP across the 3+ game regulars (percentiles), and each row is how
+  // many games that type needs to cross a level threshold. Recomputes with the
+  // formula + curve sliders (newTot and the curve both move live).
+  const planner = useMemo(() => {
+    const rates = players.filter((p) => p.g >= 3).map((p) => (p.g > 0 ? p.newTot / p.g : 0)).filter((r) => r > 0).sort((a, b) => a - b);
+    const pct = (q: number) => {
+      if (rates.length === 0) return 0;
+      const idx = (rates.length - 1) * q, lo = Math.floor(idx), hi = Math.ceil(idx);
+      return rates[lo] + (rates[hi] - rates[lo]) * (idx - lo);
+    };
+    const archetypes = [
+      { label: "Elite", sub: "top 10%", rate: pct(0.9) },
+      { label: "Strong", sub: "top 25%", rate: pct(0.75) },
+      { label: "Average", sub: "median", rate: pct(0.5) },
+      { label: "Casual", sub: "bottom 25%", rate: pct(0.25) },
+    ];
+    const rows = curve.map((c) => ({ level: c.level, rank: c.rank, x: c.x, games: archetypes.map((a) => (a.rate > 0 ? Math.ceil(c.x / a.rate) : 0)) }));
+    return { archetypes, rows, count: rates.length };
+  }, [players, curve]);
 
   async function publish() {
     setBusy(true); setErr(null); setMsg(null);
@@ -205,18 +285,18 @@ export function ProgressionCalibrator({ config, levels, rows }: { config: CfgRow
         <div className="overflow-x-auto">
           <table className="w-full text-sm tabular-nums">
             <thead className="text-left text-[0.65rem] uppercase tracking-[0.1em] text-text-subtle">
-              <tr><th className="px-4 py-2">Player</th><th className="px-4 py-2 text-right">G</th><th className="px-4 py-2 text-right" title="Double XP games played (already counted as 2× in New XP)">2&times; G</th><th className="px-4 py-2 text-right">Old XP</th><th className="px-4 py-2 text-right">Old L</th><th className="px-4 py-2 text-right">New XP</th><th className="px-4 py-2 text-right">New L</th><th className="px-4 py-2">Rank</th><th className="px-4 py-2 text-right">&Delta;</th></tr>
+              <tr><th className="px-4 py-2">Player</th><th className="px-4 py-2 text-right">G</th><th className="px-4 py-2 text-right" title="Double XP games played (already counted as 2× in New XP)">2&times; G</th><th className="px-4 py-2 text-right" title="Legacy (pre-v2) XP = raw score (×2 on double-XP) + 750/round-win + 500/match-win + accolades. Fixed reference to tune against.">Legacy XP</th><th className="px-4 py-2 text-right" title="Legacy XP placed on the OLD level map (the level each player was under the pre-v2 system).">Leg L</th><th className="px-4 py-2 text-right">New XP</th><th className="px-4 py-2 text-right">New L</th><th className="px-4 py-2">Rank</th><th className="px-4 py-2 text-right" title="New level minus Legacy level: how the new system moves each player vs the old one (0 = level preserved).">&Delta;</th></tr>
             </thead>
             <tbody>
               {regulars.map((p) => {
-                const d = p.newLvl - p.oldLvl;
+                const d = p.newLvl - p.legacyLvl;
                 return (
                   <tr key={p.name} className="border-t border-border/60">
                     <td className="px-4 py-1.5 font-semibold text-text">{p.name}</td>
                     <td className="px-4 py-1.5 text-right font-mono text-text-muted">{p.g}</td>
                     <td className={`px-4 py-1.5 text-right font-mono ${p.dxp > 0 ? "text-accent" : "text-text-subtle"}`}>{p.dxp || "—"}</td>
-                    <td className="px-4 py-1.5 text-right font-mono text-text-muted">{num(p.oldTot)}</td>
-                    <td className="px-4 py-1.5 text-right font-mono text-text-muted">{p.oldLvl}</td>
+                    <td className="px-4 py-1.5 text-right font-mono text-text">{num(p.legacyTot)}</td>
+                    <td className="px-4 py-1.5 text-right font-mono text-text-muted">{p.legacyLvl}</td>
                     <td className="px-4 py-1.5 text-right font-mono text-text">{num(p.newTot)}</td>
                     <td className="px-4 py-1.5 text-right font-mono font-semibold text-accent">{p.newLvl}</td>
                     <td className="px-4 py-1.5 text-xs uppercase text-text-muted">{rankOf(p.newLvl)}</td>
@@ -228,6 +308,44 @@ export function ProgressionCalibrator({ config, levels, rows }: { config: CfgRow
           </table>
         </div>
       </div>
+
+      <section className="rounded-lg border border-border bg-bg-elevated lg:col-span-2">
+        <div className="border-b border-border px-4 py-3">
+          <h2 className="text-sm font-bold uppercase tracking-[0.1em] text-text">Games to reach each level &mdash; by player type</h2>
+          <p className="mt-1 max-w-4xl text-xs text-text-muted">
+            Player types are the percentiles of real per-game XP across your {planner.count} regulars (3+ games) under the current formula. Each cell is the cumulative games at that pace to cross the level threshold. Recomputes as you tune the formula + curve. Use it to place level rewards.
+          </p>
+        </div>
+        <div className="max-h-[30rem] overflow-auto">
+          <table className="w-full text-sm tabular-nums">
+            <thead className="sticky top-0 z-10 bg-bg-elevated text-left text-[0.65rem] uppercase tracking-[0.1em] text-text-subtle">
+              <tr>
+                <th className="px-4 py-2">Lvl</th>
+                <th className="px-4 py-2">Rank</th>
+                <th className="px-4 py-2 text-right">XP needed</th>
+                {planner.archetypes.map((a) => (
+                  <th key={a.label} className="px-4 py-2 text-right">
+                    {a.label}
+                    <span className="block font-mono text-[0.6rem] font-normal normal-case text-text-subtle">{num(a.rate)}/g &middot; {a.sub}</span>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {planner.rows.map((r) => (
+                <tr key={r.level} className={`border-t border-border/60 ${r.level % 5 === 1 ? "bg-bg/40" : ""}`}>
+                  <td className="px-4 py-1.5 font-mono font-semibold text-text">{r.level}</td>
+                  <td className="px-4 py-1.5 text-xs uppercase text-text-muted">{r.rank}</td>
+                  <td className="px-4 py-1.5 text-right font-mono text-text-subtle">{num(r.x)}</td>
+                  {r.games.map((g, i) => (
+                    <td key={i} className="px-4 py-1.5 text-right font-mono text-text-muted">{r.level === 1 ? "0" : g.toLocaleString()}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
 
       <TotpGate open={gate} action="publish XP changes" onCancel={() => setGate(false)} onVerified={() => { setGate(false); publish(); }} />
     </div>

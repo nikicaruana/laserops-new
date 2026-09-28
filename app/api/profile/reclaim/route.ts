@@ -1,5 +1,5 @@
 /**
- * app/api/profile/reclaim/route.ts  — POST
+ * app/api/profile/reclaim/route.ts  – POST
  * --------------------------------------------------------------------
  * Re-links the signed-in (returning) player to a retired stats bundle
  * using its reclaim key. reclaim_account() deletes the empty auto-created

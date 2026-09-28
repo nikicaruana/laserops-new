@@ -1,16 +1,17 @@
 import Link from "next/link";
 import { Container } from "@/components/ui/Container";
-import { Button } from "@/components/ui/Button";
 import { Logo } from "@/components/ui/Logo";
 import { HeaderAuth } from "@/components/layout/HeaderAuth";
 import { MobileNav } from "@/components/layout/MobileNav";
-import { primaryNav, ctaLinks } from "@/lib/nav";
+import { GameCta } from "@/components/layout/GameCta";
+import { NotificationBell } from "@/components/layout/NotificationBell";
+import { primaryNav } from "@/lib/nav";
 import { cn } from "@/lib/cn";
 
 export function Header() {
   return (
     <header
-      className="sticky top-0 z-40 border-b border-border bg-bg/80 backdrop-blur-md supports-[backdrop-filter]:bg-bg/70"
+      className="sticky top-0 z-40 border-b border-border bg-bg-elevated/80 backdrop-blur-xl supports-[backdrop-filter]:bg-bg-elevated/62"
       role="banner"
     >
       <Container size="wide">
@@ -25,7 +26,7 @@ export function Header() {
             <Logo variant="wordmark" color="yellow" size="xs" />
           </div>
 
-          {/* Desktop nav — only shown xl+ */}
+          {/* Desktop nav – only shown xl+ */}
           <nav
             aria-label="Primary"
             className="hidden items-center gap-6 2xl:gap-8 xl:flex"
@@ -63,7 +64,7 @@ export function Header() {
                       </svg>
                     </Link>
 
-                    {/* Dropdown panel — CSS-only via group-hover + group-focus-within */}
+                    {/* Dropdown panel – CSS-only via group-hover + group-focus-within */}
                     <div
                       className={cn(
                         "absolute left-0 top-full z-50 pt-2",
@@ -72,7 +73,7 @@ export function Header() {
                         "group-focus-within:pointer-events-auto group-focus-within:opacity-100",
                       )}
                     >
-                      <div className="min-w-[168px] rounded-sm border border-border bg-bg py-1 shadow-lg">
+                      <div className="min-w-[168px] rounded-sm border border-border bg-bg-elevated/90 backdrop-blur-lg py-1 shadow-lg">
                         {link.children.map((child) => (
                           <Link
                             key={child.href}
@@ -93,7 +94,7 @@ export function Header() {
                     </div>
                   </div>
                 ) : (
-                  /* Plain links — no dropdown */
+                  /* Plain links – no dropdown */
                   <Link
                     key={link.href}
                     href={link.href}
@@ -118,16 +119,20 @@ export function Header() {
               )}
           </nav>
 
-          {/* Desktop auth + CTA — only shown xl+ */}
-          <div className="hidden items-center gap-3 xl:flex">
-            <HeaderAuth />
-            <Button href={ctaLinks.primary.href} variant="primary" size="md">
-              {ctaLinks.primary.label}
-            </Button>
-          </div>
+          {/* Right cluster – bell sits next to the burger (mobile) / profile (desktop) */}
+          <div className="flex items-center gap-2 xl:gap-3">
+            {/* Notification bell – all breakpoints, only renders when signed in */}
+            <NotificationBell />
 
-          {/* Mobile/tablet nav (renders its own trigger + panel) */}
-          <MobileNav />
+            {/* Desktop auth + CTA – only shown xl+ */}
+            <div className="hidden items-center gap-3 xl:flex">
+              <HeaderAuth />
+              <GameCta size="md" />
+            </div>
+
+            {/* Mobile/tablet nav (renders its own trigger + panel) */}
+            <MobileNav />
+          </div>
         </div>
       </Container>
     </header>

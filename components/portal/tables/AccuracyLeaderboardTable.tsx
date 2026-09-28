@@ -35,7 +35,7 @@ import { cn } from "@/lib/cn";
  *     "weight of evidence" indicator alongside the accuracy rate.
  *
  * The aggregator already excludes zero-shot players and applies an
- * optional MIN_SHOTS noise floor. By default no floor — see
+ * optional MIN_SHOTS noise floor. By default no floor – see
  * lib/leaderboards/accuracy.ts comment if you want to add one.
  */
 
@@ -160,7 +160,7 @@ export function AccuracyLeaderboardTable({ allRows }: Props) {
 
 function EmptyResults() {
   return (
-    <div className="border border-border bg-bg-elevated px-6 py-12 text-center">
+    <div className="portal-card px-6 py-12 text-center">
       <p className="text-sm font-semibold uppercase tracking-[0.14em] text-text-muted">
         No matches found
       </p>

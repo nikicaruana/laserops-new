@@ -53,7 +53,7 @@ export function ResetPasswordForm() {
 
   if (!ready) {
     return (
-      <div className="border border-border bg-bg-elevated px-6 py-8 text-center">
+      <div className="portal-card px-6 py-8 text-center">
         <p className="text-sm text-text-muted">
           This reset link is invalid or has expired. Head back and request a new one.
         </p>
@@ -82,7 +82,7 @@ export function ResetPasswordForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="border border-border bg-bg-elevated px-6 py-8 sm:px-8">
+    <form onSubmit={onSubmit} className="portal-card px-6 py-8 sm:px-8">
       <label className="block">
         <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">
           New password

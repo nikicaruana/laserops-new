@@ -67,7 +67,7 @@ export function BookingForm({ onAccent = false }: { onAccent?: boolean }) {
 
   // Fire a single "form start" event the first time the user interacts with
   // any field (focus bubbles up from inputs to the form). Used as a funnel
-  // step in GA4/Meta — pairs with the booking_form_submitted event on success.
+  // step in GA4/Meta – pairs with the booking_form_submitted event on success.
   const startedRef = useRef(false);
   const handleFormStart = useCallback(() => {
     if (startedRef.current) return;
@@ -311,7 +311,7 @@ export function BookingForm({ onAccent = false }: { onAccent?: boolean }) {
           value={comments}
           onChange={(e) => setComments(e.target.value)}
           rows={4}
-          placeholder="Anything else we should know — dietary requirements, special requests, preferred game modes..."
+          placeholder="Anything else we should know – dietary requirements, special requests, preferred game modes..."
           className={`${inputClass} resize-y`}
         />
       </div>

@@ -35,14 +35,14 @@ import { cn } from "@/lib/cn";
  * values still count toward total but no tier-specific column.
  *
  * Filter:
- *   Reads ?year and ?month from the URL — same filter URL all the
+ *   Reads ?year and ?month from the URL – same filter URL all the
  *   other period leaderboards use, so picking April 2026 once filters
  *   every leaderboard on the page. The accolades aggregator interprets
  *   the filter against game-data row yearMonth (rather than the
  *   period sheet) since it's reading game data directly.
  *
  *   Filter dropdown options come from period rows passed in by the
- *   server wrapper — keeps the dropdown contents identical to the
+ *   server wrapper – keeps the dropdown contents identical to the
  *   other leaderboards' dropdowns.
  */
 
@@ -218,7 +218,7 @@ export function AccoladesLeaderboardTable({
 
 function EmptyResults() {
   return (
-    <div className="border border-border bg-bg-elevated px-6 py-12 text-center">
+    <div className="portal-card px-6 py-12 text-center">
       <p className="text-sm font-semibold uppercase tracking-[0.14em] text-text-muted">
         No accolades earned
       </p>

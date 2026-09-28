@@ -17,7 +17,7 @@ import { GoogleButton } from "@/components/portal/GoogleButton";
 import { postAuthPath } from "@/lib/portalRoute";
 
 const inputStyles =
-  "h-14 w-full rounded-none border border-border-strong bg-bg-elevated px-4 text-sm text-text placeholder:text-text-subtle focus:border-accent focus:outline-none";
+  "h-14 w-full rounded-none border border-border bg-bg-overlay px-4 text-sm text-text placeholder:text-text-subtle focus:border-accent focus:outline-none";
 
 async function destinationFor(
   supabase: ReturnType<typeof createClient>,
@@ -105,7 +105,7 @@ export function LoginForm({ hadError, next }: { hadError?: boolean; next?: strin
   }
 
   return (
-    <div className="border border-border bg-bg-elevated px-6 py-8 sm:px-8">
+    <div className="portal-card px-6 py-8 sm:px-8">
       <form onSubmit={onSubmit} className="space-y-4">
         <label className="block">
           <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">

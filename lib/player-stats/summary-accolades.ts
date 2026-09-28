@@ -16,7 +16,7 @@
  *
  *   - Sheet column names also vary slightly (Spray_n_Pray_Count vs the
  *     filename Spray_n_pray.png). The sheetCol field maps each accolade
- *     to its specific column. Brittle to derive — explicit is safer.
+ *     to its specific column. Brittle to derive – explicit is safer.
  *
  *   - Tier order: T1 (highest value) → T3. Within a tier we preserve
  *     the order from the Looker reference so the UI stays familiar to
@@ -49,7 +49,7 @@ export type AccoladeDefinition = {
    ============================================================ */
 
 export const ACCOLADES: AccoladeDefinition[] = [
-  // Tier 1 — 100 XP
+  // Tier 1 – 100 XP
   {
     name: "MVP",
     description: "Highest Score",
@@ -79,7 +79,7 @@ export const ACCOLADES: AccoladeDefinition[] = [
     tier: 100,
   },
 
-  // Tier 2 — 75 XP
+  // Tier 2 – 75 XP
   {
     name: "Tank",
     description: "Least Deaths",
@@ -116,7 +116,7 @@ export const ACCOLADES: AccoladeDefinition[] = [
     tier: 75,
   },
 
-  // Tier 3 — 50 XP
+  // Tier 3 – 50 XP
   {
     name: "Kamikaze",
     description: "Most Deaths",
@@ -168,7 +168,7 @@ export const ACCOLADES: AccoladeDefinition[] = [
 
 /**
  * One accolade with its count for a specific player. Same shape used
- * for both "earned" and "not earned" cases — `count` carries the value.
+ * for both "earned" and "not earned" cases – `count` carries the value.
  */
 export type AccoladeWithCount = {
   definition: AccoladeDefinition;
@@ -185,12 +185,12 @@ export type TierGroup = {
   earned: AccoladeWithCount[];
   /** All definitions in this tier (for the always-visible definitions list). */
   allInTier: AccoladeDefinition[];
-  /** Sum of counts in this tier — useful for at-a-glance per-tier totals. */
+  /** Sum of counts in this tier – useful for at-a-glance per-tier totals. */
   earnedCount: number;
 };
 
 export type AccoladesData = {
-  /** Total accolades earned across all tiers — comes from Accolades_Total. */
+  /** Total accolades earned across all tiers – comes from Accolades_Total. */
   totalEarned: number;
   /** Three tier groups, in display order (T1 first). */
   tierGroups: TierGroup[];

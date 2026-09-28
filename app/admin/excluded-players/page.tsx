@@ -25,7 +25,7 @@ export default async function ExcludedPlayersPage() {
           Excluded players
         </h1>
         <p className="mt-2 text-sm text-text-muted">
-          Prize-ineligible nicknames (staff, owners, etc.) — kept out of season-challenge + homepage
+          Prize-ineligible nicknames (staff, owners, etc.) – kept out of season-challenge + homepage
           leader prizes.
         </p>
       </header>

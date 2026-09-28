@@ -207,7 +207,7 @@ export default async function SquadPage({
             <ul className="space-y-3">
               {matches.map((mt) => (
                 <li key={mt.id}>
-                  <Link href={`/player-portal/squad-matches/${mt.id}`} className="flex flex-wrap items-center justify-between gap-3 border border-border bg-bg-elevated px-5 py-4 transition-colors hover:border-accent">
+                  <Link href={`/player-portal/squad-matches/${mt.id}`} className="flex flex-wrap items-center justify-between gap-3 portal-card px-5 py-4 transition-colors hover:border-accent">
                     <span className="text-sm font-bold text-text">
                       {mt.home_name} <span className="text-text-subtle">vs</span> {mt.away_name}
                     </span>
@@ -238,7 +238,7 @@ export default async function SquadPage({
         )}
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {roster.map((m) => (
-            <li key={m.account_id} className="flex flex-col items-center gap-3 border border-border bg-bg-elevated p-5 text-center">
+            <li key={m.account_id} className="flex flex-col items-center gap-3 portal-card p-5 text-center">
               {/* Ops tag above */}
               <div className="flex items-center gap-2">
                 {m.ops_tag ? (

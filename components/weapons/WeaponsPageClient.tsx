@@ -20,7 +20,7 @@ import type { StatWinners } from "./WeaponStatsPanel";
  *   - Centred weapon for gallery A and gallery B (lifted from the
  *     gallery components so we can compute compare-mode winners).
  *
- * Each gallery owns its OWN tree-filter state internally — so in
+ * Each gallery owns its OWN tree-filter state internally – so in
  * compare mode the two galleries can show different trees. The
  * filter dropdown moves into each gallery as a result.
  *
@@ -59,7 +59,7 @@ export function WeaponsPageClient({ allWeapons, treeBranches }: Props) {
   }, [compareEnabled, weaponA, weaponB]);
 
   // Stable callbacks for the gallery onCenteredChange. useCallback
-  // not strictly necessary but cheap — it lets us pass the same
+  // not strictly necessary but cheap – it lets us pass the same
   // reference each render and the gallery's effect won't re-trigger
   // unnecessarily.
   const handleACentered = useCallback((w: Weapon | null) => setWeaponA(w), []);
@@ -67,7 +67,7 @@ export function WeaponsPageClient({ allWeapons, treeBranches }: Props) {
 
   return (
     <div className="flex flex-col gap-4 sm:gap-6 lg:gap-8">
-      {/* Page-level controls — just the compare toggle now. The tree
+      {/* Page-level controls – just the compare toggle now. The tree
           filter moved INTO each gallery so they can be independent
           in compare mode. */}
       <div className="flex justify-center">
@@ -77,14 +77,14 @@ export function WeaponsPageClient({ allWeapons, treeBranches }: Props) {
         />
       </div>
 
-      {/* Gallery A — top, default layout (gun image card up top,
+      {/* Gallery A – top, default layout (gun image card up top,
           stats below). */}
       <WeaponGallery
         allWeapons={allWeapons}
         treeBranches={treeBranches}
         ariaLabel={
           compareEnabled
-            ? "Weapon A — top gallery"
+            ? "Weapon A – top gallery"
             : "Weapons gallery"
         }
         statsAriaLabel={
@@ -100,7 +100,7 @@ export function WeaponsPageClient({ allWeapons, treeBranches }: Props) {
       {compareEnabled && (
         <>
           <CompareSeparator />
-          {/* Gallery B — inverted layout. Stats above the scroller
+          {/* Gallery B – inverted layout. Stats above the scroller
               so they sit closest to the divider; gun card sits at
               the bottom of the page so the two cards effectively
               face away from each other (and the comparable values
@@ -109,7 +109,7 @@ export function WeaponsPageClient({ allWeapons, treeBranches }: Props) {
             key="compare-gallery"
             allWeapons={allWeapons}
             treeBranches={treeBranches}
-            ariaLabel="Weapon B — bottom gallery"
+            ariaLabel="Weapon B – bottom gallery"
             statsAriaLabel="Stats for Weapon B"
             inverted
             hideStatsSecondary={true}
@@ -143,7 +143,7 @@ function computeWinners(a: Weapon, b: Weapon): {
 } {
   // Helper: convert a "a"/"b"/"tie" comparison result into per-side
   // win/tie/lose flags. On a tie BOTH sides get "tie" (which the
-  // stats panel now renders as a highlight, same as "win") — when
+  // stats panel now renders as a highlight, same as "win") – when
   // neither gun loses, neither tile should look "lost."
   const flag = (result: "a" | "b" | "tie", side: "a" | "b") => {
     if (result === "tie") return "tie" as const;

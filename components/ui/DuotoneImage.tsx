@@ -15,7 +15,7 @@ type DuotoneImageProps = {
   priority?: boolean;
   sizes?: string;
   className?: string;
-  /** Disable interaction entirely — render exactly one variant. */
+  /** Disable interaction entirely – render exactly one variant. */
   staticVariant?: "branded" | "color";
   /** Which variant shows on touch devices (no hover capability). */
   mobileVariant?: "branded" | "color";
@@ -23,7 +23,7 @@ type DuotoneImageProps = {
   objectPosition?: string;
   /**
    * Externally control the hover state. When provided, the component does NOT
-   * track its own mouse events — the parent is responsible. Use this when the
+   * track its own mouse events – the parent is responsible. Use this when the
    * hero (or other layered composition) needs hover detection on a parent
    * element because the image is covered by overlays.
    */
@@ -68,7 +68,7 @@ export function DuotoneImage({
     };
   }, []);
 
-  // Static variant — single image
+  // Static variant – single image
   if (staticVariant) {
     const src = staticVariant === "branded" ? brandedSrc : colorSrc;
     return (

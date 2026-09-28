@@ -3,7 +3,7 @@
  * --------------------------------------------------------------------
  * Server-side validation for a player's ops tag (public nickname):
  * length, allowed characters, and a profanity screen via `obscenity`
- * (catches obfuscations like "sh1t"). Uniqueness is NOT checked here — the
+ * (catches obfuscations like "sh1t"). Uniqueness is NOT checked here – the
  * DB's case-insensitive unique index is the source of truth; the API route
  * catches the unique-violation and reports "taken". Runs server-side only.
  */

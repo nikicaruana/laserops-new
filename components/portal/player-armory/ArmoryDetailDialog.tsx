@@ -81,7 +81,7 @@ export function ArmoryDetailDialog({ entry, onClose }: Props) {
   return (
     <dialog
       ref={dialogRef}
-      className="m-auto w-[92vw] max-w-md rounded-sm border border-border-strong bg-bg-elevated p-0 text-text backdrop:bg-bg/80 backdrop:backdrop-blur-sm"
+      className="m-auto w-[92vw] max-w-md rounded-sm border border-border bg-bg-overlay p-0 text-text backdrop:bg-bg/80 backdrop:backdrop-blur-sm"
     >
       {entry !== null && (
         <ArmoryDialogBody

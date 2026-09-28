@@ -19,7 +19,7 @@ type Props = {
 
 export function RecordList({ label, note, entries }: Props) {
   return (
-    <div className="border border-border bg-bg-elevated p-4 sm:p-5">
+    <div className="portal-card p-4 sm:p-5">
       <div className="mb-3 flex items-baseline justify-between gap-2">
         <h3 className="text-sm font-extrabold uppercase tracking-[0.1em] text-accent sm:text-base">
           {label}

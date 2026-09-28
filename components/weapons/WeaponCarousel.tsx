@@ -4,7 +4,7 @@ import { cloudinaryTransform } from "@/lib/cloudinary";
  * WeaponCarousel
  * --------------------------------------------------------------------
  * A continuous, auto-scrolling marquee of individual gun images on the
- * brand yellow band — used as a visual teaser for the full weapons page.
+ * brand yellow band – used as a visual teaser for the full weapons page.
  *
  * Pure CSS animation (no client JS): two identical strips sit in a
  * `w-max` flex row and the track translates from 0 → -50% (one strip

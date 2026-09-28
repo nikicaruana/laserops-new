@@ -225,7 +225,7 @@ export function WeaponGallery({
 
   const stripBlock =
     weapons.length === 0 ? (
-      <div className="rounded-sm border border-border bg-bg-elevated p-6 text-center">
+      <div className="rounded-sm portal-card p-6 text-center">
         <p className="text-sm text-text-muted">
           No weapons in this tree. Try a different filter.
         </p>
@@ -464,7 +464,7 @@ function TreeFilter({
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
-          className="flex w-full items-center justify-between gap-2 rounded-sm border border-border bg-bg-elevated px-3 py-2 text-sm font-semibold text-text transition-colors hover:border-border-strong focus-visible:border-accent focus-visible:outline-none"
+          className="flex w-full items-center justify-between gap-2 rounded-sm portal-card px-3 py-2 text-sm font-semibold text-text transition-colors hover:border-border-strong focus-visible:border-accent focus-visible:outline-none"
         >
           <span className="flex-1 text-center">{value}</span>
           <svg
@@ -482,7 +482,7 @@ function TreeFilter({
 
         {/* Options list */}
         {open && (
-          <ul className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-sm border border-border bg-bg-elevated py-1 shadow-lg">
+          <ul className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-sm portal-card py-1 shadow-lg">
             {allOptions.map((opt) => (
               <li key={opt}>
                 <button

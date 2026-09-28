@@ -110,7 +110,7 @@ export function MatchImages({ photos, matchId, viewerOps = "", isAdmin = false, 
   }
 
   return (
-    <section className="border border-border bg-bg-elevated">
+    <section className="portal-card">
       <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left">
         <span className="flex items-center gap-3">
           <span className="text-base font-extrabold uppercase tracking-[0.14em] text-text sm:text-lg">Match Photos</span>
