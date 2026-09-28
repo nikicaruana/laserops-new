@@ -51,6 +51,8 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   const { data: xpCfg } = await supabase.from("xp_config").select("key, value");
   const cfg = parseXpConfig((xpCfg ?? []) as { key: string; value: number | null }[]);
   const accoladeByKey = new Map((accs ?? []).map((a) => [norm(a.name as string), { id: a.id as string, xp: (a.xp as number) ?? 0 }]));
+  const { data: streakDefs } = await supabase.from("streak_definitions").select("streak_key, name, points").eq("is_active", true);
+  const streakConfig = Object.fromEntries((streakDefs ?? []).map((sd) => [sd.streak_key as string, { name: sd.name as string, points: Number(sd.points) || 0 }]));
   const identity = await resolveRoster(supabase, id);
 
   // Match flags + date (date drives date-scoped gun damage for offline).
@@ -106,7 +108,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     let unreviewed = 0;
     for (const rd of rounds) unreviewed += unreviewedCount(parseRound(rd.raw, { spawnWindowSeconds: 3 }), rd.resolutions);
     if (unreviewed > 0) return NextResponse.json({ error: `${unreviewed} unreviewed capture ambiguity${unreviewed === 1 ? "" : "ies"} — resolve them before publishing.` }, { status: 400 });
-    result = computeMatchCommit(rounds, accoladeByKey, identity, cfg, isDoubleXp);
+    result = computeMatchCommit(rounds, accoladeByKey, identity, cfg, isDoubleXp, streakConfig);
   }
 
   // Write via the service role (RLS-bypassing; grants added in migration).

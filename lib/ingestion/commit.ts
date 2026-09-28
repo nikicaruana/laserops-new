@@ -57,8 +57,9 @@ export function computeMatchCommit(
   identity: (headband: string) => { nickname: string; accountId: string | null; profilePicUrl?: string | null; gun?: string | null; xpMultiplier?: number },
   cfg: XpConfig = DEFAULT_XP_CONFIG,
   isDoubleXp = false,
+  streakConfig?: Record<string, { name: string; points: number }>,
 ): CommitResult {
-  const report = buildMatchReportV2(rawRounds, { matchId: "commit", label: "commit" });
+  const report = buildMatchReportV2(rawRounds, { matchId: "commit", label: "commit" }, { identityByHeadband: (hb) => { const e = identity(String(hb)); return e.accountId ? e.nickname : ""; }, streakConfig, });
   const P = report.players;
   const rankOf = (vals: number[], v: number, higher = true) => 1 + vals.filter((x) => (higher ? x > v : x < v)).length;
   const scores = P.map((p) => p.totalScore), kills = P.map((p) => p.frags), deaths = P.map((p) => p.deaths);

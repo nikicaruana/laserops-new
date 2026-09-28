@@ -19,10 +19,10 @@ export type StreakAward = {
 };
 
 export const STREAK_NAMES: Record<string, string> = {
-  kill_streak_3: "3-Streak",
-  kill_streak_5: "5-Streak",
-  kill_streak_10: "10-Streak",
-  kill_streak_20: "20-Streak",
+  kill_streak_3: "3 Piece",
+  kill_streak_5: "5 Piece",
+  kill_streak_10: "10 Piece",
+  kill_streak_20: "20 Piece",
   first_blood: "First Blood",
   last_blood: "Last Blood",
   survivor: "Survivor",
@@ -274,4 +274,65 @@ export function detectStreaks(round: Round): StreakAward[] {
   }
 
   return out;
+}
+
+/** Kill-streak keys — detected ACROSS rounds (see detectCrossRoundKillStreaks), not per round. */
+export const KILL_STREAK_KEYS = new Set(["kill_streak_3", "kill_streak_5", "kill_streak_10", "kill_streak_20"]);
+
+// Highest-first so each run is credited only its top tier (tiers are mutually exclusive).
+const KILL_STREAK_TIERS: { key: string; min: number }[] = [
+  { key: "kill_streak_20", min: 20 },
+  { key: "kill_streak_10", min: 10 },
+  { key: "kill_streak_5", min: 5 },
+  { key: "kill_streak_3", min: 3 },
+];
+
+/**
+ * Cross-round kill streaks. A kill streak is N kills in a row without dying, and
+ * unlike every other streak it CARRIES ACROSS ROUNDS: a player who survives a round
+ * keeps their run into the next one. Each person's kills + deaths are stitched across
+ * all (online) rounds by their (headband-resolved) NAME — so a headband switch between
+ * rounds does not break the run — ordered chronologically (round, then time), and the
+ * run is walked: a death anywhere breaks it, a round boundary does not. Each maximal run
+ * is credited its single highest tier; a player can earn several across a match.
+ * Returns awards keyed by player name.
+ */
+export function detectCrossRoundKillStreaks(rounds: Round[]): { name: string; key: string }[] {
+  type Ev = { round: number; epoch: number; kill: boolean };
+  const streams = new Map<string, Ev[]>();
+  const add = (name: string, e: Ev) => {
+    if (!name) return;
+    const cur = streams.get(name);
+    if (cur) cur.push(e);
+    else streams.set(name, [e]);
+  };
+  rounds.forEach((r, ri) => {
+    const nameOf: Record<number, string> = {};
+    for (const pl of r.players) nameOf[pl.in_game_player_id] = pl.name;
+    for (const k of r.events.kills) {
+      const epoch = toEpoch(k.time);
+      add(nameOf[k.actor_id], { round: ri, epoch, kill: true }); // a kill for the actor
+      add(nameOf[k.victim_id], { round: ri, epoch, kill: false }); // a death for the victim
+    }
+  });
+
+  const awards: { name: string; key: string }[] = [];
+  for (const [name, evs] of streams) {
+    // Chronological: by round, then time; on a tie a kill counts before a death.
+    evs.sort((a, b) => a.round - b.round || a.epoch - b.epoch || (a.kill === b.kill ? 0 : a.kill ? -1 : 1));
+    let run = 0;
+    const flush = () => {
+      if (run >= 3) {
+        const tier = KILL_STREAK_TIERS.find((t) => run >= t.min);
+        if (tier) awards.push({ name, key: tier.key });
+      }
+      run = 0;
+    };
+    for (const e of evs) {
+      if (e.kill) run++;
+      else flush();
+    }
+    flush();
+  }
+  return awards;
 }

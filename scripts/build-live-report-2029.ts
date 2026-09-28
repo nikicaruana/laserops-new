@@ -115,7 +115,7 @@ async function main() {
     const xpWins = 750 * (rep.roundsWonByTeam[p.team] ?? 0) + (p.team === winner ? 500 : 0);
     const xpAcc = earnedAccolades.reduce((s, a) => s + (a.accolade.xp || 0), 0);
     const xpMatch = xpPoints + xpWins + xpAcc;
-    const matchStreaks = p.streaks.map((s) => { const d = streakByKey.get(s.key); return { key: s.key, name: d?.name ?? s.name, description: d?.description ?? "", badgeUrl: sb(s.key), points: STREAK_POINTS[s.key] ?? 0, count: s.count }; });
+    const matchStreaks = p.streaks.map((s) => { const d = streakByKey.get(s.key); return { key: s.key, name: d?.name ?? s.name, description: d?.description ?? "", badgeUrl: sb(s.key), points: d?.points ?? STREAK_POINTS[s.key] ?? 0, count: s.count }; });
     return {
       row: {}, nickname: nick, profilePicUrl: st?.pic || DEFAULT_AVATAR,
       teamColor: p.team, teamColorLower: p.team.toLowerCase(), level: st?.level || 1, rankBadgeUrl: st?.rankBadge || rankBadge(st?.level || 1),

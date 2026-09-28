@@ -13,7 +13,7 @@
  */
 import { parseRound, type Round } from "../ingestion/round-parser";
 import { effectiveWithResolutions, type RoundResolutions } from "../ingestion/resolutions";
-import { detectStreaks, STREAK_NAMES } from "../ingestion/streaks";
+import { detectStreaks, STREAK_NAMES, KILL_STREAK_KEYS, detectCrossRoundKillStreaks } from "../ingestion/streaks";
 import { buildKillMatrix } from "../ingestion/kill-matrix";
 import { computeAccolades } from "../ingestion/accolades";
 import type { KillMatrix, PairTally, PlayerStreak, PlayerReport, MatchReportV2 } from "./types";
@@ -34,7 +34,7 @@ export const STREAK_POINTS: Record<string, number> = {
   kill_streak_3: 25, kill_streak_5: 50, kill_streak_10: 100, kill_streak_20: 200,
   survivor: 50, first_blood: 25, last_blood: 25, clutch_move: 50, ptfo: 50, map_domination: 100,
   clean_sweep: 50, grim_reaper: 100, streak_ender: 50, hold_base_3min: 50, hold_base_5min: 100, hold_base_10min: 200,
-  captures_3: 25, captures_5: 50, captures_10: 100, burner_1: 50, burner_2: 100, bully: 100, shadow: 100,
+  captures_3: 25, captures_5: 50, captures_10: 100, burner_1: 50, burner_2: 200, bully: 100, shadow: 100,
 };
 
 function ep(t: string): number { const m = t.match(/(\d+)\.(\d+)\.(\d+) (\d+):(\d+):(\d+)/); if (!m) return NaN; return Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]) / 1000; }
@@ -67,6 +67,14 @@ export function buildMatchReportV2(
   opts?: {
     scoring?: Partial<typeof V2_SCORING>;
     opsTagByHeadband?: Record<number, string>;
+    /** Resolve a headband number to its canonical player name (ops tag).
+     *  Merges headband switches at aggregation so per-round AND cross-round
+     *  streaks stitch across a switch. Empty result = keep the raw name. */
+    identityByHeadband?: (headbandNo: number) => string;
+    /** DB streak definitions (streak_key -> name + points). When given it is
+     *  authoritative for streak names AND points; the hardcoded maps are only a
+     *  fallback for keys it doesn't cover. */
+    streakConfig?: Record<string, { name: string; points: number }>;
     offline?: {
       statsByHeadband: Record<number, { frags: number; deaths: number; hits: number; shots: number; damage: number; wounds?: number; team: string }>;
       roundWinners: (string | null)[];
@@ -74,6 +82,10 @@ export function buildMatchReportV2(
   },
 ): MatchReportV2 {
   const { spawnWindowSeconds, minHoldSeconds, recaptureWindowSeconds, capturePoints, recapturePoints, holdPerSecond } = { ...V2_SCORING, ...(opts?.scoring ?? {}) };
+  // Streak names + points: DB (streakConfig) is authoritative when supplied,
+  // else the built-in maps. Used for both scoring and the report display.
+  const streakPointsOf = (key: string) => opts?.streakConfig?.[key]?.points ?? STREAK_POINTS[key] ?? 0;
+  const streakNameOf = (key: string) => opts?.streakConfig?.[key]?.name ?? STREAK_NAMES[key] ?? key;
   const parsed: Round[] = rawRounds.map((r) => parseRound(r.raw, { spawnWindowSeconds }));
   // Optional headband -> display-name remap, applied to the parsed roster BEFORE
   // aggregation — so it also MERGES multiple headbands worn by one person (e.g.
@@ -81,6 +93,17 @@ export function buildMatchReportV2(
   if (opts?.opsTagByHeadband) {
     const m = opts.opsTagByHeadband;
     for (const r of parsed) for (const p of r.players) { if (p.headband_no != null && m[p.headband_no]) p.name = m[p.headband_no]; }
+  }
+
+  // Resolve each headband to its canonical identity (ops tag) BEFORE aggregation,
+  // so someone who switched headbands mid-match is one player everywhere — their
+  // per-round and cross-round kill streaks stitch across the switch. Keeps the raw
+  // name when a headband has no resolved identity (walk-ins).
+  if (opts?.identityByHeadband) {
+    const resolve = opts.identityByHeadband;
+    for (const r of parsed) for (const p of r.players) {
+      if (p.headband_no != null) { const n = resolve(p.headband_no); if (n) p.name = n; }
+    }
   }
 
   const acc: Record<string, Acc> = {};
@@ -146,10 +169,22 @@ export function buildMatchReportV2(
     const filtered = rr.events.captures.filter((c) => !(c.capturing_player_id != null && c.base_id >= 0 && excludedKey.has(`${c.capturing_player_id}:${c.base_id}:${c.time}`)));
     const rStreak: Round = { ...rr, events: { ...rr.events, captures: filtered } };
     for (const aw of detectStreaks(rStreak)) {
-      const pts = STREAK_POINTS[aw.key] ?? 0; if (!pts) continue; const nm = nameOf[aw.player_id]; if (!nm) continue;
+      if (KILL_STREAK_KEYS.has(aw.key)) continue; const pts = streakPointsOf(aw.key); if (!pts) continue; const nm = nameOf[aw.player_id]; if (!nm) continue;
       const a = acc[nm]; if (!a) continue; a.streakPoints += pts; a.streaks[aw.key] = (a.streaks[aw.key] ?? 0) + 1;
     }
   });
+
+  // Kill streaks carry ACROSS rounds (a player who survives keeps their run), so they're
+  // detected on the whole match's stitched (headband-resolved) timeline, not per round.
+  // Every other streak stays in-round (handled in the loop above).
+  for (const aw of detectCrossRoundKillStreaks(parsed)) {
+    const pts = streakPointsOf(aw.key);
+    if (!pts) continue;
+    const a = acc[aw.name];
+    if (!a) continue;
+    a.streakPoints += pts;
+    a.streaks[aw.key] = (a.streaks[aw.key] ?? 0) + 1;
+  }
 
   // Offline rounds (LWA only): per-player kill stats (frags/deaths/hits/shots +
   // pre-estimated damage) add to each player's totals so the kill-score includes
@@ -185,7 +220,7 @@ export function buildMatchReportV2(
     const objectiveScore = Math.ceil(a.captures * capturePoints + a.recaptures * recapturePoints + a.hold * holdPerSecond);
     const streakScore = a.streakPoints;
     const streaks: PlayerStreak[] = Object.entries(a.streaks)
-      .map(([key, count]) => ({ key, name: STREAK_NAMES[key] ?? key, count, points: (STREAK_POINTS[key] ?? 0) * count }))
+      .map(([key, count]) => ({ key, name: streakNameOf(key), count, points: streakPointsOf(key) * count }))
       .sort((x, y) => y.points - x.points);
     const pp = killMatrix.perPlayer[a.name] ?? { killed: [], killedBy: [], nemesis: null };
     return {

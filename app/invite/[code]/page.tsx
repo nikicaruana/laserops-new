@@ -75,16 +75,18 @@ export default async function GameInvitePage({ params }: { params: Promise<{ cod
   } = await supabase.auth.getUser();
 
   let accountId: string | null = null;
+  let discountPct = 0;
   let mySignup: { payment_intent: string | null; status: string | null; paid_at: string | null; booked_gun: string | null } | null = null;
   let guns: UnlockedGun[] = [];
   let joined = false;
   if (user) {
     const { data: account } = await supabase
       .from("accounts")
-      .select("id, ops_tag, is_admin")
+      .select("id, ops_tag, is_admin, discount_pct")
       .eq("auth_user_id", user.id)
       .maybeSingle();
     accountId = account?.id ?? null;
+    discountPct = Number(account?.discount_pct) || 0;
     if (accountId) {
       const [{ data: s }, g2, { data: part }] = await Promise.all([
         supabase
@@ -197,7 +199,8 @@ export default async function GameInvitePage({ params }: { params: Promise<{ cod
                   mySignup={mySignup}
                   guns={guns}
                   align="center"
-                  priceEur={g.pricing_mode === "per_player" ? Number(g.price_eur) : null}
+                  priceEur={g.pricing_mode === "per_player" ? Number(g.price_eur) * (1 - discountPct / 100) : null}
+                  discountPct={discountPct}
                   isPrivate={Boolean(g.is_private)}
                 />
               </div>

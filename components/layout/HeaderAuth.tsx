@@ -77,9 +77,6 @@ export function HeaderAuth() {
           <Link href="/player-portal/profile" role="menuitem" className={menuItem} onClick={() => setOpen(false)}>
             Account Settings
           </Link>
-          <Link href="/player-portal/store" role="menuitem" className={`${menuItem} border-t border-border`} onClick={() => setOpen(false)}>
-            Store
-          </Link>
           <form action="/auth/signout" method="post">
             <button type="submit" role="menuitem" className={`${menuItem} border-t border-border hover:text-red-400`}>
               Sign Out

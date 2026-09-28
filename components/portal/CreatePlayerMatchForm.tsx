@@ -45,9 +45,17 @@ export function CreatePlayerMatchForm({ opsTag }: { opsTag: string | null }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [phonePrompt, setPhonePrompt] = useState(false);
+  const [cfg, setCfg] = useState({ price: PRICE_EUR, sessionMinutes: GAME_HOURS * 60, bufferMinutes: 60 });
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.from("pricing_config").select("default_price_eur, session_minutes, booking_buffer_minutes").eq("id", 1).maybeSingle().then(({ data }) => {
+      if (data) setCfg({ price: Number(data.default_price_eur) || PRICE_EUR, sessionMinutes: Number(data.session_minutes) || GAME_HOURS * 60, bufferMinutes: Number(data.booking_buffer_minutes) || 60 });
+    });
+  }, []);
+  const gameHours = cfg.sessionMinutes / 60;
 
   // End is always start + 3h; it only feeds the auto title.
-  const endTime = startTime ? addHours(startTime, GAME_HOURS) : "";
+  const endTime = startTime ? addHours(startTime, gameHours) : "";
 
   // Title is a fixed label (the date/time show in the subtext), until edited.
   useEffect(() => {
@@ -78,7 +86,7 @@ export function CreatePlayerMatchForm({ opsTag }: { opsTag: string | null }) {
       p_scheduled_at: when.toISOString(),
       p_min_players: MIN_PLAYERS,
       p_max_players: numOrNull(maxPlayers),
-      p_price_eur: PRICE_EUR,
+      p_price_eur: cfg.price,
     });
     setSaving(false);
     if (err || !data) {
@@ -97,10 +105,11 @@ export function CreatePlayerMatchForm({ opsTag }: { opsTag: string | null }) {
         <AvailabilityPicker
           value={{ date, time: startTime }}
           onChange={(d, t) => { setDate(d); setStartTime(t); }}
-          sessionHours={GAME_HOURS}
+          sessionHours={gameHours}
+          bufferMinutes={cfg.bufferMinutes}
         />
         <p className="mt-3 text-[0.65rem] text-text-subtle">
-          {endTime ? `Runs 3 hours, until ${endTime}.` : "Games run 3 hours - pick a date and start time we're open."}
+          {endTime ? `Runs ${gameHours} hours, until ${endTime}.` : "Games run 3 hours - pick a date and start time we're open."}
         </p>
       </fieldset>
 
@@ -133,7 +142,7 @@ export function CreatePlayerMatchForm({ opsTag }: { opsTag: string | null }) {
           <div>
             <label className={lbl}>Max players (optional)</label>
             <input type="number" min="1" className={input} value={maxPlayers} onChange={(e) => setMaxPlayers(e.target.value)} onFocus={(e) => e.target.select()} placeholder="No cap" />
-            <p className="mt-1 text-[0.65rem] text-text-subtle">Open games are €35 per player and confirm once 10 sign up.</p>
+            <p className="mt-1 text-[0.65rem] text-text-subtle">Open games are €{cfg.price} per player and confirm once 10 sign up.</p>
           </div>
         </div>
       </fieldset>

@@ -44,15 +44,15 @@ type Variant = { base: string; orbs: Orb[] };
 const VARIANTS: Record<"a" | "b" | "c", Variant> = {
   // A — "Ember": warm yellow dominant, a whisper of red, slow + calm.
   a: {
-    base: "radial-gradient(120% 120% at 50% 0%, #1a160c 0%, #100d08 45%, #0a0a0a 100%)",
+    base: "radial-gradient(120% 120% at 50% 0%, #241c0d 0%, #15110a 45%, #0a0a0a 100%)",
     orbs: [
-      { size: "52vmax", x: "12%", y: "18%", color: "rgba(255,222,0,0.16)", blur: 60, drift: "a", dur: 26, delay: 0, breathe: 15 },
-      { size: "40vmax", x: "84%", y: "26%", color: "rgba(255,222,0,0.13)", blur: 55, drift: "b", dur: 30, delay: 3, breathe: 18 },
-      { size: "46vmax", x: "20%", y: "88%", color: "rgba(255,213,0,0.12)", blur: 60, drift: "c", dur: 34, delay: 6, breathe: 20 },
-      { size: "38vmax", x: "88%", y: "82%", color: "rgba(214,45,24,0.10)", blur: 60, drift: "d", dur: 30, delay: 2, breathe: 22 },
-      { size: "26vmax", x: "58%", y: "52%", color: "rgba(224,60,30,0.06)", blur: 50, drift: "a", dur: 24, delay: 9, breathe: 17 },
-      { size: "22vmax", x: "40%", y: "40%", color: "rgba(255,180,40,0.10)", blur: 45, drift: "b", dur: 22, delay: 5, breathe: 14 },
-      { size: "12vmax", x: "70%", y: "20%", color: "rgba(255,255,255,0.05)", blur: 40, drift: "c", dur: 32, delay: 11, breathe: 19 },
+      { size: "56vmax", x: "12%", y: "16%", color: "rgba(255,222,0,0.30)", blur: 52, drift: "a", dur: 17, delay: 0, breathe: 10 },
+      { size: "44vmax", x: "86%", y: "24%", color: "rgba(255,222,0,0.24)", blur: 48, drift: "b", dur: 20, delay: 2, breathe: 12 },
+      { size: "50vmax", x: "18%", y: "90%", color: "rgba(255,206,0,0.22)", blur: 54, drift: "c", dur: 22, delay: 4, breathe: 14 },
+      { size: "42vmax", x: "90%", y: "84%", color: "rgba(226,48,24,0.20)", blur: 54, drift: "d", dur: 20, delay: 1, breathe: 15 },
+      { size: "30vmax", x: "58%", y: "50%", color: "rgba(238,74,30,0.14)", blur: 46, drift: "a", dur: 16, delay: 6, breathe: 11 },
+      { size: "26vmax", x: "38%", y: "38%", color: "rgba(255,178,36,0.20)", blur: 42, drift: "b", dur: 15, delay: 3, breathe: 9 },
+      { size: "15vmax", x: "72%", y: "18%", color: "rgba(255,240,190,0.10)", blur: 36, drift: "c", dur: 19, delay: 7, breathe: 13 },
     ],
   },
   // B — "Signal": red pulled up to sit alongside the yellow, a touch livelier.
@@ -83,10 +83,10 @@ const VARIANTS: Record<"a" | "b" | "c", Variant> = {
 
 // Parallax reach (px) for each input. Kept modest — the orbs are huge, so a
 // little shift reads clearly without dragging them off their coverage.
-const POINTER_REACH = 36;
-const TILT_REACH = 42;
-const SCROLL_REACH = 90;
-const EASE = 0.09; // toward-target lerp per frame (lower = smoother/slower)
+const POINTER_REACH = 54;
+const TILT_REACH = 66;
+const SCROLL_REACH = 150;
+const EASE = 0.1; // toward-target lerp per frame (lower = smoother/slower)
 
 export function PortalBackground({ variant = "a" }: { variant?: "a" | "b" | "c" }) {
   const v = VARIANTS[variant] ?? VARIANTS.a;

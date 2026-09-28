@@ -57,7 +57,7 @@ export default async function GameDetailPage({
 
   const { data: account } = await supabase
     .from("accounts")
-    .select("id, ops_tag, is_admin")
+    .select("id, ops_tag, is_admin, discount_pct")
     .eq("auth_user_id", user.id)
     .maybeSingle();
   if (!account) redirect("/player-portal/games");
@@ -188,7 +188,8 @@ export default async function GameDetailPage({
             guns={guns}
             align="start"
             waitlistPosition={wlPosition}
-            priceEur={match.pricing_mode === "per_player" ? Number(match.price_eur) : null}
+            priceEur={match.pricing_mode === "per_player" ? Number(match.price_eur) * (1 - (Number(account.discount_pct) || 0) / 100) : null}
+            discountPct={Number(account.discount_pct) || 0}
             isPrivate={Boolean(match.is_private)}
             tokenBalance={Number(tokenBalance ?? 0)}
             tokensApplied={tokensApplied}

@@ -69,7 +69,7 @@ export default async function GamesPage() {
 
   const { data: account } = await supabase
     .from("accounts")
-    .select("id, ops_tag, is_admin")
+    .select("id, ops_tag, is_admin, discount_pct")
     .eq("auth_user_id", user.id)
     .maybeSingle();
 
@@ -231,7 +231,8 @@ export default async function GamesPage() {
                 guns={guns}
                 align="start"
                 waitlistPosition={wlPos.get(g.id) ?? null}
-                priceEur={g.pricing_mode === "per_player" ? Number(g.price_eur) : null}
+                priceEur={g.pricing_mode === "per_player" ? Number(g.price_eur) * (1 - (Number(account.discount_pct) || 0) / 100) : null}
+                discountPct={Number(account.discount_pct) || 0}
                 isPrivate={Boolean(g.is_private)}
                 isOrganiser={isCreated}
                 hideCancel

@@ -30,7 +30,7 @@ export function MatchStatusHelp() {
         type="button"
         onClick={() => setOpen(true)}
         aria-label="What do the game states mean?"
-        className="flex h-5 w-5 items-center justify-center rounded-full border border-border-strong text-[0.65rem] font-bold text-text-muted transition-colors hover:border-accent hover:text-accent"
+        className="flex h-5 w-5 items-center justify-center rounded-full border border-accent bg-accent/15 text-[0.65rem] font-bold text-accent shadow-[0_0_0_2px_rgba(255,222,0,0.12)] transition-colors hover:bg-accent hover:text-bg"
       >
         ?
       </button>

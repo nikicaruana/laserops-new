@@ -33,11 +33,13 @@ export function AvailabilityPicker({
   onChange,
   sessionHours = 3,
   slotMinutes = 30,
+  bufferMinutes = 60,
 }: {
   value: { date: string; time: string };
   onChange: (date: string, time: string) => void;
   sessionHours?: number;
   slotMinutes?: number;
+  bufferMinutes?: number;
 }) {
   const supabase = createClient();
   const today = new Date();
@@ -81,14 +83,14 @@ export function AvailabilityPicker({
       out = out.filter((s) => toMin(s) > nowMin);
     }
     // Drop slots that clash with a confirmed/live game (1h buffer, 3h session).
-    const bufferMs = 60 * 60 * 1000;
+    const bufferMs = bufferMinutes * 60 * 1000;
     const sessionMs = sessionHours * 3600 * 1000;
     return out.filter((t) => {
       const cs = new Date(`${value.date}T${t}:00`).getTime();
       const ce = cs + sessionMs;
       return !busy.some((b) => cs < b.end + bufferMs && b.start < ce + bufferMs);
     });
-  }, [value.date, avail, busy, sessionHours, slotMinutes, todayIso, today]);
+  }, [value.date, avail, busy, sessionHours, slotMinutes, bufferMinutes, todayIso, today]);
 
   const selDay = value.date ? avail[value.date] : null;
   const dayClosed = Boolean(value.date && selDay && !selDay.is_open);

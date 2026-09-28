@@ -53,10 +53,10 @@ export const primaryNav: NavLink[] = [
     mobileExpand: true,
     children: [
       { label: "Game Portal", href: "/player-portal/games", highlight: true },
+      { label: "Player Stats", href: "/player-portal/player-stats", highlight: true },
       { label: "Squads", href: "/player-portal/squads", highlight: true },
       { label: "Ladders", href: "/player-portal/ladders", highlight: true },
       { label: "Leaderboards", href: "/player-portal/leaderboards", highlight: true },
-      { label: "Player Stats", href: "/player-portal/player-stats", highlight: true },
       { label: "Match Report", href: "/match-report", redHighlight: true },
     ],
   },
@@ -66,6 +66,7 @@ export const primaryNav: NavLink[] = [
     children: [
       { label: "Outdoor Laser Tag", href: "/outdoor-laser-tag-malta" },
       { label: "Who We Are", href: "/who-we-are" },
+      { label: "Streaks & Accolades", href: "/accolades" },
       { label: "Community", href: "/community" },
       { label: "FAQs", href: "/faqs" },
       { label: "Contact", href: "/contact" },

@@ -44,8 +44,16 @@ export function CreatePrivateBookingForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [phonePrompt, setPhonePrompt] = useState(false);
+  const [cfg, setCfg] = useState({ sessionMinutes: 180, bufferMinutes: 60 });
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.from("pricing_config").select("session_minutes, booking_buffer_minutes").eq("id", 1).maybeSingle().then(({ data }) => {
+      if (data) setCfg({ sessionMinutes: Number(data.session_minutes) || 180, bufferMinutes: Number(data.booking_buffer_minutes) || 60 });
+    });
+  }, []);
+  const gameHours = cfg.sessionMinutes / 60;
 
-  const endTime = startTime ? addHours(startTime, 3) : "";
+  const endTime = startTime ? addHours(startTime, gameHours) : "";
 
   useEffect(() => {
     if (titleDirty) return;
@@ -101,10 +109,11 @@ export function CreatePrivateBookingForm({
         <AvailabilityPicker
           value={{ date, time: startTime }}
           onChange={(d, t) => { setDate(d); setStartTime(t); }}
-          sessionHours={3}
+          sessionHours={gameHours}
+          bufferMinutes={cfg.bufferMinutes}
         />
         <p className="mt-3 text-[0.65rem] text-text-subtle">
-          {endTime ? `Runs 3 hours, until ${endTime}.` : "Sessions run 3 hours - pick a date and start time we're open."}
+          {endTime ? `Runs ${gameHours} hours, until ${endTime}.` : "Sessions run 3 hours - pick a date and start time we're open."}
         </p>
         <div className="mt-4 max-w-[12rem]">
           <label className={lbl}>How many players</label>

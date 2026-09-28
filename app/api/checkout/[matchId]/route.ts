@@ -12,6 +12,8 @@ import type { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getPaymentProvider, REFUND_POLICY } from "@/lib/payments";
 import { toCents } from "@/lib/money";
+import { createServiceClient } from "@/lib/supabase/service";
+import { markSignupPaid } from "@/lib/payments/apply";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ matchId: string }> }) {
   const { matchId } = await params;
@@ -26,7 +28,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ mat
   } = await supabase.auth.getUser();
   if (!user) return Response.json({ ok: false, error: "Not signed in." }, { status: 401 });
 
-  const { data: account } = await supabase.from("accounts").select("id, email").eq("auth_user_id", user.id).maybeSingle();
+  const { data: account } = await supabase.from("accounts").select("id, email, discount_pct").eq("auth_user_id", user.id).maybeSingle();
   if (!account) return Response.json({ ok: false, error: "No account found." }, { status: 400 });
 
   const { data: match } = await supabase
@@ -69,7 +71,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ mat
   if (remainderFraction <= 0.0001) {
     return Response.json({ ok: false, error: "This game is already covered by your tokens." }, { status: 400 });
   }
-  const amountCents = toCents(Number(match.price_eur) * remainderFraction);
+  // Permanent family & friends discount comes off the remaining cash.
+  const discountPct = Math.min(100, Math.max(0, Number(account.discount_pct) || 0));
+  const amountCents = toCents(Number(match.price_eur) * remainderFraction * (1 - discountPct / 100));
+
+  // A 100% discount (or a discount that rounds the fee to nothing) means there is
+  // nothing to charge — comp the place directly instead of opening a checkout.
+  if (amountCents <= 0) {
+    const svc = createServiceClient();
+    if (svc) await markSignupPaid("comp", { kind: "paid", purpose: "match", matchId: match.id, accountId: account.id, amountCents: 0, ref: null });
+    return Response.json({ ok: true, url: `${req.headers.get("origin") || new URL(req.url).origin}/player-portal/games/${matchId}?paid=1`, free: true });
+  }
 
   // Record the intent up front (a legitimate, player-writable column) so it
   // sticks even if they abandon checkout. paid_at stays untouched (webhook only).
