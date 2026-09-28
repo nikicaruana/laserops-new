@@ -7,7 +7,8 @@
  * enters email + a password (twice), we sign them up (which emails a
  * confirmation link). Confirming returns through /auth/callback, which then
  * sends them to onboarding to pick a callsign + photo. Google is offered as
- * an alternative and follows the same onboarding path.
+ * an alternative and follows the same onboarding path. Both paths require the
+ * player to accept the Terms & Conditions and Privacy Policy first.
  */
 import { useState } from "react";
 import Link from "next/link";
@@ -25,6 +26,7 @@ export function SignupForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [agreed, setAgreed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
@@ -32,6 +34,10 @@ export function SignupForm() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (!agreed) {
+      setError("Please accept the Terms & Conditions to continue.");
+      return;
+    }
     if (password.length < MIN_PASSWORD) {
       setError(`Password must be at least ${MIN_PASSWORD} characters.`);
       return;
@@ -53,7 +59,6 @@ export function SignupForm() {
     if (error) {
       setError(error.message);
     } else if (data.session) {
-      // Confirmation disabled -> straight to onboarding.
       window.location.assign("/player-portal/onboarding");
     } else {
       setSent(true);
@@ -63,24 +68,42 @@ export function SignupForm() {
   if (sent) {
     return (
       <div className="border border-accent bg-bg-elevated px-8 py-10 text-center">
-        <h2 className="text-lg font-semibold uppercase tracking-[0.12em] text-accent">
-          Confirm your email
-        </h2>
+        <h2 className="text-lg font-semibold uppercase tracking-[0.12em] text-accent">Confirm your email</h2>
         <p className="mt-3 text-sm text-text-muted">
-          We sent a confirmation link to <span className="text-text">{email}</span>. Open it to
-          finish creating your account and set up your profile.
+          We sent a confirmation link to <span className="text-text">{email}</span>. Open it to finish creating your
+          account and set up your profile.
         </p>
       </div>
     );
   }
 
+  const consent = (
+    <label className="flex items-start gap-2.5 text-[0.72rem] leading-relaxed text-text-subtle">
+      <input
+        type="checkbox"
+        checked={agreed}
+        onChange={(e) => setAgreed(e.target.checked)}
+        className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--color-accent)]"
+      />
+      <span>
+        I agree to the{" "}
+        <Link href="/terms" className="text-text-muted underline hover:text-accent">
+          Terms &amp; Conditions
+        </Link>{" "}
+        and{" "}
+        <Link href="/privacy" className="text-text-muted underline hover:text-accent">
+          Privacy Policy
+        </Link>
+        , including how LaserOps rewards are issued and may be revoked.
+      </span>
+    </label>
+  );
+
   return (
     <div className="portal-card px-6 py-8 sm:px-8">
       <form onSubmit={onSubmit} className="space-y-4">
         <label className="block">
-          <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">
-            Email
-          </span>
+          <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">Email</span>
           <input
             type="email"
             required
@@ -93,9 +116,7 @@ export function SignupForm() {
         </label>
 
         <div>
-          <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">
-            Password
-          </span>
+          <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">Password</span>
           <PasswordInput
             required
             autoComplete="new-password"
@@ -107,9 +128,7 @@ export function SignupForm() {
         </div>
 
         <div>
-          <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">
-            Confirm password
-          </span>
+          <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">Confirm password</span>
           <PasswordInput
             required
             autoComplete="new-password"
@@ -120,11 +139,11 @@ export function SignupForm() {
           />
         </div>
 
-        {error && (
-          <p className="border border-red-800 bg-red-950/40 px-4 py-3 text-sm text-red-400">{error}</p>
-        )}
+        {consent}
 
-        <Button type="submit" size="lg" className="w-full" disabled={busy}>
+        {error && <p className="border border-red-800 bg-red-950/40 px-4 py-3 text-sm text-red-400">{error}</p>}
+
+        <Button type="submit" size="lg" className="w-full" disabled={busy || !agreed}>
           {busy ? "Creating account…" : "Create account"}
         </Button>
       </form>
@@ -135,7 +154,10 @@ export function SignupForm() {
         <span className="h-px flex-1 bg-border" />
       </div>
 
-      <GoogleButton label="Sign up with Google" />
+      <GoogleButton label="Sign up with Google" disabled={!agreed} />
+      {!agreed && (
+        <p className="mt-2 text-center text-[0.7rem] text-text-subtle">Accept the terms above to sign up.</p>
+      )}
 
       <p className="mt-6 text-center text-xs text-text-subtle">
         Already have an account?{" "}

@@ -77,6 +77,7 @@ export const primaryNav: NavLink[] = [
 
 export const utilityNav: NavLink[] = [
   { label: "Contact", href: "/contact" },
+  { label: "Terms", href: "/terms" },
   { label: "Privacy", href: "/privacy" },
   { label: "Cookies", href: "/cookies" },
 ];

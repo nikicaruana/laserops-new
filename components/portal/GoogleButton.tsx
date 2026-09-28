@@ -8,8 +8,9 @@
  */
 import { createClient } from "@/lib/supabase/client";
 
-export function GoogleButton({ label, next }: { label: string; next?: string }) {
+export function GoogleButton({ label, next, disabled = false }: { label: string; next?: string; disabled?: boolean }) {
   async function signIn() {
+    if (disabled) return;
     const supabase = createClient();
     const callback = next
       ? `/auth/callback?next=${encodeURIComponent(next)}`
@@ -24,7 +25,8 @@ export function GoogleButton({ label, next }: { label: string; next?: string }) 
     <button
       type="button"
       onClick={signIn}
-      className="flex h-12 w-full items-center justify-center gap-3 rounded-none border border-border-strong bg-bg px-8 text-sm font-semibold uppercase tracking-[0.12em] text-text transition-colors hover:border-accent active:scale-[0.98]"
+      disabled={disabled}
+      className="flex h-12 w-full items-center justify-center gap-3 rounded-none border border-border-strong bg-bg px-8 text-sm font-semibold uppercase tracking-[0.12em] text-text transition-colors hover:border-accent active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-border-strong"
     >
       <GoogleGlyph />
       {label}
