@@ -17,13 +17,13 @@ export default async function PricingPage() {
   const supabase = await createClient();
   const [{ data: cfg }, { data: discounted }] = await Promise.all([
     supabase.from("pricing_config").select("default_price_eur, session_minutes, booking_buffer_minutes").eq("id", 1).maybeSingle(),
-    supabase.from("accounts").select("id, ops_tag, discount_pct").gt("discount_pct", 0).order("discount_pct", { ascending: false }),
+    supabase.from("accounts").select("id, ops_tag, discount_price_eur").not("discount_price_eur", "is", null).order("discount_price_eur", { ascending: true }),
   ]);
 
   const initial = (discounted ?? []).map((a) => ({
     id: a.id as string,
     opsTag: (a.ops_tag as string) ?? "",
-    discountPct: Number(a.discount_pct) || 0,
+    price: Number(a.discount_price_eur) || 0,
   }));
 
   return (

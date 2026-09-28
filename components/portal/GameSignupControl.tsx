@@ -41,7 +41,7 @@ export function GameSignupControl({
   align = "end",
   waitlistPosition = null,
   priceEur = null,
-  discountPct = 0,
+  familyFriends = false,
   hideCancel = false,
   isPrivate = false,
   isOrganiser = false,
@@ -60,8 +60,8 @@ export function GameSignupControl({
   waitlistPosition?: number | null;
   /** Per-player price; enables the "Pay online" checkout button when set. */
   priceEur?: number | null;
-  /** Family & friends discount %, already reflected in priceEur; shown as a note. */
-  discountPct?: number;
+  /** True when priceEur is this player's fixed family & friends price; shows a note. */
+  familyFriends?: boolean;
   /** Hide the built-in cancel/leave buttons (rendered separately at the page bottom). */
   hideCancel?: boolean;
   /** Private booking: allows paying offline on request. Open games are online-only. */
@@ -282,9 +282,9 @@ export function GameSignupControl({
           {paymentOpen ? (isPaid ? " · paid" : onDay ? " · paying offline" : "") : ""}
         </span>
 
-        {discountPct > 0 && priceEur != null && priceEur > 0 && !mySignup?.paid_at && paymentOpen && (
+        {familyFriends && priceEur != null && priceEur > 0 && !mySignup?.paid_at && paymentOpen && (
           <span className="block max-w-full border-l-2 border-emerald-500/70 bg-emerald-500/10 px-3 py-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.08em] text-emerald-300">
-            Family &amp; friends: {discountPct}% off applied
+            Family &amp; friends price
           </span>
         )}
         {!paymentOpen ? (
