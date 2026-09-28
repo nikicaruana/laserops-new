@@ -20,6 +20,7 @@ export type AccountState = {
   opsTag: string | null;
   email: string | null;
   avatarUrl: string | null;
+  isAdmin: boolean;
 };
 
 const EMPTY: AccountState = {
@@ -28,6 +29,7 @@ const EMPTY: AccountState = {
   opsTag: null,
   email: null,
   avatarUrl: null,
+  isAdmin: false,
 };
 
 export function useAccount(): AccountState {
@@ -50,7 +52,7 @@ export function useAccount(): AccountState {
 
       const { data: account } = await supabase
         .from("accounts")
-        .select("ops_tag, profile_pic_url")
+        .select("ops_tag, profile_pic_url, is_admin")
         .eq("auth_user_id", user.id)
         .maybeSingle();
       if (!active) return;
@@ -61,6 +63,7 @@ export function useAccount(): AccountState {
         opsTag: account?.ops_tag ?? null,
         email: user.email ?? null,
         avatarUrl: account?.profile_pic_url ?? null,
+        isAdmin: account?.is_admin === true,
       });
     }
 

@@ -29,7 +29,7 @@ export function MobileNav() {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [openIndex, setOpenIndex] = useState<number | null>(null);
-  const { signedIn } = useAccount();
+  const { signedIn, isAdmin } = useAccount();
 
   // Portal target only exists after client mount; gate render with mounted flag
   // to avoid SSR/hydration mismatch.
@@ -339,6 +339,11 @@ export function MobileNav() {
             >
               Game Portal
             </Button>
+            {isAdmin && (
+              <Button href="/admin" variant="secondary" size="lg" onClick={close} className="w-full max-w-[18rem]">
+                Admin panel
+              </Button>
+            )}
             <Button
               href="/player-portal/profile"
               variant="secondary"

@@ -17,7 +17,7 @@ import { useAccount, avatarThumb } from "@/lib/hooks/useAccount";
 import { avatarOrDefault } from "@/lib/avatar";
 
 export function HeaderAuth() {
-  const { loading, signedIn, opsTag, email, avatarUrl } = useAccount();
+  const { loading, signedIn, opsTag, email, avatarUrl, isAdmin } = useAccount();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -77,6 +77,11 @@ export function HeaderAuth() {
           <Link href="/player-portal/profile" role="menuitem" className={menuItem} onClick={() => setOpen(false)}>
             Account Settings
           </Link>
+          {isAdmin && (
+            <Link href="/admin" role="menuitem" className={`${menuItem} border-t border-border`} onClick={() => setOpen(false)}>
+              Admin panel
+            </Link>
+          )}
           <form action="/auth/signout" method="post">
             <button type="submit" role="menuitem" className={`${menuItem} border-t border-border hover:text-red-400`}>
               Sign Out

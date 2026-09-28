@@ -122,6 +122,13 @@ export function AdminNav() {
 
   const sections = (onNavigate?: () => void) => (
     <div className="flex flex-col gap-6">
+      <Link
+        href="/"
+        onClick={onNavigate}
+        className="flex items-center gap-2 border-l-2 border-transparent px-3 py-1.5 text-sm font-semibold text-accent transition-colors hover:border-accent hover:text-accent-soft"
+      >
+        <span aria-hidden>←</span> Back to site
+      </Link>
       {SECTIONS.map((section) => (
         <div key={section.heading}>
           <p className="mb-2 text-[0.6rem] font-bold uppercase tracking-[0.2em] text-text-muted">
