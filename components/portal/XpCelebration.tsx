@@ -236,7 +236,7 @@ export function XpCelebration() {
                 <img
                   src={cldImage(data.profilePicUrl, { w: 320 })}
                   alt={data.nickname}
-                  className={`h-28 w-28 rounded-full border-2 border-accent object-cover transition-shadow sm:h-32 sm:w-32 ${finished ? "shadow-[0_0_28px_color-mix(in_srgb,var(--color-accent)_55%,transparent)]" : ""}`}
+                  className={`h-28 w-28 rounded-lg border-2 border-accent object-cover transition-shadow sm:h-32 sm:w-32 ${finished ? "shadow-[0_0_28px_color-mix(in_srgb,var(--color-accent)_55%,transparent)]" : ""}`}
                 />
                 {endBadge ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
@@ -290,7 +290,7 @@ export function XpCelebration() {
                         <p className="truncate text-sm font-bold text-text">{u.title || `Level ${u.level} reward`}</p>
                         {u.description ? <p className="truncate text-xs text-text-muted">{u.description}</p> : null}
                         <div className="mt-1 flex flex-wrap gap-1">
-                          {u.rewardTokens > 0 && <RewardChip label={`${u.rewardTokens} LaserOps Token${u.rewardTokens === 1 ? "" : "s"}`} />}
+                          {u.rewardTokens > 0 && <RewardChip label={`${u.rewardTokens} LaserOps Game Token${u.rewardTokens === 1 ? "" : "s"}`} />}
                           {u.rewardDoubleXp > 0 && <RewardChip label={`${u.rewardDoubleXp}× 2× XP boost`} />}
                           {u.rewardXp15 > 0 && <RewardChip label={`${u.rewardXp15}× 1.5× XP boost`} />}
                         </div>
