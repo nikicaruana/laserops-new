@@ -27,7 +27,7 @@ type Gate = { kind: "complete" } | { kind: "cancel" } | { kind: "endEarly"; perc
 export function MatchAdminActions({
   matchId,
   status,
-  scheduledAt: _scheduledAt,
+  scheduledAt,
 }: {
   matchId: string;
   status: string | null;
@@ -67,7 +67,35 @@ export function MatchAdminActions({
     router.refresh();
   }
 
-  async function confirmGame() {
+  // Starting a match notifies every registered player, so warn loudly when it
+  // is not due to start soon (the common accidental-start case). Games also go
+  // live automatically 30 min before start.
+  function startMatch() {
+    const HOUR = 60 * 60 * 1000;
+    const startMs = scheduledAt ? new Date(scheduledAt).getTime() : null;
+    let msg = "Start this match now? It goes live and gets a join code for players.";
+    if (startMs == null) {
+      msg =
+        "Heads up: this game has no scheduled start time.\n\nSetting it live now will immediately notify all registered players that their game is live. Are you sure you want to go live now?";
+    } else if (startMs - Date.now() > HOUR) {
+      const mins = Math.round((startMs - Date.now()) / 60000);
+      const hrs = Math.round(mins / 60);
+      const days = Math.round(mins / 1440);
+      const human =
+        mins < 60 ? `${mins} min` : mins < 1440 ? `${hrs} hour${hrs === 1 ? "" : "s"}` : `${days} day${days === 1 ? "" : "s"}`;
+      const when = new Date(startMs).toLocaleString("en-GB", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      msg = `Heads up: this game is not due to start for another ${human} (starts ${when}).\n\nSetting it live now will immediately notify all registered players that their game is live. Games also go live automatically 30 minutes before start.\n\nAre you sure you want to go live now?`;
+    }
+    callRpc("admin_start_match", msg);
+  }
+
+    async function confirmGame() {
     setBusy(true);
     setError(null);
     const res = await fetch(`/api/matches/${matchId}/confirm`, { method: "POST" });
@@ -136,7 +164,7 @@ export function MatchAdminActions({
       {s === "confirmed" && (
         <button
           type="button"
-          onClick={() => callRpc("admin_start_match", "Start this match now? It goes live and gets a join code for players.")}
+          onClick={startMatch}
           disabled={busy}
           className="border border-accent bg-accent px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-bg transition-transform active:scale-[0.98] disabled:opacity-50"
         >
