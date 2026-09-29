@@ -59,3 +59,8 @@ Last updated: 2026-09-21
 - [ ] `/scoring-lab` page.
 - [ ] Progression Calibrator's legacy old-vs-new + games-to-level planner additions.
 - [ ] Any throwaway routes / preview reports left in `lib/match-report-v2/reports` if not intended for the live report page.
+
+## 7. Post-launch audits (once V2 is live)
+
+- [ ] **Site performance audit** — full pass once V2 is live: Lighthouse / Core Web Vitals, JS bundle + image sizes, caching coverage, and DB query hotspots. Already done: HoF/leaderboard/achievements boards cached (`lib/leaderboards/hall-of-fame-cached.ts`, 30-min + refresh-on-publish); Cloudinary images optimized via `cldImage`. Candidates flagged during the build: cache the Compare page's `getAllPlayerSummaryRows` (reads all players); add DB indexes for the match-report / match_player_aggregate lookups.
+- [ ] **SEO audit of all new V2 pages** — for every new page: `<title>` + meta description, canonical URL, OG/Twitter cards, sitemap coverage, structured data where relevant, and heading hierarchy. Cover the pages created during the V2 build (Blog + posts, Streaks & Accolades, Player Stats → Achievements, and any further content pages).
