@@ -84,6 +84,7 @@ const SECTIONS: { heading: string; items: Item[] }[] = [
   {
     heading: "Other",
     items: [
+      { label: "Blog", href: "/admin/blog" },
       { label: "Teams", href: "/admin/teams" },
       { label: "Excluded players", href: "/admin/excluded-players" },
     ],

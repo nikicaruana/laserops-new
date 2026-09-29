@@ -21,7 +21,7 @@ export function AdminImageUploader({
 }: {
   value: string | null;
   onChange: (url: string) => void;
-  kind: "gun" | "accolade" | "team" | "rank" | "tier" | "streak" | "killstreak" | "reward";
+  kind: "gun" | "accolade" | "team" | "rank" | "tier" | "streak" | "killstreak" | "reward" | "blog";
   previewClass?: string;
   /** When true, clicking the current image opens a full-size lightbox. */
   expandable?: boolean;

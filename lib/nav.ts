@@ -68,6 +68,7 @@ export const primaryNav: NavLink[] = [
       { label: "Who We Are", href: "/who-we-are" },
       { label: "Streaks & Accolades", href: "/accolades" },
       { label: "Community", href: "/community" },
+      { label: "Blog", href: "/blog" },
       { label: "FAQs", href: "/faqs" },
       { label: "Contact", href: "/contact" },
     ],
@@ -78,6 +79,7 @@ export const primaryNav: NavLink[] = [
 export const utilityNav: NavLink[] = [
   { label: "Contact", href: "/contact" },
   { label: "Terms", href: "/terms" },
+  { label: "Blog", href: "/blog" },
   { label: "Privacy", href: "/privacy" },
   { label: "Cookies", href: "/cookies" },
 ];
