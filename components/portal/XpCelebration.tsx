@@ -75,17 +75,27 @@ export function XpCelebration() {
   const [finished, setFinished] = useState(false);
   const slicesRef = useRef<Slice[]>([]);
   const rafRef = useRef<number | null>(null);
+  const previewRef = useRef(false);
 
-  // Fetch once per browser session.
+  // Fetch once per browser session (or every time in ?xppreview=1 preview mode).
   useEffect(() => {
     let cancelled = false;
+    let preview = false;
     try {
-      if (sessionStorage.getItem(SESSION_KEY)) return;
-      sessionStorage.setItem(SESSION_KEY, "1");
+      preview = new URLSearchParams(window.location.search).get("xppreview") === "1";
     } catch {
-      /* private mode: fall through and check anyway */
+      /* ignore */
     }
-    fetch("/api/xp-celebration")
+    previewRef.current = preview;
+    if (!preview) {
+      try {
+        if (sessionStorage.getItem(SESSION_KEY)) return;
+        sessionStorage.setItem(SESSION_KEY, "1");
+      } catch {
+        /* private mode: fall through and check anyway */
+      }
+    }
+    fetch(`/api/xp-celebration${preview ? "?preview=1" : ""}`)
       .then((r) => r.json())
       .then((j: { pending: PendingCelebration | null }) => {
         if (!cancelled && j?.pending && j.pending.matchIds.length > 0) setData(j.pending);
@@ -156,14 +166,17 @@ export function XpCelebration() {
   const endBadge = badgeOf(data.endLevel) || startBadge;
 
   async function dismiss() {
-    try {
-      await fetch("/api/xp-celebration/seen", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ matchIds: data!.matchIds }),
-      });
-    } catch {
-      /* best effort */
+    // In preview mode we never mark it seen, so it stays replayable.
+    if (!previewRef.current) {
+      try {
+        await fetch("/api/xp-celebration/seen", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ matchIds: data!.matchIds }),
+        });
+      } catch {
+        /* best effort */
+      }
     }
     setData(null);
   }

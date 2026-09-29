@@ -8,7 +8,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getPendingXpCelebration } from "@/lib/xp/celebration";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const preview = new URL(request.url).searchParams.get("preview") === "1";
   const supabase = await createClient();
   const {
     data: { user },
@@ -29,6 +30,7 @@ export async function GET() {
     svc,
     acct.id as string,
     ((acct.ops_tag as string) ?? "").trim() || "Player",
+    preview,
   );
   return Response.json({ pending });
 }

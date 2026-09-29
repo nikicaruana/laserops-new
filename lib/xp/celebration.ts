@@ -52,9 +52,13 @@ export async function getPendingXpCelebration(
   svc: SupabaseClient,
   accountId: string,
   nickname: string,
+  /** Preview: ignore the seen ledger so the full-history celebration always shows. */
+  ignoreSeen = false,
 ): Promise<PendingCelebration | null> {
   const [{ data: celeb }, { data: mpa }] = await Promise.all([
-    svc.from("player_xp_celebrated").select("match_id").eq("account_id", accountId),
+    ignoreSeen
+      ? Promise.resolve({ data: [] as { match_id: string }[] })
+      : svc.from("player_xp_celebrated").select("match_id").eq("account_id", accountId),
     svc
       .from("match_player_aggregate")
       .select("match_id, xp_total_before_match, xp_total_after_match, level_before, level_after, matches!inner(played_on, sequence_no)")
