@@ -10,6 +10,7 @@
  * (account, match) marks a match as already celebrated.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { FALLBACK_PROFILE_PIC } from "@/lib/leaderboards/period-shared";
 
 export type CelebrationUnlock = {
   level: number;
@@ -23,8 +24,11 @@ export type CelebrationUnlock = {
 
 export type CelebrationLevel = { level: number; threshold: number; badgeUrl: string };
 
+export type RewardImages = { token: string; doubleXp: string; xp15: string };
+
 export type PendingCelebration = {
   nickname: string;
+  profilePicUrl: string;
   gamesCount: number;
   startXp: number;
   endXp: number;
@@ -35,6 +39,8 @@ export type PendingCelebration = {
   levels: CelebrationLevel[];
   /** Unlocks earned by crossing into new levels. */
   unlocks: CelebrationUnlock[];
+  /** Reward artwork (game token coin + XP-boost tokens) for unlock rows. */
+  rewardImages: RewardImages;
   /** Every match this celebration covers (marked seen on dismiss). */
   matchIds: string[];
 };
@@ -87,7 +93,7 @@ export async function getPendingXpCelebration(
   // re-check is cheap and correct once real XP lands).
   if (endXp - startXp <= 0 && endLevel <= startLevel) return null;
 
-  const [{ data: rl }, { data: ul }] = await Promise.all([
+  const [{ data: rl }, { data: ul }, { data: life }, { data: ri }] = await Promise.all([
     svc.from("rank_levels").select("level, score_threshold, badge_url").gte("level", startLevel).lte("level", endLevel + 1).order("level"),
     svc
       .from("level_unlocks")
@@ -96,7 +102,17 @@ export async function getPendingXpCelebration(
       .lte("level", endLevel)
       .eq("is_active", true)
       .order("level"),
+    svc.from("player_stats_lifetime").select("profile_pic_url").eq("account_id", accountId).maybeSingle(),
+    svc.from("reward_images").select("key, image_url"),
   ]);
+
+  const profilePicUrl = ((life as { profile_pic_url: string | null } | null)?.profile_pic_url ?? "").trim() || FALLBACK_PROFILE_PIC;
+  const riMap = new Map(((ri ?? []) as { key: string; image_url: string | null }[]).map((r) => [r.key, (r.image_url ?? "").trim()]));
+  const rewardImages: RewardImages = {
+    token: riMap.get("game_token") ?? "",
+    doubleXp: riMap.get("xp_boost_2x") ?? "",
+    xp15: riMap.get("xp_boost_1_5x") ?? "",
+  };
 
   const levels: CelebrationLevel[] = ((rl ?? []) as { level: number; score_threshold: number | null; badge_url: string | null }[]).map((r) => ({
     level: Number(r.level),
@@ -127,6 +143,7 @@ export async function getPendingXpCelebration(
 
   return {
     nickname,
+    profilePicUrl,
     gamesCount: rows.length,
     startXp,
     endXp,
@@ -135,6 +152,7 @@ export async function getPendingXpCelebration(
     leveledUp: endLevel > startLevel,
     levels,
     unlocks,
+    rewardImages,
     matchIds: rows.map((r) => r.match_id),
   };
 }

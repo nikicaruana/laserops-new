@@ -186,8 +186,17 @@ export function XpCelebration() {
   const displayedLevel = slice?.level ?? data.startLevel;
 
   const badgeOf = (lvl: number) => data.levels.find((l) => l.level === lvl)?.badgeUrl ?? "";
-  const startBadge = badgeOf(data.startLevel);
-  const endBadge = badgeOf(data.endLevel) || startBadge;
+  const endBadge = badgeOf(data.endLevel) || badgeOf(data.startLevel);
+
+  const unlockImageFor = (u: PendingCelebration["unlocks"][number]) =>
+    u.iconUrl ||
+    (u.rewardTokens > 0
+      ? data.rewardImages.token
+      : u.rewardDoubleXp > 0
+        ? data.rewardImages.doubleXp
+        : u.rewardXp15 > 0
+          ? data.rewardImages.xp15
+          : "");
 
   async function dismiss() {
     // In preview mode we never mark it seen, so it stays replayable.
@@ -220,19 +229,24 @@ export function XpCelebration() {
               Here&apos;s your progress from {data.gamesCount} game{data.gamesCount === 1 ? "" : "s"}.
             </p>
 
-            {/* Badge(s) */}
+            {/* Player avatar with their current rank badge as an accent. */}
             <div className="mt-6 flex items-center justify-center">
-              {data.leveledUp ? (
-                <div className="flex items-center gap-3 rounded-sm bg-bg p-3 sm:gap-4 sm:p-4">
-                  <Badge url={startBadge} level={data.startLevel} dim />
-                  <span aria-hidden className="text-xl leading-none text-accent sm:text-2xl">▶</span>
-                  <Badge url={endBadge} level={data.endLevel} glow={finished} />
-                </div>
-              ) : (
-                <div className="rounded-sm bg-bg p-3 sm:p-4">
-                  <Badge url={startBadge} level={data.startLevel} />
-                </div>
-              )}
+              <div className="relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={cldImage(data.profilePicUrl, { w: 320 })}
+                  alt={data.nickname}
+                  className={`h-28 w-28 rounded-full border-2 border-accent object-cover transition-shadow sm:h-32 sm:w-32 ${finished ? "shadow-[0_0_28px_color-mix(in_srgb,var(--color-accent)_55%,transparent)]" : ""}`}
+                />
+                {endBadge ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={cldImage(endBadge, { w: 160 })}
+                    alt={`Level ${data.endLevel} badge`}
+                    className="absolute -bottom-2 -right-2 h-14 w-14 object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.6)] sm:h-16 sm:w-16"
+                  />
+                ) : null}
+              </div>
             </div>
 
             {/* Level + earned */}
@@ -262,11 +276,13 @@ export function XpCelebration() {
               <div className={`mt-6 transition-opacity duration-500 ${finished ? "opacity-100" : "opacity-0"}`}>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-accent">You unlocked</p>
                 <ul className="mt-3 space-y-2 text-left">
-                  {data.unlocks.map((u) => (
+                  {data.unlocks.map((u) => {
+                    const img = unlockImageFor(u);
+                    return (
                     <li key={u.level} className="flex items-center gap-3 border border-border bg-bg p-3">
-                      {u.iconUrl ? (
+                      {img ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
-                        <img src={cldImage(u.iconUrl, { w: 120 })} alt="" className="h-11 w-11 shrink-0 object-contain" />
+                        <img src={cldImage(img, { w: 120 })} alt="" className="h-11 w-11 shrink-0 object-contain" />
                       ) : (
                         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-sm border border-accent/50 bg-accent/10 font-mono text-xs font-bold text-accent">L{u.level}</span>
                       )}
@@ -281,7 +297,8 @@ export function XpCelebration() {
                       </div>
                       <span className="shrink-0 text-[0.55rem] font-bold uppercase tracking-[0.12em] text-text-subtle">Lvl {u.level}</span>
                     </li>
-                  ))}
+                    );
+                  })}
                 </ul>
               </div>
             )}
@@ -297,17 +314,6 @@ export function XpCelebration() {
         </div>
       </div>
     </div>
-  );
-}
-
-function Badge({ url, level, dim, glow }: { url: string; level: number; dim?: boolean; glow?: boolean }) {
-  if (!url) return <span className="block h-16 w-16 sm:h-20 sm:w-20" aria-hidden />;
-  return (
-    <img
-      src={cldImage(url, { w: 240 })}
-      alt={`Level ${level} badge`}
-      className={`block h-16 w-16 object-contain transition-all sm:h-20 sm:w-20 ${dim ? "opacity-60" : ""} ${glow ? "drop-shadow-[0_0_12px_color-mix(in_srgb,var(--color-accent)_60%,transparent)]" : ""}`}
-    />
   );
 }
 
