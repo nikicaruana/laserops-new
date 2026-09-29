@@ -7,7 +7,9 @@
  * depends on the current status:
  *   tentative / awaiting_confirm -> Confirm game, Cancel*
  *   confirmed                    -> Start match, Cancel*
- *   live                         -> Complete match*, End early (weather refund)*
+ *   live                         -> Complete match*, End early (weather refund)*, Undo go-live
+ *                                   (Undo reverts an accidental start back to confirmed; only when
+ *                                   no game data exists yet, and it is NOT 2FA-gated as it moves no money.)
  *   cancelled                    -> Reopen
  * ENDING a game - completing it, ending it early, or cancelling it - moves money
  * (refunds) and is irreversible, so each of those (*) requires a 2FA-elevated
@@ -186,6 +188,20 @@ export function MatchAdminActions({
               </button>
             </span>
           )}
+
+          <button
+            type="button"
+            onClick={() =>
+              callRpc(
+                "admin_undo_go_live",
+                "This match isn't actually being played? Revert it to Confirmed and clear the join code. Players already notified won't be un-notified.",
+              )
+            }
+            disabled={busy}
+            className="border border-border-strong px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-text-muted hover:border-accent hover:text-accent disabled:opacity-50"
+          >
+            Undo go-live
+          </button>
         </>
       )}
 
