@@ -290,7 +290,7 @@ export function XpCelebration() {
                         <p className="truncate text-sm font-bold text-text">{u.title || `Level ${u.level} reward`}</p>
                         {u.description ? <p className="truncate text-xs text-text-muted">{u.description}</p> : null}
                         <div className="mt-1 flex flex-wrap gap-1">
-                          {u.rewardTokens > 0 && <RewardChip label={`${u.rewardTokens} token${u.rewardTokens === 1 ? "" : "s"}`} />}
+                          {u.rewardTokens > 0 && <RewardChip label={`${u.rewardTokens} LaserOps Token${u.rewardTokens === 1 ? "" : "s"}`} />}
                           {u.rewardDoubleXp > 0 && <RewardChip label={`${u.rewardDoubleXp}× 2× XP boost`} />}
                           {u.rewardXp15 > 0 && <RewardChip label={`${u.rewardXp15}× 1.5× XP boost`} />}
                         </div>
