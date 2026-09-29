@@ -14,7 +14,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { cldImage } from "@/lib/cld";
-import type { PendingCelebration } from "@/lib/xp/celebration";
+import type { PendingCelebration, CelebrationUnlock } from "@/lib/xp/celebration";
 
 const CHECK_THROTTLE_MS = 15000;
 const TOTAL_MS = 2800;
@@ -281,9 +281,9 @@ export function XpCelebration() {
               <div className="absolute inset-y-0 bg-accent" style={{ left: `${baselineFill * 100}%`, width: `${Math.max(0, earnedFill - baselineFill) * 100}%` }} />
             </div>
 
-            {/* Unlocks */}
+            {/* Unlocks (shown immediately) */}
             {data.unlocks.length > 0 && (
-              <div className={`mt-6 transition-opacity duration-500 ${finished ? "opacity-100" : "opacity-0"}`}>
+              <div className="mt-6">
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-accent">You unlocked</p>
                 <ul className="mt-3 space-y-2 text-left">
                   {data.unlocks.map((u) => {
@@ -297,13 +297,8 @@ export function XpCelebration() {
                         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-sm border border-accent/50 bg-accent/10 font-mono text-xs font-bold text-accent">L{u.level}</span>
                       )}
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-bold text-text">{u.title || `Level ${u.level} reward`}</p>
+                        <p className="truncate text-sm font-bold text-text">{rewardLabel(u)}</p>
                         {u.description ? <p className="truncate text-xs text-text-muted">{u.description}</p> : null}
-                        <div className="mt-1 flex flex-wrap gap-1">
-                          {u.rewardTokens > 0 && <RewardChip label={`${u.rewardTokens} LaserOps Game Token${u.rewardTokens === 1 ? "" : "s"}`} />}
-                          {u.rewardDoubleXp > 0 && <RewardChip label={`${u.rewardDoubleXp}× 2× XP boost`} />}
-                          {u.rewardXp15 > 0 && <RewardChip label={`${u.rewardXp15}× 1.5× XP boost`} />}
-                        </div>
                       </div>
                       <span className="shrink-0 text-[0.55rem] font-bold uppercase tracking-[0.12em] text-text-subtle">Lvl {u.level}</span>
                     </li>
@@ -327,6 +322,10 @@ export function XpCelebration() {
   );
 }
 
-function RewardChip({ label }: { label: string }) {
-  return <span className="rounded-sm border border-accent/40 bg-accent/10 px-1.5 py-0.5 text-[0.55rem] font-bold uppercase tracking-[0.08em] text-accent">{label}</span>;
+/** Reward name derived from the reward type (consistent wording). */
+function rewardLabel(u: CelebrationUnlock): string {
+  if (u.rewardTokens > 0) return `${u.rewardTokens} LaserOps Game Token${u.rewardTokens === 1 ? "" : "s"}`;
+  if (u.rewardDoubleXp > 0) return u.rewardDoubleXp > 1 ? `${u.rewardDoubleXp}× 2x XP Token` : "2x XP Token";
+  if (u.rewardXp15 > 0) return u.rewardXp15 > 1 ? `${u.rewardXp15}× 1.5x XP Token` : "1.5x XP Token";
+  return u.title || `Level ${u.level} reward`;
 }
