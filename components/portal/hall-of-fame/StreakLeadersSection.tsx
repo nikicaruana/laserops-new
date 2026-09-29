@@ -1,20 +1,17 @@
-import type { AccoladeLeaders } from "@/lib/leaderboards/hall-of-fame";
+import type { StreakLeaders } from "@/lib/leaderboards/hall-of-fame";
 import { cldImage } from "@/lib/cld";
 
 /**
- * Accolade Leaders – for every accolade, the top 3 players who have earned
- * it the most, alongside the accolade's badge and what it's awarded for.
- * The catalog is already ordered by tier (100 → 75 → 50 XP).
+ * Streak Leaders – for every streak, the top 3 players who have earned it the
+ * most, alongside the streak's badge, what it's awarded for, and its in-game
+ * points. Streak names/points/badges/order are admin-authoritative (they come
+ * from streak_definitions), so this matches the streaks page and match reports.
  */
-export function AccoladeLeadersSection({
-  accolades,
-}: {
-  accolades: AccoladeLeaders[];
-}) {
-  if (accolades.length === 0) {
+export function StreakLeadersSection({ streaks }: { streaks: StreakLeaders[] }) {
+  if (streaks.length === 0) {
     return (
       <p className="py-10 text-center text-sm text-text-muted">
-        Accolade leaders will appear here once match data is available.
+        Streak leaders will appear here once match data is available.
       </p>
     );
   }
@@ -22,21 +19,18 @@ export function AccoladeLeadersSection({
   return (
     <div>
       <p className="mb-5 text-center text-sm text-text-muted">
-        The players who have earned the most of each accolade.
+        The players who have earned the most of each streak.
       </p>
       <div className="grid gap-4 sm:grid-cols-2">
-        {accolades.map((acc) => (
-          <div
-            key={acc.name}
-            className="portal-card p-4 sm:p-5"
-          >
-            {/* Accolade header – badge + name + what it's for */}
+        {streaks.map((st) => (
+          <div key={st.streakKey} className="portal-card p-4 sm:p-5">
+            {/* Streak header – badge + name + what it's for + points */}
             <div className="flex items-center gap-3">
-              {acc.iconPath ? (
+              {st.badgeUrl ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
-                  src={cldImage(acc.iconPath, { w: 168 })}
-                  alt={acc.name}
+                  src={cldImage(st.badgeUrl, { w: 168 })}
+                  alt={st.name}
                   loading="lazy"
                   decoding="async"
                   className="h-14 w-14 shrink-0 object-contain"
@@ -46,27 +40,26 @@ export function AccoladeLeadersSection({
               )}
               <div className="min-w-0">
                 <h3 className="text-sm font-extrabold uppercase tracking-[0.1em] text-accent sm:text-base">
-                  {acc.name}
+                  {st.name}
                 </h3>
-                <p className="text-xs text-text-muted">{acc.description}</p>
+                {st.description ? (
+                  <p className="text-xs text-text-muted">{st.description}</p>
+                ) : null}
                 <p className="mt-0.5 text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-text-subtle">
-                  {acc.tier} XP
+                  {st.points.toLocaleString("en-US")} pts
                 </p>
               </div>
             </div>
 
-            {/* Top 3 holders */}
-            {acc.entries.length === 0 ? (
+            {/* Top 3 holders by times earned */}
+            {st.entries.length === 0 ? (
               <p className="mt-4 py-2 text-center text-xs text-text-muted">
                 Not yet earned.
               </p>
             ) : (
               <ol className="mt-4 space-y-2">
-                {acc.entries.map((e) => (
-                  <li
-                    key={`${acc.name}-${e.rank}-${e.nickname}`}
-                    className="flex items-center gap-3"
-                  >
+                {st.entries.map((e) => (
+                  <li key={`${st.streakKey}-${e.rank}-${e.nickname}`} className="flex items-center gap-3">
                     <span className="w-4 shrink-0 text-center font-mono text-xs font-bold text-text-subtle">
                       {e.rank}
                     </span>

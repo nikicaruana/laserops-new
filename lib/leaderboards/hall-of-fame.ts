@@ -524,3 +524,26 @@ export const fetchWeaponMasters = unstable_cache(
   ["hall-of-fame-weapon-masters-v2"],
   { revalidate: 1800, tags: ["sheets"] },
 );
+
+/* ─── 5. Streak Leaders ─────────────────────────── */
+
+export type StreakLeaderEntry = {
+  rank: number;
+  nickname: string;
+  profilePicUrl: string;
+  /** How many times this player has earned the streak. */
+  count: number;
+};
+
+export type StreakLeaders = {
+  streakKey: string;
+  name: string;
+  /** What the streak is awarded for. */
+  description: string;
+  /** Cloudinary badge URL from streak_definitions. */
+  badgeUrl: string;
+  /** In-game points the streak awards. */
+  points: number;
+  /** Top 3 players by times earned (fewer, or empty, if rarely earned). */
+  entries: StreakLeaderEntry[];
+};

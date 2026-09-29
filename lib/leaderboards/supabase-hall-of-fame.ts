@@ -22,8 +22,8 @@ import type {
   SeasonChampions,
   SeasonChampionChallenge,
   AccoladeLeaders,
+  StreakLeaders,
 } from "@/lib/leaderboards/hall-of-fame";
-import { ACCOLADES } from "@/lib/player-stats/summary-accolades";
 import { accoladeKey } from "@/lib/cms/accolades";
 import { isUnclaimedNickname } from "@/lib/leaderboards/unclaimed";
 import { FALLBACK_PROFILE_PIC } from "@/lib/leaderboards/period-shared";
@@ -36,6 +36,12 @@ import {
 /* ─── Formatters ────────────────────────────────────────────────────── */
 const fmtInt = (v: number): string => Math.round(v).toLocaleString("en-US");
 const fmtRatio = (v: number): string => v.toFixed(2);
+const fmtDuration = (v: number): string => {
+  const t = Math.round(v);
+  const m = Math.floor(t / 60);
+  const sec = t % 60;
+  return m > 0 ? `${m}m ${sec}s` : `${sec}s`;
+};
 const fmtPercent = (v: number): string => `${Math.round(v * 100)}%`;
 const fmtNumber = (v: number): string =>
   Number.isInteger(v) ? v.toLocaleString("en-US") : v.toFixed(2);
@@ -57,6 +63,8 @@ const RECORD_META: {
   { record: "Highest Accuracy", key: "accuracy", note: "Min. 250 shots in a game", format: fmtPercent },
   { record: "Most Damage", key: "damage", format: fmtInt },
   { record: "Highest Match Rating", key: "rating", format: fmtRatio },
+  { record: "Most Caps", key: "caps", format: fmtInt },
+  { record: "Longest Capture Time", key: "holdSeconds", format: fmtDuration },
 ];
 
 type RecordRow = {
@@ -113,15 +121,23 @@ type AccoladeRow = {
 export async function getAccoladeLeaders(
   supabase: SupabaseClient,
 ): Promise<AccoladeLeaders[]> {
-  const { data } = await supabase
-    .from("v_hof_accolade_leaders")
-    .select("accolade, ops_tag, profile_pic_url, times_won");
+  const [defsRes, leadersRes] = await Promise.all([
+    supabase
+      .from("accolade_definitions")
+      .select("name, description, badge_url, xp")
+      .eq("is_active", true)
+      .order("xp", { ascending: false })
+      .order("name"),
+    supabase
+      .from("v_hof_accolade_leaders")
+      .select("accolade, ops_tag, profile_pic_url, times_won"),
+  ]);
 
   // Key by accoladeKey (case/separator-insensitive) so catalogue names match
   // the view's stored names even when they differ in casing/spelling – e.g.
   // catalogue "Spray N Pray" vs view "Spray n Pray".
   const byAccolade = new Map<string, AccoladeRow[]>();
-  for (const r of (data ?? []) as AccoladeRow[]) {
+  for (const r of (leadersRes.data ?? []) as AccoladeRow[]) {
     if (!r.accolade) continue;
     if (isUnclaimedNickname((r.ops_tag ?? "").trim())) continue;
     const key = accoladeKey(r.accolade);
@@ -130,17 +146,26 @@ export async function getAccoladeLeaders(
     else byAccolade.set(key, [r]);
   }
 
-  // Iterate the catalogue so order + description + icon come from one source.
-  return ACCOLADES.map((acc): AccoladeLeaders => {
-    const rows = (byAccolade.get(accoladeKey(acc.name)) ?? [])
+  // Catalogue comes from accolade_definitions (admin-authoritative), so newer
+  // accolades like CAP-Tain and Fortress appear automatically. Ordered by XP.
+  const defs = ((defsRes.data ?? []) as {
+    name: string | null;
+    description: string | null;
+    badge_url: string | null;
+    xp: number | null;
+  }[]).filter((d) => (d.name ?? "").trim() !== "");
+
+  return defs.map((d): AccoladeLeaders => {
+    const name = (d.name ?? "").trim();
+    const rows = (byAccolade.get(accoladeKey(name)) ?? [])
       .slice()
       .sort((a, b) => (b.times_won ?? 0) - (a.times_won ?? 0))
       .slice(0, 3);
     return {
-      name: acc.name,
-      description: acc.description,
-      iconPath: acc.iconPath,
-      tier: acc.tier,
+      name,
+      description: (d.description ?? "").trim(),
+      iconPath: (d.badge_url ?? "").trim(),
+      tier: d.xp ?? 0,
       entries: rows.map((r, i) => ({
         rank: i + 1,
         nickname: (r.ops_tag ?? "").trim(),
@@ -151,6 +176,74 @@ export async function getAccoladeLeaders(
   });
 }
 
+/* ─── 5. Streak Leaders ─────────────────────────── */
+
+type StreakRow = {
+  streak_key: string | null;
+  ops_tag: string | null;
+  profile_pic_url: string | null;
+  times_earned: number | null;
+};
+
+// Per streak, the top 3 players by total times earned. Streak names, points,
+// badge art and order are admin-authoritative (streak_definitions), so this is
+// the single source the leaderboard, match report and accolades page share.
+export async function getStreakLeaders(
+  supabase: SupabaseClient,
+): Promise<StreakLeaders[]> {
+  const [defsRes, leadersRes] = await Promise.all([
+    supabase
+      .from("streak_definitions")
+      .select("streak_key, name, description, badge_url, points, tier")
+      .eq("is_active", true),
+    supabase
+      .from("v_hof_streak_leaders")
+      .select("streak_key, ops_tag, profile_pic_url, times_earned"),
+  ]);
+
+  const byKey = new Map<string, StreakRow[]>();
+  for (const r of (leadersRes.data ?? []) as StreakRow[]) {
+    const key = (r.streak_key ?? "").trim();
+    if (!key) continue;
+    if (isUnclaimedNickname((r.ops_tag ?? "").trim())) continue;
+    const arr = byKey.get(key);
+    if (arr) arr.push(r);
+    else byKey.set(key, [r]);
+  }
+
+  const defs = ((defsRes.data ?? []) as {
+    streak_key: string | null;
+    name: string | null;
+    description: string | null;
+    badge_url: string | null;
+    points: number | null;
+    tier: number | null;
+  }[]).filter((d) => (d.streak_key ?? "").trim() !== "");
+
+  // Strongest streaks first (tier, then points), matching the streaks page.
+  defs.sort((a, b) => (b.tier ?? 0) - (a.tier ?? 0) || (b.points ?? 0) - (a.points ?? 0));
+
+  return defs.map((d): StreakLeaders => {
+    const key = (d.streak_key ?? "").trim();
+    const rows = (byKey.get(key) ?? [])
+      .slice()
+      .sort((a, b) => (b.times_earned ?? 0) - (a.times_earned ?? 0))
+      .slice(0, 3);
+    return {
+      streakKey: key,
+      name: (d.name ?? key).trim(),
+      description: (d.description ?? "").trim(),
+      badgeUrl: (d.badge_url ?? "").trim(),
+      points: d.points ?? 0,
+      entries: rows.map((r, i) => ({
+        rank: i + 1,
+        nickname: (r.ops_tag ?? "").trim(),
+        profilePicUrl: (r.profile_pic_url ?? "").trim() || FALLBACK_PROFILE_PIC,
+        count: r.times_earned ?? 0,
+      })),
+    };
+  });
+}
 /* ─── 1. Season Champions ───────────────────────────────────────────── */
 
 function humanizeMetric(metric: string): string {
@@ -222,6 +315,8 @@ const WEAPON_SPECS: {
   { key: "accuracy", label: "Best Accuracy", note: "Min. 250 shots", value: (r) => r.accuracy, eligible: (r) => r.shots > 250, format: fmtPercent },
   { key: "damage", label: "Most Damage", value: (r) => r.damage, format: fmtInt },
   { key: "rating", label: "Best Match Rating", value: (r) => r.matchRating, format: fmtRatio },
+  { key: "caps", label: "Most Caps", value: (r) => r.captures, format: fmtInt },
+  { key: "holdSeconds", label: "Longest Capture Time", value: (r) => r.holdSeconds, format: fmtDuration },
 ];
 
 type GunGameRow = {
@@ -236,6 +331,8 @@ type GunGameRow = {
   damage: number;
   matchRating: number;
   shots: number;
+  captures: number;
+  holdSeconds: number;
 };
 
 function topThreeGun(
@@ -274,7 +371,7 @@ export async function getWeaponMasters(
     supabase.from("player_armory").select("gun_name, nickname, profile_pic_url, score_total"),
     supabase
       .from("match_player_aggregate")
-      .select("gun_used, score, frags, kd, accuracy, damage, match_rating, shots, account_id, match_id"),
+      .select("gun_used, score, frags, kd, accuracy, damage, match_rating, shots, captures, hold_seconds, account_id, match_id"),
     supabase.from("player_stats_lifetime").select("account_id, nickname, profile_pic_url"),
     supabase.from("matches").select("id, match_code"),
   ]);
@@ -330,6 +427,8 @@ export async function getWeaponMasters(
     damage: number | null;
     match_rating: number | null;
     shots: number | null;
+    captures: number | null;
+    hold_seconds: number | null;
     account_id: string | null;
     match_id: string | null;
   }[]) {
@@ -349,6 +448,8 @@ export async function getWeaponMasters(
       damage: r.damage ?? 0,
       matchRating: r.match_rating ?? 0,
       shots: r.shots ?? 0,
+      captures: r.captures ?? 0,
+      holdSeconds: r.hold_seconds ?? 0,
     };
     const arr = rowsByGun.get(gun);
     if (arr) arr.push(row);

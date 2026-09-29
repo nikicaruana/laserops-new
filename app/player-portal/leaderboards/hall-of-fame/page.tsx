@@ -5,6 +5,7 @@ import { SeasonChampionsSection } from "@/components/portal/hall-of-fame/SeasonC
 import { AllTimeRecordsSection } from "@/components/portal/hall-of-fame/AllTimeRecordsSection";
 import { WeaponMastersSection } from "@/components/portal/hall-of-fame/WeaponMastersSection";
 import { AccoladeLeadersSection } from "@/components/portal/hall-of-fame/AccoladeLeadersSection";
+import { StreakLeadersSection } from "@/components/portal/hall-of-fame/StreakLeadersSection";
 import { createClient } from "@/lib/supabase/server";
 import { getWeaponsFromSupabase } from "@/lib/cms/supabase-weapons";
 import {
@@ -12,6 +13,7 @@ import {
   getAllTimeRecords,
   getWeaponMasters,
   getAccoladeLeaders,
+  getStreakLeaders,
 } from "@/lib/leaderboards/supabase-hall-of-fame";
 
 export const metadata: Metadata = {
@@ -38,12 +40,13 @@ export default async function HallOfFameLeaderboardPage({
   // records/masters themselves come from Supabase. Catch per-section so one
   // flaky dataset shows its own empty state instead of failing the whole page.
   const weapons = await getWeaponsFromSupabase();
-  const [champions, allTimeRecords, weaponMasters, accoladeLeaders] =
+  const [champions, allTimeRecords, weaponMasters, accoladeLeaders, streakLeaders] =
     await Promise.all([
       getHallOfFameChampions(supabase).catch(() => []),
       getAllTimeRecords(supabase).catch(() => []),
       getWeaponMasters(supabase, weapons).catch(() => []),
       getAccoladeLeaders(supabase).catch(() => []),
+      getStreakLeaders(supabase).catch(() => []),
     ]);
 
   return (
@@ -55,6 +58,7 @@ export default async function HallOfFameLeaderboardPage({
           "All-Time Records",
           "Weapon Masters",
           "Accolade Leaders",
+          "Streak Leaders",
         ]}
         initialSlug={tab}
       >
@@ -62,6 +66,7 @@ export default async function HallOfFameLeaderboardPage({
         <AllTimeRecordsSection categories={allTimeRecords} />
         <WeaponMastersSection weapons={weaponMasters} />
         <AccoladeLeadersSection accolades={accoladeLeaders} />
+        <StreakLeadersSection streaks={streakLeaders} />
       </HallOfFameTabs>
     </div>
   );
