@@ -76,6 +76,7 @@ export default async function PlayerSummaryPage({
         <SummaryBody
           top={projectSummaryTop(result.row)}
           row={result.row}
+          accolades={result.accolades}
           ratingUnlocked={result.ratingUnlocked}
           opsTag={opsTag}
           social={social}
@@ -135,6 +136,7 @@ function SquadsSection({ opsTag, squads }: { opsTag: string; squads: SquadChip[]
 function SummaryBody({
   top,
   row,
+  accolades,
   ratingUnlocked,
   opsTag,
   social,
@@ -143,6 +145,7 @@ function SummaryBody({
 }: {
   top: ReturnType<typeof projectSummaryTop>;
   row: Parameters<typeof StatsSection>[0]["row"];
+  accolades: Parameters<typeof AccoladesSection>[0]["data"];
   ratingUnlocked: boolean;
   opsTag: string;
   social: Social | null;
@@ -188,7 +191,7 @@ function SummaryBody({
         <StatsSection row={row} ratingUnlocked={ratingUnlocked} />
       </CollapsibleSection>
       <CollapsibleSection title="Accolades">
-        <AccoladesSection row={row} />
+        <AccoladesSection data={accolades} />
       </CollapsibleSection>
     </>
   );

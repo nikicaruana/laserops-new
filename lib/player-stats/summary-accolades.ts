@@ -225,3 +225,44 @@ export function projectAccolades(row: PlayerStatsRaw): AccoladesData {
 
   return { totalEarned, tierGroups };
 }
+
+/* ============================================================
+   ADMIN-DRIVEN PROJECTION
+   The Player Summary sources its catalogue from accolade_definitions
+   (admin), so new accolades (CAP-Tain, Fortress, ...) appear here
+   automatically. projectAccolades above stays for the Sheets Compare page.
+   ============================================================ */
+
+export type AdminAccolade = {
+  name: string;
+  description: string;
+  /** Cloudinary badge URL from accolade_definitions.badge_url. */
+  badgeUrl: string;
+  tier: AccoladeTier;
+};
+
+/**
+ * Build the accolades section data from the admin catalogue plus a player's
+ * per-accolade counts (keyed by accolade name). Only the three standard XP
+ * tiers are shown; ordering within a tier follows the catalogue order given.
+ */
+export function buildAccoladesDataFromDefs(
+  defs: AdminAccolade[],
+  counts: Map<string, number>,
+  totalEarned: number,
+): AccoladesData {
+  const tiers: AccoladeTier[] = [100, 75, 50];
+  const tierGroups = tiers.map((tier) => {
+    const allInTier: AccoladeDefinition[] = defs
+      .filter((d) => d.tier === tier)
+      .map((d) => ({ name: d.name, description: d.description, sheetCol: "", iconPath: d.badgeUrl, tier }));
+    const withCounts: AccoladeWithCount[] = allInTier.map((definition) => ({
+      definition,
+      count: counts.get(definition.name) ?? 0,
+    }));
+    const earned = withCounts.filter((a) => a.count > 0);
+    const earnedCount = earned.reduce((sum, a) => sum + a.count, 0);
+    return { tier, earned, allInTier, earnedCount };
+  });
+  return { totalEarned, tierGroups };
+}

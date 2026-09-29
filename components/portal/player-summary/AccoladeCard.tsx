@@ -1,4 +1,5 @@
 import type { AccoladeWithCount } from "@/lib/player-stats/summary-accolades";
+import { cldImage } from "@/lib/cld";
 
 /**
  * AccoladeCard
@@ -33,8 +34,9 @@ export function AccoladeCard({ data }: AccoladeCardProps) {
           maximum visible badge size on mobile while preserving the
           natural aspect ratio. Caps at max-w-[10rem] on desktop so
           they don't get absurdly large in wider cards. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={definition.iconPath}
+        src={cldImage(definition.iconPath, { w: 320 })}
         alt={`${definition.name} accolade`}
         loading="lazy"
         decoding="async"

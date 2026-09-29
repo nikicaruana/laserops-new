@@ -1,10 +1,9 @@
 import {
-  projectAccolades,
   type AccoladeTier,
+  type AccoladesData,
   type TierGroup,
 } from "@/lib/player-stats/summary-accolades";
 import { AccoladeCard } from "@/components/portal/player-summary/AccoladeCard";
-import type { PlayerStatsRaw } from "@/lib/player-stats/shared";
 
 /**
  * AccoladesSection
@@ -30,11 +29,10 @@ import type { PlayerStatsRaw } from "@/lib/player-stats/shared";
  */
 
 type AccoladesSectionProps = {
-  row: PlayerStatsRaw;
+  data: AccoladesData;
 };
 
-export function AccoladesSection({ row }: AccoladesSectionProps) {
-  const data = projectAccolades(row);
+export function AccoladesSection({ data }: AccoladesSectionProps) {
 
   return (
     <div className="flex flex-col gap-6 sm:gap-8">

@@ -15,7 +15,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { PlayerStatsRaw } from "@/lib/player-stats/shared";
 import { DEFAULT_AVATAR_URL } from "@/lib/avatar";
-import { ACCOLADES } from "@/lib/player-stats/summary-accolades";
+import {
+  ACCOLADES,
+  buildAccoladesDataFromDefs,
+  type AccoladesData,
+  type AccoladeTier,
+} from "@/lib/player-stats/summary-accolades";
 
 /** Encode a star count into a synthetic string RatingPill can parse (_N_Star). */
 function starImage(stars: number | null): string {
@@ -181,6 +186,8 @@ function buildRow(args: {
 
 export type SummaryRowResult = {
   row: PlayerStatsRaw;
+  /** Admin-driven accolades section data (accolade_definitions + counts). */
+  accolades: AccoladesData;
   /** Whether the player has an actual rating (drives the unlock explainer). */
   ratingUnlocked: boolean;
 };
@@ -215,7 +222,7 @@ export async function getPlayerSummaryRow(
         .order("total_kills", { ascending: false })
         .limit(1),
       supabase.from("match_awards").select("accolade_definition_id").eq("account_id", accountId),
-      supabase.from("accolade_definitions").select("id, name"),
+      supabase.from("accolade_definitions").select("id, name, description, badge_url, xp"),
       supabase.from("rank_levels").select("level, rank_name, badge_url, score_threshold").order("level"),
       supabase.from("guns").select("name, image_url"),
       supabase.from("game_modes").select("obj_slot1_stat, obj_slot2_stat").eq("is_default", true).maybeSingle(),
@@ -238,6 +245,19 @@ export async function getPlayerSummaryRow(
     if (name) accoladeCounts.set(name, (accoladeCounts.get(name) ?? 0) + 1);
   }
 
+  const accoladesData = buildAccoladesDataFromDefs(
+    ((accoladeDefs ?? []) as { name: string | null; description: string | null; badge_url: string | null; xp: number | null }[])
+      .filter((d) => !!d.name && (d.xp === 100 || d.xp === 75 || d.xp === 50))
+      .map((d) => ({
+        name: d.name as string,
+        description: (d.description ?? "").trim(),
+        badgeUrl: (d.badge_url ?? "").trim(),
+        tier: d.xp as AccoladeTier,
+      })),
+    accoladeCounts,
+    (awards ?? []).length,
+  );
+
   const row = buildRow({
     life,
     rating: (rating as RatingRow | null) ?? null,
@@ -251,7 +271,7 @@ export async function getPlayerSummaryRow(
     objSlots,
   });
 
-  return { row, ratingUnlocked: !!rating };
+  return { row, ratingUnlocked: !!rating, accolades: accoladesData };
 }
 
 /**
