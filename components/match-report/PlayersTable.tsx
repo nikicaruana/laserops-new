@@ -411,7 +411,10 @@ function PlayerRow({
       )}
 
       <BestTd value={player.totalXp} best={best.totalXp} format="number">
-        <RowLink href={href}>{player.totalXp.toLocaleString("en-US")}</RowLink>
+        <RowLink href={href}>
+          {player.totalXp.toLocaleString("en-US")}
+          {player.xpBoost ? <XpBoostTag mult={player.xpBoost} /> : null}
+        </RowLink>
       </BestTd>
 
       {!offline && (
@@ -425,6 +428,24 @@ function PlayerRow({
         </>
       )}
     </tr>
+  );
+}
+
+/* ---------- XP boost token tag ---------- */
+
+/**
+ * Small tag shown next to a player's Total XP when they applied a personal
+ * XP-boost token this match (1.5x or 2x). Not shown for match-wide double XP.
+ */
+function XpBoostTag({ mult }: { mult: number }) {
+  const label = Number.isInteger(mult) ? String(mult) : String(mult).replace(/\.0$/, "");
+  return (
+    <span
+      title={`XP boost token applied (${label}\u00d7 XP)`}
+      className="ml-1 inline-block rounded-sm bg-accent/20 px-1 align-middle text-[0.5rem] font-bold leading-tight text-accent sm:text-[0.55rem]"
+    >
+      {`\u00d7${label}`}
+    </span>
   );
 }
 

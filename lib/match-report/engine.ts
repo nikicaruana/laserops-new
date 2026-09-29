@@ -66,6 +66,10 @@ export type MatchPlayer = {
   spawnKills?: number;
   spawnDamage?: number;
   totalXp: number;
+  /** Personal XP-boost token multiplier applied this match (1.5 or 2), or
+   *  null when none was used. Not set for match-wide double-XP games, where
+   *  personal boosts are not usable. */
+  xpBoost: number | null;
   gunUsed: string;
   gunUsedImage: string;
   // Per-match ranks
@@ -316,6 +320,7 @@ function buildPlayer(
     accuracy: parseNumericOr(row.raw.PlayerAccuracy, 0),
     damage: parseNumericOr(row.raw.LaserOps_Damage, 0),
     totalXp: parseNumericOr(row.raw.XP_Total, 0),
+    xpBoost: null,
     gunUsed: (row.raw.LaserOps_Gun_Used ?? "").trim(),
     gunUsedImage: (row.raw.LaserOps_Gun_Used_Image ?? "").trim(),
     scoreRank: parseNumericOr(row.raw.LaserOps_Score_Rank, 0),

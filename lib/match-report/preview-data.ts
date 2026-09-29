@@ -32,13 +32,15 @@ type Base = {
   objCaps: number; // number of captures
   capTime: number; // seconds holding bases
   streaks: MatchStreak[];
+  /** Sample personal XP-boost token multiplier (demo only). */
+  boost?: number;
 };
 
 // Leadership is deliberately spread: score=Kini, kills+accuracy=Ghost,
 // fewest-deaths=Blaze, damage=Viper, captures+hold=Rook.
 const BASE: Base[] = [
-  { nickname: "Kini", team: "Red", level: 12, score: 5010, kills: 20, deaths: 14, accuracy: 0.40, damage: 11000, totalXp: 1450, objCaps: 6, capTime: 420, streaks: [streak("kill_streak_3", "3-Streak", "3 kills in a row without dying.", 25, 2), streak("bully", "Bully", "Killing the same player 10 times in one round.", 100, 1), streak("revenge", "Revenge", "Kill the person who killed you last.", 25, 3)] },
-  { nickname: "Ghost", team: "Blue", level: 23, score: 4820, kills: 25, deaths: 12, accuracy: 0.46, damage: 10800, totalXp: 1380, objCaps: 4, capTime: 260, streaks: [streak("kill_streak_5", "5-Streak", "5 kills in a row without dying.", 50, 1), streak("first_blood", "First Blood", "First kill of a round.", 25, 1)] },
+  { nickname: "Kini", team: "Red", level: 12, score: 5010, kills: 20, deaths: 14, accuracy: 0.40, damage: 11000, totalXp: 1450, boost: 2, objCaps: 6, capTime: 420, streaks: [streak("kill_streak_3", "3-Streak", "3 kills in a row without dying.", 25, 2), streak("bully", "Bully", "Killing the same player 10 times in one round.", 100, 1), streak("revenge", "Revenge", "Kill the person who killed you last.", 25, 3)] },
+  { nickname: "Ghost", team: "Blue", level: 23, score: 4820, kills: 25, deaths: 12, accuracy: 0.46, damage: 10800, totalXp: 1380, boost: 1.5, objCaps: 4, capTime: 260, streaks: [streak("kill_streak_5", "5-Streak", "5 kills in a row without dying.", 50, 1), streak("first_blood", "First Blood", "First kill of a round.", 25, 1)] },
   { nickname: "Viper", team: "Red", level: 18, score: 4110, kills: 18, deaths: 16, accuracy: 0.38, damage: 12800, totalXp: 1180, objCaps: 3, capTime: 300, streaks: [streak("revenge", "Revenge", "Kill the person who killed you last.", 25, 1)] },
   { nickname: "Blaze", team: "Blue", level: 15, score: 3890, kills: 17, deaths: 11, accuracy: 0.36, damage: 9800, totalXp: 1090, objCaps: 4, capTime: 380, streaks: [streak("shadow", "Shadow", "A full round without dying (5+ kills to qualify).", 100, 1)] },
   { nickname: "Nova", team: "Red", level: 20, score: 3560, kills: 15, deaths: 18, accuracy: 0.33, damage: 8600, totalXp: 980, objCaps: 5, capTime: 510, streaks: [streak("captures_3", "3x Cap", "3 base captures in one round.", 25, 1)] },
@@ -160,6 +162,7 @@ function mkPlayer(b: Base, idx: number, opts: Opts, accs: Accolade[]): MatchPlay
     accuracy: b.accuracy,
     damage: b.damage,
     totalXp: b.totalXp,
+    xpBoost: b.boost ?? null,
     gunUsed: gun.name,
     gunUsedImage: gun.image,
     scoreRank: ranker("score")(b.score),

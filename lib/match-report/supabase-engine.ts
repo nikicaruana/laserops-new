@@ -65,6 +65,7 @@ type AggRow = {
   xp_from_points: number | null;
   xp_from_wins: number | null;
   xp_from_accolades: number | null;
+  xp_multiplier: number | null;
   xp_total: number | null;
   level_before: number | null;
   level_after: number | null;
@@ -199,6 +200,10 @@ export async function fetchMatchReportSupabase(
 
   const players: MatchPlayer[] = rows.map((r) => {
     const nickname = r.nickname ?? "";
+    // A personal XP-boost token shows only in non-double-XP matches (boosts
+    // are not usable when the whole match is double XP).
+    const xpMult = Number(r.xp_multiplier ?? 1) || 1;
+    const xpBoost = match.is_double_xp !== true && xpMult > 1 ? xpMult : null;
     const teamColor = r.team_colour ?? "";
     const profilePicUrl = r.profile_pic_url || DEFAULT_AVATAR_URL;
     const row: GameDataRow = {
@@ -226,6 +231,7 @@ export async function fetchMatchReportSupabase(
       spawnKills: n(r.spawn_kills),
       spawnDamage: n(r.spawn_damage),
       totalXp: n(r.xp_total),
+      xpBoost,
       gunUsed: r.gun_used ?? "",
       gunUsedImage: r.gun_used ? gunImage.get(r.gun_used) ?? "" : "",
       scoreRank: n(r.score_rank),
