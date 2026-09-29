@@ -17,9 +17,11 @@ import type { PlayerStatsRaw } from "@/lib/player-stats/shared";
 import { DEFAULT_AVATAR_URL } from "@/lib/avatar";
 import {
   ACCOLADES,
+  accoladeCountCol,
   buildAccoladesDataFromDefs,
   type AccoladesData,
   type AccoladeTier,
+  type AdminAccolade,
 } from "@/lib/player-stats/summary-accolades";
 
 /** Encode a star count into a synthetic string RatingPill can parse (_N_Star). */
@@ -121,6 +123,11 @@ function buildRow(args: {
   const accoladeColumns: Record<string, string> = {};
   for (const acc of ACCOLADES) {
     accoladeColumns[acc.sheetCol] = String(accoladeCounts.get(acc.name) ?? 0);
+  }
+  // Also key every accolade by name so admin-defined accolades (not in the
+  // static list, e.g. CAP-Tain / Fortress) flow through to the Compare page.
+  for (const [accName, accCount] of accoladeCounts) {
+    accoladeColumns[accoladeCountCol(accName)] = String(accCount);
   }
 
   return {
@@ -281,14 +288,14 @@ export async function getPlayerSummaryRow(
  */
 export async function getAllPlayerSummaryRows(
   supabase: SupabaseClient,
-): Promise<{ rows: PlayerStatsRaw[]; uniqueGunsMap: Record<string, number> }> {
+): Promise<{ rows: PlayerStatsRaw[]; uniqueGunsMap: Record<string, number>; accolades: AdminAccolade[] }> {
   const [{ data: lifeRows }, { data: ratingRows }, { data: gunRows }, { data: awardRows }, { data: accoladeDefs }, { data: ranks }, { data: allGuns }, { data: modeRow }] =
     await Promise.all([
       supabase.from("player_stats_lifetime").select(LIFETIME_COLS),
       supabase.from("player_ratings").select(`account_id, ${RATING_COLS}`),
       supabase.from("player_gun_stats").select("account_id, gun_name, rounds, total_kills"),
       supabase.from("match_awards").select("account_id, accolade_definition_id").not("account_id", "is", null),
-      supabase.from("accolade_definitions").select("id, name"),
+      supabase.from("accolade_definitions").select("id, name, description, badge_url, xp"),
       supabase.from("rank_levels").select("level, rank_name, badge_url, score_threshold").order("level"),
       supabase.from("guns").select("name, image_url"),
       supabase.from("game_modes").select("obj_slot1_stat, obj_slot2_stat").eq("is_default", true).maybeSingle(),
@@ -315,6 +322,14 @@ export async function getAllPlayerSummaryRows(
     gunsByAccount.set(g.account_id, list);
   }
 
+  const accoladeCatalogue: AdminAccolade[] = ((accoladeDefs ?? []) as { name: string | null; description: string | null; badge_url: string | null; xp: number | null }[])
+    .filter((d) => !!d.name && (d.xp === 100 || d.xp === 75 || d.xp === 50))
+    .map((d) => ({
+      name: d.name as string,
+      description: (d.description ?? "").trim(),
+      badgeUrl: (d.badge_url ?? "").trim(),
+      tier: d.xp as AccoladeTier,
+    }));
   // Per-account accolade counts by name.
   const accoladesByAccount = new Map<string, Map<string, number>>();
   const accoladeTotalByAccount = new Map<string, number>();
@@ -357,7 +372,7 @@ export async function getAllPlayerSummaryRows(
     if (nick) uniqueGunsMap[nick] = gunList.length;
   }
 
-  return { rows, uniqueGunsMap };
+  return { rows, uniqueGunsMap, accolades: accoladeCatalogue };
 }
 
 /** Distinct player nicknames for the search autocomplete. */

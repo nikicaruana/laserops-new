@@ -18,14 +18,14 @@ export const metadata: Metadata = {
  */
 export default async function ComparePlayersPage() {
   const supabase = await createClient();
-  const { rows, uniqueGunsMap } = await getAllPlayerSummaryRows(supabase);
+  const { rows, uniqueGunsMap, accolades } = await getAllPlayerSummaryRows(supabase);
 
   return (
     /* max-w-[680px] ≈ max-w-5xl shrunk by ~35% – keeps the two columns
        readable without filling the whole viewport on large screens. */
     <div className="mx-auto w-full max-w-[680px]">
       <Suspense fallback={null}>
-        <CompareView allRows={rows} uniqueGunsMap={uniqueGunsMap} />
+        <CompareView allRows={rows} uniqueGunsMap={uniqueGunsMap} accolades={accolades} />
       </Suspense>
     </div>
   );

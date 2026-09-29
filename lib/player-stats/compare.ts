@@ -16,7 +16,7 @@ import {
   RATING_UNLOCK_MIN_LEVEL,
 } from "@/lib/player-stats/summary-top";
 import { normalizeRateToPercent } from "@/lib/player-stats/summary-stats";
-import { ACCOLADES } from "@/lib/player-stats/summary-accolades";
+import { accoladeCountCol, type AdminAccolade } from "@/lib/player-stats/summary-accolades";
 
 /* ============================================================
    Types
@@ -111,6 +111,7 @@ function cmp(a: number, b: number): StatWinner {
 export function projectComparePlayer(
   row: PlayerStatsRaw,
   uniqueGunsUsed: number,
+  accolades: AdminAccolade[],
 ): ComparePlayerData {
   const profileRaw = row.Player_Stats_Profile_Pic?.trim() ?? "";
   const matchesPlayed = parseNumericOr(row.Matches_Played, 0);
@@ -128,8 +129,8 @@ export function projectComparePlayer(
   const roundsWinRatePct = roundsTotal > 0 ? (roundsWon / roundsTotal) * 100 : 0;
 
   const accoladesByName: Record<string, number> = {};
-  for (const a of ACCOLADES) {
-    accoladesByName[a.name] = parseNumericOr(row[a.sheetCol] ?? "", 0);
+  for (const a of accolades) {
+    accoladesByName[a.name] = parseNumericOr(row[accoladeCountCol(a.name)] ?? "", 0);
   }
 
   return {
@@ -181,9 +182,10 @@ export function projectComparePlayer(
 export function computeWinners(
   a: ComparePlayerData,
   b: ComparePlayerData,
+  catalogue: AdminAccolade[],
 ): CompareWinners {
   const accolades: Record<string, StatWinner> = {};
-  for (const def of ACCOLADES) {
+  for (const def of catalogue) {
     const ca = a.accoladesByName[def.name] ?? 0;
     const cb = b.accoladesByName[def.name] ?? 0;
     accolades[def.name] = cmp(ca, cb);

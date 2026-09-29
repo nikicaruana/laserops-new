@@ -266,3 +266,12 @@ export function buildAccoladesDataFromDefs(
   });
   return { totalEarned, tierGroups };
 }
+
+/**
+ * Column key that carries a player's count for one accolade (by name) inside
+ * the synthetic PlayerStatsRaw row, so admin-defined accolades flow through the
+ * Compare page without a fixed per-accolade column.
+ */
+export function accoladeCountCol(name: string): string {
+  return `Accolade_Count::${name}`;
+}

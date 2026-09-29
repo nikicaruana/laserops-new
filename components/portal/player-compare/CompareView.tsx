@@ -15,9 +15,8 @@ import {
   type StatWinner,
 } from "@/lib/player-stats/compare";
 import {
-  ACCOLADES,
-  type AccoladeDefinition,
   type AccoladeTier,
+  type AdminAccolade,
 } from "@/lib/player-stats/summary-accolades";
 import { RatingPill } from "@/components/portal/player-summary/RatingPill";
 import { AnimatedValue } from "@/components/portal/player-summary/AnimatedValue";
@@ -30,9 +29,11 @@ type Props = {
   allRows: PlayerStatsRaw[];
   /** lowercased-nickname → unique-gun-count, computed server-side. */
   uniqueGunsMap: Record<string, number>;
+  /** Admin accolade catalogue (accolade_definitions), tiers 100/75/50. */
+  accolades: AdminAccolade[];
 };
 
-export function CompareView({ allRows, uniqueGunsMap }: Props) {
+export function CompareView({ allRows, uniqueGunsMap, accolades }: Props) {
   const searchParams = useSearchParams();
   const opsParam = searchParams.get("ops") ?? "";
   const compareParam = searchParams.get("compare") ?? "";
@@ -68,6 +69,7 @@ export function CompareView({ allRows, uniqueGunsMap }: Props) {
         ? projectComparePlayer(
             rowA,
             uniqueGunsMap[rowA.Player_Stats_Nickname.trim().toLowerCase()] ?? 0,
+            accolades,
           )
         : null,
     [rowA, uniqueGunsMap],
@@ -78,6 +80,7 @@ export function CompareView({ allRows, uniqueGunsMap }: Props) {
         ? projectComparePlayer(
             rowB,
             uniqueGunsMap[rowB.Player_Stats_Nickname.trim().toLowerCase()] ?? 0,
+            accolades,
           )
         : null,
     [rowB, uniqueGunsMap],
@@ -85,7 +88,7 @@ export function CompareView({ allRows, uniqueGunsMap }: Props) {
 
   // Compute winners only when both players are present.
   const winners = useMemo(
-    () => (playerA && playerB ? computeWinners(playerA, playerB) : null),
+    () => (playerA && playerB ? computeWinners(playerA, playerB, accolades) : null),
     [playerA, playerB],
   );
 
@@ -318,7 +321,7 @@ export function CompareView({ allRows, uniqueGunsMap }: Props) {
 
           {/* Per-tier accolade cards */}
           {([100, 75, 50] as AccoladeTier[]).map((tier) => {
-            const tierDefs = ACCOLADES.filter((a) => a.tier === tier);
+            const tierDefs = accolades.filter((a) => a.tier === tier);
             // Only show accolades where at least one player has earned ≥1
             const visibleDefs = tierDefs.filter(
               (def) =>
@@ -633,7 +636,7 @@ function AccoladeRow({
   countB,
   winner,
 }: {
-  def: AccoladeDefinition;
+  def: AdminAccolade;
   countA: number;
   countB: number;
   winner: StatWinner;
@@ -659,7 +662,7 @@ function AccoladeCell({
   count,
   highlight,
 }: {
-  def: AccoladeDefinition;
+  def: AdminAccolade;
   count: number;
   highlight: string;
 }) {
@@ -670,8 +673,9 @@ function AccoladeCell({
         highlight,
       )}
     >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={def.iconPath}
+        src={cldImage(def.badgeUrl, { w: 224 })}
         alt={`${def.name} accolade`}
         loading="lazy"
         decoding="async"
