@@ -36,6 +36,7 @@ const PLAYER_STATS_TABS = [
   { label: "Summary", href: "/player-portal/player-stats/summary" },
   { label: "History", href: "/player-portal/player-stats/history" },
   { label: "Rivalries", href: "/player-portal/player-stats/rivalries" },
+  { label: "Achievements", href: "/player-portal/player-stats/achievements" },
   { label: "Armory", href: "/player-portal/player-stats/armory" },
   { label: "Last Match", href: "/player-portal/player-stats/last-match" },
   { label: "Compare", href: "/player-portal/player-stats/compare" },
