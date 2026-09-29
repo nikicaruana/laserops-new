@@ -24,6 +24,12 @@ import {
 } from "@/lib/leaderboards/supabase-hall-of-fame";
 import { getPeriodRowsFromSupabase } from "@/lib/leaderboards/supabase-period";
 import { getXpLevelsFromSupabase } from "@/lib/leaderboards/supabase-xp-levels";
+import { getActiveSeason } from "@/lib/cms/seasons";
+import {
+  getSeasonsFromSupabase,
+  getChallengesFromSupabase,
+  getSeasonChallengeData,
+} from "@/lib/leaderboards/supabase-challenges";
 
 const REVALIDATE = 1800; // 30 minutes
 const TAGS = ["leaderboards", "sheets"];
@@ -72,5 +78,42 @@ export const getCachedPeriodRows = unstable_cache(
 export const getCachedXpLevels = unstable_cache(
   async () => getXpLevelsFromSupabase(createPublicClient()),
   ["lb-xp-levels-v1"],
+  opts,
+);
+
+export type CurrentSeasonChallengeLeaders = {
+  seasonName: string;
+  challenges: { name: string; metricLabel: string; top: { rank: number; nickname: string; formatted: string }[] }[];
+};
+
+function humanizeMetric(metric: string): string {
+  return metric.replace(/^(Total_|Season_|Max_|LaserOps_|Player)/i, "").replace(/_/g, " ").trim();
+}
+function fmtNum(v: number): string {
+  return Number.isInteger(v) ? v.toLocaleString("en-US") : v.toFixed(2);
+}
+
+/** Current (active) season challenge standings, top 10 per challenge. */
+export const getCachedCurrentSeasonChallenges = unstable_cache(
+  async (): Promise<CurrentSeasonChallengeLeaders | null> => {
+    const sb = createPublicClient();
+    const seasons = await getSeasonsFromSupabase(sb);
+    const active = getActiveSeason(seasons);
+    if (!active) return null;
+    const challenges = await getChallengesFromSupabase(sb, active.number);
+    if (challenges.length === 0) return null;
+    const data = await getSeasonChallengeData(sb, active, challenges);
+    return {
+      seasonName: active.name,
+      challenges: data
+        .filter((cd) => cd.entries.length > 0)
+        .map((cd) => ({
+          name: cd.challenge.name,
+          metricLabel: cd.challenge.sourceMode === "gun_threshold_count" ? "guns" : humanizeMetric(cd.challenge.metric),
+          top: cd.entries.slice(0, 10).map((e) => ({ rank: e.rank, nickname: e.nickname, formatted: fmtNum(e.metricValue) })),
+        })),
+    };
+  },
+  ["lb-current-season-challenges-v1"],
   opts,
 );
