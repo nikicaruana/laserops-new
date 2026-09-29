@@ -14,6 +14,7 @@
  *     winners are marshal-entered on matches.offline_round_results).
  */
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { parseRound } from "@/lib/ingestion/round-parser";
@@ -159,5 +160,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   const { error: rollupErr } = await supabase.rpc("rollup_match_careers");
   if (rollupErr) return NextResponse.json({ error: `Scores saved, but the career rollup failed: ${rollupErr.message}` }, { status: 500 });
 
+  // Refresh the cached, player-agnostic leaderboard/Hall of Fame boards.
+  revalidateTag("leaderboards");
   return NextResponse.json({ ok: true, players: result.aggregates.length, awards: result.awards.length, winner: result.winnerColour });
 }

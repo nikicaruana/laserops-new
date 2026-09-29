@@ -6,15 +6,13 @@ import { AllTimeRecordsSection } from "@/components/portal/hall-of-fame/AllTimeR
 import { WeaponMastersSection } from "@/components/portal/hall-of-fame/WeaponMastersSection";
 import { AccoladeLeadersSection } from "@/components/portal/hall-of-fame/AccoladeLeadersSection";
 import { StreakLeadersSection } from "@/components/portal/hall-of-fame/StreakLeadersSection";
-import { createClient } from "@/lib/supabase/server";
-import { getWeaponsFromSupabase } from "@/lib/cms/supabase-weapons";
 import {
-  getHallOfFameChampions,
-  getAllTimeRecords,
-  getWeaponMasters,
-  getAccoladeLeaders,
-  getStreakLeaders,
-} from "@/lib/leaderboards/supabase-hall-of-fame";
+  getCachedHallOfFameChampions,
+  getCachedAllTimeRecords,
+  getCachedWeaponMasters,
+  getCachedAccoladeLeaders,
+  getCachedStreakLeaders,
+} from "@/lib/leaderboards/hall-of-fame-cached";
 
 export const metadata: Metadata = {
   title: "Hall of Fame",
@@ -35,18 +33,16 @@ export default async function HallOfFameLeaderboardPage({
   searchParams: Promise<{ tab?: string }>;
 }) {
   const { tab } = await searchParams;
-  const supabase = await createClient();
-  // Weapon catalogue (image + sort order) still comes from the CMS; the
-  // records/masters themselves come from Supabase. Catch per-section so one
-  // flaky dataset shows its own empty state instead of failing the whole page.
-  const weapons = await getWeaponsFromSupabase();
+  // Data is cached (30-min window, shared across all viewers) since these boards
+  // are player-agnostic. Catch per-section so one flaky dataset shows its own
+  // empty state instead of failing the whole page.
   const [champions, allTimeRecords, weaponMasters, accoladeLeaders, streakLeaders] =
     await Promise.all([
-      getHallOfFameChampions(supabase).catch(() => []),
-      getAllTimeRecords(supabase).catch(() => []),
-      getWeaponMasters(supabase, weapons).catch(() => []),
-      getAccoladeLeaders(supabase).catch(() => []),
-      getStreakLeaders(supabase).catch(() => []),
+      getCachedHallOfFameChampions().catch(() => []),
+      getCachedAllTimeRecords().catch(() => []),
+      getCachedWeaponMasters().catch(() => []),
+      getCachedAccoladeLeaders().catch(() => []),
+      getCachedStreakLeaders().catch(() => []),
     ]);
 
   return (

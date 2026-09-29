@@ -15,17 +15,15 @@
  *   5. Accolade Leaders  – top-3 most-earned per accolade
  *   6. Streak Leaders    – top-3 most-earned per streak
  */
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { getWeaponsFromSupabase } from "@/lib/cms/supabase-weapons";
 import {
-  getHallOfFameChampions,
-  getAllTimeRecords,
-  getWeaponMasters,
-  getAccoladeLeaders,
-  getStreakLeaders,
-} from "@/lib/leaderboards/supabase-hall-of-fame";
-import { getPeriodRowsFromSupabase } from "@/lib/leaderboards/supabase-period";
-import { getXpLevelsFromSupabase } from "@/lib/leaderboards/supabase-xp-levels";
+  getCachedHallOfFameChampions,
+  getCachedAllTimeRecords,
+  getCachedWeaponMasters,
+  getCachedAccoladeLeaders,
+  getCachedStreakLeaders,
+  getCachedPeriodRows,
+  getCachedXpLevels,
+} from "@/lib/leaderboards/hall-of-fame-cached";
 import { aggregateKills } from "@/lib/leaderboards/kills";
 import { aggregateScore } from "@/lib/leaderboards/score";
 import { aggregateDamage } from "@/lib/leaderboards/damage";
@@ -57,23 +55,22 @@ export type PlayerAchievements = {
 const LEADERBOARD_TOP = 10;
 
 export async function getPlayerAchievements(
-  supabase: SupabaseClient,
   opsTag: string,
 ): Promise<PlayerAchievements | null> {
   const key = opsTag.trim().toLowerCase();
   if (key === "") return null;
   const match = (n: string | null | undefined) => (n ?? "").trim().toLowerCase() === key;
 
-  const weapons = await getWeaponsFromSupabase();
+  // All sources are cached, player-agnostic boards; we filter to the player here.
   const [champions, allTimeRecords, weaponMasters, accoladeLeaders, streakLeaders, periodRows, xpLevels] =
     await Promise.all([
-      getHallOfFameChampions(supabase).catch(() => []),
-      getAllTimeRecords(supabase).catch(() => []),
-      getWeaponMasters(supabase, weapons).catch(() => []),
-      getAccoladeLeaders(supabase).catch(() => []),
-      getStreakLeaders(supabase).catch(() => []),
-      getPeriodRowsFromSupabase(supabase).catch(() => []),
-      getXpLevelsFromSupabase(supabase).catch(() => []),
+      getCachedHallOfFameChampions().catch(() => []),
+      getCachedAllTimeRecords().catch(() => []),
+      getCachedWeaponMasters().catch(() => []),
+      getCachedAccoladeLeaders().catch(() => []),
+      getCachedStreakLeaders().catch(() => []),
+      getCachedPeriodRows().catch(() => []),
+      getCachedXpLevels().catch(() => []),
     ]);
 
   let displayNick = opsTag.trim();

@@ -7,7 +7,6 @@
  * Reads ?ops= (set by the shared player-stats search bar).
  */
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
 import { getPlayerAchievements } from "@/lib/leaderboards/player-achievements";
 import { PlayerAchievementsView } from "@/components/portal/achievements/PlayerAchievementsView";
 
@@ -23,8 +22,7 @@ export default async function AchievementsPage({
 
   if (opsTag === "") return <SearchPrompt />;
 
-  const supabase = await createClient();
-  const data = await getPlayerAchievements(supabase, opsTag);
+  const data = await getPlayerAchievements(opsTag);
   if (!data) return <SearchPrompt />;
 
   return (
