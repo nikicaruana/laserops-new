@@ -102,8 +102,18 @@ export function XpCelebration() {
     const now = Date.now();
     if (!force && !preview && now - lastCheckRef.current < CHECK_THROTTLE_MS) return;
     lastCheckRef.current = now;
+    let url = "/api/xp-celebration";
+    if (preview) {
+      url += "?preview=1";
+      try {
+        const toLevel = new URLSearchParams(window.location.search).get("toLevel");
+        if (toLevel) url += `&toLevel=${encodeURIComponent(toLevel)}`;
+      } catch {
+        /* ignore */
+      }
+    }
     try {
-      const r = await fetch(`/api/xp-celebration${preview ? "?preview=1" : ""}`);
+      const r = await fetch(url);
       const j = (await r.json()) as { pending: PendingCelebration | null };
       if (j?.pending && j.pending.matchIds.length > 0) setData(j.pending);
     } catch {

@@ -9,7 +9,10 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { getPendingXpCelebration } from "@/lib/xp/celebration";
 
 export async function GET(request: Request) {
-  const preview = new URL(request.url).searchParams.get("preview") === "1";
+  const params = new URL(request.url).searchParams;
+  const preview = params.get("preview") === "1";
+  const toLevelRaw = Number(params.get("toLevel"));
+  const overrideEndLevel = preview && Number.isFinite(toLevelRaw) && toLevelRaw > 0 ? Math.floor(toLevelRaw) : undefined;
   const supabase = await createClient();
   const {
     data: { user },
@@ -31,6 +34,7 @@ export async function GET(request: Request) {
     acct.id as string,
     ((acct.ops_tag as string) ?? "").trim() || "Player",
     preview,
+    overrideEndLevel,
   );
   return Response.json({ pending });
 }

@@ -60,6 +60,8 @@ export async function getPendingXpCelebration(
   nickname: string,
   /** Preview: ignore the seen ledger so the full-history celebration always shows. */
   ignoreSeen = false,
+  /** Preview only: simulate reaching this level (to preview higher-level unlocks). */
+  overrideEndLevel?: number,
 ): Promise<PendingCelebration | null> {
   const [{ data: celeb }, { data: mpa }] = await Promise.all([
     ignoreSeen
@@ -93,13 +95,18 @@ export async function getPendingXpCelebration(
   // re-check is cheap and correct once real XP lands).
   if (endXp - startXp <= 0 && endLevel <= startLevel) return null;
 
+  // Preview override: simulate reaching a higher level so higher-level unlocks
+  // (e.g. game tokens, first at level 15) can be previewed before a player gets
+  // there. endXp is recomputed from the thresholds below.
+  const effEnd = ignoreSeen && overrideEndLevel && overrideEndLevel > endLevel ? overrideEndLevel : endLevel;
+
   const [{ data: rl }, { data: ul }, { data: life }, { data: ri }] = await Promise.all([
-    svc.from("rank_levels").select("level, score_threshold, badge_url").gte("level", startLevel).lte("level", endLevel + 1).order("level"),
+    svc.from("rank_levels").select("level, score_threshold, badge_url").gte("level", startLevel).lte("level", effEnd + 1).order("level"),
     svc
       .from("level_unlocks")
       .select("level, title, description, icon_url, reward_tokens, reward_double_xp, reward_xp_1_5")
       .gt("level", startLevel)
-      .lte("level", endLevel)
+      .lte("level", effEnd)
       .eq("is_active", true)
       .order("level"),
     svc.from("player_stats_lifetime").select("profile_pic_url").eq("account_id", accountId).maybeSingle(),
@@ -141,15 +148,26 @@ export async function getPendingXpCelebration(
     // Only show levels that actually have something configured.
     .filter((u) => u.title !== "" || u.description !== "" || u.rewardTokens > 0 || u.rewardDoubleXp > 0 || u.rewardXp15 > 0);
 
+  // If previewing a higher target level, end the bar ~35% into that level.
+  let finalEndLevel = endLevel;
+  let finalEndXp = endXp;
+  if (effEnd !== endLevel) {
+    finalEndLevel = effEnd;
+    const thr = new Map(levels.map((l) => [l.level, l.threshold]));
+    const base = thr.get(effEnd) ?? endXp;
+    const next = thr.get(effEnd + 1);
+    finalEndXp = next != null ? Math.round(base + (next - base) * 0.35) : base + 1;
+  }
+
   return {
     nickname,
     profilePicUrl,
     gamesCount: rows.length,
     startXp,
-    endXp,
+    endXp: finalEndXp,
     startLevel,
-    endLevel,
-    leveledUp: endLevel > startLevel,
+    endLevel: finalEndLevel,
+    leveledUp: finalEndLevel > startLevel,
     levels,
     unlocks,
     rewardImages,
