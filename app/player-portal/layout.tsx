@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { XpCelebration } from "@/components/portal/XpCelebration";
 
 /**
  * Player Portal layout.
@@ -24,5 +25,10 @@ export const metadata: Metadata = {
 };
 
 export default function PlayerPortalLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return (
+    <>
+      <XpCelebration />
+      {children}
+    </>
+  );
 }
