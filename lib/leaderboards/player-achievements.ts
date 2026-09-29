@@ -60,7 +60,11 @@ export type AchievementItem = {
 export type WeaponAchievement = {
   weaponName: string;
   imageUrl: string;
+  /** Whether the viewed player is this gun's overall Weapon Master. */
   isMaster: boolean;
+  /** Who holds the overall Weapon Master (highest career score), or "". */
+  masterNickname: string;
+  /** e.g. "16,585 total score" – the master's career score. */
   masterDetail?: string;
   items: AchievementItem[];
   href: string;
@@ -172,7 +176,10 @@ export async function getPlayerAchievements(opsTag: string): Promise<PlayerAchie
         weaponName: w.weaponName,
         imageUrl: w.imageUrl,
         isMaster,
-        masterDetail: isMaster && w.master ? `${w.master.formatted} career score` : undefined,
+        // Always surface the overall Weapon Master (highest career score), even
+        // when it isn't the viewed player, as context for the gun.
+        masterNickname: w.master?.nickname ?? "",
+        masterDetail: w.master ? `${w.master.formatted} total score` : undefined,
         items: items.sort(byRank),
         href: HREF.weapons,
       });
@@ -209,7 +216,7 @@ export async function getPlayerAchievements(opsTag: string): Promise<PlayerAchie
   };
   pushList("season", "Season Champion", "Top-2 finishes in a completed-season challenge.", HREF.season, season);
   pushList("current-season", "Current Season Challenges", "Top-10 in the active season's challenges.", HREF.challenges, currentSeasonItems);
-  pushList("leaderboards", "Leaderboard Rankings", "Top-10 placings on the all-time leaderboards.", HREF.leaderboards, leaderboards);
+  pushList("leaderboards", "All-Time Leaderboard Rankings", "Top-10 placings on the all-time leaderboards.", HREF.leaderboards, leaderboards);
   pushList("records", "All-Time Records", "Best single-game performances ever recorded.", HREF.records, records);
   if (weapons.length > 0) {
     sections.push({ kind: "weapons", key: "weapons", title: "Weapon Mastery", blurb: "Tap a weapon to see its mastery and records.", href: HREF.weapons, weapons });

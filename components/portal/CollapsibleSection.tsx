@@ -37,6 +37,8 @@ type CollapsibleSectionProps = {
    * minimal and matches the platform's native behavior.
    */
   defaultOpen?: boolean;
+  /** "center" (default) or "responsive" = left on mobile, centered on desktop. */
+  align?: "center" | "responsive";
   /** The collapsible content – typically a leaderboard table. */
   children: ReactNode;
   /** Optional pass-through for layout containers wrapping the section. */
@@ -46,6 +48,7 @@ type CollapsibleSectionProps = {
 export function CollapsibleSection({
   title,
   defaultOpen = true,
+  align = "center",
   children,
   className,
 }: CollapsibleSectionProps) {
@@ -60,8 +63,8 @@ export function CollapsibleSection({
           "list-none [&::-webkit-details-marker]:hidden",
           // Layout: indicator + title, click target spans full row
           "flex cursor-pointer select-none items-center gap-3 py-3",
-          // Centered to match the rest of the player-portal aesthetic
-          "justify-center",
+          // Centered by default; "responsive" left-aligns on mobile.
+          align === "responsive" ? "justify-start sm:justify-center" : "justify-center",
         )}
       >
         {/* Yellow chevron – points right when collapsed, rotates 90° to point
@@ -77,7 +80,7 @@ export function CollapsibleSection({
         >
           <path d="M4 2l4 4-4 4" strokeLinecap="square" strokeLinejoin="miter" />
         </svg>
-        <h2 className="text-2xl font-extrabold leading-tight tracking-tight sm:text-3xl">
+        <h2 className={cn("text-2xl font-extrabold leading-tight tracking-tight sm:text-3xl", align === "responsive" && "text-left sm:text-center")}>
           {title}
         </h2>
       </summary>

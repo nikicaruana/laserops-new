@@ -73,28 +73,53 @@ export function WeaponAchievementsAccordion({ weapons }: { weapons: WeaponAchiev
             </Link>
           </div>
 
-          {current.isMaster ? (
-            <div className="mt-3 flex items-center gap-3 border border-accent bg-accent/[0.06] p-3">
-              <Placing rank={1} />
+          {/* Overall Weapon Master (highest career score) – gold when it's the
+              viewed player (counts as their achievement), context otherwise. */}
+          {current.masterNickname ? (
+            <div
+              className={`mt-3 flex items-center gap-3 border p-3 ${
+                current.isMaster ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-bg"
+              }`}
+            >
+              {current.isMaster ? (
+                <Placing rank={1} />
+              ) : (
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm border border-border bg-bg-elevated text-[0.5rem] font-bold uppercase tracking-[0.06em] text-text-subtle sm:h-10 sm:w-10">
+                  WM
+                </span>
+              )}
               <div className="min-w-0">
-                <p className="text-[0.6rem] font-bold uppercase tracking-[0.14em] text-accent">Weapon Master</p>
-                {current.masterDetail ? <p className="mt-0.5 text-xs text-text-muted">{current.masterDetail}</p> : null}
+                <p
+                  className={`text-[0.6rem] font-bold uppercase tracking-[0.14em] ${
+                    current.isMaster ? "text-accent" : "text-text-subtle"
+                  }`}
+                >
+                  Weapon Master{current.isMaster ? "" : ` · ${current.masterNickname}`}
+                </p>
+                <p className="mt-0.5 text-xs text-text-muted">
+                  Highest career score with this gun{current.masterDetail ? ` · ${current.masterDetail}` : ""}.
+                </p>
               </div>
             </div>
           ) : null}
 
           {current.items.length > 0 ? (
-            <ul className="mt-3 space-y-2">
-              {current.items.map((it, i) => (
-                <li key={`${current.weaponName}-${i}`} className="flex items-center gap-3">
-                  <Placing rank={it.rank} />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-text">{it.label}</p>
-                    {it.detail ? <p className="truncate text-xs text-text-muted">{it.detail}</p> : null}
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <>
+              <p className="mt-4 text-xs text-text-subtle">
+                These are one-off game records, each set in a single match.
+              </p>
+              <ul className="mt-2 space-y-2">
+                {current.items.map((it, i) => (
+                  <li key={`${current.weaponName}-${i}`} className="flex items-center gap-3">
+                    <Placing rank={it.rank} />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-text">{it.label}</p>
+                      {it.detail ? <p className="truncate text-xs text-text-muted">{it.detail}</p> : null}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </>
           ) : null}
         </div>
       ) : null}

@@ -53,7 +53,7 @@ export const getCachedWeaponMasters = unstable_cache(
     const weapons = await getWeaponsFromSupabase();
     return getWeaponMasters(sb, weapons);
   },
-  ["hof-weapon-masters-v1"],
+  ["hof-weapon-masters-v2"],
   opts,
 );
 

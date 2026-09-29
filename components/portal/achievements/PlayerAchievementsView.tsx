@@ -18,6 +18,11 @@ export function PlayerAchievementsView({ data }: { data: PlayerAchievements }) {
     <div className="space-y-6">
       <Header nickname={data.nickname} profilePicUrl={data.profilePicUrl} total={data.totalCount} />
 
+      <p className="text-left text-sm leading-relaxed text-text-muted sm:text-center">
+        See where <span className="font-semibold text-text">{data.nickname}</span> left their mark in the
+        community&apos;s all-time and seasonal records and accomplishments.
+      </p>
+
       {data.totalCount === 0 ? (
         <div className="portal-card px-6 py-12 text-center">
           <p className="text-sm font-semibold uppercase tracking-[0.14em] text-text-muted">No achievements yet</p>
@@ -28,9 +33,13 @@ export function PlayerAchievementsView({ data }: { data: PlayerAchievements }) {
       ) : (
         <div className="space-y-2">
           {data.sections.map((section) => (
-            <CollapsibleSection key={section.key} title={<SectionTitle title={section.title} count={sectionCount(section)} />}>
+            <CollapsibleSection
+              key={section.key}
+              align="responsive"
+              title={<SectionTitle title={section.title} count={sectionCount(section)} />}
+            >
               <div className="mx-auto max-w-3xl">
-                <p className="mb-4 text-center text-xs text-text-subtle">{section.blurb}</p>
+                <p className="mb-4 text-left text-xs text-text-subtle sm:text-center">{section.blurb}</p>
                 {section.kind === "weapons" ? (
                   <WeaponAchievementsAccordion weapons={section.weapons} />
                 ) : (
@@ -40,7 +49,7 @@ export function PlayerAchievementsView({ data }: { data: PlayerAchievements }) {
                     ))}
                   </ul>
                 )}
-                <div className="mt-4 text-center">
+                <div className="mt-4 text-left sm:text-center">
                   <Link href={section.href} className="text-xs font-bold uppercase tracking-[0.12em] text-accent hover:text-accent-soft">
                     View full board →
                   </Link>

@@ -367,8 +367,7 @@ export async function getWeaponMasters(
   supabase: SupabaseClient,
   weapons: Weapon[],
 ): Promise<WeaponRecords[]> {
-  const [armoryRes, mpaRes, lifeRes, matchRes] = await Promise.all([
-    supabase.from("player_armory").select("gun_name, nickname, profile_pic_url, score_total"),
+  const [mpaRes, lifeRes, matchRes] = await Promise.all([
     supabase
       .from("match_player_aggregate")
       .select("gun_used, score, frags, kd, accuracy, damage, match_rating, shots, captures, hold_seconds, account_id, match_id"),
@@ -376,28 +375,11 @@ export async function getWeaponMasters(
     supabase.from("matches").select("id, match_code"),
   ]);
 
-  // Career master per gun = highest player_armory score_total.
+  // Career Weapon Master per gun = highest summed match score with that gun.
+  // (v2 note: player_armory.score_total is a legacy import that is not
+  // populated, so career score is derived from match_player_aggregate.)
   const masterByGun = new Map<string, WeaponMaster>();
-  for (const a of (armoryRes.data ?? []) as {
-    gun_name: string | null;
-    nickname: string | null;
-    profile_pic_url: string | null;
-    score_total: number | null;
-  }[]) {
-    const gun = (a.gun_name ?? "").trim().toLowerCase();
-    const nick = (a.nickname ?? "").trim();
-    const score = a.score_total ?? 0;
-    if (gun === "" || score <= 0 || nick === "" || isUnclaimedNickname(nick)) continue;
-    const existing = masterByGun.get(gun);
-    if (!existing || score > existing.scoreTotal) {
-      masterByGun.set(gun, {
-        nickname: nick,
-        profilePicUrl: (a.profile_pic_url ?? "").trim() || FALLBACK_PROFILE_PIC,
-        scoreTotal: score,
-        formatted: fmtInt(score),
-      });
-    }
-  }
+  const careerScoreByGun = new Map<string, Map<string, number>>();
 
   // account_id -> display, match_id -> match_code.
   const lifeByAccount = new Map<string, { nickname: string; pic: string }>();
@@ -454,6 +436,31 @@ export async function getWeaponMasters(
     const arr = rowsByGun.get(gun);
     if (arr) arr.push(row);
     else rowsByGun.set(gun, [row]);
+    // Accumulate career score per (gun, account) for the Weapon Master.
+    const perAcct = careerScoreByGun.get(gun) ?? new Map<string, number>();
+    perAcct.set(r.account_id, (perAcct.get(r.account_id) ?? 0) + (r.score ?? 0));
+    careerScoreByGun.set(gun, perAcct);
+  }
+
+  // Resolve the Weapon Master per gun from the accumulated career scores.
+  for (const [gun, perAcct] of careerScoreByGun) {
+    let bestAcct = "";
+    let bestScore = 0;
+    for (const [acct, sum] of perAcct) {
+      if (sum > bestScore) {
+        bestScore = sum;
+        bestAcct = acct;
+      }
+    }
+    if (bestAcct === "" || bestScore <= 0) continue;
+    const life = lifeByAccount.get(bestAcct);
+    if (!life || life.nickname === "" || isUnclaimedNickname(life.nickname)) continue;
+    masterByGun.set(gun, {
+      nickname: life.nickname,
+      profilePicUrl: life.pic,
+      scoreTotal: bestScore,
+      formatted: fmtInt(bestScore),
+    });
   }
 
   const out: WeaponRecords[] = [];
