@@ -11,11 +11,12 @@
  * Mounted once in the player-portal layout. A per-session guard stops it from
  * re-checking on every navigation.
  */
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { cldImage } from "@/lib/cld";
 import type { PendingCelebration } from "@/lib/xp/celebration";
 
-const SESSION_KEY = "xpCelebrationChecked";
+const CHECK_THROTTLE_MS = 15000;
 const TOTAL_MS = 2800;
 
 type Slice = {
@@ -76,10 +77,21 @@ export function XpCelebration() {
   const slicesRef = useRef<Slice[]>([]);
   const rafRef = useRef<number | null>(null);
   const previewRef = useRef(false);
+  const lastCheckRef = useRef(0);
+  const dataRef = useRef<PendingCelebration | null>(null);
+  dataRef.current = data;
+  const pathname = usePathname();
+  const pathnameRef = useRef(pathname);
+  pathnameRef.current = pathname;
 
-  // Fetch once per browser session (or every time in ?xppreview=1 preview mode).
-  useEffect(() => {
-    let cancelled = false;
+  // Re-check for a pending celebration eagerly (mount, tab focus/visibility, and
+  // navigation) rather than once per session, so it also fires right after an
+  // account claim or a freshly-scored match while the player is already using the
+  // app. The seen ledger prevents showing the same one twice; the onboarding page
+  // is skipped so it doesn't interrupt sign-up. Throttled to avoid spamming.
+  const check = useCallback(async (force = false) => {
+    if (dataRef.current) return; // already showing
+    if ((pathnameRef.current ?? "").includes("/onboarding")) return;
     let preview = false;
     try {
       preview = new URLSearchParams(window.location.search).get("xppreview") === "1";
@@ -87,24 +99,36 @@ export function XpCelebration() {
       /* ignore */
     }
     previewRef.current = preview;
-    if (!preview) {
-      try {
-        if (sessionStorage.getItem(SESSION_KEY)) return;
-        sessionStorage.setItem(SESSION_KEY, "1");
-      } catch {
-        /* private mode: fall through and check anyway */
-      }
+    const now = Date.now();
+    if (!force && !preview && now - lastCheckRef.current < CHECK_THROTTLE_MS) return;
+    lastCheckRef.current = now;
+    try {
+      const r = await fetch(`/api/xp-celebration${preview ? "?preview=1" : ""}`);
+      const j = (await r.json()) as { pending: PendingCelebration | null };
+      if (j?.pending && j.pending.matchIds.length > 0) setData(j.pending);
+    } catch {
+      /* ignore */
     }
-    fetch(`/api/xp-celebration${preview ? "?preview=1" : ""}`)
-      .then((r) => r.json())
-      .then((j: { pending: PendingCelebration | null }) => {
-        if (!cancelled && j?.pending && j.pending.matchIds.length > 0) setData(j.pending);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
   }, []);
+
+  useEffect(() => {
+    check(true);
+    const onFocus = () => check();
+    const onVis = () => {
+      if (document.visibilityState === "visible") check();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [check]);
+
+  // Re-check on navigation (a natural "started using the app" signal), throttled.
+  useEffect(() => {
+    check();
+  }, [pathname, check]);
 
   // Run the bar animation once data arrives.
   useEffect(() => {
