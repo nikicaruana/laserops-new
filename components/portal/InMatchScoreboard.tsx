@@ -141,9 +141,12 @@ export function InMatchScoreboard({ scoreboard, me }: { scoreboard: Scoreboard; 
           )}
         </div>
 
+        {/* Desktop: table on the left, selected-player detail on the right.
+            Mobile: normal stack (card, streaks, table, nemesis, kills). */}
+        <div className="mt-4 lg:grid lg:grid-cols-[minmax(0,1fr)_23rem] lg:items-start lg:gap-x-6 lg:gap-y-4">
         {/* Selected player's card */}
         {selected && (
-          <div className="mt-4 border border-accent bg-accent/10 p-4">
+          <div className="border border-accent bg-accent/10 p-4 lg:col-start-2 lg:row-start-1">
             <div className="flex items-center gap-3">
               <span className="relative block h-11 w-11 shrink-0 overflow-hidden rounded-sm border border-accent bg-bg-overlay">
                 {selected.avatarUrl ? (
@@ -190,7 +193,7 @@ export function InMatchScoreboard({ scoreboard, me }: { scoreboard: Scoreboard; 
 
         {/* Streaks – icon-only, horizontally scrollable */}
         {selected && selected.streaks.length > 0 && (
-          <div className="mt-4">
+          <div className="mt-4 lg:mt-0 lg:col-start-2 lg:row-start-2">
             <p className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-text-muted">Streaks</p>
             <div className="mt-2 flex gap-0 overflow-x-auto px-1 pb-1 pt-3">
               {selected.streaks.map((s) => (
@@ -215,8 +218,8 @@ export function InMatchScoreboard({ scoreboard, me }: { scoreboard: Scoreboard; 
         )}
 
         {/* Everyone's performance – tap a row to load that player above */}
-        <div className="mt-4 overflow-x-auto">
-          <table className="w-auto border-collapse text-sm">
+        <div className="mt-4 overflow-x-auto lg:mt-0 lg:col-start-1 lg:row-start-1 lg:row-span-4 lg:self-start">
+          <table className="w-auto border-collapse text-sm lg:w-full">
             <thead>
               <tr className="border-b border-border-strong text-[0.6rem] uppercase tracking-[0.06em] text-text-muted">
                 <Th align="right">#</Th>
@@ -279,7 +282,7 @@ export function InMatchScoreboard({ scoreboard, me }: { scoreboard: Scoreboard; 
 
         {/* Nemesis + head-to-head for the selected player */}
         {selected?.nemesis && (
-          <div className="mt-5 border border-border bg-bg-overlay/60 px-4 py-4">
+          <div className="mt-5 border border-border bg-bg-overlay/60 px-4 py-4 lg:mt-0 lg:col-start-2 lg:row-start-3">
             <p className="mb-3 text-center text-[0.65rem] font-bold uppercase tracking-[0.16em] text-text-muted">Round Nemesis</p>
             <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4">
               <div className="flex items-center gap-3">
@@ -310,11 +313,12 @@ export function InMatchScoreboard({ scoreboard, me }: { scoreboard: Scoreboard; 
         )}
 
         {selected && (selected.killed.length > 0 || selected.killedBy.length > 0) && (
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:mt-0 lg:col-start-2 lg:row-start-4 lg:grid-cols-1">
             <KillList title={`Players ${selected.name} killed`} rows={selected.killed} tone="accent" />
             <KillList title={`Players who killed ${selected.name}`} rows={selected.killedBy} tone="red" />
           </div>
         )}
+        </div>
       </div>
     </section>
   );

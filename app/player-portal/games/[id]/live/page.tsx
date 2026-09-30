@@ -56,7 +56,7 @@ export default async function LiveGamePage({ params }: { params: Promise<{ id: s
     : { label: "", date: null, rounds: [] };
 
   return (
-    <Container size="narrow" className="py-4 sm:py-6">
+    <Container size="default" className="py-4 sm:py-6">
       {isLive && <LiveRosterRefresh matchId={match.id} />}
       <div className="mx-auto max-w-lg">
         <div className="mb-4 text-center">
@@ -98,13 +98,15 @@ export default async function LiveGamePage({ params }: { params: Promise<{ id: s
             </Link>
           </div>
         ) : null}
+      </div>
 
-        {scoreboard.rounds.length > 0 && (
-          <div className="mt-6">
-            <InMatchScoreboard scoreboard={scoreboard} me={account.ops_tag ?? null} />
-          </div>
-        )}
+      {scoreboard.rounds.length > 0 && (
+        <div className="mx-auto mt-6 max-w-lg lg:max-w-none">
+          <InMatchScoreboard scoreboard={scoreboard} me={account.ops_tag ?? null} />
+        </div>
+      )}
 
+      <div className="mx-auto max-w-lg">
         {isOver && (
           <div className="mt-6 portal-card px-5 py-6 text-center">
             <p className="text-sm text-text-muted">This game has finished.</p>
