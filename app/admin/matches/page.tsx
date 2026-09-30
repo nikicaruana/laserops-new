@@ -32,6 +32,9 @@ type Row = {
   paid_count: number | null;
   on_day_count: number | null;
   match_player_aggregate: { count: number }[] | null;
+  is_private: boolean | null;
+  is_double_xp: boolean | null;
+  created_by: string | null;
 };
 
 const TABS: { key: string; label: string }[] = [
@@ -43,6 +46,23 @@ const TABS: { key: string; label: string }[] = [
   { key: "completed", label: "Completed" },
   { key: "cancelled", label: "Cancelled" },
 ];
+
+const TYPE_TABS: { key: string; label: string }[] = [
+  { key: "all", label: "All types" },
+  { key: "laserops_open", label: "LaserOps Open" },
+  { key: "double_xp", label: "Double XP" },
+  { key: "community_open", label: "Community Open" },
+  { key: "private", label: "Private Bookings" },
+];
+
+/** Classify a match into one of the type tabs. LaserOps vs Community is by
+ *  whether the creator is an admin account (else it is player-created). */
+function categoryOf(m: Row, adminIds: Set<string>): string {
+  if (m.is_private) return "private";
+  if (m.is_double_xp) return "double_xp";
+  if (m.created_by && !adminIds.has(m.created_by)) return "community_open";
+  return "laserops_open";
+}
 
 /** The date a match happens on, as YYYY-MM-DD (scheduled first, else played). */
 function effectiveDate(m: Row): string | null {
@@ -68,16 +88,17 @@ function fmtDateTime(iso: string | null, dateOnly: string | null): React.ReactNo
 export default async function AdminMatchesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; from?: string; to?: string }>;
+  searchParams: Promise<{ status?: string; from?: string; to?: string; type?: string }>;
 }) {
-  const { status, from, to } = await searchParams;
+  const { status, from, to, type } = await searchParams;
   const active = TABS.find((t) => t.key === status)?.key ?? "all";
+  const activeType = TYPE_TABS.find((t) => t.key === type)?.key ?? "all";
 
   const supabase = await createClient();
   let query = supabase
     .from("matches")
     .select(
-      "id, match_code, title, status, scheduled_at, played_on, round_count, source_file_type, scoring_mode, xp_distributed_at, elo_calculated_at, results_stale_at, registered_count, paid_count, on_day_count, match_player_aggregate(count)",
+      "id, match_code, title, status, scheduled_at, played_on, round_count, source_file_type, scoring_mode, xp_distributed_at, elo_calculated_at, results_stale_at, registered_count, paid_count, on_day_count, is_private, is_double_xp, created_by, match_player_aggregate(count)",
     )
     .order("scheduled_at", { ascending: false, nullsFirst: false })
     .order("played_on", { ascending: false, nullsFirst: false })
@@ -89,6 +110,13 @@ export default async function AdminMatchesPage({
   // Date-range filter on each match's effective date (inclusive).
   if (from) rows = rows.filter((m) => { const d = effectiveDate(m); return d != null && d >= from; });
   if (to) rows = rows.filter((m) => { const d = effectiveDate(m); return d != null && d <= to; });
+  // Type filter (LaserOps/Community/Double XP/Private). Needs admin account ids
+  // to tell LaserOps-created from player-created open games.
+  if (activeType !== "all") {
+    const { data: adminRows } = await supabase.from("accounts").select("id").eq("is_admin", true);
+    const adminIds = new Set(((adminRows ?? []) as { id: string }[]).map((a) => a.id));
+    rows = rows.filter((m) => categoryOf(m, adminIds) === activeType);
+  }
 
   return (
     <div>
@@ -114,6 +142,7 @@ export default async function AdminMatchesPage({
           {TABS.map((t) => {
             const params = new URLSearchParams();
             if (t.key !== "all") params.set("status", t.key);
+            if (activeType !== "all") params.set("type", activeType);
             if (from) params.set("from", from);
             if (to) params.set("to", to);
             const qs = params.toString();
@@ -133,6 +162,30 @@ export default async function AdminMatchesPage({
           })}
         </div>
         <MatchDateFilter />
+      </div>
+
+      <div className="mb-6 flex flex-wrap items-center gap-2">
+        {TYPE_TABS.map((t) => {
+          const params = new URLSearchParams();
+          if (active !== "all") params.set("status", active);
+          if (t.key !== "all") params.set("type", t.key);
+          if (from) params.set("from", from);
+          if (to) params.set("to", to);
+          const qs = params.toString();
+          return (
+            <Link
+              key={t.key}
+              href={qs ? `/admin/matches?${qs}` : "/admin/matches"}
+              className={`border px-3 py-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.1em] ${
+                t.key === activeType
+                  ? "border-accent bg-accent/10 text-accent"
+                  : "border-border-strong text-text-muted hover:border-accent hover:text-accent"
+              }`}
+            >
+              {t.label}
+            </Link>
+          );
+        })}
       </div>
 
       {rows.length === 0 ? (
