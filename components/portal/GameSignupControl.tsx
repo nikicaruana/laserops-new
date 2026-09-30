@@ -21,6 +21,7 @@ import { GunBookingModal } from "@/components/portal/GunBookingModal";
 import { Modal } from "@/components/ui/Modal";
 import { AddPhoneModal } from "@/components/portal/AddPhoneModal";
 import { formatEur } from "@/lib/money";
+import { cldImage } from "@/lib/cld";
 // Import the policy constant directly (not the @/lib/payments barrel) so the
 // client bundle doesn't pull in the Stripe provider -> lib/stripe -> node:crypto.
 import { REFUND_POLICY } from "@/lib/payments/policy";
@@ -48,6 +49,7 @@ export function GameSignupControl({
   isOrganiser = false,
   tokenBalance = 0,
   tokensApplied = 0,
+  tokenImageUrl = "",
 }: {
   matchId: string;
   accountId: string;
@@ -73,6 +75,8 @@ export function GameSignupControl({
   tokenBalance?: number;
   /** Tokens already applied to THIS game (0 to 1); the online charge covers the rest. */
   tokensApplied?: number;
+  /** Cloudinary URL for the LaserOps game-token coin art. */
+  tokenImageUrl?: string;
 }) {
   const router = useRouter();
   const col = align === "center" ? "items-center text-center" : align === "start" ? "items-start" : "items-start sm:items-end";
@@ -261,6 +265,17 @@ export function GameSignupControl({
                     </>
                   )}
                 </p>
+                {tokenBalance > 0 && (
+                  <div className="flex items-center gap-2 border border-border bg-bg-overlay px-3 py-2">
+                    {tokenImageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={cldImage(tokenImageUrl, { w: 96 })} alt="" className="h-8 w-8 shrink-0 object-contain" />
+                    ) : null}
+                    <span className="text-xs text-text-muted">
+                      Your wallet: <span className="font-mono font-bold text-accent">{fmtTok(tokenBalance)}</span> token{tokenBalance === 1 ? "" : "s"}
+                    </span>
+                  </div>
+                )}
                 {canUseFullToken && (
                   <button
                     type="button"

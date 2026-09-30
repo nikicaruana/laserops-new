@@ -111,6 +111,10 @@ export default async function GameDetailPage({
       ])
     : [{ data: 0 }, { data: [] as { delta: number | string }[] }];
   const tokensApplied = (tokenSpends ?? []).reduce((s, r) => s + -Number(r.delta), 0);
+  const { data: tokenImgRow } = needsTokenInfo
+    ? await supabase.from("reward_images").select("image_url").eq("key", "game_token").maybeSingle()
+    : { data: null as { image_url: string | null } | null };
+  const tokenImageUrl = ((tokenImgRow?.image_url as string | null) ?? "").trim();
 
   return (
     <Container size="narrow" className="py-10 sm:py-14">
@@ -193,6 +197,7 @@ export default async function GameDetailPage({
             isPrivate={Boolean(match.is_private)}
             tokenBalance={Number(tokenBalance ?? 0)}
             tokensApplied={tokensApplied}
+            tokenImageUrl={tokenImageUrl}
             hideCancel
           />
         )}
