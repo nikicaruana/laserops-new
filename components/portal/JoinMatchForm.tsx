@@ -25,6 +25,7 @@ export function JoinMatchForm({
   bookedGun,
   isDoubleXp = false,
   boosts = { double: 0, one_five: 0 },
+  preview = false,
 }: {
   matchId: string;
   guns: CarouselGun[];
@@ -34,6 +35,8 @@ export function JoinMatchForm({
   isDoubleXp?: boolean;
   /** The player's remaining XP-boost balances. */
   boosts?: { double: number; one_five: number };
+  /** Preview mode: render the flow without joining or spending a token. */
+  preview?: boolean;
 }) {
   const router = useRouter();
   const [code, setCode] = useState("");
@@ -55,13 +58,17 @@ export function JoinMatchForm({
   // heads-up so the player doesn't pick a taken one (the RPC rejects it anyway).
   const ownHeadband = (initial?.headband ?? "").trim();
   const loadTaken = useCallback(async () => {
+    if (preview) {
+      setTaken([]);
+      return;
+    }
     const supabase = createClient();
     const { data } = await supabase.from("match_participants").select("headset_label").eq("match_id", matchId);
     const nums = ((data ?? []) as { headset_label: string | null }[])
       .map((r) => (r.headset_label ?? "").trim())
       .filter((h) => h !== "" && h !== ownHeadband);
     setTaken(Array.from(new Set(nums)));
-  }, [matchId, ownHeadband]);
+  }, [matchId, ownHeadband, preview]);
 
   useEffect(() => {
     void loadTaken();
@@ -73,6 +80,12 @@ export function JoinMatchForm({
     e.preventDefault();
     setError(null);
     setBusy(true);
+    if (preview) {
+      setBusy(false);
+      setBoostNote(boost !== "none" ? `${boost === "double" ? "Double XP" : "1.5x XP"} boost would be applied for this game.` : null);
+      setJoined(true);
+      return;
+    }
     const supabase = createClient();
     const { data, error: err } = await supabase.rpc("join_live_match", {
       p_match_id: matchId,
@@ -121,6 +134,11 @@ export function JoinMatchForm({
 
   return (
     <form onSubmit={onSubmit} className="space-y-5">
+      {preview && (
+        <p className="border border-accent/50 bg-accent/10 px-3 py-2 text-[0.7rem] font-bold uppercase tracking-[0.08em] text-accent">
+          Preview — nothing is really joined and no token is spent.
+        </p>
+      )}
       <div>
         <label className={lbl}>Entry code</label>
         <input

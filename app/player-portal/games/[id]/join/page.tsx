@@ -15,7 +15,13 @@ import { getUnlockedGuns } from "@/lib/matches/guns";
 
 export const metadata: Metadata = { title: "Join game", robots: { index: false, follow: false } };
 
-export default async function JoinMatchPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function JoinMatchPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ preview?: string }>;
+}) {
   const { id } = await params;
   const supabase = await createClient();
 
@@ -37,6 +43,9 @@ export default async function JoinMatchPage({ params }: { params: Promise<{ id: 
     );
   }
 
+  // Admin-only preview of the join flow (bypasses live/registered gates + sample boosts).
+  const preview = ((await searchParams).preview === "1") && account.is_admin === true;
+
   const { data: match } = await supabase
     .from("matches")
     .select("id, title, status, is_double_xp")
@@ -51,6 +60,7 @@ export default async function JoinMatchPage({ params }: { params: Promise<{ id: 
     if (b.boost_type === "one_five") boosts.one_five = Number(b.balance) || 0;
   }
 
+  const effBoosts = preview ? { double: 1, one_five: 2 } : boosts;
   const [{ data: signup }, guns, { data: participant }] = await Promise.all([
     supabase
       .from("match_signups")
@@ -79,7 +89,23 @@ export default async function JoinMatchPage({ params }: { params: Promise<{ id: 
           </h1>
         </div>
 
-        {match.status !== "live" ? (
+        {preview || (match.status === "live" && isRegistered) ? (
+          <div className="portal-card px-5 py-6 sm:px-6">
+            <JoinMatchForm
+              matchId={match.id}
+              guns={guns}
+              bookedGun={signup?.booked_gun ?? null}
+              isDoubleXp={preview ? false : match.is_double_xp === true}
+              boosts={effBoosts}
+              preview={preview}
+              initial={
+                participant
+                  ? { headband: participant.headset_label ?? null, gun: participant.gun_used ?? null }
+                  : null
+              }
+            />
+          </div>
+        ) : match.status !== "live" ? (
           <div className="portal-card px-5 py-8 text-center">
             <p className="text-sm text-text-muted">
               This game isn&apos;t live yet. The join code goes live about 30 minutes before the
@@ -89,7 +115,7 @@ export default async function JoinMatchPage({ params }: { params: Promise<{ id: 
               ← Back to games
             </Link>
           </div>
-        ) : !isRegistered ? (
+        ) : (
           <div className="portal-card px-5 py-8 text-center">
             <p className="text-sm text-text-muted">
               You&apos;re not signed up for this game, so you can&apos;t join it. If you&apos;re here
@@ -98,21 +124,6 @@ export default async function JoinMatchPage({ params }: { params: Promise<{ id: 
             <Link href="/player-portal/games" className="mt-4 inline-block text-xs font-semibold uppercase tracking-[0.12em] text-accent">
               ← Back to games
             </Link>
-          </div>
-        ) : (
-          <div className="portal-card px-5 py-6 sm:px-6">
-            <JoinMatchForm
-              matchId={match.id}
-              guns={guns}
-              bookedGun={signup?.booked_gun ?? null}
-              isDoubleXp={match.is_double_xp === true}
-              boosts={boosts}
-              initial={
-                participant
-                  ? { headband: participant.headset_label ?? null, gun: participant.gun_used ?? null }
-                  : null
-              }
-            />
           </div>
         )}
       </div>
