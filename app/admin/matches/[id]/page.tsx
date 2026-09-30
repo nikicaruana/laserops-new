@@ -10,6 +10,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { MatchStatusBadge } from "@/components/admin/MatchStatusBadge";
 import { PlayerBar } from "@/components/portal/PlayerBar";
+import { MatchPricingEditor } from "@/components/admin/MatchPricingEditor";
 import { MatchAdminActions } from "@/components/admin/MatchAdminActions";
 import { RescheduleMatchButton } from "@/components/admin/RescheduleMatchButton";
 import { LadderResultActions } from "@/components/admin/LadderResultActions";
@@ -482,6 +483,15 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
           )}
         </Fact>
       </div>
+
+      {["tentative", "awaiting_confirm", "confirmed"].includes(match.status ?? "") && (
+        <MatchPricingEditor
+          matchId={match.id}
+          price={match.price_eur != null ? Number(match.price_eur) : null}
+          pricingMode={match.pricing_mode ?? null}
+          deposit={match.deposit_eur != null ? Number(match.deposit_eur) : null}
+        />
+      )}
 
       {/* Players & headbands – roster + file headbands + assignment (pre/post publish) */}
       {(showRoster || Object.keys(ingestByHeadband).length > 0) && (
