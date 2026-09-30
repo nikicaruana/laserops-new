@@ -5,6 +5,7 @@ import "./globals.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { SiteAmbientBackground } from "@/components/layout/SiteAmbientBackground";
+import { ActivityPing } from "@/components/layout/ActivityPing";
 import { ChromeGate } from "@/components/layout/ChromeGate";
 import { GTM, GTMNoScript } from "@/components/tracking/GTM";
 import { CookieConsent } from "@/components/tracking/CookieConsent";
@@ -134,6 +135,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="flex min-h-svh flex-col text-text antialiased">
         <GTMNoScript />
+        <ActivityPing />
         <SiteAmbientBackground />
         {/* Skip link for keyboard / screen reader users */}
         <a

@@ -43,7 +43,7 @@ export default async function AdminUsersPage() {
           <StatCard label="Total players" value={stats.total_accounts} hint="Everyone in the system" />
           <StatCard label="Registered accounts" value={stats.claimed_accounts} hint="Signed up or claimed a profile (includes merged stats)" />
           <StatCard label="Migrated (unclaimed)" value={stats.migrated_accounts} hint="Imported from the Sheets database, not yet claimed" />
-          <StatCard label="Active in last 24h" value={stats.logged_in_24h} hint="Logged in within the last 24 hours" />
+          <StatCard label="Active in last 24h" value={stats.logged_in_24h} hint="Used the site or signed in within the last 24 hours" />
         </section>
       )}
 
