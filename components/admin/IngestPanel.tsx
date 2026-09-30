@@ -87,6 +87,7 @@ export function IngestPanel({
     setBusy(true);
     setError(null);
     const supabase = createClient();
+    let addedOnline = false;
     for (const f of picked) {
       try {
         const text = await f.text();
@@ -116,10 +117,16 @@ export function IngestPanel({
           setError(`${f.name}: ${err.message}`);
           break;
         }
+        addedOnline = true;
       } catch (err) {
         setError(`${f.name}: ${err instanceof Error ? err.message : "Couldn't parse"}`);
         break;
       }
+    }
+    // Build + cache the in-match scoreboards now so players see the new
+    // round(s) immediately (and their live pages get nudged to refresh).
+    if (addedOnline) {
+      await fetch(`/api/matches/${matchId}/build-inmatch`, { method: "POST" }).catch(() => {});
     }
     setBusy(false);
     e.target.value = "";
