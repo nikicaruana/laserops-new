@@ -5,6 +5,7 @@ import { HeaderAuth } from "@/components/layout/HeaderAuth";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { GameCta } from "@/components/layout/GameCta";
 import { NotificationBell } from "@/components/layout/NotificationBell";
+import { LiveGameButton } from "@/components/layout/LiveGameButton";
 import { primaryNav } from "@/lib/nav";
 import { cn } from "@/lib/cn";
 
@@ -121,6 +122,9 @@ export function Header() {
 
           {/* Right cluster – bell sits next to the burger (mobile) / profile (desktop) */}
           <div className="flex items-center gap-2 xl:gap-3">
+            {/* Live game CTA – only renders when the player has a game live now */}
+            <LiveGameButton />
+
             {/* Notification bell – all breakpoints, only renders when signed in */}
             <NotificationBell />
 

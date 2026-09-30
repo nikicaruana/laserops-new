@@ -10,6 +10,7 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
 import { GunCarousel, type CarouselGun } from "@/components/portal/GunCarousel";
@@ -115,6 +116,13 @@ export function JoinMatchForm({
     router.refresh();
   }
 
+  // After a real join, take the player straight to the live in-match view.
+  useEffect(() => {
+    if (!joined || preview) return;
+    const t = setTimeout(() => router.push(`/player-portal/games/${matchId}/live`), 1800);
+    return () => clearTimeout(t);
+  }, [joined, preview, matchId, router]);
+
   if (joined) {
     return (
       <div className="border border-accent bg-accent/10 px-5 py-6 text-center">
@@ -129,8 +137,14 @@ export function JoinMatchForm({
           )}
         </p>
         {boostNote && <p className="mt-3 text-xs font-semibold text-accent">{boostNote}</p>}
+        <Link
+          href={`/player-portal/games/${matchId}/live`}
+          className="mt-4 inline-block w-full border border-accent bg-accent px-5 py-2.5 text-xs font-bold uppercase tracking-[0.12em] text-bg transition-colors hover:bg-accent-soft"
+        >
+          Go to live game →
+        </Link>
         <p className="mt-3 text-xs text-text-subtle">
-          Good luck. Come back after the game to see your stats.
+          {preview ? "Preview \u2013 you won\u2019t be redirected." : "Taking you to the live game\u2026"}
         </p>
       </div>
     );

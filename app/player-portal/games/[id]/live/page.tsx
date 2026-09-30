@@ -2,10 +2,11 @@
  * app/player-portal/games/[id]/live/page.tsx
  * --------------------------------------------------------------------
  * Player live-game view – where a player who's joined a live match lands. Shows
- * their own headband + gun, and a LIVE roster of everyone who's joined that
- * updates in real time as players sign in (LiveRosterRefresh). If they haven't
- * joined yet it points them to the join flow; once the game ends it points them
- * to their match report.
+ * their own headband + gun and the In-Match Scores (Beta) board: a per-round
+ * leaderboard with their own stat card + streaks and everyone's performance,
+ * populated as the admin uploads each round's JSON (LiveRosterRefresh nudges it
+ * live). If they haven't joined yet it points them to the join flow; once the
+ * game ends it points them to their full match report.
  */
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -14,13 +15,11 @@ import { Container } from "@/components/ui/Container";
 import { createClient } from "@/lib/supabase/server";
 import { LiveRosterRefresh } from "@/components/portal/LiveRosterRefresh";
 import { LiveFeedClient } from "@/components/live/LiveFeedClient";
-import { InMatchScoreboard } from "@/components/portal/InMatchScoreboard";
+import { InMatchScoreboard, type InMatchViewer } from "@/components/portal/InMatchScoreboard";
 import { getInMatchScoreboard } from "@/lib/inmatch/scoreboard";
 import { createServiceClient } from "@/lib/supabase/service";
 
 export const metadata: Metadata = { title: "Live game", robots: { index: false, follow: false } };
-
-type RosterRow = { headset_label: string | null; name: string | null; gun_used: string | null; is_self: boolean };
 
 export default async function LiveGamePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -31,19 +30,34 @@ export default async function LiveGamePage({ params }: { params: Promise<{ id: s
   } = await supabase.auth.getUser();
   if (!user) redirect(`/player-portal/login?next=/player-portal/games/${id}/live`);
 
-  const { data: account } = await supabase.from("accounts").select("id, ops_tag, is_admin").eq("auth_user_id", user.id).maybeSingle();
+  const { data: account } = await supabase
+    .from("accounts")
+    .select("id, ops_tag, is_admin, profile_pic_url")
+    .eq("auth_user_id", user.id)
+    .maybeSingle();
   if (!account) redirect("/player-portal/games");
 
-  const [{ data: match }, { data: participant }, { data: rosterRows }] = await Promise.all([
+  const [{ data: match }, { data: participant }] = await Promise.all([
     supabase.from("matches").select("id, match_code, title, status, live_feed_enabled").eq("id", id).maybeSingle(),
     supabase.from("match_participants").select("headset_label, gun_used").eq("match_id", id).eq("account_id", account.id).maybeSingle(),
-    supabase.rpc("live_match_roster", { p_match_id: id }),
   ]);
   if (!match) notFound();
 
-  const roster = (rosterRows ?? []) as RosterRow[];
   const isLive = match.status === "live";
   const isOver = match.status === "completed";
+
+  // Gun artwork for the viewer's stat card (config table, RLS-readable).
+  let gunImageUrl: string | null = null;
+  if (participant?.gun_used) {
+    const { data: g } = await supabase.from("guns").select("image_url").eq("name", participant.gun_used).maybeSingle();
+    gunImageUrl = (g?.image_url as string | null) ?? null;
+  }
+  const viewer: InMatchViewer = {
+    opsTag: account.ops_tag ?? null,
+    avatarUrl: (account.profile_pic_url as string | null) ?? null,
+    gunLabel: participant?.gun_used ?? null,
+    gunImageUrl,
+  };
 
   // In-match round scores (Beta): visible to players in this match + admins.
   const canSeeScores = !!participant || account.is_admin === true;
@@ -98,35 +112,7 @@ export default async function LiveGamePage({ params }: { params: Promise<{ id: s
 
         {scoreboard.rounds.length > 0 && (
           <div className="mt-6">
-            <InMatchScoreboard scoreboard={scoreboard} me={account.ops_tag ?? null} />
-          </div>
-        )}
-
-        {/* Live roster */}
-        {isLive && (
-          <div className="mt-6 portal-card">
-            <div className="flex items-center justify-between border-b border-border px-5 py-3">
-              <p className="text-sm font-bold uppercase tracking-[0.16em] text-text-muted">In the arena</p>
-              <span className="font-mono text-sm font-bold text-accent">{roster.length}</span>
-            </div>
-            {roster.length === 0 ? (
-              <p className="px-5 py-8 text-center text-sm text-text-subtle">Waiting for players to sign in…</p>
-            ) : (
-              <ul className="divide-y divide-border">
-                {roster.map((r, i) => (
-                  <li key={`${r.headset_label ?? "x"}-${i}`} className={`flex items-center gap-3 px-5 py-3 text-sm ${r.is_self ? "bg-accent/5" : ""}`}>
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center border border-border-strong bg-bg font-mono text-xs font-bold text-accent">
-                      {r.headset_label ?? "–"}
-                    </span>
-                    <span className="flex-1 truncate font-semibold text-text">
-                      {r.name}
-                      {r.is_self && <span className="ml-2 text-[0.6rem] font-bold uppercase tracking-[0.12em] text-accent">You</span>}
-                    </span>
-                    {r.gun_used && <span className="shrink-0 text-xs text-text-subtle">{r.gun_used}</span>}
-                  </li>
-                ))}
-              </ul>
-            )}
+            <InMatchScoreboard scoreboard={scoreboard} viewer={viewer} />
           </div>
         )}
 
@@ -135,7 +121,7 @@ export default async function LiveGamePage({ params }: { params: Promise<{ id: s
             <p className="text-sm text-text-muted">This game has finished.</p>
             {match.match_code && (
               <Link href={`/match-report?match=${match.match_code}`} className="mt-4 inline-block border border-accent bg-accent px-5 py-2 text-xs font-bold uppercase tracking-[0.12em] text-bg">
-                View match report
+                View full match report
               </Link>
             )}
           </div>

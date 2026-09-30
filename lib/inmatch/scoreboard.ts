@@ -19,7 +19,10 @@ import { buildMatchReportV2, type MatchReportV2 } from "@/lib/match-report-v2/bu
 import { resolveRoster } from "@/lib/ingestion/roster";
 import type { RoundResolutions } from "@/lib/ingestion/resolutions";
 
-export type InMatchStreak = { key: string; name: string; count: number; points: number };
+// Bump when the cached payload shape changes so stale caches rebuild.
+const CACHE_VERSION = 2;
+
+export type InMatchStreak = { key: string; name: string; count: number; points: number; imageUrl: string };
 
 export type InMatchPlayer = {
   name: string;
@@ -39,6 +42,7 @@ export type InMatchPlayer = {
 };
 
 export type InMatchRound = {
+  version: number;
   roundNo: number;
   winnerTeam: string | null;
   durationSeconds: number | null;
@@ -61,7 +65,7 @@ type RoundRow = {
 };
 
 /** MatchReportV2 (built on ONE round) -> compact in-match payload. */
-function toInMatchRound(report: MatchReportV2, roundNo: number): InMatchRound {
+function toInMatchRound(report: MatchReportV2, roundNo: number, streakImg: Map<string, string>): InMatchRound {
   const round0 = report.rounds[0];
   const players: InMatchPlayer[] = report.players
     .map((p) => ({
@@ -78,10 +82,17 @@ function toInMatchRound(report: MatchReportV2, roundNo: number): InMatchRound {
       objectiveScore: p.objectiveScore,
       streakScore: p.streakScore,
       totalScore: p.totalScore,
-      streaks: p.streaks.map((s) => ({ key: s.key, name: s.name, count: s.count, points: s.points })),
+      streaks: p.streaks.map((s) => ({
+        key: s.key,
+        name: s.name,
+        count: s.count,
+        points: s.points,
+        imageUrl: streakImg.get(s.key) ?? "",
+      })),
     }))
     .sort((a, b) => b.totalScore - a.totalScore || b.frags - a.frags);
   return {
+    version: CACHE_VERSION,
     roundNo,
     winnerTeam: round0?.winnerTeam ?? report.matchWinner ?? null,
     durationSeconds: round0?.durationSeconds ?? null,
@@ -93,8 +104,8 @@ function toInMatchRound(report: MatchReportV2, roundNo: number): InMatchRound {
 
 /**
  * Build the in-match scoreboard for a match. Cached rounds are returned as-is;
- * any round without a cached report is built now and the cache written back so
- * the next read is an instant cache hit.
+ * any round without a current cached report is built now and the cache written
+ * back so the next read is an instant cache hit.
  */
 export async function getInMatchScoreboard(
   svc: SupabaseClient,
@@ -112,13 +123,29 @@ export async function getInMatchScoreboard(
   const list = (rows ?? []) as RoundRow[];
   if (list.length === 0) return { label: meta.label, date: meta.date, rounds: [] };
 
-  // Identity resolver (headband -> ops tag / display name), built once. Return
-  // "" for an unresolved headband so the report keeps the raw "Head NN" label.
-  const resolver = await resolveRoster(svc, matchId);
-  const identityByHeadband = (no: number) => {
-    const e = resolver(String(no));
-    return e.nickname === String(no) ? "" : e.nickname;
-  };
+  const needsBuild = list.some((r) => !(r.report && r.report_built_at && r.report.version === CACHE_VERSION));
+
+  // Identity + streak-image maps are only needed when something must (re)build.
+  let identityByHeadband: ((no: number) => string) | undefined;
+  let streakConfig: Record<string, { name: string; points: number }> | undefined;
+  let streakImg = new Map<string, string>();
+  if (needsBuild) {
+    const resolver = await resolveRoster(svc, matchId);
+    identityByHeadband = (no: number) => {
+      const e = resolver(String(no));
+      return e.nickname === String(no) ? "" : e.nickname;
+    };
+    // Admin streak definitions are authoritative for names + points + badges,
+    // keyed by the canonical streak_key (matches the report's streak.key).
+    const { data: sdefs } = await svc.from("streak_definitions").select("streak_key, name, badge_url, points");
+    streakConfig = {};
+    for (const d of (sdefs ?? []) as { streak_key: string | null; name: string | null; badge_url: string | null; points: number | null }[]) {
+      const key = (d.streak_key ?? "").trim();
+      if (!key) continue;
+      streakConfig[key] = { name: (d.name ?? key).trim() || key, points: Number(d.points) || 0 };
+      streakImg.set(key, (d.badge_url ?? "").trim());
+    }
+  }
 
   const rounds: InMatchRound[] = [];
   const freshlyBuilt: { id: string; round: InMatchRound }[] = [];
@@ -126,7 +153,7 @@ export async function getInMatchScoreboard(
   for (const r of list) {
     seq += 1;
     const roundNo = r.round_no ?? seq;
-    if (r.report && r.report_built_at) {
+    if (r.report && r.report_built_at && r.report.version === CACHE_VERSION) {
       rounds.push({ ...r.report, roundNo });
       continue;
     }
@@ -134,9 +161,9 @@ export async function getInMatchScoreboard(
     const report = buildMatchReportV2(
       [{ raw: r.raw_file, resolutions: r.resolutions ?? undefined, winnerOverride: r.winner_override ?? undefined }],
       { matchId, label: meta.label, date: meta.date },
-      { identityByHeadband },
+      { identityByHeadband, streakConfig },
     );
-    const built = toInMatchRound(report, roundNo);
+    const built = toInMatchRound(report, roundNo, streakImg);
     rounds.push(built);
     freshlyBuilt.push({ id: r.id, round: built });
   }
