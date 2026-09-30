@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { fetchGalleryImages } from "@/lib/cloudinary";
 import { Container } from "@/components/ui/Container";
+import { SectionAmbient } from "@/components/layout/SectionAmbient";
 
 /**
  * GalleryPreview
@@ -28,8 +29,9 @@ export async function GalleryPreview() {
   if (featured.length === 0) return null;
 
   return (
-    <section className="border-t border-border bg-bg py-16 sm:py-20 lg:py-28">
-      <Container size="wide">
+    <section className="relative overflow-hidden border-t border-border bg-bg py-16 sm:py-20 lg:py-28">
+      <SectionAmbient tone="dark" />
+      <Container size="wide" className="relative">
         {/* Section header */}
         <div className="mb-8 sm:mb-10 lg:mb-12">
           <div className="flex items-center gap-3">

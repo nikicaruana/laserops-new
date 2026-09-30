@@ -10,6 +10,7 @@ import { brand } from "@/lib/brand";
 import { fetchInstagramPosts } from "@/lib/cms/instagram-posts";
 import { fetchGoogleReviews } from "@/lib/cms/google-reviews";
 import { fetchSiteConfig, configString } from "@/lib/cms/site-config";
+import { SectionAmbient } from "@/components/layout/SectionAmbient";
 
 /**
  * Homepage.
@@ -96,8 +97,9 @@ export default async function HomePage() {
       />
 
       {/* ── Final CTA band ───────────────────────────────────────── */}
-      <section className="bg-bg">
-        <Container className="py-24 text-center sm:py-32">
+      <section className="relative overflow-hidden bg-bg">
+        <SectionAmbient tone="dark" />
+        <Container className="relative py-24 text-center sm:py-32">
           <span className="eyebrow">Get Involved</span>
           <h2 className="mt-4 text-3xl font-extrabold text-text sm:text-4xl lg:text-5xl">
             Ready when you are.

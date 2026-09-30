@@ -11,6 +11,7 @@ import {
 import { type ChallengeEntry } from "@/lib/leaderboards/season-challenges";
 import { fetchSiteConfig, configBool, configInt } from "@/lib/cms/site-config";
 import { cn } from "@/lib/cn";
+import { SectionAmbient } from "@/components/layout/SectionAmbient";
 
 /**
  * SeasonLeadersSection
@@ -63,11 +64,12 @@ export async function SeasonLeadersSection() {
   const metricLabel = metricLabelFor(featuredChallenge.metric);
 
   return (
-    <section className="border-t border-border bg-bg">
+    <section className="relative overflow-hidden border-t border-border bg-bg">
+      <SectionAmbient tone="dark" />
       {/* Asymmetric padding: more space at top (separates from Weapons
           section above), less at bottom (Gallery is conceptually a
           continuation, so keep the gap to the next section tight). */}
-      <Container className="pb-10 pt-16 sm:pb-14 sm:pt-24">
+      <Container className="relative pb-10 pt-16 sm:pb-14 sm:pt-24">
         {/* Section header. CMS description is intentionally NOT used –
             see homepageSubtitleFor() for the rationale. */}
         <div className="text-center">
