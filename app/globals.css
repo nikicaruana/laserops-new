@@ -177,6 +177,20 @@
       7px 7px;
   }
 
+  /* Dark-dot variant of the dimple texture, for LaserOps-yellow surfaces where
+     the light dots would be invisible. Same density/offsets as .dimple-texture. */
+  .dimple-texture-dark {
+    background-image:
+      radial-gradient(circle at center, rgba(0, 0, 0, 0.10) 1px, transparent 1.2px),
+      radial-gradient(circle at center, rgba(0, 0, 0, 0.06) 1px, transparent 1.2px);
+    background-size:
+      14px 14px,
+      42px 42px;
+    background-position:
+      0 0,
+      7px 7px;
+  }
+
   /* Combine HUD grid + dimples for the main page backdrop */
   .surface-texture {
     background-image:

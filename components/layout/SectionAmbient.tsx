@@ -2,74 +2,70 @@
 /**
  * components/layout/SectionAmbient.tsx
  * --------------------------------------------------------------------
- * Section-scoped ambient backdrop matching the site's PortalBackground: soft,
- * slowly-drifting bokeh orbs + a dotted dapple, but absolutely positioned inside
- * ONE section instead of fixed behind the whole page. Two tones:
- *   - "dark"   → warm yellow/red orbs + light dapple, for dark sections.
- *   - "yellow" → blackish orbs + dark dapple, for LaserOps-yellow sections.
- * Put it as the first child of a `relative overflow-hidden` section; page content
- * sits above it (relative z-10). pointer-events-none; frozen for reduced motion
- * via the shared portal keyframes.
+ * Section-scoped copy of the site's PortalBackground: the SAME drifting bokeh
+ * orbs + `.dimple-texture` dapple, but absolutely positioned inside ONE section
+ * instead of fixed behind the whole page (so it works on top of a section's own
+ * background). Two tones:
+ *   - "dark"   -> the exact Ember orb palette (warm yellow/red) + light dapple,
+ *                 identical to the rest of the site.
+ *   - "yellow" -> the same orb sizes/positions/motion in a COMPLEMENTARY blue/
+ *                 indigo/violet palette + a dark dapple, for LaserOps-yellow
+ *                 sections.
+ * Reuses the shared `.portal-bg__*` classes + portal-drift/portal-breathe
+ * keyframes, so the movement matches other pages exactly (and freezes under
+ * prefers-reduced-motion via the shared rule). Put it as the first child of a
+ * `relative overflow-hidden` section; content sits above it (relative).
  */
 import type { CSSProperties } from "react";
 
 type Tone = "dark" | "yellow";
 type Orb = { size: string; x: string; y: string; color: string; blur: number; drift: "a" | "b" | "c" | "d"; dur: number; delay: number; breathe: number };
 
-const ORBS: Record<Tone, Orb[]> = {
-  dark: [
-    { size: "42vmax", x: "8%", y: "18%", color: "rgba(255,222,0,0.10)", blur: 60, drift: "a", dur: 22, delay: 0, breathe: 14 },
-    { size: "34vmax", x: "85%", y: "72%", color: "rgba(226,48,24,0.08)", blur: 60, drift: "c", dur: 26, delay: 3, breathe: 16 },
-    { size: "28vmax", x: "62%", y: "28%", color: "rgba(255,178,36,0.07)", blur: 52, drift: "b", dur: 20, delay: 5, breathe: 12 },
-    { size: "24vmax", x: "28%", y: "82%", color: "rgba(255,222,0,0.06)", blur: 50, drift: "d", dur: 24, delay: 7, breathe: 15 },
-  ],
-  yellow: [
-    { size: "40vmax", x: "10%", y: "22%", color: "rgba(0,0,0,0.16)", blur: 62, drift: "a", dur: 24, delay: 0, breathe: 15 },
-    { size: "32vmax", x: "84%", y: "18%", color: "rgba(0,0,0,0.12)", blur: 60, drift: "b", dur: 28, delay: 2, breathe: 16 },
-    { size: "30vmax", x: "72%", y: "82%", color: "rgba(15,15,15,0.14)", blur: 56, drift: "c", dur: 22, delay: 4, breathe: 13 },
-    { size: "24vmax", x: "26%", y: "78%", color: "rgba(0,0,0,0.10)", blur: 50, drift: "d", dur: 26, delay: 6, breathe: 14 },
-  ],
-};
+// Dark tone = PortalBackground variant "a" (Ember), exact values.
+const DARK_ORBS: Orb[] = [
+  { size: "56vmax", x: "12%", y: "16%", color: "rgba(255,222,0,0.30)", blur: 52, drift: "a", dur: 17, delay: 0, breathe: 10 },
+  { size: "44vmax", x: "86%", y: "24%", color: "rgba(255,222,0,0.24)", blur: 48, drift: "b", dur: 20, delay: 2, breathe: 12 },
+  { size: "50vmax", x: "18%", y: "90%", color: "rgba(255,206,0,0.22)", blur: 54, drift: "c", dur: 22, delay: 4, breathe: 14 },
+  { size: "42vmax", x: "90%", y: "84%", color: "rgba(226,48,24,0.20)", blur: 54, drift: "d", dur: 20, delay: 1, breathe: 15 },
+  { size: "30vmax", x: "58%", y: "50%", color: "rgba(238,74,30,0.14)", blur: 46, drift: "a", dur: 16, delay: 6, breathe: 11 },
+  { size: "26vmax", x: "38%", y: "38%", color: "rgba(255,178,36,0.20)", blur: 42, drift: "b", dur: 15, delay: 3, breathe: 9 },
+  { size: "15vmax", x: "72%", y: "18%", color: "rgba(255,240,190,0.10)", blur: 36, drift: "c", dur: 19, delay: 7, breathe: 13 },
+];
 
-const DAPPLE: Record<Tone, { image: string; opacity: number }> = {
-  dark: {
-    image:
-      "radial-gradient(circle at 20% 50%, rgba(255,255,255,0.06) 1px, transparent 1.5px), radial-gradient(circle at 70% 30%, rgba(255,255,255,0.05) 1px, transparent 1.5px)",
-    opacity: 0.6,
-  },
-  yellow: {
-    image:
-      "radial-gradient(circle at 20% 50%, rgba(0,0,0,0.4) 1px, transparent 1.5px), radial-gradient(circle at 70% 30%, rgba(0,0,0,0.3) 1px, transparent 1.5px)",
-    opacity: 0.22,
-  },
-};
+// Yellow tone = same geometry/motion, complementary cool palette (blue/indigo/
+// violet) that reads against LaserOps yellow.
+const YELLOW_ORBS: Orb[] = [
+  { size: "56vmax", x: "12%", y: "16%", color: "rgba(38,22,150,0.45)", blur: 52, drift: "a", dur: 17, delay: 0, breathe: 10 },
+  { size: "44vmax", x: "86%", y: "24%", color: "rgba(24,60,190,0.42)", blur: 48, drift: "b", dur: 20, delay: 2, breathe: 12 },
+  { size: "50vmax", x: "18%", y: "90%", color: "rgba(92,28,168,0.40)", blur: 54, drift: "c", dur: 22, delay: 4, breathe: 14 },
+  { size: "42vmax", x: "90%", y: "84%", color: "rgba(20,44,180,0.42)", blur: 54, drift: "d", dur: 20, delay: 1, breathe: 15 },
+  { size: "30vmax", x: "58%", y: "50%", color: "rgba(70,20,140,0.30)", blur: 46, drift: "a", dur: 16, delay: 6, breathe: 11 },
+  { size: "26vmax", x: "38%", y: "38%", color: "rgba(34,50,200,0.34)", blur: 42, drift: "b", dur: 15, delay: 3, breathe: 9 },
+  { size: "15vmax", x: "72%", y: "18%", color: "rgba(140,44,180,0.26)", blur: 36, drift: "c", dur: 19, delay: 7, breathe: 13 },
+];
 
-export function SectionAmbient({ tone = "dark", dapple = true }: { tone?: Tone; dapple?: boolean }) {
+export function SectionAmbient({ tone = "dark" }: { tone?: Tone }) {
+  const orbs = tone === "yellow" ? YELLOW_ORBS : DARK_ORBS;
+  const dappleClass = tone === "yellow" ? "dimple-texture-dark" : "dimple-texture";
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-      {ORBS[tone].map((o, i) => (
-        <span
-          key={i}
-          className="absolute rounded-full"
-          style={
-            {
-              left: o.x,
-              top: o.y,
-              width: o.size,
-              height: o.size,
-              background: `radial-gradient(circle at center, ${o.color} 0%, transparent 70%)`,
-              filter: `blur(${o.blur}px)`,
-              animation: `portal-drift-${o.drift} ${o.dur}s ease-in-out ${o.delay}s infinite, portal-breathe ${o.breathe}s ease-in-out ${o.delay}s infinite alternate`,
-            } as CSSProperties
-          }
-        />
-      ))}
-      {dapple && (
-        <div
-          className="absolute inset-0"
-          style={{ backgroundImage: DAPPLE[tone].image, backgroundSize: "32px 32px, 48px 48px", opacity: DAPPLE[tone].opacity }}
-        />
-      )}
+    <div className="portal-bg pointer-events-none absolute inset-0" style={{ position: "absolute", zIndex: 0, background: "transparent" }} aria-hidden>
+      <div className="portal-bg__orbs">
+        {orbs.map((o, i) => (
+          <span key={i} className="portal-bg__orb" style={{ left: o.x, top: o.y, width: o.size, height: o.size } as CSSProperties}>
+            <span
+              className="portal-bg__orb-inner"
+              style={
+                {
+                  background: `radial-gradient(circle at center, ${o.color} 0%, transparent 70%)`,
+                  filter: `blur(${o.blur}px)`,
+                  animation: `portal-drift-${o.drift} ${o.dur}s ease-in-out ${o.delay}s infinite, portal-breathe ${o.breathe}s ease-in-out ${o.delay}s infinite alternate`,
+                } as CSSProperties
+              }
+            />
+          </span>
+        ))}
+      </div>
+      <div className={`portal-bg__dapple ${dappleClass}`} />
     </div>
   );
 }

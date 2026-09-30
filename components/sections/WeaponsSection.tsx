@@ -46,17 +46,7 @@ export function WeaponsSection() {
       className="relative overflow-hidden"
       style={{ backgroundColor: "#ffde00" }}
     >
-      <SectionAmbient tone="yellow" dapple={false} />
-      {/* Subtle dot texture echoing the hero */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-10"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle at 20% 50%, rgba(0,0,0,0.4) 1px, transparent 1.5px), radial-gradient(circle at 70% 30%, rgba(0,0,0,0.3) 1px, transparent 1.5px)",
-          backgroundSize: "32px 32px, 48px 48px",
-        }}
-      />
+      <SectionAmbient tone="yellow" />
 
       <Container size="wide" className="relative py-20 sm:py-28 lg:py-32">
         {/* Eyebrow + heading */}
