@@ -81,7 +81,7 @@ export function InMatchScoreboard({ scoreboard, me, pastMode = false }: { scoreb
   }, [players]);
 
   if (!round || players.length === 0 || !best) return null;
-  const isSelf = selected ? nk(selected.name) === meKey : false;
+
 
   const stats = selected
     ? [
@@ -162,12 +162,11 @@ export function InMatchScoreboard({ scoreboard, me, pastMode = false }: { scoreb
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-[0.6rem] font-bold uppercase tracking-[0.16em] text-accent">
-                  {isSelf ? "Your round" : "Round stats"}
+                  {selected.headband ? `Head ${selected.headband}` : "Round stats"}
                 </p>
                 <p className="flex items-center gap-1.5 truncate text-sm font-bold text-text">
                   <span className={`h-2 w-2 shrink-0 rounded-full ${teamDot(selected.team)}`} />
                   {selected.name}
-                  {isSelf && <span className="text-[0.55rem] font-bold uppercase tracking-[0.12em] text-accent">You</span>}
                 </p>
               </div>
               {selected.gunImageUrl ? (

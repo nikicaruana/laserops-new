@@ -27,7 +27,7 @@ import { resolveRoster } from "@/lib/ingestion/roster";
 import type { RoundResolutions } from "@/lib/ingestion/resolutions";
 
 // Bump when the cached payload shape or scoring changes so stale caches rebuild.
-const CACHE_VERSION = 4;
+const CACHE_VERSION = 5;
 
 export type InMatchStreak = { key: string; name: string; count: number; points: number; imageUrl: string };
 export type InMatchKill = { name: string; count: number };
@@ -36,6 +36,7 @@ export type InMatchNemesis = { name: string; killsFor: number; killsAgainst: num
 export type InMatchPlayer = {
   name: string;
   team: string;
+  headband: string;
   avatarUrl: string;
   gunLabel: string;
   gunImageUrl: string;
@@ -68,7 +69,7 @@ export type InMatchRound = {
 
 export type InMatchScoreboard = { label: string; date: string | null; rounds: InMatchRound[] };
 
-type NameMeta = { avatarUrl: string; gun: string };
+type NameMeta = { avatarUrl: string; gun: string; headband: string };
 type StreakCfg = Record<string, { name: string; points: number }>;
 /** lower(name) -> streak_key -> count of kill-streak awards attributed to a round. */
 type KillDelta = Map<string, Map<string, number>>;
@@ -138,6 +139,7 @@ function toInMatchRound(report: MatchReportV2, roundNo: number, maps: BuildMaps,
       return {
         name: p.name,
         team: p.team,
+        headband: meta?.headband ?? "",
         avatarUrl: meta?.avatarUrl ?? "",
         gunLabel,
         gunImageUrl: gunLabel ? maps.gunImg.get(gunLabel) ?? "" : "",
@@ -213,7 +215,7 @@ export async function getInMatchScoreboard(
 
     const [{ data: sdefs }, { data: parts }, { data: guns }] = await Promise.all([
       svc.from("streak_definitions").select("streak_key, name, badge_url, points"),
-      svc.from("match_participants").select("account_id, display_name, gun_used"),
+      svc.from("match_participants").select("account_id, display_name, gun_used, headset_label"),
       svc.from("guns").select("name, image_url"),
     ]);
 
@@ -229,11 +231,11 @@ export async function getInMatchScoreboard(
       ? await svc.from("accounts").select("id, ops_tag, profile_pic_url").in("id", accIds)
       : { data: [] as { id: string; ops_tag: string | null; profile_pic_url: string | null }[] };
     const accById = new Map(((accRows ?? []) as { id: string; ops_tag: string | null; profile_pic_url: string | null }[]).map((a) => [a.id, a]));
-    for (const p of (parts ?? []) as { account_id: string | null; display_name: string | null; gun_used: string | null }[]) {
+    for (const p of (parts ?? []) as { account_id: string | null; display_name: string | null; gun_used: string | null; headset_label: string | null }[]) {
       const acc = p.account_id ? accById.get(p.account_id) : undefined;
       const nickname = (acc?.ops_tag || p.display_name || "").trim();
       if (!nickname) continue;
-      maps.nameMeta.set(nk(nickname), { avatarUrl: (acc?.profile_pic_url ?? "").trim(), gun: (p.gun_used ?? "").trim() });
+      maps.nameMeta.set(nk(nickname), { avatarUrl: (acc?.profile_pic_url ?? "").trim(), gun: (p.gun_used ?? "").trim(), headband: (p.headset_label ?? "").trim() });
     }
     for (const g of (guns ?? []) as { name: string | null; image_url: string | null }[]) {
       if (g.name) maps.gunImg.set(g.name.trim(), (g.image_url ?? "").trim());

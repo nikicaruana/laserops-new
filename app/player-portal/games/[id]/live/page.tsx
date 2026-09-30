@@ -90,27 +90,14 @@ export default async function LiveGamePage({ params }: { params: Promise<{ id: s
           </h1>
         </div>
 
-        {participant ? (
-          <div className="portal-card px-5 py-6 text-center">
-            <p className="text-sm font-semibold uppercase tracking-[0.12em] text-accent">You&rsquo;re in</p>
-            <p className="mt-2 text-sm text-text-muted">
-              Headband <span className="font-mono font-semibold text-text">{participant.headset_label ?? "–"}</span>
-              {participant.gun_used && (
-                <>
-                  {" "}
-                  · <span className="font-semibold text-text">{participant.gun_used}</span>
-                </>
-              )}
-            </p>
-          </div>
-        ) : isLive ? (
+        {!participant && isLive && (
           <div className="portal-card px-5 py-6 text-center">
             <p className="text-sm text-text-muted">You haven&apos;t joined this game yet.</p>
             <Link href={`/player-portal/games/${id}/join`} className="mt-4 inline-block border border-accent bg-accent px-5 py-2 text-xs font-bold uppercase tracking-[0.12em] text-bg">
               Join game
             </Link>
           </div>
-        ) : null}
+        )}
       </div>
 
       {scoreboard.rounds.length > 0 && (
