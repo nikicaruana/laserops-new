@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
 import { GunCarousel, type CarouselGun } from "@/components/portal/GunCarousel";
+import { cldImage } from "@/lib/cld";
 
 const input =
   "h-12 w-full rounded-none border border-border bg-bg-overlay px-4 text-sm text-text placeholder:text-text-subtle focus:border-accent focus:outline-none";
@@ -25,6 +26,7 @@ export function JoinMatchForm({
   bookedGun,
   isDoubleXp = false,
   boosts = { double: 0, one_five: 0 },
+  boostImages = { double: "", one_five: "" },
   preview = false,
 }: {
   matchId: string;
@@ -35,6 +37,8 @@ export function JoinMatchForm({
   isDoubleXp?: boolean;
   /** The player's remaining XP-boost balances. */
   boosts?: { double: number; one_five: number };
+  /** Cloudinary URLs for the XP-boost token art. */
+  boostImages?: { double: string; one_five: string };
   /** Preview mode: render the flow without joining or spending a token. */
   preview?: boolean;
 }) {
@@ -189,27 +193,12 @@ export function JoinMatchForm({
       ) : hasBoosts ? (
         <div>
           <label className={lbl}>Use an XP boost?</label>
-          <div className="flex flex-col gap-2">
-            {([
-              { key: "none", label: "No boost", avail: true },
-              { key: "double", label: `Double XP (2x)${boosts.double > 0 ? ` · ${boosts.double} left` : ""}`, avail: boosts.double > 0 },
-              { key: "one_five", label: `1.5x XP${boosts.one_five > 0 ? ` · ${boosts.one_five} left` : ""}`, avail: boosts.one_five > 0 },
-            ] as const).map((opt) =>
-              opt.avail ? (
-                <button
-                  key={opt.key}
-                  type="button"
-                  onClick={() => setBoost(opt.key)}
-                  className={`border px-4 py-2.5 text-left text-xs font-bold uppercase tracking-[0.1em] transition-colors ${
-                    boost === opt.key ? "border-accent bg-accent/10 text-accent" : "border-border-strong bg-bg-overlay/70 text-text-muted backdrop-blur-sm hover:border-accent hover:text-accent"
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ) : null,
-            )}
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            <BoostTile label="No boost" selected={boost === "none"} available onSelect={() => setBoost("none")} />
+            <BoostTile label="1.5x XP" imageUrl={boostImages.one_five} count={boosts.one_five} selected={boost === "one_five"} available={boosts.one_five > 0} onSelect={() => setBoost("one_five")} />
+            <BoostTile label="2x XP" imageUrl={boostImages.double} count={boosts.double} selected={boost === "double"} available={boosts.double > 0} onSelect={() => setBoost("double")} />
           </div>
-          <p className="mt-1 text-[0.7rem] text-text-subtle">Applied to your XP for this game only. It&apos;s used up when you join.</p>
+          <p className="mt-2 text-[0.7rem] text-text-subtle">Applied to your XP for this game only. It&apos;s used up when you join.</p>
         </div>
       ) : null}
 
@@ -221,5 +210,51 @@ export function JoinMatchForm({
         {busy ? "Joining…" : "Join game"}
       </Button>
     </form>
+  );
+}
+
+function BoostTile({
+  label,
+  imageUrl,
+  count,
+  selected,
+  available,
+  onSelect,
+}: {
+  label: string;
+  imageUrl?: string;
+  count?: number;
+  selected: boolean;
+  available: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={available ? onSelect : undefined}
+      disabled={!available}
+      aria-pressed={selected}
+      className={`flex flex-col items-center gap-1.5 border p-2 text-center transition-colors sm:p-3 ${
+        selected ? "border-accent bg-accent/10" : "border-border-strong bg-bg-overlay/70 hover:border-accent"
+      } ${available ? "" : "cursor-not-allowed opacity-40"}`}
+    >
+      <span className="flex aspect-square w-full items-center justify-center">
+        {imageUrl ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img src={cldImage(imageUrl, { w: 200 })} alt="" className="h-12 w-12 object-contain sm:h-14 sm:w-14" />
+        ) : (
+          <span className={`flex h-12 w-12 items-center justify-center rounded-full border-2 sm:h-14 sm:w-14 ${selected ? "border-accent text-accent" : "border-border-strong text-text-subtle"}`} aria-hidden>
+            <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M6 6l12 12" strokeLinecap="round" />
+            </svg>
+          </span>
+        )}
+      </span>
+      <span className={`text-[0.65rem] font-bold uppercase tracking-[0.06em] ${selected ? "text-accent" : "text-text"}`}>{label}</span>
+      <span className="text-[0.6rem] font-semibold uppercase tracking-[0.08em] text-text-subtle">
+        {count != null ? `${count} left` : "\u00a0"}
+      </span>
+    </button>
   );
 }

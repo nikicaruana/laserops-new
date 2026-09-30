@@ -60,6 +60,10 @@ export default async function JoinMatchPage({
     if (b.boost_type === "one_five") boosts.one_five = Number(b.balance) || 0;
   }
 
+  const { data: riRows } = await supabase.from("reward_images").select("key, image_url");
+  const riMap = new Map(((riRows ?? []) as { key: string; image_url: string | null }[]).map((r) => [r.key, (r.image_url ?? "").trim()]));
+  const boostImages = { double: riMap.get("xp_boost_2x") ?? "", one_five: riMap.get("xp_boost_1_5x") ?? "" };
+
   const effBoosts = preview ? { double: 1, one_five: 2 } : boosts;
   const [{ data: signup }, guns, { data: participant }] = await Promise.all([
     supabase
@@ -97,6 +101,7 @@ export default async function JoinMatchPage({
               bookedGun={signup?.booked_gun ?? null}
               isDoubleXp={preview ? false : match.is_double_xp === true}
               boosts={effBoosts}
+              boostImages={boostImages}
               preview={preview}
               initial={
                 participant
