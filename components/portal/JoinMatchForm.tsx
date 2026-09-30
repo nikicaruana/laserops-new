@@ -142,6 +142,7 @@ export function JoinMatchForm({
         <label className={lbl}>Entry code</label>
         <input
           inputMode="numeric"
+          pattern="[0-9]*"
           autoFocus
           maxLength={4}
           className={`${input} text-center text-xl font-bold tracking-[0.5em]`}
@@ -154,6 +155,8 @@ export function JoinMatchForm({
       <div>
         <label className={lbl}>Headband number</label>
         <input
+          inputMode="numeric"
+          pattern="[0-9]*"
           className={`${input} ${headbandTaken ? "border-red-700" : ""}`}
           value={headband}
           onChange={(e) => setHeadband(e.target.value)}
@@ -234,10 +237,10 @@ function BoostTile({
       <span className="flex aspect-square w-full items-center justify-center">
         {imageUrl ? (
           /* eslint-disable-next-line @next/next/no-img-element */
-          <img src={cldImage(imageUrl, { w: 200 })} alt="" className="h-10 w-10 object-contain sm:h-12 sm:w-12" />
+          <img src={cldImage(imageUrl, { w: 400 })} alt="" className="h-20 w-20 object-contain sm:h-24 sm:w-24" />
         ) : (
-          <span className={`flex h-10 w-10 items-center justify-center rounded-full border-2 sm:h-12 sm:w-12 ${selected ? "border-accent text-accent" : "border-border-strong text-text-subtle"}`} aria-hidden>
-            <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2">
+          <span className={`flex h-20 w-20 items-center justify-center rounded-full border-2 sm:h-24 sm:w-24 ${selected ? "border-accent text-accent" : "border-border-strong text-text-subtle"}`} aria-hidden>
+            <svg viewBox="0 0 24 24" className="h-10 w-10" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="9" />
               <path d="M6 6l12 12" strokeLinecap="round" />
             </svg>
