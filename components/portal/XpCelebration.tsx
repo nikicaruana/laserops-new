@@ -115,7 +115,20 @@ export function XpCelebration() {
     try {
       const r = await fetch(url);
       const j = (await r.json()) as { pending: PendingCelebration | null };
-      if (j?.pending && j.pending.matchIds.length > 0) setData(j.pending);
+      if (j?.pending && j.pending.matchIds.length > 0) {
+        setData(j.pending);
+        // Mark it seen as soon as it's shown, so each player sees it only once
+        // per set of new games — even if they close the tab/PWA without pressing
+        // the button. Preview mode (?xppreview=1) never marks it, so it stays
+        // replayable.
+        if (!preview) {
+          void fetch("/api/xp-celebration/seen", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ matchIds: j.pending.matchIds }),
+          }).catch(() => {});
+        }
+      }
     } catch {
       /* ignore */
     }
