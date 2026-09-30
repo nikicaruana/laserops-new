@@ -14,6 +14,9 @@ import { Container } from "@/components/ui/Container";
 import { createClient } from "@/lib/supabase/server";
 import { LiveRosterRefresh } from "@/components/portal/LiveRosterRefresh";
 import { LiveFeedClient } from "@/components/live/LiveFeedClient";
+import { InMatchScoreboard } from "@/components/portal/InMatchScoreboard";
+import { getInMatchScoreboard } from "@/lib/inmatch/scoreboard";
+import { createServiceClient } from "@/lib/supabase/service";
 
 export const metadata: Metadata = { title: "Live game", robots: { index: false, follow: false } };
 
@@ -28,7 +31,7 @@ export default async function LiveGamePage({ params }: { params: Promise<{ id: s
   } = await supabase.auth.getUser();
   if (!user) redirect(`/player-portal/login?next=/player-portal/games/${id}/live`);
 
-  const { data: account } = await supabase.from("accounts").select("id, ops_tag").eq("auth_user_id", user.id).maybeSingle();
+  const { data: account } = await supabase.from("accounts").select("id, ops_tag, is_admin").eq("auth_user_id", user.id).maybeSingle();
   if (!account) redirect("/player-portal/games");
 
   const [{ data: match }, { data: participant }, { data: rosterRows }] = await Promise.all([
@@ -41,6 +44,13 @@ export default async function LiveGamePage({ params }: { params: Promise<{ id: s
   const roster = (rosterRows ?? []) as RosterRow[];
   const isLive = match.status === "live";
   const isOver = match.status === "completed";
+
+  // In-match round scores (Beta): visible to players in this match + admins.
+  const canSeeScores = !!participant || account.is_admin === true;
+  const svc = canSeeScores ? createServiceClient() : null;
+  const scoreboard = svc
+    ? await getInMatchScoreboard(svc, match.id, { label: match.title || match.match_code || "Game", date: null })
+    : { label: "", date: null, rounds: [] };
 
   return (
     <Container size="narrow" className="py-12 sm:py-16">
@@ -85,6 +95,12 @@ export default async function LiveGamePage({ params }: { params: Promise<{ id: s
             </Link>
           </div>
         ) : null}
+
+        {scoreboard.rounds.length > 0 && (
+          <div className="mt-6">
+            <InMatchScoreboard scoreboard={scoreboard} me={account.ops_tag ?? null} />
+          </div>
+        )}
 
         {/* Live roster */}
         {isLive && (

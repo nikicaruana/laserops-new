@@ -1,0 +1,163 @@
+/**
+ * lib/inmatch/scoreboard.ts
+ * --------------------------------------------------------------------
+ * In-match round scores (Beta). Builds a compact per-round scoreboard for the
+ * player-facing in-match view — the leaderboard + everyone's performance +
+ * streaks that players see BETWEEN rounds while an online game is running
+ * without the live feed.
+ *
+ * Each round's scoreboard is derived with the SAME v2 scoring engine as the
+ * published match report ([[match-report-v2-beta]]), but on a single round's raw
+ * JSON, then cached on match_ingest_rounds.report so player reads are instant
+ * (the break between rounds is short — nothing re-parses on the read path once
+ * a round is cached). Server-only: reads via the service client (it must read
+ * every player's account for identities and every round's raw file).
+ */
+import "server-only";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { buildMatchReportV2, type MatchReportV2 } from "@/lib/match-report-v2/build";
+import { resolveRoster } from "@/lib/ingestion/roster";
+import type { RoundResolutions } from "@/lib/ingestion/resolutions";
+
+export type InMatchStreak = { key: string; name: string; count: number; points: number };
+
+export type InMatchPlayer = {
+  name: string;
+  team: string;
+  frags: number;
+  deaths: number;
+  kd: number;
+  accuracy: number;
+  damage: number;
+  captures: number;
+  holdSeconds: number;
+  killScore: number;
+  objectiveScore: number;
+  streakScore: number;
+  totalScore: number;
+  streaks: InMatchStreak[];
+};
+
+export type InMatchRound = {
+  roundNo: number;
+  winnerTeam: string | null;
+  durationSeconds: number | null;
+  teams: { colour: string; name: string; playerCount: number }[];
+  players: InMatchPlayer[];
+  builtAt: string;
+};
+
+export type InMatchScoreboard = { label: string; date: string | null; rounds: InMatchRound[] };
+
+type RoundRow = {
+  id: string;
+  round_no: number | null;
+  filename: string | null;
+  raw_file: string | null;
+  resolutions: RoundResolutions | null;
+  winner_override: string | null;
+  report: InMatchRound | null;
+  report_built_at: string | null;
+};
+
+/** MatchReportV2 (built on ONE round) -> compact in-match payload. */
+function toInMatchRound(report: MatchReportV2, roundNo: number): InMatchRound {
+  const round0 = report.rounds[0];
+  const players: InMatchPlayer[] = report.players
+    .map((p) => ({
+      name: p.name,
+      team: p.team,
+      frags: p.frags,
+      deaths: p.deaths,
+      kd: p.kd,
+      accuracy: p.accuracy,
+      damage: p.damage,
+      captures: p.captures,
+      holdSeconds: p.holdSeconds,
+      killScore: p.killScore,
+      objectiveScore: p.objectiveScore,
+      streakScore: p.streakScore,
+      totalScore: p.totalScore,
+      streaks: p.streaks.map((s) => ({ key: s.key, name: s.name, count: s.count, points: s.points })),
+    }))
+    .sort((a, b) => b.totalScore - a.totalScore || b.frags - a.frags);
+  return {
+    roundNo,
+    winnerTeam: round0?.winnerTeam ?? report.matchWinner ?? null,
+    durationSeconds: round0?.durationSeconds ?? null,
+    teams: report.teams.map((t) => ({ colour: t.colour, name: t.name, playerCount: t.playerNames.length })),
+    players,
+    builtAt: report.generatedAt,
+  };
+}
+
+/**
+ * Build the in-match scoreboard for a match. Cached rounds are returned as-is;
+ * any round without a cached report is built now and the cache written back so
+ * the next read is an instant cache hit.
+ */
+export async function getInMatchScoreboard(
+  svc: SupabaseClient,
+  matchId: string,
+  meta: { label: string; date: string | null },
+): Promise<InMatchScoreboard> {
+  const { data: rows } = await svc
+    .from("match_ingest_rounds")
+    .select("id, round_no, filename, raw_file, resolutions, winner_override, report, report_built_at")
+    .eq("match_id", matchId)
+    .eq("mode", "online")
+    .order("round_no", { ascending: true, nullsFirst: false })
+    .order("created_at", { ascending: true });
+
+  const list = (rows ?? []) as RoundRow[];
+  if (list.length === 0) return { label: meta.label, date: meta.date, rounds: [] };
+
+  // Identity resolver (headband -> ops tag / display name), built once. Return
+  // "" for an unresolved headband so the report keeps the raw "Head NN" label.
+  const resolver = await resolveRoster(svc, matchId);
+  const identityByHeadband = (no: number) => {
+    const e = resolver(String(no));
+    return e.nickname === String(no) ? "" : e.nickname;
+  };
+
+  const rounds: InMatchRound[] = [];
+  const freshlyBuilt: { id: string; round: InMatchRound }[] = [];
+  let seq = 0;
+  for (const r of list) {
+    seq += 1;
+    const roundNo = r.round_no ?? seq;
+    if (r.report && r.report_built_at) {
+      rounds.push({ ...r.report, roundNo });
+      continue;
+    }
+    if (!r.raw_file) continue;
+    const report = buildMatchReportV2(
+      [{ raw: r.raw_file, resolutions: r.resolutions ?? undefined, winnerOverride: r.winner_override ?? undefined }],
+      { matchId, label: meta.label, date: meta.date },
+      { identityByHeadband },
+    );
+    const built = toInMatchRound(report, roundNo);
+    rounds.push(built);
+    freshlyBuilt.push({ id: r.id, round: built });
+  }
+
+  if (freshlyBuilt.length > 0) {
+    const builtAt = new Date().toISOString();
+    await Promise.all(
+      freshlyBuilt.map((b) =>
+        svc.from("match_ingest_rounds").update({ report: b.round, report_built_at: builtAt }).eq("id", b.id),
+      ),
+    );
+  }
+
+  return { label: meta.label, date: meta.date, rounds };
+}
+
+/** Invalidate cached reports for a match so the next read rebuilds them. */
+export async function invalidateInMatchScoreboard(svc: SupabaseClient, matchId: string): Promise<void> {
+  await svc
+    .from("match_ingest_rounds")
+    .update({ report: null, report_built_at: null })
+    .eq("match_id", matchId)
+    .eq("mode", "online");
+}

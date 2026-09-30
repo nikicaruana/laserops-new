@@ -14,6 +14,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { parseRound } from "@/lib/ingestion/round-parser";
 import { isLwa, lwaMatchPlayers } from "@/lib/ingestion/lwa";
+import { createServiceClient } from "@/lib/supabase/service";
+import { getInMatchScoreboard } from "@/lib/inmatch/scoreboard";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -71,18 +73,43 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (existing) return NextResponse.json({ ok: true, skipped: "duplicate" });
   }
 
+  // Assign a stable round number (this file is new — duplicates returned above).
+  const { data: mx } = await supabase
+    .from("match_ingest_rounds")
+    .select("round_no")
+    .eq("match_id", id)
+    .eq("mode", "online")
+    .order("round_no", { ascending: false, nullsFirst: false })
+    .limit(1)
+    .maybeSingle();
+  const roundNo = (mx?.round_no ?? 0) + 1;
+
   const { error: insErr } = await supabase
     .from("match_ingest_rounds")
-    .insert({ match_id: id, filename: filename || null, raw_file: raw, mode: "online" });
+    .insert({ match_id: id, filename: filename || null, raw_file: raw, mode: "online", round_no: roundNo });
   if (insErr) return NextResponse.json({ error: insErr.message }, { status: 500 });
 
-  // Note the source type so the match shows as JSON-sourced.
+  // Touch the match: marks it JSON-sourced AND fires the realtime change that
+  // refreshes players' live pages so the new round's scores appear at once.
   await supabase.from("matches").update({ source_file_type: "json" }).eq("id", id);
+
+  // Build + cache this round's in-match scoreboard now (parse once at upload)
+  // so player reads between rounds are instant. Best-effort: the read path
+  // rebuilds on demand if this fails.
+  try {
+    const svc = createServiceClient();
+    if (svc) {
+      const { data: m } = await svc.from("matches").select("title, match_code").eq("id", id).maybeSingle();
+      await getInMatchScoreboard(svc, id, { label: m?.title || m?.match_code || "Game", date: null });
+    }
+  } catch {
+    /* non-fatal */
+  }
 
   const { count } = await supabase
     .from("match_ingest_rounds")
     .select("id", { count: "exact", head: true })
     .eq("match_id", id);
 
-  return NextResponse.json({ ok: true, mode: "online", rounds: count ?? null });
+  return NextResponse.json({ ok: true, mode: "online", rounds: count ?? null, roundNo });
 }
