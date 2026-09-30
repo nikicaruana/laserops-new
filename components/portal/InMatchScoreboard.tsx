@@ -169,9 +169,12 @@ export function InMatchScoreboard({ scoreboard, me }: { scoreboard: Scoreboard; 
                 </p>
               </div>
               {selected.gunImageUrl ? (
-                <span className="flex h-9 w-16 shrink-0 items-center justify-center bg-accent px-1">
+                <span
+                  className="flex h-10 w-[4.5rem] shrink-0 items-center justify-center"
+                  style={{ background: "radial-gradient(60% 62% at 50% 50%, rgba(255,222,0,0.6) 0%, rgba(255,222,0,0.16) 55%, rgba(255,222,0,0) 78%)" }}
+                >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={cldImage(selected.gunImageUrl, { w: 200 })} alt={selected.gunLabel} className="h-7 w-full object-contain" />
+                  <img src={cldImage(selected.gunImageUrl, { w: 220 })} alt={selected.gunLabel} className="h-7 w-12 object-contain" />
                 </span>
               ) : selected.gunLabel ? (
                 <span className="shrink-0 text-[0.65rem] font-semibold text-text-muted">{selected.gunLabel}</span>
@@ -257,9 +260,13 @@ export function InMatchScoreboard({ scoreboard, me }: { scoreboard: Scoreboard; 
                     </Td>
                     <Td align="left">
                       {p.gunImageUrl ? (
-                        <span className="inline-flex h-5 w-11 items-center justify-center bg-accent px-0.5" title={p.gunLabel}>
+                        <span
+                          className="inline-flex h-6 w-12 items-center justify-center"
+                          title={p.gunLabel}
+                          style={{ background: "radial-gradient(62% 62% at 50% 50%, rgba(255,222,0,0.55) 0%, rgba(255,222,0,0.14) 58%, rgba(255,222,0,0) 80%)" }}
+                        >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={cldImage(p.gunImageUrl, { w: 120 })} alt={p.gunLabel} className="h-4 w-full object-contain" />
+                          <img src={cldImage(p.gunImageUrl, { w: 120 })} alt={p.gunLabel} className="h-4 w-9 object-contain" />
                         </span>
                       ) : (
                         <span className="whitespace-nowrap text-[0.7rem] text-text-subtle">{p.gunLabel || "–"}</span>
