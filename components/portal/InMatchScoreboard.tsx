@@ -192,14 +192,14 @@ export function InMatchScoreboard({ scoreboard, me }: { scoreboard: Scoreboard; 
         {selected && selected.streaks.length > 0 && (
           <div className="mt-4">
             <p className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-text-muted">Streaks</p>
-            <div className="mt-2 flex gap-2 overflow-x-auto px-1 pb-1 pt-3">
+            <div className="mt-2 flex gap-0 overflow-x-auto px-1 pb-1 pt-3">
               {selected.streaks.map((s) => (
-                <div key={s.key} className="relative shrink-0" title={`${s.name}${s.count > 1 ? ` ×${s.count}` : ""} · +${s.points}`}>
+                <div key={s.key} className="relative shrink-0 -mx-2 first:ml-0 last:mr-0" title={`${s.name}${s.count > 1 ? ` ×${s.count}` : ""} · +${s.points}`}>
                   {s.imageUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={cldImage(s.imageUrl, { w: 220 })} alt={s.name} className="h-[5.4rem] w-[5.4rem] object-contain" />
+                    <img src={cldImage(s.imageUrl, { w: 260 })} alt={s.name} className="h-[6.2rem] w-[6.2rem] object-contain" />
                   ) : (
-                    <span className="flex h-[5.4rem] w-[5.4rem] items-center justify-center border border-accent/40 bg-bg-overlay px-1 text-center text-[0.6rem] font-semibold text-text">
+                    <span className="flex h-[6.2rem] w-[6.2rem] items-center justify-center border border-accent/40 bg-bg-overlay px-1 text-center text-[0.6rem] font-semibold text-text">
                       {s.name}
                     </span>
                   )}
