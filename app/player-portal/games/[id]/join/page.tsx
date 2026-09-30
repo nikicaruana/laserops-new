@@ -48,7 +48,7 @@ export default async function JoinMatchPage({
 
   const { data: match } = await supabase
     .from("matches")
-    .select("id, title, status, is_double_xp")
+    .select("id, title, status, is_double_xp, match_code")
     .eq("id", id)
     .maybeSingle();
   if (!match) notFound();
@@ -109,6 +109,23 @@ export default async function JoinMatchPage({
                   : null
               }
             />
+          </div>
+        ) : match.status === "completed" || match.status === "cancelled" ? (
+          <div className="portal-card px-5 py-8 text-center">
+            <p className="text-sm text-text-muted">This game has ended, so you can no longer sign in.</p>
+            {match.status === "completed" && match.match_code && (
+              <Link
+                href={`/match-report?match=${match.match_code}`}
+                className="mt-4 inline-block border border-accent bg-accent px-5 py-2 text-xs font-bold uppercase tracking-[0.12em] text-bg"
+              >
+                View match report
+              </Link>
+            )}
+            <div className="mt-4">
+              <Link href="/player-portal/games" className="text-xs font-semibold uppercase tracking-[0.12em] text-accent">
+                ← Back to games
+              </Link>
+            </div>
           </div>
         ) : match.status !== "live" ? (
           <div className="portal-card px-5 py-8 text-center">

@@ -15,7 +15,7 @@ import { Container } from "@/components/ui/Container";
 import { createClient } from "@/lib/supabase/server";
 import { LiveRosterRefresh } from "@/components/portal/LiveRosterRefresh";
 import { LiveFeedClient } from "@/components/live/LiveFeedClient";
-import { InMatchScoreboard, type InMatchViewer } from "@/components/portal/InMatchScoreboard";
+import { InMatchScoreboard } from "@/components/portal/InMatchScoreboard";
 import { getInMatchScoreboard } from "@/lib/inmatch/scoreboard";
 import { createServiceClient } from "@/lib/supabase/service";
 
@@ -32,7 +32,7 @@ export default async function LiveGamePage({ params }: { params: Promise<{ id: s
 
   const { data: account } = await supabase
     .from("accounts")
-    .select("id, ops_tag, is_admin, profile_pic_url")
+    .select("id, ops_tag, is_admin")
     .eq("auth_user_id", user.id)
     .maybeSingle();
   if (!account) redirect("/player-portal/games");
@@ -46,21 +46,10 @@ export default async function LiveGamePage({ params }: { params: Promise<{ id: s
   const isLive = match.status === "live";
   const isOver = match.status === "completed";
 
-  // Gun artwork for the viewer's stat card (config table, RLS-readable).
-  let gunImageUrl: string | null = null;
-  if (participant?.gun_used) {
-    const { data: g } = await supabase.from("guns").select("image_url").eq("name", participant.gun_used).maybeSingle();
-    gunImageUrl = (g?.image_url as string | null) ?? null;
-  }
-  const viewer: InMatchViewer = {
-    opsTag: account.ops_tag ?? null,
-    avatarUrl: (account.profile_pic_url as string | null) ?? null,
-    gunLabel: participant?.gun_used ?? null,
-    gunImageUrl,
-  };
-
-  // In-match round scores (Beta): visible to players in this match + admins.
-  const canSeeScores = !!participant || account.is_admin === true;
+  // In-match round scores (Beta): live only, visible to players in this match
+  // + admins. Once the game is completed players lose the live view entirely
+  // and are pointed to the full match report.
+  const canSeeScores = isLive && (!!participant || account.is_admin === true);
   const svc = canSeeScores ? createServiceClient() : null;
   const scoreboard = svc
     ? await getInMatchScoreboard(svc, match.id, { label: match.title || match.match_code || "Game", date: null })
@@ -112,7 +101,7 @@ export default async function LiveGamePage({ params }: { params: Promise<{ id: s
 
         {scoreboard.rounds.length > 0 && (
           <div className="mt-6">
-            <InMatchScoreboard scoreboard={scoreboard} viewer={viewer} />
+            <InMatchScoreboard scoreboard={scoreboard} me={account.ops_tag ?? null} />
           </div>
         )}
 

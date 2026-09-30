@@ -40,5 +40,7 @@ export async function GET() {
     .limit(1)
     .maybeSingle();
 
-  return NextResponse.json({ match: m ? { id: m.id, title: m.title ?? null } : null });
+  if (!m) return NextResponse.json({ match: null });
+  const joined = ((parts ?? []) as { match_id: string }[]).some((r) => r.match_id === m.id);
+  return NextResponse.json({ match: { id: m.id, title: m.title ?? null, joined } });
 }

@@ -11,7 +11,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-type LiveGame = { id: string; title: string | null } | null;
+type LiveGame = { id: string; title: string | null; joined: boolean } | null;
 
 export function LiveGameButton() {
   const [game, setGame] = useState<LiveGame>(null);
@@ -45,7 +45,7 @@ export function LiveGameButton() {
 
   return (
     <Link
-      href={`/player-portal/games/${game.id}/live`}
+      href={`/player-portal/games/${game.id}/${game.joined ? "live" : "join"}`}
       className="inline-flex h-11 items-center gap-1.5 border border-accent bg-accent px-3 text-[0.65rem] font-bold uppercase tracking-[0.12em] text-bg transition-colors hover:bg-accent-soft"
       aria-label="Go to your live game"
     >

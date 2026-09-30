@@ -4,17 +4,16 @@
  * components/portal/InMatchScoreboard.tsx
  * --------------------------------------------------------------------
  * In-match round scores (Beta). The player-facing scoreboard shown BETWEEN
- * rounds of an online game running without the live feed: pick a round and see
- * your own stat card (with per-stat rank) + streak badges and a table of
- * everyone's performance. Data is the cached per-round payload built
- * server-side (lib/inmatch/scoreboard.ts); this component is display + round
- * navigation only. Marked Beta — not final.
+ * rounds of an online game running without the live feed. Pick a round; the top
+ * card shows a player's stats (your own by default, else the round leader) with
+ * per-stat rank, avatar + gun, a horizontally-scrollable strip of streak badges,
+ * their nemesis and head-to-head kill lists. Tap any row in the table to load
+ * that player's card (so an admin can inspect anyone). Display only — the data
+ * is the cached per-round payload from lib/inmatch/scoreboard.ts. Beta.
  */
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { cldImage } from "@/lib/cld";
-import type { InMatchScoreboard as Scoreboard, InMatchPlayer } from "@/lib/inmatch/scoreboard";
-
-export type InMatchViewer = { opsTag: string | null; avatarUrl: string | null; gunLabel: string | null; gunImageUrl: string | null };
+import type { InMatchScoreboard as Scoreboard, InMatchPlayer, InMatchKill } from "@/lib/inmatch/scoreboard";
 
 const TEAM_DOT: Record<string, string> = {
   yellow: "bg-accent",
@@ -30,9 +29,8 @@ const teamDot = (c: string) => TEAM_DOT[c.toLowerCase()] ?? "bg-zinc-500";
 
 const pct = (a: number) => Math.round(a <= 1 ? a * 100 : a);
 const num = (n: number) => n.toLocaleString("en-US");
-const ord = (n: number) => `#${n}`;
+const nk = (s: string) => s.trim().toLowerCase();
 
-/** Rank of `mine` among players for a metric (1 = best). */
 function rankOf(players: InMatchPlayer[], mine: InMatchPlayer, val: (p: InMatchPlayer) => number, lowerBetter = false) {
   const v = val(mine);
   let rank = 1;
@@ -44,26 +42,42 @@ function rankOf(players: InMatchPlayer[], mine: InMatchPlayer, val: (p: InMatchP
   return rank;
 }
 
-export function InMatchScoreboard({ scoreboard, viewer }: { scoreboard: Scoreboard; viewer: InMatchViewer }) {
+export function InMatchScoreboard({ scoreboard, me }: { scoreboard: Scoreboard; me: string | null }) {
   const { rounds } = scoreboard;
   const [sel, setSel] = useState(Math.max(0, rounds.length - 1));
+  const [pickedName, setPickedName] = useState<string | null>(null);
 
-  if (rounds.length === 0) return null;
-  const round = rounds[Math.min(sel, rounds.length - 1)];
-  const meKey = (viewer.opsTag ?? "").trim().toLowerCase();
-  const mine = meKey ? round.players.find((p) => p.name.trim().toLowerCase() === meKey) ?? null : null;
-  const players = round.players;
+  const round = rounds[Math.min(sel, Math.max(0, rounds.length - 1))];
+  const meKey = (me ?? "").trim().toLowerCase();
+  const players = round?.players ?? [];
 
-  const myStats = mine
+  // Selected player: an explicit pick (if present this round), else me, else the
+  // round leader (players are sorted best-first).
+  const selected = useMemo(() => {
+    if (pickedName) {
+      const hit = players.find((p) => nk(p.name) === nk(pickedName));
+      if (hit) return hit;
+    }
+    if (meKey) {
+      const mine = players.find((p) => nk(p.name) === meKey);
+      if (mine) return mine;
+    }
+    return players[0] ?? null;
+  }, [pickedName, players, meKey]);
+
+  if (!round || players.length === 0) return null;
+  const isSelf = selected ? nk(selected.name) === meKey : false;
+
+  const stats = selected
     ? [
-        { label: "Score", value: num(mine.totalScore), rank: rankOf(players, mine, (p) => p.totalScore), big: true },
-        { label: "Kills", value: num(mine.frags), rank: rankOf(players, mine, (p) => p.frags) },
-        { label: "Deaths", value: num(mine.deaths), rank: rankOf(players, mine, (p) => p.deaths, true) },
-        { label: "K/D", value: mine.kd.toFixed(2), rank: rankOf(players, mine, (p) => p.kd) },
-        { label: "Damage", value: num(mine.damage), rank: rankOf(players, mine, (p) => p.damage) },
-        { label: "Accuracy", value: `${pct(mine.accuracy)}%`, rank: rankOf(players, mine, (p) => p.accuracy) },
-        { label: "Obj Caps", value: num(mine.captures), rank: rankOf(players, mine, (p) => p.captures) },
-        { label: "Cap Time (s)", value: num(Math.round(mine.holdSeconds)), rank: rankOf(players, mine, (p) => p.holdSeconds) },
+        { label: "Score", value: num(selected.totalScore), rank: rankOf(players, selected, (p) => p.totalScore), big: true },
+        { label: "Kills", value: num(selected.frags), rank: rankOf(players, selected, (p) => p.frags) },
+        { label: "Deaths", value: num(selected.deaths), rank: rankOf(players, selected, (p) => p.deaths, true) },
+        { label: "K/D", value: selected.kd.toFixed(2), rank: rankOf(players, selected, (p) => p.kd) },
+        { label: "DMG", value: num(selected.damage), rank: rankOf(players, selected, (p) => p.damage) },
+        { label: "ACC", value: `${pct(selected.accuracy)}%`, rank: rankOf(players, selected, (p) => p.accuracy) },
+        { label: "Obj Caps", value: num(selected.captures), rank: rankOf(players, selected, (p) => p.captures) },
+        { label: "Time (s)", value: num(Math.round(selected.holdSeconds)), rank: rankOf(players, selected, (p) => p.holdSeconds) },
       ]
     : [];
 
@@ -117,130 +131,208 @@ export function InMatchScoreboard({ scoreboard, viewer }: { scoreboard: Scoreboa
           )}
         </div>
 
-        {/* Your card */}
-        {mine && (
+        {/* Selected player's card */}
+        {selected && (
           <div className="mt-4 border border-accent bg-accent/10 p-4">
-            {/* identity row */}
             <div className="flex items-center gap-3">
               <span className="relative block h-11 w-11 shrink-0 overflow-hidden rounded-sm border border-border bg-bg-overlay">
-                {viewer.avatarUrl ? (
+                {selected.avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={cldImage(viewer.avatarUrl, { w: 96 })} alt="" className="h-full w-full object-cover" />
+                  <img src={cldImage(selected.avatarUrl, { w: 96 })} alt="" className="h-full w-full object-cover" />
                 ) : (
                   <span className="flex h-full w-full items-center justify-center text-xs font-bold text-text-subtle">
-                    {(viewer.opsTag ?? "?").slice(0, 2).toUpperCase()}
+                    {selected.name.slice(0, 2).toUpperCase()}
                   </span>
                 )}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="text-[0.6rem] font-bold uppercase tracking-[0.16em] text-accent">Your round</p>
-                <p className="truncate text-sm font-bold text-text">{viewer.opsTag ?? mine.name}</p>
+                <p className="text-[0.6rem] font-bold uppercase tracking-[0.16em] text-accent">
+                  {isSelf ? "Your round" : "Round stats"}
+                </p>
+                <p className="flex items-center gap-1.5 truncate text-sm font-bold text-text">
+                  <span className={`h-2 w-2 shrink-0 rounded-full ${teamDot(selected.team)}`} />
+                  {selected.name}
+                  {isSelf && <span className="text-[0.55rem] font-bold uppercase tracking-[0.12em] text-accent">You</span>}
+                </p>
               </div>
-              {viewer.gunImageUrl ? (
-                <span className="flex items-center gap-2">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={cldImage(viewer.gunImageUrl, { w: 160 })} alt="" className="h-8 w-16 object-contain" />
-                </span>
-              ) : viewer.gunLabel ? (
-                <span className="text-[0.65rem] font-semibold text-text-muted">{viewer.gunLabel}</span>
+              {selected.gunImageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={cldImage(selected.gunImageUrl, { w: 160 })} alt={selected.gunLabel} className="h-8 w-16 shrink-0 object-contain" />
+              ) : selected.gunLabel ? (
+                <span className="shrink-0 text-[0.65rem] font-semibold text-text-muted">{selected.gunLabel}</span>
               ) : null}
             </div>
 
             {/* stat grid with per-stat rank */}
             <div className="mt-3 grid grid-cols-4 gap-2">
-              {myStats.map((s) => (
+              {stats.map((s) => (
                 <div key={s.label} className="border border-border bg-bg px-1 py-1.5 text-center">
-                  <p className="text-[0.5rem] font-semibold uppercase tracking-[0.08em] text-text-muted">{s.label}</p>
+                  <p className="text-[0.5rem] font-semibold uppercase tracking-[0.06em] text-text-muted">{s.label}</p>
                   <p className={`font-mono font-bold tabular-nums text-accent ${s.big ? "text-base" : "text-sm"}`}>{s.value}</p>
-                  <p className="text-[0.5rem] font-semibold uppercase tracking-[0.06em] text-text-subtle">{ord(s.rank)}</p>
+                  <p className="text-[0.5rem] font-semibold uppercase tracking-[0.06em] text-text-subtle">#{s.rank}</p>
                 </div>
               ))}
             </div>
-
-            {/* streaks as badges */}
-            {mine.streaks.length > 0 && (
-              <div className="mt-3">
-                <p className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-text-muted">Streaks</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {mine.streaks.map((s) => (
-                    <span
-                      key={s.key}
-                      className="inline-flex items-center gap-1.5 border border-accent/40 bg-bg-overlay px-1.5 py-1"
-                      title={`${s.name}${s.count > 1 ? ` ×${s.count}` : ""} · +${s.points}`}
-                    >
-                      {s.imageUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={cldImage(s.imageUrl, { w: 72 })} alt="" className="h-7 w-7 object-contain" />
-                      ) : (
-                        <span className="text-[0.65rem] font-semibold text-text">{s.name}</span>
-                      )}
-                      <span className="flex flex-col leading-tight">
-                        <span className="text-[0.6rem] font-semibold text-text">{s.name}</span>
-                        <span className="font-mono text-[0.6rem] text-accent">
-                          {s.count > 1 ? `×${s.count} · ` : ""}+{s.points}
-                        </span>
-                      </span>
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         )}
 
-        {/* Everyone's performance */}
+        {/* Streaks – icon-only, horizontally scrollable */}
+        {selected && selected.streaks.length > 0 && (
+          <div className="mt-4">
+            <p className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-text-muted">Streaks</p>
+            <div className="mt-2 flex gap-3 overflow-x-auto pb-1">
+              {selected.streaks.map((s) => (
+                <div key={s.key} className="relative shrink-0" title={`${s.name}${s.count > 1 ? ` ×${s.count}` : ""} · +${s.points}`}>
+                  {s.imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={cldImage(s.imageUrl, { w: 160 })} alt={s.name} className="h-16 w-16 object-contain" />
+                  ) : (
+                    <span className="flex h-16 w-16 items-center justify-center border border-accent/40 bg-bg-overlay px-1 text-center text-[0.55rem] font-semibold text-text">
+                      {s.name}
+                    </span>
+                  )}
+                  {s.count > 1 && (
+                    <span className="absolute -right-1 -top-1 inline-flex min-w-[1.1rem] items-center justify-center rounded-full bg-accent px-1 text-[0.6rem] font-bold text-bg">
+                      ×{s.count}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Everyone's performance – tap a row to load that player above */}
         <div className="mt-4 overflow-x-auto">
-          <table className="w-full min-w-[42rem] border-collapse text-sm">
+          <table className="w-full min-w-[38rem] table-fixed border-collapse text-sm">
+            <colgroup>
+              <col style={{ width: "2rem" }} />
+              <col style={{ width: "9rem" }} />
+              <col style={{ width: "4rem" }} />
+              <col style={{ width: "2.5rem" }} />
+              <col style={{ width: "2.5rem" }} />
+              <col style={{ width: "3rem" }} />
+              <col style={{ width: "3rem" }} />
+              <col style={{ width: "3.5rem" }} />
+              <col style={{ width: "3rem" }} />
+              <col style={{ width: "3.5rem" }} />
+            </colgroup>
             <thead>
-              <tr className="border-b border-border-strong text-[0.6rem] uppercase tracking-[0.08em] text-text-muted">
-                <Th className="text-left">#</Th>
-                <Th className="text-left">Player</Th>
-                <Th>Score</Th>
-                <Th>K</Th>
-                <Th>D</Th>
-                <Th>K/D</Th>
-                <Th>Acc</Th>
-                <Th>Dmg</Th>
-                <Th>Caps</Th>
-                <Th>Cap(s)</Th>
+              <tr className="border-b border-border-strong text-[0.6rem] uppercase tracking-[0.06em] text-text-muted">
+                <Th align="right">#</Th>
+                <Th align="left">Player</Th>
+                <Th align="right">Score</Th>
+                <Th align="right">K</Th>
+                <Th align="right">D</Th>
+                <Th align="right">K/D</Th>
+                <Th align="right">Acc</Th>
+                <Th align="right">Dmg</Th>
+                <Th align="right">Caps</Th>
+                <Th align="right">Time</Th>
               </tr>
             </thead>
             <tbody>
               {players.map((p, i) => {
-                const isMe = meKey && p.name.trim().toLowerCase() === meKey;
+                const isMe = meKey && nk(p.name) === meKey;
+                const isSel = selected && nk(p.name) === nk(selected.name);
                 return (
-                  <tr key={`${p.name}-${i}`} className={`border-b border-border ${isMe ? "bg-accent/5" : ""}`}>
-                    <Td className="text-left font-mono text-text-subtle">{i + 1}</Td>
-                    <Td className="text-left">
-                      <span className="flex items-center gap-2">
+                  <tr
+                    key={`${p.name}-${i}`}
+                    onClick={() => setPickedName(p.name)}
+                    className={`cursor-pointer border-b border-border transition-colors hover:bg-bg-overlay ${
+                      isSel ? "bg-accent/10" : isMe ? "bg-accent/5" : ""
+                    }`}
+                  >
+                    <Td align="right" className="font-mono text-text-subtle">{i + 1}</Td>
+                    <Td align="left">
+                      <span className="flex items-center gap-1.5">
                         <span className={`h-2 w-2 shrink-0 rounded-full ${teamDot(p.team)}`} />
                         <span className="truncate font-semibold text-text">{p.name}</span>
-                        {isMe && <span className="text-[0.55rem] font-bold uppercase tracking-[0.12em] text-accent">You</span>}
+                        {isMe && <span className="shrink-0 text-[0.5rem] font-bold uppercase tracking-[0.1em] text-accent">You</span>}
                       </span>
                     </Td>
-                    <Td className="font-mono font-bold tabular-nums text-accent">{num(p.totalScore)}</Td>
-                    <Td className="font-mono tabular-nums">{p.frags}</Td>
-                    <Td className="font-mono tabular-nums text-text-muted">{p.deaths}</Td>
-                    <Td className="font-mono tabular-nums">{p.kd.toFixed(2)}</Td>
-                    <Td className="font-mono tabular-nums text-text-muted">{pct(p.accuracy)}%</Td>
-                    <Td className="font-mono tabular-nums text-text-muted">{num(p.damage)}</Td>
-                    <Td className="font-mono tabular-nums">{p.captures}</Td>
-                    <Td className="font-mono tabular-nums text-text-muted">{Math.round(p.holdSeconds)}</Td>
+                    <Td align="right" className="font-mono font-bold tabular-nums text-accent">{num(p.totalScore)}</Td>
+                    <Td align="right" className="font-mono tabular-nums">{p.frags}</Td>
+                    <Td align="right" className="font-mono tabular-nums text-text-muted">{p.deaths}</Td>
+                    <Td align="right" className="font-mono tabular-nums">{p.kd.toFixed(2)}</Td>
+                    <Td align="right" className="font-mono tabular-nums text-text-muted">{pct(p.accuracy)}%</Td>
+                    <Td align="right" className="font-mono tabular-nums text-text-muted">{num(p.damage)}</Td>
+                    <Td align="right" className="font-mono tabular-nums">{p.captures}</Td>
+                    <Td align="right" className="font-mono tabular-nums text-text-muted">{Math.round(p.holdSeconds)}</Td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
         </div>
+
+        {/* Nemesis + head-to-head for the selected player */}
+        {selected?.nemesis && (
+          <div className="mt-5 border border-border bg-bg-overlay/60 px-4 py-4">
+            <p className="mb-3 text-center text-[0.65rem] font-bold uppercase tracking-[0.16em] text-text-muted">Round Nemesis</p>
+            <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4">
+              <div className="flex items-center gap-3">
+                <span className="relative block h-14 w-14 shrink-0 overflow-hidden rounded-sm border border-border-strong bg-bg-overlay">
+                  {selected.nemesis.avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={cldImage(selected.nemesis.avatarUrl, { w: 120 })} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="flex h-full w-full items-center justify-center text-xs font-bold text-text-subtle">
+                      {selected.nemesis.name.slice(0, 2).toUpperCase()}
+                    </span>
+                  )}
+                </span>
+                <p className="text-lg font-extrabold uppercase tracking-tight text-accent">{selected.nemesis.name}</p>
+              </div>
+              <div className="flex gap-6 text-center">
+                <div>
+                  <p className="font-mono text-2xl font-extrabold text-text">{selected.nemesis.killsFor}</p>
+                  <p className="text-[0.55rem] font-semibold uppercase tracking-[0.12em] text-text-subtle">Kills on them</p>
+                </div>
+                <div>
+                  <p className="font-mono text-2xl font-extrabold text-text">{selected.nemesis.killsAgainst}</p>
+                  <p className="text-[0.55rem] font-semibold uppercase tracking-[0.12em] text-text-subtle">Killed by them</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {selected && (selected.killed.length > 0 || selected.killedBy.length > 0) && (
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <KillList title={`Players ${selected.name} killed`} rows={selected.killed} tone="accent" />
+            <KillList title={`Players who killed ${selected.name}`} rows={selected.killedBy} tone="red" />
+          </div>
+        )}
       </div>
     </section>
   );
 }
 
-function Th({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <th className={`px-2 py-2 font-semibold ${className || "text-right"}`}>{children}</th>;
+function KillList({ title, rows, tone }: { title: string; rows: InMatchKill[]; tone: "accent" | "red" }) {
+  return (
+    <div className="border border-border bg-bg-overlay/60 p-4">
+      <p className="mb-2 text-[0.6rem] font-bold uppercase tracking-[0.14em] text-text-muted">{title}</p>
+      {rows.length === 0 ? (
+        <p className="text-sm text-text-subtle">{tone === "red" ? "Untouchable this round." : "No kills this round."}</p>
+      ) : (
+        <ul className="space-y-1.5">
+          {rows.map((r) => (
+            <li key={r.name} className="flex items-center justify-between text-sm">
+              <span className="truncate text-text">{r.name}</span>
+              <span className={`font-mono font-bold ${tone === "red" ? "text-red-400" : "text-accent"}`}>{r.count}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
 }
 
-function Td({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <td className={`px-2 py-2 ${className || "text-right"}`}>{children}</td>;
+function Th({ children, align }: { children: React.ReactNode; align: "left" | "right" }) {
+  return <th className={`px-1.5 py-2 font-semibold ${align === "left" ? "text-left" : "text-right"}`}>{children}</th>;
+}
+
+function Td({ children, align, className = "" }: { children: React.ReactNode; align: "left" | "right"; className?: string }) {
+  return <td className={`px-1.5 py-2 ${align === "left" ? "text-left" : "text-right"} ${className}`}>{children}</td>;
 }
