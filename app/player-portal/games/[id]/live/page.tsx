@@ -65,7 +65,18 @@ export default async function LiveGamePage({ params }: { params: Promise<{ id: s
     <Container size="default" className="py-4 sm:py-6">
       {isLive && <LiveRosterRefresh matchId={match.id} />}
       <div className="mx-auto max-w-lg">
-        <div className="mb-4 text-center">
+        <div className="relative mb-4 text-center">
+          {isLive && participant && match.live_feed_enabled && (
+            <Link
+              href={`/player-portal/games/${id}/feed`}
+              className="absolute right-0 top-0 inline-flex items-center gap-1.5 border border-red-500 bg-red-600 px-2.5 py-1.5 text-[0.6rem] font-bold uppercase tracking-[0.1em] text-white transition-colors hover:bg-red-500"
+            >
+              <svg viewBox="0 0 100 100" className="h-3.5 w-3.5" aria-hidden fill="currentColor">
+                <path d="M50 4 L61 39 L96 50 L61 61 L50 96 L39 61 L4 50 L39 39 Z" />
+              </svg>
+              Enter Live Feed
+            </Link>
+          )}
           <span className="inline-flex items-center gap-2 border border-accent bg-accent/15 px-3 py-1 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-accent">
             {isLive && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />}
             {isLive ? "Live now" : isOver ? "Game over" : match.status}
@@ -74,19 +85,6 @@ export default async function LiveGamePage({ params }: { params: Promise<{ id: s
             {match.title || "LaserOps Game"}
           </h1>
         </div>
-
-        {/* Live feed opens fullscreen (it gets messy mid-game) — red CTA at the top, not in the header. */}
-        {isLive && participant && match.live_feed_enabled && (
-          <Link
-            href={`/player-portal/games/${id}/feed`}
-            className="mb-4 flex items-center justify-center gap-2.5 border border-red-500 bg-red-600 px-5 py-3 text-sm font-extrabold uppercase tracking-[0.14em] text-white transition-colors hover:bg-red-500"
-          >
-            <svg viewBox="0 0 100 100" className="h-5 w-5" aria-hidden fill="currentColor">
-              <path d="M50 4 L61 39 L96 50 L61 61 L50 96 L39 61 L4 50 L39 39 Z" />
-            </svg>
-            Live Feed
-          </Link>
-        )}
 
         {participant ? (
           <div className="portal-card px-5 py-6 text-center">
