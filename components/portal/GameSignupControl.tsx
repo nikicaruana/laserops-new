@@ -18,6 +18,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { type CarouselGun } from "@/components/portal/GunCarousel";
 import { GunBookingModal } from "@/components/portal/GunBookingModal";
+import { Modal } from "@/components/ui/Modal";
 import { AddPhoneModal } from "@/components/portal/AddPhoneModal";
 import { formatEur } from "@/lib/money";
 // Import the policy constant directly (not the @/lib/payments barrel) so the
@@ -79,6 +80,7 @@ export function GameSignupControl({
   const [error, setError] = useState<string | null>(null);
   const [needsPhone, setNeedsPhone] = useState(false);
   const [booking, setBooking] = useState(false);
+  const [payOpen, setPayOpen] = useState(false);
 
   const open = status === "tentative" || status === "awaiting_confirm" || status === "confirmed";
   const registered = mySignup?.status === "registered";
@@ -172,6 +174,27 @@ export function GameSignupControl({
       setBusy(false);
     }
   }
+  async function useFullToken() {
+    await payWithTokens(1);
+    setPayOpen(false);
+  }
+  async function useFractionThenViva() {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/signups/${matchId}/pay-token`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: tokenBalance }),
+      });
+      const data = (await res.json()) as { ok?: boolean; error?: string };
+      if (!res.ok || !data.ok) throw new Error(data.error || "Could not apply your token.");
+      await payNow(); // redirect to card checkout for the remainder
+    } catch (err) {
+      setBusy(false);
+      setError(err instanceof Error ? err.message : "Could not apply your token.");
+    }
+  }
 
   // ---- On the waitlist ----------------------------------------------------
   if (waitlisted) {
@@ -206,55 +229,73 @@ export function GameSignupControl({
     const remainderEur = hasPrice ? (priceEur as number) * (1 - applied) : 0;
     const fmtTok = (n: number) => (Number.isInteger(n) ? String(n) : String(parseFloat(n.toFixed(2))));
 
-    const payButton = (
-      <button
-        type="button"
-        onClick={payNow}
-        disabled={busy}
-        className="border border-accent bg-accent px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-bg transition-transform active:scale-[0.98] disabled:opacity-50"
-      >
-        {busy ? "Starting checkout…" : `Pay ${formatEur(remainderEur)}${applied > 0 ? " remainder" : ""} now`}
-      </button>
-    );
-
     // Game-token payment options (1 token = 1 free game; fractions part-pay).
     const canUseFullToken = hasPrice && applied === 0 && tokenBalance >= 1;
     const canUseFraction = hasPrice && applied === 0 && tokenBalance > 0 && tokenBalance < 1;
-    const tokenSection =
-      hasPrice && !isPaid && (tokenBalance > 0 || applied > 0) ? (
-        <div className={`flex flex-col gap-1.5 ${col}`}>
-          {applied > 0 && applied < 1 && (
-            <span className="block max-w-full border-l-2 border-accent/70 bg-accent/10 px-3 py-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.08em] text-accent">
-              {fmtTok(applied)} token applied · {formatEur(remainderEur)} left to pay
-            </span>
+
+    // Single Pay-now button that opens a modal to choose how to pay: a full
+    // token (free), part-token + card for the remainder, or card in full.
+    const payFlow =
+      hasPrice && !isPaid ? (
+        <>
+          <button
+            type="button"
+            onClick={() => setPayOpen(true)}
+            disabled={busy}
+            className="border border-accent bg-accent px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-bg transition-transform active:scale-[0.98] disabled:opacity-50"
+          >
+            {applied > 0 ? `Pay ${formatEur(remainderEur)} remainder` : "Pay now"}
+          </button>
+          {payOpen && (
+            <Modal title="Pay for this game" onClose={() => setPayOpen(false)}>
+              <div className="space-y-3 text-left">
+                <p className="text-sm text-text-muted">
+                  {applied > 0 ? (
+                    <>
+                      {fmtTok(applied)} token applied &middot;{" "}
+                      <span className="font-semibold text-text">{formatEur(remainderEur)}</span> left to pay
+                    </>
+                  ) : (
+                    <>
+                      Game price: <span className="font-semibold text-text">{formatEur(priceEur as number)}</span>
+                    </>
+                  )}
+                </p>
+                {canUseFullToken && (
+                  <button
+                    type="button"
+                    onClick={useFullToken}
+                    disabled={busy}
+                    className="w-full border border-accent bg-accent px-4 py-3 text-sm font-bold uppercase tracking-[0.1em] text-bg transition-transform active:scale-[0.98] disabled:opacity-50"
+                  >
+                    {busy ? "Working…" : "Use 1 token (free game)"}
+                  </button>
+                )}
+                {canUseFraction && (
+                  <button
+                    type="button"
+                    onClick={useFractionThenViva}
+                    disabled={busy}
+                    className="w-full border border-accent bg-accent/10 px-4 py-3 text-sm font-bold uppercase tracking-[0.1em] text-accent transition-colors hover:bg-accent/20 disabled:opacity-50"
+                  >
+                    {busy ? "Working…" : `Use ${fmtTok(tokenBalance)} token + pay ${formatEur((priceEur as number) * (1 - tokenBalance))} by card`}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={payNow}
+                  disabled={busy}
+                  className={`w-full border px-4 py-3 text-sm font-bold uppercase tracking-[0.1em] transition-colors disabled:opacity-50 ${canUseFullToken ? "border-border-strong bg-bg-overlay text-text hover:border-accent" : "border-accent bg-accent text-bg active:scale-[0.98]"}`}
+                >
+                  {busy ? "Starting checkout…" : `Pay ${formatEur(remainderEur)} by card`}
+                </button>
+                {error && <p className="text-xs text-red-400">{error}</p>}
+                <p className="text-[0.65rem] leading-relaxed text-text-subtle">{REFUND_POLICY}</p>
+              </div>
+            </Modal>
           )}
-          {canUseFullToken && (
-            <button
-              type="button"
-              onClick={() => payWithTokens(1)}
-              disabled={busy}
-              className="border border-accent bg-accent/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-accent transition-colors hover:bg-accent/20 disabled:opacity-50"
-            >
-              {busy ? "Working…" : "Use 1 token (free game)"}
-            </button>
-          )}
-          {canUseFraction && (
-            <button
-              type="button"
-              onClick={() => payWithTokens(tokenBalance)}
-              disabled={busy}
-              className="border border-accent bg-accent/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-accent transition-colors hover:bg-accent/20 disabled:opacity-50"
-            >
-              {busy ? "Working…" : `Apply ${fmtTok(tokenBalance)} token · then pay ${formatEur((priceEur as number) * (1 - tokenBalance))}`}
-            </button>
-          )}
-        </div>
+        </>
       ) : null;
-    const refundNote = (
-      <p className={`max-w-xs sm:max-w-md text-[0.65rem] leading-relaxed text-text-subtle ${align === "center" ? "text-center" : "sm:text-right"}`}>
-        {REFUND_POLICY}
-      </p>
-    );
     const gunBooking = canBook && (
       <div>
         <button
@@ -313,9 +354,7 @@ export function GameSignupControl({
               <span className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-text-muted">
                 Pay to confirm your place
               </span>
-              {tokenSection}
-              {payButton}
-              {refundNote}
+              {payFlow}
             </div>
           ) : (
             <span className="block max-w-full border-l-2 border-accent/70 bg-accent/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-accent">
@@ -330,9 +369,7 @@ export function GameSignupControl({
             </span>
             {hasPrice && (
               <>
-                {tokenSection}
-                {payButton}
-                {refundNote}
+                {payFlow}
               </>
             )}
             <button type="button" onClick={() => setIntent("on_day")} disabled={busy} className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-text-muted hover:text-accent disabled:opacity-50">
