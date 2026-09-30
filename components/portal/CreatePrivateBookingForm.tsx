@@ -119,6 +119,13 @@ export function CreatePrivateBookingForm({
           <label className={lbl}>How many players</label>
           <input type="number" min="1" className={input} value={headcount} onChange={(e) => setHeadcount(e.target.value)} onFocus={(e) => e.target.select()} />
         </div>
+        {Number(headcount) < 10 ? (
+          <p className="mt-2 text-[0.72rem] font-semibold text-accent">
+            Private bookings have a 10-player minimum. Groups under 10 are charged the &euro;350 flat rate.
+          </p>
+        ) : (
+          <p className="mt-2 text-[0.72rem] text-text-subtle">10-player minimum (&euro;350 flat rate for smaller groups).</p>
+        )}
       </fieldset>
 
       <fieldset className="portal-card px-5 py-5">
