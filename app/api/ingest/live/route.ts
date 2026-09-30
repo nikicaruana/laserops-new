@@ -66,7 +66,7 @@ export async function POST(req: Request) {
 
   // Keep the raw round for scoring (latest content wins; publish reads it later).
   if (existing) await svc.from("match_ingest_rounds").update({ raw_file: raw }).eq("id", existing.id);
-  else await svc.from("match_ingest_rounds").insert({ match_id: matchId, filename, raw_file: raw, round_no: roundNo });
+  else await svc.from("match_ingest_rounds").insert({ match_id: matchId, filename, raw_file: raw, round_no: roundNo, mode: "online" });
   await svc.from("matches").update({ source_file_type: "json" }).eq("id", matchId);
 
   return NextResponse.json({ ok: true, round_no: roundNo, match_id: matchId });

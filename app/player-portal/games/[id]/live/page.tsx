@@ -50,9 +50,16 @@ export default async function LiveGamePage({ params }: { params: Promise<{ id: s
   // + admins. Once the game is completed players lose the live view entirely
   // and are pointed to the full match report.
   const canSeeScores = isLive && (!!participant || account.is_admin === true);
+  // In a live-feed game the current round plays out in the live feed above, so
+  // the scoreboard covers the completed PAST rounds only (exclude the current).
+  let currentRound: number | null = null;
+  if (canSeeScores && match.live_feed_enabled) {
+    const { data: ls } = await supabase.from("match_live_state").select("round_no").eq("match_id", match.id).maybeSingle();
+    currentRound = (ls?.round_no as number | null) ?? null;
+  }
   const svc = canSeeScores ? createServiceClient() : null;
   const scoreboard = svc
-    ? await getInMatchScoreboard(svc, match.id, { label: match.title || match.match_code || "Game", date: null })
+    ? await getInMatchScoreboard(svc, match.id, { label: match.title || match.match_code || "Game", date: null }, { excludeRoundNo: currentRound })
     : { label: "", date: null, rounds: [] };
 
   return (
@@ -102,7 +109,7 @@ export default async function LiveGamePage({ params }: { params: Promise<{ id: s
 
       {scoreboard.rounds.length > 0 && (
         <div className="mx-auto mt-6 max-w-lg lg:max-w-none">
-          <InMatchScoreboard scoreboard={scoreboard} me={account.ops_tag ?? null} />
+          <InMatchScoreboard scoreboard={scoreboard} me={account.ops_tag ?? null} pastMode={match.live_feed_enabled === true} />
         </div>
       )}
 

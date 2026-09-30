@@ -42,7 +42,7 @@ function rankOf(players: InMatchPlayer[], mine: InMatchPlayer, val: (p: InMatchP
   return rank;
 }
 
-export function InMatchScoreboard({ scoreboard, me }: { scoreboard: Scoreboard; me: string | null }) {
+export function InMatchScoreboard({ scoreboard, me, pastMode = false }: { scoreboard: Scoreboard; me: string | null; pastMode?: boolean }) {
   const { rounds } = scoreboard;
   const [sel, setSel] = useState(Math.max(0, rounds.length - 1));
   const [pickedName, setPickedName] = useState<string | null>(null);
@@ -101,9 +101,11 @@ export function InMatchScoreboard({ scoreboard, me }: { scoreboard: Scoreboard; 
       <div aria-hidden className="h-1 bg-accent" />
       <div className="p-4 sm:p-5">
         {/* Header */}
-        <h2 className="text-sm font-bold uppercase tracking-[0.16em] text-text">In-Match Scores</h2>
+        <h2 className="text-sm font-bold uppercase tracking-[0.16em] text-text">{pastMode ? "Past Rounds" : "In-Match Scores"}</h2>
         <p className="mt-1 text-[0.7rem] text-text-subtle">
-          Live scores, updated after each round. Not final until every round is parsed and the match is concluded.
+          {pastMode
+            ? "Scores from completed rounds – the current round is shown live above. Not final until the match is concluded."
+            : "Live scores, updated after each round. Not final until every round is parsed and the match is concluded."}
         </p>
 
         {/* Round tabs */}

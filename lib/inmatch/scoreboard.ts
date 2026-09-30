@@ -184,16 +184,18 @@ export async function getInMatchScoreboard(
   svc: SupabaseClient,
   matchId: string,
   meta: { label: string; date: string | null },
+  opts?: { excludeRoundNo?: number | null },
 ): Promise<InMatchScoreboard> {
   const { data: rows } = await svc
     .from("match_ingest_rounds")
     .select("id, round_no, filename, raw_file, resolutions, winner_override, report, report_built_at")
     .eq("match_id", matchId)
-    .eq("mode", "online")
+    .or("mode.eq.online,mode.is.null")
     .order("round_no", { ascending: true, nullsFirst: false })
     .order("created_at", { ascending: true });
 
-  const list = (rows ?? []) as RoundRow[];
+  const exclude = opts?.excludeRoundNo ?? null;
+  const list = ((rows ?? []) as RoundRow[]).filter((r) => exclude == null || r.round_no !== exclude);
   if (list.length === 0) return { label: meta.label, date: meta.date, rounds: [] };
 
   const needsBuild = list.some((r) => !(r.report && r.report_built_at && r.report.version === CACHE_VERSION));
@@ -311,5 +313,5 @@ export async function invalidateInMatchScoreboard(svc: SupabaseClient, matchId: 
     .from("match_ingest_rounds")
     .update({ report: null, report_built_at: null })
     .eq("match_id", matchId)
-    .eq("mode", "online");
+    .or("mode.eq.online,mode.is.null");
 }
