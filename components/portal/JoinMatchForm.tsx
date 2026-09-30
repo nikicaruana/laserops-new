@@ -16,8 +16,8 @@ import { GunCarousel, type CarouselGun } from "@/components/portal/GunCarousel";
 import { cldImage } from "@/lib/cld";
 
 const input =
-  "h-12 w-full rounded-none border border-border bg-bg-overlay px-4 text-sm text-text placeholder:text-text-subtle focus:border-accent focus:outline-none";
-const lbl = "mb-1.5 block text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-text-muted";
+  "h-11 w-full rounded-none border border-border bg-bg-overlay px-4 text-sm text-text placeholder:text-text-subtle focus:border-accent focus:outline-none";
+const lbl = "mb-1 block text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-text-muted";
 
 export function JoinMatchForm({
   matchId,
@@ -137,24 +137,18 @@ export function JoinMatchForm({
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-5">
-      {preview && (
-        <p className="border border-accent/50 bg-accent/10 px-3 py-2 text-[0.7rem] font-bold uppercase tracking-[0.08em] text-accent">
-          Preview — nothing is really joined and no token is spent.
-        </p>
-      )}
+    <form onSubmit={onSubmit} className="space-y-4">
       <div>
         <label className={lbl}>Entry code</label>
         <input
           inputMode="numeric"
           autoFocus
           maxLength={4}
-          className={`${input} text-center text-2xl font-bold tracking-[0.5em]`}
+          className={`${input} text-center text-xl font-bold tracking-[0.5em]`}
           value={code}
           onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 4))}
           placeholder="0000"
         />
-        <p className="mt-1 text-[0.7rem] text-text-subtle">The 4-digit code the marshal calls out.</p>
       </div>
 
       <div>
@@ -198,7 +192,6 @@ export function JoinMatchForm({
             <BoostTile label="1.5x XP" imageUrl={boostImages.one_five} count={boosts.one_five} selected={boost === "one_five"} available={boosts.one_five > 0} onSelect={() => setBoost("one_five")} />
             <BoostTile label="2x XP" imageUrl={boostImages.double} count={boosts.double} selected={boost === "double"} available={boosts.double > 0} onSelect={() => setBoost("double")} />
           </div>
-          <p className="mt-2 text-[0.7rem] text-text-subtle">Applied to your XP for this game only. It&apos;s used up when you join.</p>
         </div>
       ) : null}
 
@@ -234,16 +227,16 @@ function BoostTile({
       onClick={available ? onSelect : undefined}
       disabled={!available}
       aria-pressed={selected}
-      className={`flex flex-col items-center gap-1.5 border p-2 text-center transition-colors sm:p-3 ${
+      className={`flex flex-col items-center gap-1 border p-1.5 text-center transition-colors sm:p-2 ${
         selected ? "border-accent bg-accent/10" : "border-border-strong bg-bg-overlay/70 hover:border-accent"
       } ${available ? "" : "cursor-not-allowed opacity-40"}`}
     >
       <span className="flex aspect-square w-full items-center justify-center">
         {imageUrl ? (
           /* eslint-disable-next-line @next/next/no-img-element */
-          <img src={cldImage(imageUrl, { w: 200 })} alt="" className="h-12 w-12 object-contain sm:h-14 sm:w-14" />
+          <img src={cldImage(imageUrl, { w: 200 })} alt="" className="h-10 w-10 object-contain sm:h-12 sm:w-12" />
         ) : (
-          <span className={`flex h-12 w-12 items-center justify-center rounded-full border-2 sm:h-14 sm:w-14 ${selected ? "border-accent text-accent" : "border-border-strong text-text-subtle"}`} aria-hidden>
+          <span className={`flex h-10 w-10 items-center justify-center rounded-full border-2 sm:h-12 sm:w-12 ${selected ? "border-accent text-accent" : "border-border-strong text-text-subtle"}`} aria-hidden>
             <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="9" />
               <path d="M6 6l12 12" strokeLinecap="round" />

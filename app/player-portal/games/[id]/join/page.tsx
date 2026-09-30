@@ -84,17 +84,17 @@ export default async function JoinMatchPage({
   const isRegistered = signup?.status === "registered";
 
   return (
-    <Container size="narrow" className="py-12 sm:py-16">
+    <Container size="narrow" className="py-4 sm:py-8">
       <div className="mx-auto max-w-md">
-        <div className="mb-6 text-center">
+        <div className="mb-4 text-center">
           <p className="text-[0.7rem] font-bold uppercase tracking-[0.24em] text-accent">Join game</p>
-          <h1 className="mt-2 text-2xl font-extrabold uppercase tracking-tight text-text sm:text-3xl">
+          <h1 className="mt-1 text-xl font-extrabold uppercase tracking-tight text-text sm:text-2xl">
             {match.title || "LaserOps Game"}
           </h1>
         </div>
 
         {preview || (match.status === "live" && isRegistered) ? (
-          <div className="portal-card px-5 py-6 sm:px-6">
+          <div className="portal-card px-4 py-4 sm:px-5 sm:py-5">
             <JoinMatchForm
               matchId={match.id}
               guns={guns}
