@@ -86,11 +86,19 @@ export default async function HomePage() {
           or if the homepage_show_season_leaders flag is off in
           Site_Config. Sits between Weapons (marketing hooks) and Gallery
           (social proof) – a "see the action in progress" beat. */}
-      <SeasonLeadersSection />
-      {/* Cloudinary photo preview – shows up to 9 images tagged "featured".
-          Returns null if Cloudinary isn't configured or no featured photos exist,
-          so the homepage stays clean during initial setup. */}
-      <GalleryPreview />
+      {/* Consecutive dark sections share ONE ambient so the bokeh is continuous
+          across the section break. Both sit transparent over this group's dark
+          base; the group collapses to nothing if both sections auto-hide. */}
+      <div className="relative overflow-hidden bg-bg">
+        <SectionAmbient tone="dark" />
+        <div className="relative">
+          <SeasonLeadersSection />
+          {/* Cloudinary photo preview – shows up to 9 images tagged "featured".
+              Returns null if Cloudinary isn't configured or no featured photos exist,
+              so the homepage stays clean during initial setup. */}
+          <GalleryPreview />
+        </div>
+      </div>
       <GallerySection
         instagramItems={instagramItems}
         reviewItems={reviewItems}

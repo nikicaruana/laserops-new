@@ -2,26 +2,21 @@
 /**
  * components/layout/SectionAmbient.tsx
  * --------------------------------------------------------------------
- * Section-scoped copy of the site's PortalBackground: the SAME drifting bokeh
- * orbs + `.dimple-texture` dapple, but absolutely positioned inside ONE section
- * instead of fixed behind the whole page (so it works on top of a section's own
- * background). Two tones:
- *   - "dark"   -> the exact Ember orb palette (warm yellow/red) + light dapple,
- *                 identical to the rest of the site.
- *   - "yellow" -> the same orb sizes/positions/motion in a COMPLEMENTARY blue/
- *                 indigo/violet palette + a dark dapple, for LaserOps-yellow
- *                 sections.
+ * Section-scoped copy of the site's PortalBackground. Two tones:
+ *   - "dark"   -> the exact Ember bokeh orbs (warm yellow/red) + `.dimple-texture`
+ *                 dapple, identical to the rest of the site.
+ *   - "yellow" -> dapple ONLY (dark dots via `.dimple-texture-dark`), no orbs.
  * Reuses the shared `.portal-bg__*` classes + portal-drift/portal-breathe
- * keyframes, so the movement matches other pages exactly (and freezes under
- * prefers-reduced-motion via the shared rule). Put it as the first child of a
- * `relative overflow-hidden` section; content sits above it (relative).
+ * keyframes so motion matches other pages (and freezes under reduced motion).
+ * Put it as the first child of a `relative overflow-hidden` container; content
+ * sits above it (in a relative wrapper).
  */
 import type { CSSProperties } from "react";
 
 type Tone = "dark" | "yellow";
 type Orb = { size: string; x: string; y: string; color: string; blur: number; drift: "a" | "b" | "c" | "d"; dur: number; delay: number; breathe: number };
 
-// Dark tone = PortalBackground variant "a" (Ember), exact values.
+// PortalBackground variant "a" (Ember), exact values.
 const DARK_ORBS: Orb[] = [
   { size: "56vmax", x: "12%", y: "16%", color: "rgba(255,222,0,0.30)", blur: 52, drift: "a", dur: 17, delay: 0, breathe: 10 },
   { size: "44vmax", x: "86%", y: "24%", color: "rgba(255,222,0,0.24)", blur: 48, drift: "b", dur: 20, delay: 2, breathe: 12 },
@@ -32,20 +27,8 @@ const DARK_ORBS: Orb[] = [
   { size: "15vmax", x: "72%", y: "18%", color: "rgba(255,240,190,0.10)", blur: 36, drift: "c", dur: 19, delay: 7, breathe: 13 },
 ];
 
-// Yellow tone = same geometry/motion, complementary cool palette (blue/indigo/
-// violet) that reads against LaserOps yellow.
-const YELLOW_ORBS: Orb[] = [
-  { size: "56vmax", x: "12%", y: "16%", color: "rgba(38,22,150,0.45)", blur: 52, drift: "a", dur: 17, delay: 0, breathe: 10 },
-  { size: "44vmax", x: "86%", y: "24%", color: "rgba(24,60,190,0.42)", blur: 48, drift: "b", dur: 20, delay: 2, breathe: 12 },
-  { size: "50vmax", x: "18%", y: "90%", color: "rgba(92,28,168,0.40)", blur: 54, drift: "c", dur: 22, delay: 4, breathe: 14 },
-  { size: "42vmax", x: "90%", y: "84%", color: "rgba(20,44,180,0.42)", blur: 54, drift: "d", dur: 20, delay: 1, breathe: 15 },
-  { size: "30vmax", x: "58%", y: "50%", color: "rgba(70,20,140,0.30)", blur: 46, drift: "a", dur: 16, delay: 6, breathe: 11 },
-  { size: "26vmax", x: "38%", y: "38%", color: "rgba(34,50,200,0.34)", blur: 42, drift: "b", dur: 15, delay: 3, breathe: 9 },
-  { size: "15vmax", x: "72%", y: "18%", color: "rgba(140,44,180,0.26)", blur: 36, drift: "c", dur: 19, delay: 7, breathe: 13 },
-];
-
 export function SectionAmbient({ tone = "dark" }: { tone?: Tone }) {
-  const orbs = tone === "yellow" ? YELLOW_ORBS : DARK_ORBS;
+  const orbs = tone === "yellow" ? [] : DARK_ORBS;
   const dappleClass = tone === "yellow" ? "dimple-texture-dark" : "dimple-texture";
   return (
     <div className="portal-bg pointer-events-none absolute inset-0" style={{ position: "absolute", zIndex: 0, background: "transparent" }} aria-hidden>

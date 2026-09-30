@@ -260,7 +260,7 @@ export function GallerySection({
             rel="noopener noreferrer"
             variant="secondary"
             size="md"
-            className="!border-bg !text-bg hover:!border-bg hover:!bg-bg hover:!text-accent"
+            className="!bg-accent !border-bg !text-bg hover:!bg-bg hover:!border-bg hover:!text-accent"
           >
             <GoogleIcon className="h-4 w-4" />
             All reviews on Google
