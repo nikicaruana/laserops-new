@@ -178,7 +178,12 @@ export async function getPendingXpCelebration(
 export async function markCelebrated(svc: SupabaseClient, accountId: string, matchIds: string[]): Promise<void> {
   const ids = matchIds.filter((m) => typeof m === "string" && m.length > 0);
   if (ids.length === 0) return;
+  // ON CONFLICT DO NOTHING (ignoreDuplicates) — a seen row never needs updating,
+  // and this needs only INSERT (service_role has no UPDATE grant on this table).
   await svc
     .from("player_xp_celebrated")
-    .upsert(ids.map((match_id) => ({ account_id: accountId, match_id })), { onConflict: "account_id,match_id" });
+    .upsert(ids.map((match_id) => ({ account_id: accountId, match_id })), {
+      onConflict: "account_id,match_id",
+      ignoreDuplicates: true,
+    });
 }
