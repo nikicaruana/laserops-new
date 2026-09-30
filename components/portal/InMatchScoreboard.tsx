@@ -3,13 +3,13 @@
 /**
  * components/portal/InMatchScoreboard.tsx
  * --------------------------------------------------------------------
- * In-match round scores (Beta). The player-facing scoreboard shown BETWEEN
- * rounds of an online game running without the live feed. Pick a round; the top
- * card shows a player's stats (your own by default, else the round leader) with
- * per-stat rank, avatar + gun, a horizontally-scrollable strip of streak badges,
- * their nemesis and head-to-head kill lists. Tap any row in the table to load
- * that player's card (so an admin can inspect anyone). Display only — the data
- * is the cached per-round payload from lib/inmatch/scoreboard.ts. Beta.
+ * In-match round scores. The player-facing scoreboard shown BETWEEN rounds of an
+ * online game running without the live feed. Pick a round; the top card shows a
+ * player's stats (your own by default, else the round leader) with per-stat rank,
+ * avatar + gun, a horizontally-scrollable strip of streak badges, their nemesis
+ * and head-to-head kill lists. Tap any table row to load that player's card. The
+ * table highlights the leader of each stat. Display only — data is the cached
+ * per-round payload from lib/inmatch/scoreboard.ts.
  */
 import { useMemo, useState } from "react";
 import { cldImage } from "@/lib/cld";
@@ -51,8 +51,6 @@ export function InMatchScoreboard({ scoreboard, me }: { scoreboard: Scoreboard; 
   const meKey = (me ?? "").trim().toLowerCase();
   const players = round?.players ?? [];
 
-  // Selected player: an explicit pick (if present this round), else me, else the
-  // round leader (players are sorted best-first).
   const selected = useMemo(() => {
     if (pickedName) {
       const hit = players.find((p) => nk(p.name) === nk(pickedName));
@@ -65,7 +63,24 @@ export function InMatchScoreboard({ scoreboard, me }: { scoreboard: Scoreboard; 
     return players[0] ?? null;
   }, [pickedName, players, meKey]);
 
-  if (!round || players.length === 0) return null;
+  // Best value per column (leader highlight); deaths -> lowest is best.
+  const best = useMemo(() => {
+    if (players.length === 0) return null;
+    const max = (f: (p: InMatchPlayer) => number) => Math.max(...players.map(f));
+    const min = (f: (p: InMatchPlayer) => number) => Math.min(...players.map(f));
+    return {
+      score: max((p) => p.totalScore),
+      frags: max((p) => p.frags),
+      deaths: min((p) => p.deaths),
+      kd: max((p) => p.kd),
+      accuracy: max((p) => p.accuracy),
+      damage: max((p) => p.damage),
+      captures: max((p) => p.captures),
+      hold: max((p) => p.holdSeconds),
+    };
+  }, [players]);
+
+  if (!round || players.length === 0 || !best) return null;
   const isSelf = selected ? nk(selected.name) === meKey : false;
 
   const stats = selected
@@ -87,7 +102,9 @@ export function InMatchScoreboard({ scoreboard, me }: { scoreboard: Scoreboard; 
       <div className="p-4 sm:p-5">
         {/* Header */}
         <h2 className="text-sm font-bold uppercase tracking-[0.16em] text-text">In-Match Scores</h2>
-        <p className="mt-1 text-[0.7rem] text-text-subtle">Live scores, updated after each round.</p>
+        <p className="mt-1 text-[0.7rem] text-text-subtle">
+          Live scores, updated after each round. Not final until every round is parsed and the match is concluded.
+        </p>
 
         {/* Round tabs */}
         <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
@@ -128,7 +145,7 @@ export function InMatchScoreboard({ scoreboard, me }: { scoreboard: Scoreboard; 
         {selected && (
           <div className="mt-4 border border-accent bg-accent/10 p-4">
             <div className="flex items-center gap-3">
-              <span className="relative block h-11 w-11 shrink-0 overflow-hidden rounded-sm border border-border bg-bg-overlay">
+              <span className="relative block h-11 w-11 shrink-0 overflow-hidden rounded-sm border border-accent bg-bg-overlay">
                 {selected.avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={cldImage(selected.avatarUrl, { w: 96 })} alt="" className="h-full w-full object-cover" />
@@ -149,8 +166,10 @@ export function InMatchScoreboard({ scoreboard, me }: { scoreboard: Scoreboard; 
                 </p>
               </div>
               {selected.gunImageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={cldImage(selected.gunImageUrl, { w: 160 })} alt={selected.gunLabel} className="h-8 w-16 shrink-0 object-contain" />
+                <span className="flex h-9 w-16 shrink-0 items-center justify-center bg-accent px-1">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={cldImage(selected.gunImageUrl, { w: 200 })} alt={selected.gunLabel} className="h-7 w-full object-contain" />
+                </span>
               ) : selected.gunLabel ? (
                 <span className="shrink-0 text-[0.65rem] font-semibold text-text-muted">{selected.gunLabel}</span>
               ) : null}
@@ -202,6 +221,7 @@ export function InMatchScoreboard({ scoreboard, me }: { scoreboard: Scoreboard; 
               <tr className="border-b border-border-strong text-[0.6rem] uppercase tracking-[0.06em] text-text-muted">
                 <Th align="right">#</Th>
                 <Th align="left">Ops Tag</Th>
+                <Th align="left">Gun</Th>
                 <Th align="right">Score</Th>
                 <Th align="right">K</Th>
                 <Th align="right">D</Th>
@@ -232,14 +252,24 @@ export function InMatchScoreboard({ scoreboard, me }: { scoreboard: Scoreboard; 
                         {isMe && <span className="shrink-0 text-[0.5rem] font-bold uppercase tracking-[0.1em] text-accent">You</span>}
                       </span>
                     </Td>
-                    <Td align="right" className="font-mono font-bold tabular-nums text-accent">{num(p.totalScore)}</Td>
-                    <Td align="right" className="font-mono tabular-nums">{p.frags}</Td>
-                    <Td align="right" className="font-mono tabular-nums text-text-muted">{p.deaths}</Td>
-                    <Td align="right" className="font-mono tabular-nums">{p.kd.toFixed(2)}</Td>
-                    <Td align="right" className="font-mono tabular-nums text-text-muted">{pct(p.accuracy)}%</Td>
-                    <Td align="right" className="font-mono tabular-nums text-text-muted">{num(p.damage)}</Td>
-                    <Td align="right" className="font-mono tabular-nums">{p.captures}</Td>
-                    <Td align="right" className="font-mono tabular-nums text-text-muted">{Math.round(p.holdSeconds)}</Td>
+                    <Td align="left">
+                      {p.gunImageUrl ? (
+                        <span className="inline-flex h-5 w-11 items-center justify-center bg-accent px-0.5" title={p.gunLabel}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={cldImage(p.gunImageUrl, { w: 120 })} alt={p.gunLabel} className="h-4 w-full object-contain" />
+                        </span>
+                      ) : (
+                        <span className="whitespace-nowrap text-[0.7rem] text-text-subtle">{p.gunLabel || "–"}</span>
+                      )}
+                    </Td>
+                    <NumTd value={num(p.totalScore)} best={p.totalScore === best.score} baseClass="font-bold text-accent" />
+                    <NumTd value={String(p.frags)} best={p.frags === best.frags} />
+                    <NumTd value={String(p.deaths)} best={p.deaths === best.deaths} baseClass="text-text-muted" />
+                    <NumTd value={p.kd.toFixed(2)} best={p.kd === best.kd} />
+                    <NumTd value={`${pct(p.accuracy)}%`} best={p.accuracy === best.accuracy} baseClass="text-text-muted" />
+                    <NumTd value={num(p.damage)} best={p.damage === best.damage} baseClass="text-text-muted" />
+                    <NumTd value={String(p.captures)} best={p.captures === best.captures} />
+                    <NumTd value={String(Math.round(p.holdSeconds))} best={p.holdSeconds === best.hold} baseClass="text-text-muted" />
                   </tr>
                 );
               })}
@@ -311,9 +341,17 @@ function KillList({ title, rows, tone }: { title: string; rows: InMatchKill[]; t
 }
 
 function Th({ children, align }: { children: React.ReactNode; align: "left" | "right" }) {
-  return <th className={`px-1.5 py-2 font-semibold ${align === "left" ? "text-left" : "text-right"}`}>{children}</th>;
+  return <th className={`whitespace-nowrap px-1.5 py-2 font-semibold ${align === "left" ? "text-left" : "text-right"}`}>{children}</th>;
 }
 
 function Td({ children, align, className = "" }: { children: React.ReactNode; align: "left" | "right"; className?: string }) {
   return <td className={`px-1.5 py-2 ${align === "left" ? "text-left" : "text-right"} ${className}`}>{children}</td>;
+}
+
+function NumTd({ value, best, baseClass = "" }: { value: string; best: boolean; baseClass?: string }) {
+  return (
+    <td className={`px-1.5 py-2 text-right font-mono tabular-nums ${best ? "bg-accent/20 font-bold text-accent" : baseClass}`}>
+      {value}
+    </td>
+  );
 }
