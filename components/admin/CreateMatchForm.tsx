@@ -75,7 +75,9 @@ export function CreateMatchForm() {
   const isPrivate = matchType === "private";
   // Only private bookings can be a flat lump sum; everything else is per player.
   const effectiveMode = isPrivate ? pricingMode : "per_player";
-  const priceLabel = effectiveMode === "flat" ? "Flat rate (EUR)" : "Price per player (EUR, optional)";
+  // Open games must carry a per-player price; private bookings are quoted, so optional.
+  const priceRequired = !isPrivate;
+  const priceLabel = effectiveMode === "flat" ? "Flat rate (EUR)" : priceRequired ? "Price per player (EUR)" : "Price per player (EUR, optional)";
 
   // Title is a fixed label per type (the date/time show in the subtext), until
   // the admin edits it.
@@ -83,6 +85,15 @@ export function CreateMatchForm() {
     if (titleDirty) return;
     setTitle(TYPE_META[matchType].title);
   }, [matchType, titleDirty]);
+
+  // Default the price to the operator's normal per-player price (admin Pricing
+  // & Sessions). Runs once on mount, before any admin edit.
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.from("pricing_config").select("default_price_eur").eq("id", 1).maybeSingle().then(({ data }) => {
+      if (data?.default_price_eur != null) setPriceEur(String(Number(data.default_price_eur)));
+    });
+  }, []);
 
   function onStart(v: string) {
     setStartTime(v);
@@ -99,6 +110,10 @@ export function CreateMatchForm() {
     const when = new Date(`${date}T${startTime}:00`);
     if (Number.isNaN(when.getTime())) {
       setError("That date/time isn't valid.");
+      return;
+    }
+    if (priceRequired && !(Number(priceEur) > 0)) {
+      setError("Set a price per player - open games must have a price.");
       return;
     }
     setSaving(true);
