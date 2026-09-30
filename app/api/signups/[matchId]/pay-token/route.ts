@@ -20,15 +20,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ mat
   if (!user) return Response.json({ ok: false, error: "Not signed in." }, { status: 401 });
 
   let amount = 1;
+  let idempotencyKey: string | null = null;
   try {
-    const body = (await req.json().catch(() => ({}))) as { amount?: number };
+    const body = (await req.json().catch(() => ({}))) as { amount?: number; idempotencyKey?: string };
     if (typeof body.amount === "number" && Number.isFinite(body.amount)) amount = body.amount;
+    if (typeof body.idempotencyKey === "string" && body.idempotencyKey.trim()) idempotencyKey = body.idempotencyKey.trim();
   } catch {
     /* default to 1 */
   }
   if (amount <= 0) return Response.json({ ok: false, error: "Amount must be positive." }, { status: 400 });
 
-  const { data: applied, error } = await supabase.rpc("spend_tokens", { p_match_id: matchId, p_amount: amount });
+  const { data: applied, error } = await supabase.rpc("spend_tokens", { p_match_id: matchId, p_amount: amount, p_idempotency_key: idempotencyKey });
   if (error) return Response.json({ ok: false, error: error.message }, { status: 400 });
   return Response.json({ ok: true, applied: Number(applied ?? 0) });
 }

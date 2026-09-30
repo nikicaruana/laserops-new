@@ -167,7 +167,7 @@ export function GameSignupControl({
       const res = await fetch(`/api/signups/${matchId}/pay-token`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount }),
+        body: JSON.stringify({ amount, idempotencyKey: crypto.randomUUID() }),
       });
       const data = (await res.json()) as { ok?: boolean; error?: string };
       if (!res.ok || !data.ok) throw new Error(data.error || "Couldn't use your tokens.");
@@ -189,7 +189,7 @@ export function GameSignupControl({
       const res = await fetch(`/api/signups/${matchId}/pay-token`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: tokenBalance }),
+        body: JSON.stringify({ amount: tokenBalance, idempotencyKey: crypto.randomUUID() }),
       });
       const data = (await res.json()) as { ok?: boolean; error?: string };
       if (!res.ok || !data.ok) throw new Error(data.error || "Could not apply your token.");
@@ -293,7 +293,7 @@ export function GameSignupControl({
                     disabled={busy}
                     className="w-full border border-accent bg-accent/10 px-4 py-3 text-sm font-bold uppercase tracking-[0.1em] text-accent transition-colors hover:bg-accent/20 disabled:opacity-50"
                   >
-                    {busy ? "Working…" : `Use ${fmtTok(tokenBalance)} token + pay ${formatEur((priceEur as number) * (1 - tokenBalance))} by card`}
+                    {busy ? "Working…" : `Use ${fmtTok(tokenBalance)} token + pay ${formatEur((priceEur as number) * (1 - tokenBalance))} online`}
                   </button>
                 )}
                 <button
@@ -302,7 +302,7 @@ export function GameSignupControl({
                   disabled={busy}
                   className={`w-full border px-4 py-3 text-sm font-bold uppercase tracking-[0.1em] transition-colors disabled:opacity-50 ${canUseFullToken ? "border-border-strong bg-bg-overlay text-text hover:border-accent" : "border-accent bg-accent text-bg active:scale-[0.98]"}`}
                 >
-                  {busy ? "Starting checkout…" : `Pay ${formatEur(remainderEur)} by card`}
+                  {busy ? "Starting checkout…" : `Pay ${formatEur(remainderEur)} online`}
                 </button>
                 {error && <p className="text-xs text-red-400">{error}</p>}
                 <p className="text-[0.65rem] leading-relaxed text-text-subtle">{REFUND_POLICY}</p>
