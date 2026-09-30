@@ -153,7 +153,7 @@ type CardProps = {
  */
 function LeaderCard({ entry, metricLabel }: CardProps) {
   return (
-    <div className="relative h-full border border-accent bg-bg-elevated p-5 sm:p-6 lg:p-7">
+    <div className="relative h-full border border-accent portal-surface p-5 sm:p-6 lg:p-7">
       {/* Yellow corner accent – sm+ only (too noisy on phones). */}
       <span aria-hidden className="absolute left-0 top-0 hidden h-6 w-6 border-l-[3px] border-t-[3px] border-accent sm:block" />
       <span aria-hidden className="absolute right-0 top-0 hidden h-6 w-6 border-r-[3px] border-t-[3px] border-accent sm:block" />
@@ -235,7 +235,7 @@ function SupportingCard({ entry, metricLabel }: CardProps) {
     // on desktop. The two layouts (mobile row, desktop column) are
     // rendered as separate sub-trees rather than reflowed via flex
     // direction switches – clearer, less fragile.
-    <div className="border border-border bg-bg-elevated p-3 sm:p-4 lg:h-full lg:p-5">
+    <div className="border border-border portal-surface p-3 sm:p-4 lg:h-full lg:p-5">
       {/* === Mobile / tablet layout: horizontal row ============== */}
       <div className="flex items-center gap-3 lg:hidden">
         <img

@@ -4,7 +4,6 @@ import Image from "next/image";
 import { useState } from "react";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
-import { SectionAmbient } from "@/components/layout/SectionAmbient";
 
 /**
  * Weapons preview section.
@@ -46,7 +45,6 @@ export function WeaponsSection() {
       className="relative overflow-hidden"
       style={{ backgroundColor: "#ffde00" }}
     >
-      <SectionAmbient tone="yellow" />
 
       <Container size="wide" className="relative py-20 sm:py-28 lg:py-32">
         {/* Eyebrow + heading */}

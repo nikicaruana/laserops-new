@@ -7,7 +7,6 @@ import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 import { brand } from "@/lib/brand";
-import { SectionAmbient } from "@/components/layout/SectionAmbient";
 
 /**
  * Gallery section – mixed-content social proof.
@@ -168,10 +167,8 @@ export function GallerySection({
       // No border-t here: the dark→yellow transition IS the visual
       // separator. An explicit border would just compete with the
       // color shift.
-      className="relative overflow-hidden bg-accent text-bg"
+      className="relative bg-accent text-bg"
     >
-      <SectionAmbient tone="yellow" />
-      <div className="relative">
       <Container size="wide" className="pt-14 sm:pt-20 lg:pt-24">
         {/* Header */}
         <div className="mb-10 max-w-2xl sm:mb-14">
@@ -267,7 +264,6 @@ export function GallerySection({
           </Button>
         </div>
       </Container>
-      </div>
     </section>
   );
 }
