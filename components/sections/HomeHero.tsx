@@ -88,7 +88,6 @@ export function HomeHero() {
           alt=""
           width={1080}
           height={1620}
-          priority
           sizes="100vw"
           className="h-full w-full object-cover"
         />
@@ -105,7 +104,6 @@ export function HomeHero() {
             alt=""
             width={1080}
             height={890}
-            priority
             sizes="(max-height: 700px) 60vh, 70vh"
             className="block w-full h-auto"
           />
@@ -114,7 +112,6 @@ export function HomeHero() {
             alt=""
             width={1080}
             height={890}
-            priority
             sizes="(max-height: 700px) 60vh, 70vh"
             className="absolute inset-0 block w-full h-auto"
             style={{
@@ -146,7 +143,6 @@ export function HomeHero() {
           alt=""
           width={2400}
           height={1350}
-          priority
           sizes="100vw"
           className="h-full w-full object-cover"
         />
@@ -164,7 +160,6 @@ export function HomeHero() {
             alt=""
             width={2400}
             height={1350}
-            priority
             sizes="(min-width: 1280px) 100vw"
             className="block h-full w-auto max-w-none"
           />
@@ -173,7 +168,6 @@ export function HomeHero() {
             alt=""
             width={2400}
             height={1350}
-            priority
             sizes="(min-width: 1280px) 100vw"
             className="absolute inset-0 block h-full w-auto max-w-none"
             style={{

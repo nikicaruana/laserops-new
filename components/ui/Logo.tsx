@@ -11,6 +11,8 @@ type LogoProps = {
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   /** Wrap in a link to home (default true) */
   asLink?: boolean;
+  /** Preload eagerly (Next priority). Only for a truly above-the-fold, LCP-class logo. */
+  priority?: boolean;
   className?: string;
 };
 
@@ -40,6 +42,7 @@ export function Logo({
   color = "white",
   size = "md",
   asLink = true,
+  priority = false,
   className,
 }: LogoProps) {
   // Both icon and wordmark variants now have yellow assets.
@@ -68,7 +71,7 @@ export function Logo({
       alt={altText}
       width={dimensions.naturalW}
       height={dimensions.naturalH}
-      priority
+      priority={priority}
       className={cn("h-auto select-none", className)}
       style={{ width: `${dimensions.displayW}px` }}
     />
