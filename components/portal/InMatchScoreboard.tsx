@@ -86,15 +86,8 @@ export function InMatchScoreboard({ scoreboard, me }: { scoreboard: Scoreboard; 
       <div aria-hidden className="h-1 bg-accent" />
       <div className="p-4 sm:p-5">
         {/* Header */}
-        <div className="flex items-center gap-2">
-          <h2 className="text-sm font-bold uppercase tracking-[0.16em] text-text">In-Match Scores</h2>
-          <span className="inline-flex items-center rounded-sm bg-accent px-1.5 py-0.5 text-[0.55rem] font-bold uppercase tracking-[0.12em] text-bg">
-            Beta
-          </span>
-        </div>
-        <p className="mt-1 text-[0.7rem] text-text-subtle">
-          Live between-round scores. Not final &ndash; figures may change once the match is published.
-        </p>
+        <h2 className="text-sm font-bold uppercase tracking-[0.16em] text-text">In-Match Scores</h2>
+        <p className="mt-1 text-[0.7rem] text-text-subtle">Live scores, updated after each round.</p>
 
         {/* Round tabs */}
         <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
@@ -180,14 +173,14 @@ export function InMatchScoreboard({ scoreboard, me }: { scoreboard: Scoreboard; 
         {selected && selected.streaks.length > 0 && (
           <div className="mt-4">
             <p className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-text-muted">Streaks</p>
-            <div className="mt-2 flex gap-3 overflow-x-auto pb-1">
+            <div className="mt-2 flex gap-2 overflow-x-auto px-1 pb-1 pt-3">
               {selected.streaks.map((s) => (
                 <div key={s.key} className="relative shrink-0" title={`${s.name}${s.count > 1 ? ` ×${s.count}` : ""} · +${s.points}`}>
                   {s.imageUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={cldImage(s.imageUrl, { w: 160 })} alt={s.name} className="h-16 w-16 object-contain" />
+                    <img src={cldImage(s.imageUrl, { w: 220 })} alt={s.name} className="h-[5.4rem] w-[5.4rem] object-contain" />
                   ) : (
-                    <span className="flex h-16 w-16 items-center justify-center border border-accent/40 bg-bg-overlay px-1 text-center text-[0.55rem] font-semibold text-text">
+                    <span className="flex h-[5.4rem] w-[5.4rem] items-center justify-center border border-accent/40 bg-bg-overlay px-1 text-center text-[0.6rem] font-semibold text-text">
                       {s.name}
                     </span>
                   )}
@@ -204,23 +197,11 @@ export function InMatchScoreboard({ scoreboard, me }: { scoreboard: Scoreboard; 
 
         {/* Everyone's performance – tap a row to load that player above */}
         <div className="mt-4 overflow-x-auto">
-          <table className="w-full min-w-[38rem] table-fixed border-collapse text-sm">
-            <colgroup>
-              <col style={{ width: "2rem" }} />
-              <col style={{ width: "9rem" }} />
-              <col style={{ width: "4rem" }} />
-              <col style={{ width: "2.5rem" }} />
-              <col style={{ width: "2.5rem" }} />
-              <col style={{ width: "3rem" }} />
-              <col style={{ width: "3rem" }} />
-              <col style={{ width: "3.5rem" }} />
-              <col style={{ width: "3rem" }} />
-              <col style={{ width: "3.5rem" }} />
-            </colgroup>
+          <table className="w-auto border-collapse text-sm">
             <thead>
               <tr className="border-b border-border-strong text-[0.6rem] uppercase tracking-[0.06em] text-text-muted">
                 <Th align="right">#</Th>
-                <Th align="left">Player</Th>
+                <Th align="left">Ops Tag</Th>
                 <Th align="right">Score</Th>
                 <Th align="right">K</Th>
                 <Th align="right">D</Th>
@@ -247,7 +228,7 @@ export function InMatchScoreboard({ scoreboard, me }: { scoreboard: Scoreboard; 
                     <Td align="left">
                       <span className="flex items-center gap-1.5">
                         <span className={`h-2 w-2 shrink-0 rounded-full ${teamDot(p.team)}`} />
-                        <span className="truncate font-semibold text-text">{p.name}</span>
+                        <span className="whitespace-nowrap font-semibold text-text">{p.name}</span>
                         {isMe && <span className="shrink-0 text-[0.5rem] font-bold uppercase tracking-[0.1em] text-accent">You</span>}
                       </span>
                     </Td>
@@ -286,12 +267,12 @@ export function InMatchScoreboard({ scoreboard, me }: { scoreboard: Scoreboard; 
               </div>
               <div className="flex gap-6 text-center">
                 <div>
-                  <p className="font-mono text-2xl font-extrabold text-text">{selected.nemesis.killsFor}</p>
-                  <p className="text-[0.55rem] font-semibold uppercase tracking-[0.12em] text-text-subtle">Kills on them</p>
+                  <p className="font-mono text-2xl font-extrabold text-accent">{selected.nemesis.killsFor}</p>
+                  <p className="text-[0.55rem] font-semibold uppercase tracking-[0.12em] text-accent">Kills on them</p>
                 </div>
                 <div>
-                  <p className="font-mono text-2xl font-extrabold text-text">{selected.nemesis.killsAgainst}</p>
-                  <p className="text-[0.55rem] font-semibold uppercase tracking-[0.12em] text-text-subtle">Killed by them</p>
+                  <p className="font-mono text-2xl font-extrabold text-red-400">{selected.nemesis.killsAgainst}</p>
+                  <p className="text-[0.55rem] font-semibold uppercase tracking-[0.12em] text-red-400">Killed by them</p>
                 </div>
               </div>
             </div>

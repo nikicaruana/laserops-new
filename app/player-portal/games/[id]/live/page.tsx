@@ -56,15 +56,15 @@ export default async function LiveGamePage({ params }: { params: Promise<{ id: s
     : { label: "", date: null, rounds: [] };
 
   return (
-    <Container size="narrow" className="py-12 sm:py-16">
+    <Container size="narrow" className="py-4 sm:py-6">
       {isLive && <LiveRosterRefresh matchId={match.id} />}
       <div className="mx-auto max-w-lg">
-        <div className="mb-6 text-center">
+        <div className="mb-4 text-center">
           <span className="inline-flex items-center gap-2 border border-accent bg-accent/15 px-3 py-1 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-accent">
             {isLive && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />}
             {isLive ? "Live now" : isOver ? "Game over" : match.status}
           </span>
-          <h1 className="mt-3 text-2xl font-extrabold uppercase tracking-tight text-text sm:text-3xl">
+          <h1 className="mt-2 text-2xl font-extrabold uppercase tracking-tight text-text sm:text-3xl">
             {match.title || "LaserOps Game"}
           </h1>
         </div>
