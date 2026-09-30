@@ -27,7 +27,7 @@ function BaseEmblem({ color, size = 40 }: { color: string; size?: number }) {
 
 export function LiveRoundView({
   snap, t, mode, me = null, roundLabel, live = true, onTaunt, incomingTaunts = [],
-  killstreakDefs = [], deployments = [], onDeployKillstreak,
+  killstreakDefs = [], deployments = [], onDeployKillstreak, keepAwake = true, onToggleKeepAwake,
 }: {
   snap: LiveSnapshot;
   t: number;
@@ -45,6 +45,9 @@ export function LiveRoundView({
   deployments?: ActiveDeployment[];
   /** Player mode: deploy a killstreak on the enemy feed. */
   onDeployKillstreak?: (def: KillstreakDef, baseIds: number[]) => void;
+  /** Player mode: keep-screen-on toggle state + handler (renders a top-right button). */
+  keepAwake?: boolean;
+  onToggleKeepAwake?: () => void;
 }) {
   const [sentTaunts, setSentTaunts] = useState<Set<string>>(new Set());
   const bases = useMemo(() => baseStateAt(snap, t), [snap, t]);
@@ -107,11 +110,24 @@ export function LiveRoundView({
             <span className="truncate">{me}</span>
           </span>
         )}
-        {winner ? (
-          <span className="text-[0.62rem] font-bold uppercase tracking-[0.14em]" style={{ color: teamHex(winner) }}>{winner} wins</span>
-        ) : live ? (
-          <span className="flex items-center gap-1 text-[0.62rem] font-bold uppercase tracking-[0.14em] text-red-400"><span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" /> Live</span>
-        ) : null}
+        <span className="flex items-center gap-2">
+          {winner ? (
+            <span className="text-[0.62rem] font-bold uppercase tracking-[0.14em]" style={{ color: teamHex(winner) }}>{winner} wins</span>
+          ) : live ? (
+            <span className="flex items-center gap-1 text-[0.62rem] font-bold uppercase tracking-[0.14em] text-red-400"><span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" /> Live</span>
+          ) : null}
+          {onToggleKeepAwake && (
+            <button
+              type="button"
+              onClick={onToggleKeepAwake}
+              title={keepAwake ? "Screen stays on - tap to allow auto-lock" : "Screen will auto-lock - tap to keep it on"}
+              aria-label="Keep screen on"
+              className={`shrink-0 text-base leading-none ${keepAwake ? "text-accent" : "text-text-subtle"}`}
+            >
+              {keepAwake ? "🔆" : "🌙"}
+            </button>
+          )}
+        </span>
       </div>
 
       {/* Base capture states — also the killstreak target picker while armed */}
