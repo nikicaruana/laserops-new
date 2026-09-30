@@ -11,7 +11,6 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useWakeLock } from "@/lib/hooks/use-wake-lock";
 import { LiveRoundView } from "@/components/live/LiveRoundView";
 import type { LiveSnapshot } from "@/lib/live-sim/engine";
 import { fetchKillstreaks, fetchActiveDeployments, deployKillstreak, mapDeploymentRow, type KillstreakDef, type ActiveDeployment } from "@/lib/killstreaks";
@@ -38,8 +37,6 @@ export function LiveFeedClient({
   // Broadcast channel for live taunts (ephemeral — no DB writes/egress).
   const tauntCh = useRef<ReturnType<ReturnType<typeof createClient>["channel"]> | null>(null);
 
-  const [keepAwake, setKeepAwake] = useState(true);
-  useWakeLock(mode === "player" && keepAwake);
 
   // Taunts: player mode only. Subscribe to the match's broadcast channel and
   // collect the ones aimed at me; expose a sender for the 🖕 button.
@@ -149,7 +146,7 @@ export function LiveFeedClient({
   return (
     <div className="px-3 py-3">
       {title && <p className="mb-2 text-center text-[0.6rem] font-semibold uppercase tracking-[0.16em] text-text-subtle">{title}</p>}
-      <LiveRoundView snap={data} t={t} mode={mode} me={me} roundLabel={roundNo ? `Round ${roundNo}` : undefined} onTaunt={sendTaunt} incomingTaunts={taunts} killstreakDefs={ksDefs} deployments={deploys} onDeployKillstreak={onDeployKillstreak} keepAwake={keepAwake} onToggleKeepAwake={mode === "player" ? () => setKeepAwake((k) => !k) : undefined} />
+      <LiveRoundView snap={data} t={t} mode={mode} me={me} roundLabel={roundNo ? `Round ${roundNo}` : undefined} onTaunt={sendTaunt} incomingTaunts={taunts} killstreakDefs={ksDefs} deployments={deploys} onDeployKillstreak={onDeployKillstreak} />
     </div>
   );
 }

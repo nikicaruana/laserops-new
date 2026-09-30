@@ -12,6 +12,7 @@ import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { LiveFeedClient } from "@/components/live/LiveFeedClient";
+import { WakeLockToggle } from "@/components/portal/WakeLockToggle";
 
 export const metadata: Metadata = { title: "Live feed", robots: { index: false, follow: false } };
 
@@ -54,6 +55,9 @@ export default async function LiveFeedPage({ params }: { params: Promise<{ id: s
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />
           Live Feed
         </span>
+        <div className="ml-auto">
+          <WakeLockToggle />
+        </div>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">
         <LiveFeedClient matchId={match.id} mode="player" me={account.ops_tag ?? null} />
