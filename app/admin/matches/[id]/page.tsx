@@ -9,6 +9,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { MatchStatusBadge } from "@/components/admin/MatchStatusBadge";
+import { PlayerBar } from "@/components/portal/PlayerBar";
 import { MatchAdminActions } from "@/components/admin/MatchAdminActions";
 import { RescheduleMatchButton } from "@/components/admin/RescheduleMatchButton";
 import { LadderResultActions } from "@/components/admin/LadderResultActions";
@@ -442,6 +443,10 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         <p className="mt-1.5 text-[0.65rem] text-text-subtle">
           Share this so players can view the game and sign up.
         </p>
+      </div>
+
+      <div className="mb-6 max-w-md">
+        <PlayerBar reg={match.registered_count ?? 0} min={match.min_players ?? 10} max={match.max_players} status={match.status} />
       </div>
 
       <div className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

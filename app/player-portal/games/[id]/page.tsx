@@ -14,6 +14,7 @@ import { notFound, redirect } from "next/navigation";
 import { Container } from "@/components/ui/Container";
 import { createClient } from "@/lib/supabase/server";
 import { GameSignupControl } from "@/components/portal/GameSignupControl";
+import { PlayerBar } from "@/components/portal/PlayerBar";
 import { GamesLiveRefresh } from "@/components/portal/GamesLiveRefresh";
 import { MatchInviteMenu } from "@/components/portal/MatchInviteMenu";
 import { CancelSignupButton } from "@/components/portal/CancelSignupButton";
@@ -90,11 +91,12 @@ export default async function GameDetailPage({
   const { data: signupRows } = canViewSignups
     ? await supabase.rpc("match_signups_for_organizer", { p_match_id: id })
     : { data: null };
-  const signups = (signupRows ?? []) as { ops_tag: string | null; profile_pic_url: string | null; level: number | null; rank_badge_url: string | null; status: string; signed_up_at: string }[];
+  const signups = (signupRows ?? []) as { ops_tag: string | null; profile_pic_url: string | null; level: number | null; rank_badge_url: string | null; status: string; signed_up_at: string; paid_at: string | null; payment_intent: string | null }[];
   const reg = match.registered_count ?? 0;
   const min = match.min_players ?? 10;
   const isFull = match.max_players != null && reg >= match.max_players;
-  const pct = Math.min(100, Math.round((reg / Math.max(1, min)) * 100));
+  const priced = (match.price_eur ?? 0) > 0;
+  const paymentOpen = match.status === "confirmed" || match.status === "live";
   const showPrice = match.price_eur != null && match.pricing_mode === "per_player";
   const isLiveMine = match.status === "live" && mySignup?.status === "registered";
   const joined = Boolean(participant);
@@ -205,15 +207,7 @@ export default async function GameDetailPage({
 
       {/* Fill progress */}
       <div className="mt-8 max-w-sm">
-        <div className="flex items-center justify-between text-[0.65rem] uppercase tracking-[0.1em] text-text-subtle">
-          <span>
-            {reg} / {min} players{match.max_players ? ` (max ${match.max_players})` : ""}
-          </span>
-          {reg >= min && <span className="text-accent">Quorum met</span>}
-        </div>
-        <div className="mt-1 h-1.5 w-full bg-bg-overlay">
-          <div className={`h-full ${reg >= min ? "bg-accent" : "bg-text-muted"}`} style={{ width: `${pct}%` }} />
-        </div>
+        <PlayerBar reg={reg} min={min} max={match.max_players} status={match.status} />
       </div>
 
       {/* Invite – only while the game is still filling (not once live/over). Last
@@ -252,10 +246,19 @@ export default async function GameDetailPage({
                       <span className="text-[0.65rem] font-semibold uppercase tracking-[0.1em] text-text-muted">Lvl. {s.level}</span>
                     </span>
                   ) : null}
+                  {priced && paymentOpen && s.status === "registered" && (
+                    s.paid_at ? (
+                      <span className="text-[0.55rem] font-bold uppercase tracking-[0.1em] text-emerald-300">Paid{s.payment_intent === "token" ? " · token" : ""}</span>
+                    ) : s.payment_intent === "on_day" ? (
+                      <span className="text-[0.55rem] font-bold uppercase tracking-[0.1em] text-amber-300">Paying offline</span>
+                    ) : (
+                      <span className="text-[0.55rem] font-bold uppercase tracking-[0.1em] text-text-subtle">Unpaid</span>
+                    )
+                  )}
                 </>
               );
-              const cls = `flex flex-col items-center gap-2.5 border px-3 py-4 ${
-                waitlisted ? "border-amber-600/40 bg-amber-500/5" : "border-border bg-bg-elevated"
+              const cls = `flex flex-col items-center gap-2.5 portal-card px-3 py-4 ${
+                waitlisted ? "border-amber-600/40" : ""
               }`;
               return (
                 <li key={i}>
