@@ -14,7 +14,6 @@ import { redirect, notFound } from "next/navigation";
 import { Container } from "@/components/ui/Container";
 import { createClient } from "@/lib/supabase/server";
 import { LiveRosterRefresh } from "@/components/portal/LiveRosterRefresh";
-import { LiveFeedClient } from "@/components/live/LiveFeedClient";
 import { InMatchScoreboard } from "@/components/portal/InMatchScoreboard";
 import { getInMatchScoreboard } from "@/lib/inmatch/scoreboard";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -76,12 +75,17 @@ export default async function LiveGamePage({ params }: { params: Promise<{ id: s
           </h1>
         </div>
 
-        {/* Live feed – the player's personalised phone view while the game is on
-            (only when the admin has enabled it for this match) */}
+        {/* Live feed opens fullscreen (it gets messy mid-game) — red CTA at the top, not in the header. */}
         {isLive && participant && match.live_feed_enabled && (
-          <div className="mb-6 portal-card p-2">
-            <LiveFeedClient matchId={match.id} mode="player" me={account.ops_tag ?? null} />
-          </div>
+          <Link
+            href={`/player-portal/games/${id}/feed`}
+            className="mb-4 flex items-center justify-center gap-2.5 border border-red-500 bg-red-600 px-5 py-3 text-sm font-extrabold uppercase tracking-[0.14em] text-white transition-colors hover:bg-red-500"
+          >
+            <svg viewBox="0 0 100 100" className="h-5 w-5" aria-hidden fill="currentColor">
+              <path d="M50 4 L61 39 L96 50 L61 61 L50 96 L39 61 L4 50 L39 39 Z" />
+            </svg>
+            Live Feed
+          </Link>
         )}
 
         {participant ? (
