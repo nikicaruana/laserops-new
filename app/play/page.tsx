@@ -300,7 +300,7 @@ export default async function PlayPage() {
       </section>
 
       {/* ── Videos ───────────────────────────────────────────── */}
-      <section className="border-b border-border bg-bg-elevated">
+      <section className="border-b border-border">
         <Container size="default" className="pt-14 sm:pt-16">
           <div className="text-center">
             <SectionLabel>Watch</SectionLabel>
@@ -363,7 +363,7 @@ export default async function PlayPage() {
             {PLAY_OPTIONS.map((option) => (
               <div
                 key={option.label}
-                className="flex flex-col border border-border bg-bg-elevated p-6 sm:p-8"
+                className="flex flex-col border border-border portal-surface p-6 sm:p-8"
               >
                 <h3 className="text-xl font-extrabold tracking-tight text-text">
                   {option.label}
@@ -392,7 +392,7 @@ export default async function PlayPage() {
       </section>
 
       {/* ── Why LaserOps is different ────────────────────────── */}
-      <section className="border-b border-border bg-bg-elevated">
+      <section className="border-b border-border">
         <Container size="default" className="py-14 sm:py-16">
           <div className="text-center">
             <SectionLabel>Why LaserOps</SectionLabel>
@@ -445,7 +445,7 @@ export default async function PlayPage() {
               {reviews.map((review, i) => (
                 <figure
                   key={`${review.reviewerName}-${i}`}
-                  className="flex flex-col border border-border bg-bg-elevated p-6"
+                  className="flex flex-col border border-border portal-surface p-6"
                 >
                   <Stars rating={review.rating} />
                   <blockquote className="mt-4 flex-1 leading-relaxed text-text-muted">
@@ -462,7 +462,7 @@ export default async function PlayPage() {
       )}
 
       {/* ── Still scouting? ──────────────────────────────────── */}
-      <section className="border-b border-border bg-bg-elevated">
+      <section className="border-b border-border">
         <Container size="narrow" className="py-14 sm:py-16">
           <div className="text-center">
             <SectionLabel>Still Scouting?</SectionLabel>
@@ -476,7 +476,7 @@ export default async function PlayPage() {
                 <CtaTrack cta={link.cta}>
                   <a
                     href={link.href}
-                    className="flex items-center justify-between gap-3 border border-border bg-bg px-5 py-4 text-sm font-bold uppercase tracking-[0.08em] text-text transition-colors hover:border-accent hover:text-accent"
+                    className="flex items-center justify-between gap-3 border border-border portal-surface px-5 py-4 text-sm font-bold uppercase tracking-[0.08em] text-text transition-colors hover:border-accent hover:text-accent"
                   >
                     <span>{link.label}</span>
                     <span aria-hidden className="text-accent">

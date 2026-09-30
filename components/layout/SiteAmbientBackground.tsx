@@ -14,8 +14,6 @@ import { PortalBackground } from "@/components/portal/PortalBackground";
 function keepsFlatBlack(pathname: string): boolean {
   return (
     pathname === "/" ||
-    pathname === "/play" ||
-    pathname.startsWith("/play/") ||
     pathname === "/admin" ||
     pathname.startsWith("/admin/")
   );
