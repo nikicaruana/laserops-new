@@ -21,6 +21,7 @@ import { parseRound } from "@/lib/ingestion/round-parser";
 import { unreviewedCount, type RoundResolutions } from "@/lib/ingestion/resolutions";
 import { computeMatchCommit, type CommitResult } from "@/lib/ingestion/commit";
 import { computeOfflineMatchCommit, type OfflinePlayerStat } from "@/lib/ingestion/offline-commit";
+import { getScoringConfig } from "@/lib/scoring/config";
 import { lwaMatchPlayers, isLwa } from "@/lib/ingestion/lwa";
 import { parseXpConfig } from "@/lib/scoring/xp";
 import { resolveRoster } from "@/lib/ingestion/roster";
@@ -55,6 +56,8 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   const { data: streakDefs } = await supabase.from("streak_definitions").select("streak_key, name, points").eq("is_active", true);
   const streakConfig = Object.fromEntries((streakDefs ?? []).map((sd) => [sd.streak_key as string, { name: sd.name as string, points: Number(sd.points) || 0 }]));
   const identity = await resolveRoster(supabase, id);
+  // Admin-authoritative scoring config (formula + exploit thresholds) for the mode.
+  const scoringRuntime = await getScoringConfig(supabase);
 
   // Match flags + date (date drives date-scoped gun damage for offline).
   const { data: mFlags } = await supabase.from("matches").select("played_on, scheduled_at, is_double_xp, offline_round_results, scoring_mode").eq("id", id).maybeSingle();
@@ -100,16 +103,16 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     const dmgMap = new Map(((gd ?? []) as { name: string; damage: number | null }[]).map((x) => [String(x.name).toLowerCase().trim(), Number(x.damage) || 0]));
     const unknownDmg = dmgMap.get("unknown gun") ?? 0;
     const gunDamage = (name: string | null | undefined) => (name ? dmgMap.get(name.toLowerCase().trim()) ?? unknownDmg : unknownDmg);
-    result = computeOfflineMatchCommit(players, roundResults, identity, gunDamage, cfg, isDoubleXp);
+    result = computeOfflineMatchCommit(players, roundResults, identity, gunDamage, cfg, isDoubleXp, scoringRuntime.formula);
   } else {
     // Online: JSON event-stream rounds.
     const rounds = ingested.filter((r) => !isLwa(r.raw_file as string)).map((r) => ({ raw: r.raw_file as string, resolutions: (r.resolutions ?? {}) as RoundResolutions, winnerOverride: (r.winner_override as string | null) ?? null }));
     if (rounds.length === 0) return NextResponse.json({ error: "No online (JSON) rounds to score. If this game was played offline, switch the match to Offline mode." }, { status: 400 });
     // Gate: every same-second capture ambiguity must be reviewed first.
     let unreviewed = 0;
-    for (const rd of rounds) unreviewed += unreviewedCount(parseRound(rd.raw, { spawnWindowSeconds: 3 }), rd.resolutions);
+    for (const rd of rounds) unreviewed += unreviewedCount(parseRound(rd.raw, { spawnWindowSeconds: scoringRuntime.scoring.spawnWindowSeconds }), rd.resolutions);
     if (unreviewed > 0) return NextResponse.json({ error: `${unreviewed} unreviewed capture ambiguity${unreviewed === 1 ? "" : "ies"} — resolve them before publishing.` }, { status: 400 });
-    result = computeMatchCommit(rounds, accoladeByKey, identity, cfg, isDoubleXp, streakConfig);
+    result = computeMatchCommit(rounds, accoladeByKey, identity, cfg, isDoubleXp, streakConfig, scoringRuntime);
   }
 
   // Write via the service role (RLS-bypassing; grants added in migration).

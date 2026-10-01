@@ -21,13 +21,14 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildMatchReportV2, STREAK_POINTS, type MatchReportV2 } from "@/lib/match-report-v2/build";
+import { getScoringConfig } from "@/lib/scoring/config";
 import { parseRound, type Round } from "@/lib/ingestion/round-parser";
 import { detectCrossRoundKillStreaks, KILL_STREAK_KEYS, STREAK_NAMES } from "@/lib/ingestion/streaks";
 import { resolveRoster } from "@/lib/ingestion/roster";
 import type { RoundResolutions } from "@/lib/ingestion/resolutions";
 
 // Bump when the cached payload shape or scoring changes so stale caches rebuild.
-const CACHE_VERSION = 5;
+const CACHE_VERSION = 6;
 
 export type InMatchStreak = { key: string; name: string; count: number; points: number; imageUrl: string };
 export type InMatchKill = { name: string; count: number };
@@ -204,6 +205,7 @@ export async function getInMatchScoreboard(
 
   let identityByHeadband: ((no: number) => string) | undefined;
   const maps: BuildMaps = { streakImg: new Map(), streakCfg: {}, nameMeta: new Map(), gunImg: new Map() };
+  const scoringRuntime = await getScoringConfig(svc);
   const killDeltaByIndex = new Map<number, KillDelta>();
 
   if (needsBuild) {
@@ -290,7 +292,7 @@ export async function getInMatchScoreboard(
     const report = buildMatchReportV2(
       [{ raw: r.raw_file, resolutions: r.resolutions ?? undefined, winnerOverride: r.winner_override ?? undefined }],
       { matchId, label: meta.label, date: meta.date },
-      { identityByHeadband, streakConfig: maps.streakCfg },
+      { identityByHeadband, streakConfig: maps.streakCfg, scoring: scoringRuntime.scoring, formula: scoringRuntime.formula },
     );
     const built = toInMatchRound(report, roundNo, maps, killDeltaByIndex.get(i) ?? new Map());
     rounds.push(built);

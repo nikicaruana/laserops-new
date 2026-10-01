@@ -12,6 +12,7 @@
 import { buildMatchReportV2 } from "../match-report-v2/build";
 import type { RoundResolutions } from "./resolutions";
 import { computeMatchXp, DEFAULT_XP_CONFIG, type XpConfig } from "../scoring/xp";
+import type { ScoringRuntime } from "../scoring/config";
 
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
@@ -58,8 +59,9 @@ export function computeMatchCommit(
   cfg: XpConfig = DEFAULT_XP_CONFIG,
   isDoubleXp = false,
   streakConfig?: Record<string, { name: string; points: number }>,
+  scoringRuntime?: ScoringRuntime,
 ): CommitResult {
-  const report = buildMatchReportV2(rawRounds, { matchId: "commit", label: "commit" }, { identityByHeadband: (hb) => { const e = identity(String(hb)); return e.accountId ? e.nickname : ""; }, streakConfig, });
+  const report = buildMatchReportV2(rawRounds, { matchId: "commit", label: "commit" }, { identityByHeadband: (hb) => { const e = identity(String(hb)); return e.accountId ? e.nickname : ""; }, streakConfig, scoring: scoringRuntime?.scoring, formula: scoringRuntime?.formula, });
   const P = report.players;
   const rankOf = (vals: number[], v: number, higher = true) => 1 + vals.filter((x) => (higher ? x > v : x < v)).length;
   const scores = P.map((p) => p.totalScore), kills = P.map((p) => p.frags), deaths = P.map((p) => p.deaths);

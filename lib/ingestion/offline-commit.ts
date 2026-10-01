@@ -23,6 +23,7 @@
  * empty/zero on offline aggregates; the report shows them as "not captured".
  */
 import { computeMatchXp, DEFAULT_XP_CONFIG, type XpConfig } from "../scoring/xp";
+import { computeGroupValue, type ScoreFormula } from "../scoring/formula";
 import type { CommitAggregate, CommitResult, NetResultSummary } from "./commit";
 
 export type OfflinePlayerStat = {
@@ -41,7 +42,16 @@ type GunDamage = (gunName: string | null | undefined) => number;
 
 /** Same kill-score model as the online v2 formula (build.ts); objective +
  *  streak components are 0 offline. */
-function killScoreOf(frags: number, damage: number, accuracy: number, kd: number): number {
+function killScoreOf(frags: number, damage: number, accuracy: number, kd: number, formula?: ScoreFormula): number {
+  if (formula) {
+    // Offline = kill-only: sum just the non-objective groups of the admin formula.
+    let killV = 0;
+    for (const g of formula.groups) {
+      const isObj = [...g.baseTerms, ...g.multipliers].some((t) => t.stat === "captures" || t.stat === "hold" || t.stat === "recaptures");
+      if (!isObj) killV += computeGroupValue(g, { frags, damage, accuracy, kd });
+    }
+    return Math.round(killV);
+  }
   return Math.round((frags * 50 + damage * 0.2) * (1 + accuracy * 0.2) * (1 + kd * 0.12));
 }
 
@@ -60,6 +70,7 @@ export function computeOfflineMatchCommit(
   gunDamage: GunDamage,
   cfg: XpConfig = DEFAULT_XP_CONFIG,
   isDoubleXp = false,
+  formula?: ScoreFormula,
 ): CommitResult {
   // --- 1. Merge headbands that resolve to the same account -----------------
   const groups = new Map<string, Group>();
@@ -96,7 +107,7 @@ export function computeOfflineMatchCommit(
   const scored: Scored[] = [...groups.values()].map((g) => {
     const accuracy = g.shots > 0 ? g.hits / g.shots : 0;
     const kd = g.deaths > 0 ? g.frags / g.deaths : g.frags;
-    const score = killScoreOf(g.frags, g.damage, accuracy, kd);
+    const score = killScoreOf(g.frags, g.damage, accuracy, kd, formula);
     return { ...g, accuracy, kd, score };
   });
 

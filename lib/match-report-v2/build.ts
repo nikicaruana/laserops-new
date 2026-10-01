@@ -16,6 +16,7 @@ import { effectiveWithResolutions, type RoundResolutions } from "../ingestion/re
 import { detectStreaks, STREAK_NAMES, KILL_STREAK_KEYS, detectCrossRoundKillStreaks } from "../ingestion/streaks";
 import { buildKillMatrix } from "../ingestion/kill-matrix";
 import { computeAccolades } from "../ingestion/accolades";
+import { computeGroupValue, type ScoreFormula } from "../scoring/formula";
 import type { KillMatrix, PairTally, PlayerStreak, PlayerReport, MatchReportV2 } from "./types";
 
 export type { KillMatrix, PairTally, PlayerStreak, PlayerReport, MatchReportV2 } from "./types";
@@ -66,6 +67,8 @@ export function buildMatchReportV2(
   meta: { matchId: string; label: string; date?: string | null },
   opts?: {
     scoring?: Partial<typeof V2_SCORING>;
+    /** Admin per-mode score formula; when set, kill + objective come from it. */
+    formula?: ScoreFormula;
     opsTagByHeadband?: Record<number, string>;
     /** Resolve a headband number to its canonical player name (ops tag).
      *  Merges headband switches at aggregation so per-round AND cross-round
@@ -82,6 +85,7 @@ export function buildMatchReportV2(
   },
 ): MatchReportV2 {
   const { spawnWindowSeconds, minHoldSeconds, recaptureWindowSeconds, capturePoints, recapturePoints, holdPerSecond } = { ...V2_SCORING, ...(opts?.scoring ?? {}) };
+  const formula = opts?.formula;
   // Streak names + points: DB (streakConfig) is authoritative when supplied,
   // else the built-in maps. Used for both scoring and the report display.
   const streakPointsOf = (key: string) => opts?.streakConfig?.[key]?.points ?? STREAK_POINTS[key] ?? 0;
@@ -213,11 +217,31 @@ export function buildMatchReportV2(
     const dmg = Math.max(0, a.damage - a.spawnDamage);
     const accuracy = a.shots > 0 ? a.hits / a.shots : 0;
     const kd = a.deaths > 0 ? f / a.deaths : f;
-    const killScore = Math.round((f * 50 + dmg * 0.2) * (1 + accuracy * 0.2) * (1 + kd * 0.12));
-    // Round the objective portion UP to a whole number, so player scores and
-    // team ratings are always integers (fractional hold weights like x1.5 would
-    // otherwise leave a trailing .5).
-    const objectiveScore = Math.ceil(a.captures * capturePoints + a.recaptures * recapturePoints + a.hold * holdPerSecond);
+    // Scores come from the admin formula when provided: each group is objective
+    // if it uses an objective stat, else kill. Recaptures are not a formula stat
+    // (their points live in exploit control), so they are added to the objective
+    // total separately. Kill rounds; objective ceils so team ratings stay integer
+    // even with fractional hold weights (x1.5).
+    const statVals = { frags: f, damage: dmg, accuracy, kd, captures: a.captures, hold: a.hold, recaptures: a.recaptures };
+    let killScore: number;
+    let objectiveScore: number;
+    if (formula) {
+      let killV = 0;
+      let objV = 0;
+      for (const g of formula.groups) {
+        const isObj = [...g.baseTerms, ...g.multipliers].some(
+          (t) => t.stat === "captures" || t.stat === "hold" || t.stat === "recaptures",
+        );
+        const v = computeGroupValue(g, statVals);
+        if (isObj) objV += v;
+        else killV += v;
+      }
+      killScore = Math.round(killV);
+      objectiveScore = Math.ceil(objV + a.recaptures * recapturePoints);
+    } else {
+      killScore = Math.round((f * 50 + dmg * 0.2) * (1 + accuracy * 0.2) * (1 + kd * 0.12));
+      objectiveScore = Math.ceil(a.captures * capturePoints + a.recaptures * recapturePoints + a.hold * holdPerSecond);
+    }
     const streakScore = a.streakPoints;
     const streaks: PlayerStreak[] = Object.entries(a.streaks)
       .map(([key, count]) => ({ key, name: streakNameOf(key), count, points: streakPointsOf(key) * count }))
