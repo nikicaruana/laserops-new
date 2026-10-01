@@ -50,6 +50,11 @@ export default async function CheckoutCompletePage({
         <p className="mt-6 text-[0.65rem] text-text-subtle">
           If it hasn&rsquo;t updated shortly, refresh &ndash; the confirmation arrives via a secure webhook.
         </p>
+        <p className="mt-3 text-[0.65rem] text-text-subtle">
+          Purchases, including game tokens, are subject to our{" "}
+          <Link href="/terms" className="underline hover:text-text">Terms</Link>{" "}
+          (including token validity and expiry).
+        </p>
       </div>
     </main>
   );

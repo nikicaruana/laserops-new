@@ -72,6 +72,11 @@ export default async function StorePage() {
           </Link>
         </p>
 
+        <div className="mt-6 border-l-2 border-accent/70 bg-accent/5 px-4 py-3 text-left text-xs leading-relaxed text-text-muted">
+          <span className="font-semibold text-text">Before you buy:</span> 1 token = 1 game. Tokens expire after the validity period shown on each bundle, and once expired they can&apos;t be used or refunded. Tokens are non-transferable (except via gifting) and have no cash value. Full terms are below and in our{" "}
+          <Link href="/terms" className="underline hover:text-accent">Terms &amp; Conditions</Link>.
+        </div>
+
         {list.length === 0 ? (
           <p className="mt-10 text-center text-text-muted">No bundles are available right now. Check back soon.</p>
         ) : (

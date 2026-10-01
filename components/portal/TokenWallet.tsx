@@ -94,6 +94,10 @@ export function TokenWallet({
           <span className="text-text">{fmtDate(nextExpiry.expires_at as string)}</span>.
         </p>
       )}
+      <p className="mt-2 text-[0.7rem] text-text-subtle">
+        Tokens expire after their validity period; once expired they can&apos;t be used or refunded.{" "}
+        <Link href="/terms" className="underline hover:text-accent">Token terms</Link>.
+      </p>
 
       {boosts && (
         <div className="mt-6 border-t border-border pt-5">
