@@ -47,6 +47,29 @@ const GAMES: Record<string, GameCfg> = {
     date: "2026-09-05",
     opsByHead: { 1: "Snaaaaaaake", 2: "Buwdha", 4: "Sina", 6: "Jens", 37: "BSoD", 39: "Jinnies", 40: "TheHolySpirit", 41: "Glenn", 42: "Tompa", 45: "aximus" },
   },
+  "28": {
+    // HYBRID: R1-2 online (both Blue) + R3-5 offline from the combined "clean
+    // 10-active" LWA 20.10.37 (20.20.48's 7v6 + 20.17.30 aborted were discarded).
+    // Offline Blue 2 / Yellow 1 -> match Blue 4-1 (sheet). Band swaps: Hasapardi
+    // 2->47, Tompa 42->51, Sina 37->58. POL kept Head 04 but switched Ghost->Predator.
+    date: "2026-09-08",
+    opsByHead: {
+      1: "Mustafa", 6: "JRilez", 39: "Uros", 40: "Glenn", 41: "Rowan", 45: "Niksu", 4: "POL",
+      2: "Hasapardi", 47: "Hasapardi", 42: "Tompa", 51: "Tompa", 37: "Sina", 58: "Sina",
+    },
+    onlineFiles: [
+      { file: "RealtimeStatistics_20260908_151300.json", win: "Blue" },
+      { file: "RealtimeStatistics_20260908_153038.json", win: "Blue" },
+    ],
+    offline: { lwaFile: "AlphaTag.Statistic_2026.09.08_20.10.37.lwa", winners: ["Blue", "Blue", "Yellow"] },
+    excludeHeadbands: [5], // Head 5 briefly appears in R2 only - not one of the clean 10-active roster.
+    // Explicit guns (R3-5 profile used for offline damage; POL = Predator offline).
+    gunOverride: {
+      POL: "AK-25 Predator", Mustafa: "AK-25 Predator", JRilez: "MG21 Berserk", Uros: "AK-25 Predator",
+      Glenn: "AKM Legend", Rowan: "AK-25 Predator", Niksu: "AK-25 Predator", Hasapardi: "AR-15 Ranger",
+      Tompa: "AK-25 Predator", Sina: "MP9LT Phoenix",
+    },
+  },
   "29": {
     date: "2026-09-12",
     opsByHead: { 1: "Sina", 2: "Mustafa", 6: "Maltese Predator", 9: "Hasapardi", 26: "Wugy", 39: "ChrisKyle", 40: "Jens", 41: "Snaaaaaaake", 47: "BlueJay", 53: "PourHoneyOnMyBun" },
