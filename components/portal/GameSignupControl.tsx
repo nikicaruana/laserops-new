@@ -50,6 +50,7 @@ export function GameSignupControl({
   tokenBalance = 0,
   tokensApplied = 0,
   tokenImageUrl = "",
+  beginnerLock = null,
 }: {
   matchId: string;
   accountId: string;
@@ -77,6 +78,8 @@ export function GameSignupControl({
   tokensApplied?: number;
   /** Cloudinary URL for the LaserOps game-token coin art. */
   tokenImageUrl?: string;
+  /** Set when THIS viewer is above a beginners game's level cap: blocks sign-up with a notice. */
+  beginnerLock?: { yourLevel: number; maxLevel: number } | null;
 }) {
   const router = useRouter();
   const col = align === "center" ? "items-center text-center" : align === "start" ? "items-start" : "items-start sm:items-end";
@@ -399,6 +402,20 @@ export function GameSignupControl({
           </button>
         )}
         {error && <span className="text-xs text-red-400">{error}</span>}
+      </div>
+    );
+  }
+
+  // ---- Too high a level for a beginners game ------------------------------
+  if (beginnerLock && !registered && !waitlisted) {
+    return (
+      <div className={`flex flex-col gap-2 ${col}`}>
+        <span className="inline-flex items-center gap-2 border border-amber-600/60 bg-amber-500/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.12em] text-amber-300">
+          Beginners only
+        </span>
+        <span className="text-[0.7rem] text-text-subtle">
+          Your level ({beginnerLock.yourLevel}) is too high for this beginners game (max level {beginnerLock.maxLevel}).
+        </span>
       </div>
     );
   }

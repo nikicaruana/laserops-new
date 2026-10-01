@@ -35,6 +35,8 @@ type Game = {
   registered_count: number | null;
   is_double_xp: boolean | null;
   is_private: boolean | null;
+  is_beginner: boolean | null;
+  beginner_max_level: number | null;
 };
 
 type MySignup = {
@@ -61,7 +63,13 @@ function fmtDateTime(iso: string | null): string {
   });
 }
 
-export default async function GamesPage() {
+export default async function GamesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ filter?: string }>;
+}) {
+  const { filter } = await searchParams;
+  const beginnerOnly = filter === "beginner";
   const supabase = await createClient();
   const {
     data: { user },
@@ -87,9 +95,9 @@ export default async function GamesPage() {
 
   const nowIso = new Date().toISOString();
   const selectCols =
-    "id, match_code, title, status, scheduled_at, min_players, max_players, price_eur, pricing_mode, registered_count, is_double_xp, is_private";
+    "id, match_code, title, status, scheduled_at, min_players, max_players, price_eur, pricing_mode, registered_count, is_double_xp, is_private, is_beginner, beginner_max_level";
 
-  const [{ data: signupRows }, guns, { data: participantRows }, { data: inviteRows }] = await Promise.all([
+  const [{ data: signupRows }, guns, { data: participantRows }, { data: inviteRows }, { data: levelRow }] = await Promise.all([
     supabase
       .from("match_signups")
       .select("match_id, payment_intent, status, paid_at, booked_gun")
@@ -97,7 +105,9 @@ export default async function GamesPage() {
     getUnlockedGuns(supabase, account.ops_tag, { includeLocked: account.is_admin === true }),
     supabase.from("match_participants").select("match_id").eq("account_id", account.id),
     supabase.rpc("my_pending_match_invites"),
+    supabase.from("player_stats_lifetime").select("current_level").eq("account_id", account.id).maybeSingle(),
   ]);
+  const viewerLevel = (levelRow as { current_level: number | null } | null)?.current_level ?? 1;
 
   const joinedIds = new Set(((participantRows ?? []) as { match_id: string }[]).map((p) => p.match_id));
   const mine = new Map<string, MySignup>();
@@ -165,6 +175,7 @@ export default async function GamesPage() {
 
   const excluded = new Set<string>([...createdIdSet, ...myIdSet, ...invitedIdSet, ...liveIdSet]);
   const openGames = ((openRows ?? []) as Game[]).filter((g) => !excluded.has(g.id));
+  const openGamesShown = beginnerOnly ? openGames.filter((g) => g.is_beginner) : openGames;
   const wlPos = new Map<string, number>();
   for (const r of (wlRows ?? []) as { match_id: string; wl_position: number }[]) wlPos.set(r.match_id, r.wl_position);
 
@@ -177,6 +188,10 @@ export default async function GamesPage() {
     const joined = joinedIds.has(g.id);
     const showPrice = g.price_eur != null && g.pricing_mode === "per_player";
     const isCreated = createdIdSet.has(g.id);
+    const beginnerLock =
+      g.is_beginner && g.beginner_max_level != null && !account.is_admin && viewerLevel > g.beginner_max_level
+        ? { yourLevel: viewerLevel, maxLevel: g.beginner_max_level }
+        : null;
     return (
       <li key={g.id} className="flex flex-col gap-3 portal-card p-4 sm:p-5">
         {/* Title + status */}
@@ -195,6 +210,11 @@ export default async function GamesPage() {
             <MatchStatusBadge status={g.status} />
             {g.is_double_xp && (
               <span className="border border-amber-700 bg-amber-950/40 px-1.5 py-0.5 text-[0.5rem] font-bold uppercase tracking-[0.12em] text-amber-300">2XP</span>
+            )}
+            {g.is_beginner && (
+              <span className="border border-emerald-700 bg-emerald-950/40 px-1.5 py-0.5 text-[0.5rem] font-bold uppercase tracking-[0.12em] text-emerald-300">
+                Beginners{g.beginner_max_level != null ? ` · max Lvl ${g.beginner_max_level}` : ""}
+              </span>
             )}
           </div>
         </div>
@@ -236,6 +256,7 @@ export default async function GamesPage() {
                 familyFriends={account.discount_price_eur != null}
                 isPrivate={Boolean(g.is_private)}
                 isOrganiser={isCreated}
+                beginnerLock={beginnerLock}
                 hideCancel
               />
             )}
@@ -307,9 +328,23 @@ export default async function GamesPage() {
         </GamesGroup>
       )}
 
-      <GamesGroup title="Open Games" count={openGames.length}>
+      <GamesGroup title="Open Games" count={openGamesShown.length}>
+        <div className="mb-4 flex flex-wrap gap-2">
+          <Link
+            href="/player-portal/games"
+            className={`border px-3 py-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.1em] ${!beginnerOnly ? "border-accent bg-accent/10 text-accent" : "border-border-strong text-text-muted hover:border-accent hover:text-accent"}`}
+          >
+            All games
+          </Link>
+          <Link
+            href="/player-portal/games?filter=beginner"
+            className={`border px-3 py-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.1em] ${beginnerOnly ? "border-accent bg-accent/10 text-accent" : "border-border-strong text-text-muted hover:border-accent hover:text-accent"}`}
+          >
+            Beginners only
+          </Link>
+        </div>
         <GamesViewToggle
-          games={openGames
+          games={openGamesShown
             .filter((g) => ["tentative", "awaiting_confirm", "confirmed"].includes(g.status ?? ""))
             .map((g) => ({
               id: g.id,
@@ -321,12 +356,12 @@ export default async function GamesPage() {
               max: g.max_players,
             }))}
         >
-          {openGames.length === 0 ? (
+          {openGamesShown.length === 0 ? (
             <p className="border border-dashed border-border px-4 py-16 text-center text-sm text-text-muted">
-              No open games right now. Check back soon.
+              {beginnerOnly ? "No beginners games right now. Check back soon." : "No open games right now. Check back soon."}
             </p>
           ) : (
-            <ul className="space-y-3">{openGames.map((g) => card(g))}</ul>
+            <ul className="space-y-3">{openGamesShown.map((g) => card(g))}</ul>
           )}
         </GamesViewToggle>
       </GamesGroup>

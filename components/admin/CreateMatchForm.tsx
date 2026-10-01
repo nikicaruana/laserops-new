@@ -68,6 +68,8 @@ export function CreateMatchForm() {
   const [maxPlayers, setMaxPlayers] = useState("");
   const [priceEur, setPriceEur] = useState("");
   const [pricingMode, setPricingMode] = useState<"per_player" | "flat">("per_player");
+  const [isBeginner, setIsBeginner] = useState(false);
+  const [beginnerMaxLevel, setBeginnerMaxLevel] = useState("");
   const [depositEur, setDepositEur] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -116,6 +118,10 @@ export function CreateMatchForm() {
       setError("Set a price per player - open games must have a price.");
       return;
     }
+    if (!isPrivate && isBeginner && !(Number(beginnerMaxLevel) > 0)) {
+      setError("Set a max level for the beginners game.");
+      return;
+    }
     setSaving(true);
     const supabase = createClient();
     const { data, error: err } = await supabase
@@ -131,6 +137,8 @@ export function CreateMatchForm() {
         deposit_eur: isPrivate ? numOrNull(depositEur) : null,
         is_double_xp: matchType === "double_xp",
         is_private: isPrivate,
+        is_beginner: !isPrivate && isBeginner,
+        beginner_max_level: !isPrivate && isBeginner ? (Number(beginnerMaxLevel) || null) : null,
       })
       .select("id")
       .single();
@@ -243,6 +251,22 @@ export function CreateMatchForm() {
             <label className={lbl}>Max players (optional)</label>
             <input type="number" min="1" className={input} value={maxPlayers} onChange={(e) => setMaxPlayers(e.target.value)} onFocus={(e) => e.target.select()} placeholder="No cap" />
           </div>
+
+          {!isPrivate && (
+            <div className="sm:col-span-2 border-t border-border pt-4">
+              <label className="flex cursor-pointer items-center gap-2.5">
+                <input type="checkbox" checked={isBeginner} onChange={(e) => setIsBeginner(e.target.checked)} className="h-4 w-4 accent-[color:var(--color-accent)]" />
+                <span className="text-sm font-semibold text-text">Beginners only game</span>
+              </label>
+              <p className="mt-1 text-[0.65rem] text-text-subtle">Caps the game to players at or below a level. Shown clearly to players browsing; higher-level players can&apos;t sign up.</p>
+              {isBeginner && (
+                <div className="mt-3 max-w-[14rem]">
+                  <label className={lbl}>Max level</label>
+                  <input type="number" min="1" className={input} value={beginnerMaxLevel} onChange={(e) => setBeginnerMaxLevel(e.target.value)} onFocus={(e) => e.target.select()} placeholder="e.g. 10" />
+                </div>
+              )}
+            </div>
+          )}
 
           {isPrivate && (
             <div>

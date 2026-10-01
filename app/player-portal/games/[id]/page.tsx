@@ -66,13 +66,13 @@ export default async function GameDetailPage({
   const { data: match } = await supabase
     .from("matches")
     .select(
-      "id, match_code, title, status, scheduled_at, min_players, max_players, price_eur, pricing_mode, registered_count, is_double_xp, is_private, invite_code, created_by",
+      "id, match_code, title, status, scheduled_at, min_players, max_players, price_eur, pricing_mode, registered_count, is_double_xp, is_private, is_beginner, beginner_max_level, invite_code, created_by",
     )
     .eq("id", id)
     .maybeSingle();
   if (!match) notFound();
 
-  const [{ data: mySignup }, guns, { data: participant }, { data: wlRows }] = await Promise.all([
+  const [{ data: mySignup }, guns, { data: participant }, { data: wlRows }, { data: levelRow }] = await Promise.all([
     supabase
       .from("match_signups")
       .select("payment_intent, status, paid_at, booked_gun")
@@ -82,7 +82,13 @@ export default async function GameDetailPage({
     getUnlockedGuns(supabase, account.ops_tag, { includeLocked: account.is_admin === true }),
     supabase.from("match_participants").select("id").eq("match_id", id).eq("account_id", account.id).maybeSingle(),
     supabase.rpc("my_waitlist_positions"),
+    supabase.from("player_stats_lifetime").select("current_level").eq("account_id", account.id).maybeSingle(),
   ]);
+  const viewerLevel = (levelRow as { current_level: number | null } | null)?.current_level ?? 1;
+  const beginnerLock =
+    match.is_beginner && match.beginner_max_level != null && !account.is_admin && viewerLevel > match.beginner_max_level
+      ? { yourLevel: viewerLevel, maxLevel: match.beginner_max_level }
+      : null;
 
   const isCreator = match.created_by === account.id;
   const amSignedUp = Boolean(mySignup && mySignup.status !== "cancelled");
@@ -144,6 +150,11 @@ export default async function GameDetailPage({
               Double XP
             </span>
           )}
+          {match.is_beginner && (
+            <span className="border border-emerald-700 bg-emerald-950/40 px-2 py-0.5 text-[0.55rem] font-bold uppercase tracking-[0.12em] text-emerald-300">
+              Beginners{match.beginner_max_level != null ? ` · max Lvl ${match.beginner_max_level}` : ""}
+            </span>
+          )}
         </div>
         <p className="mt-2 text-sm text-text-muted">
           {fmtDateTime(match.scheduled_at)}
@@ -197,6 +208,7 @@ export default async function GameDetailPage({
             priceEur={match.pricing_mode === "per_player" ? (account.discount_price_eur != null ? Number(account.discount_price_eur) : Number(match.price_eur)) : null}
             familyFriends={account.discount_price_eur != null}
             isPrivate={Boolean(match.is_private)}
+            beginnerLock={beginnerLock}
             tokenBalance={Number(tokenBalance ?? 0)}
             tokensApplied={tokensApplied}
             tokenImageUrl={tokenImageUrl}
