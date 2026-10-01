@@ -4,7 +4,7 @@ A running list of everything that must be done to take `v2-rebuild` live on the
 main site. Living document — add items as they come up, tick them as they land.
 Legend: `[ ]` todo · `[~]` in progress / partial · `[x]` done · `[!]` blocked / waiting.
 
-Last updated: 2026-09-21
+Last updated: 2026-10-01
 
 ---
 
@@ -38,14 +38,16 @@ Last updated: 2026-09-21
 
 ## 3. Data
 
+- [ ] **Build the prod DB on staging, then PROMOTE it in place (not a copy-migrate).** Stand up ONE Supabase project that becomes prod: apply all migrations, seed every config table, carry over the agreed match set, recompute everything (below). The closed group tests against it; before launch delete only the test-generated rows (test accounts, signups, payments, token ledger, test matches) and repoint the prod domain + env at this same project. Avoids a risky dump-and-restore into a second project.
+- [ ] **Finalise scoring/XP inputs BEFORE the recompute (hard gate).** Lock the scoring formula, exploit controls, XP progression + rewards, and the rating system, and decide exactly which matches carry over. THEN recompute XP/stats/ratings for every carried match. XP for all past games will change - expected.
+- [ ] **Retrospective unlocks on account create/claim.** When a player creates or claims their account, grant the level-based unlocks their recomputed XP/level earns, so they immediately see the right guns/perks unlocked.
 - [ ] **Launch match-backlog ingestion** — ingest the backlog of past matches at launch.
 - [ ] **Player accounts / historical data** — decide/handle any migration from V1 (open question — confirm scope).
 
 ## 4. Payments
 
 - [x] **Viva integration** — VALIDATED end-to-end in the Viva DEMO sandbox on 2026-09-28: live test payment + refund both confirmed (webhook marks paid with correct amount; admin refund clears + records). Two bugs found & fixed via the self-test: (1) Basic-auth endpoints (webhook key + refund) must hit `demo.vivapayments.com`/`www.vivapayments.com`, not the `-api` host; (2) Viva refund needs `?amount=` even for a full refund (adapter now resolves it). Diagnostic: `GET /api/admin/viva-check`. Runbook: `docs/VIVA-SANDBOX-SETUP.md`. **For prod:** swap to the production Viva account (`VIVA_ENV=production` + prod credentials + prod webhook at the real domain + Source success/failure = `https://laseropsmalta.com/checkout/complete`). Token-bundle webhook path still untested (no active bundles seeded).
-- [ ] **Stripe refund flow** — built; needs one fresh Stripe test payment to verify end-to-end.
-- [ ] **Stripe prod keys + webhook** configured in the prod project.
+- [x] ~~Stripe refund flow / prod keys + webhook~~ **DROPPED** - we went with Viva, not Stripe. Residual Stripe code/keys are legacy and can be removed.
 
 ## 5. Verify / QA after cutover
 
@@ -64,3 +66,26 @@ Last updated: 2026-09-21
 
 - [ ] **Site performance audit** — full pass once V2 is live: Lighthouse / Core Web Vitals, JS bundle + image sizes, caching coverage, and DB query hotspots. Already done: HoF/leaderboard/achievements boards cached (`lib/leaderboards/hall-of-fame-cached.ts`, 30-min + refresh-on-publish); Cloudinary images optimized via `cldImage`. Candidates flagged during the build: cache the Compare page's `getAllPlayerSummaryRows` (reads all players); add DB indexes for the match-report / match_player_aggregate lookups.
 - [ ] **SEO audit of all new V2 pages** — for every new page: `<title>` + meta description, canonical URL, OG/Twitter cards, sitemap coverage, structured data where relevant, and heading hierarchy. Cover the pages created during the V2 build (Blog + posts, Streaks & Accolades, Player Stats → Achievements, and any further content pages).
+
+## 8. Pre-staging build items (added 2026-10-01)
+
+These should land before the closed-group staging test.
+
+- [ ] **Beginner-only open games.** Admin "create open game" gets a *Beginner game* switch; turning it on reveals an **XP cap** input. Beginner games are clearly labelled in the open-games list with the cap visible to players browsing. Add a **beginner filter** to the open-games list. A player above the cap who tries to sign up is shown a "your XP is too high for this match" notice and blocked. TBD: cap by raw lifetime XP number vs by level (wording reads as raw XP - confirm).
+- [ ] **Token T&Cs shown everywhere needed.** Surface the token terms (incl. expiry: lots carry `expires_at`, oldest-expiry-first drawdown, expired = unusable/non-refundable) consistently in four places: (1) prominently on the store/product page before checkout; (2) in the Terms & Conditions; (3) in the purchase confirmation; (4) alongside the wallet balance/expiry. Partly present already (store validity copy, /terms clauses, TokenWallet expiry line) - this is a placement/consistency pass, especially the pre-checkout and confirmation spots.
+- [ ] **Gallery rework (match-tied photos).** Every upload tied to a specific match; start the photo library from scratch in a new, clearly-labelled Cloudinary folder. Goal: enable stat-overlay story images for ALL past games. Player gallery gets a "games I took part in" filter slider; the match-name filter becomes a dropdown (the current flat setup clutters at scale). Lives in components/gallery (GalleryGrid.tsx) + the upload flow. **Timing: build the mechanism now; backfill/populate the new folder during staging once the carryover match set is locked.**
+- [ ] **"Match photos uploaded" notification + email.** New notification type fired when photos are added to a match, with a branded HTML email (same system as the existing 9 templates).
+- [ ] **Mixed online/offline match report.** When a game mixes online and offline rounds, keep the ONLINE report format (do NOT fall back to the offline-only layout). Show the streaks + "you killed" / "killed by" tables from the online rounds, and label which rounds were online vs offline (e.g. "Rounds 1-2 online, 3-5 offline"). Fix per-round averaging so online-only stats divide by the ONLINE round count, not total: e.g. 2 online + 3 offline, 10 caps (online-only) -> caps/round = 5, not 2. Same for cap-time/round and any other online-only per-round stat. TBD: the exact online-only vs dual (also-offline) stat list for the denominators.
+
+## 9. Closed-group staging test (Vercel) - extra steps
+
+A staging test is a parallel copy of prod infra config pointed at a staging URL, plus the data decision in section 3. Extra steps beyond a straight prod deploy:
+
+- [ ] **Stable staging domain** (e.g. `staging.laseropsmalta.com` aliased to the v2-rebuild branch) - NOT the per-commit preview URL, which changes every push and breaks the OAuth/Supabase allowlists.
+- [ ] **Second OAuth + Supabase allowlist entry** for the staging origin (Google JS origins + Supabase redirect URLs). Consent screen already published; email/profile/openid only, so no tester cap.
+- [ ] **Env vars scoped to staging** in Vercel (Supabase / Cloudinary / Resend / Viva / NEXT_PUBLIC_SITE_URL / REVALIDATE_SECRET). Cloudinary renders fine on any Vercel deploy.
+- [ ] **Gate the group:** app-level email allowlist in middleware.ts (preferred - does not block webhooks) OR Vercel Deployment Protection (needs a bypass token for the Viva webhook, /api/revalidate, crons).
+- [ ] **noindex on staging** - robots.ts currently allows "/" based on NEXT_PUBLIC_SITE_URL; guard it to disallow-all when the host is staging (custom aliases are not auto-noindexed the way random preview URLs are).
+- [ ] **Crons** run only on Production deployments, not previews. On a preview-based staging the 5 crons (notifications-dispatch, match-reminders, go-live, waitlist-notify, ladder-idle-drop) will NOT auto-fire - trigger manually, or run staging as its own prod project (then they WILL send real mail to testers).
+- [ ] **Viva stays in DEMO** on staging: demo keys + a demo Source whose success/failure URLs + webhook point at the staging domain. Needs the partner present to create/reverify (parked constraint).
+- [ ] **Resend sends real email** to testers during staging (notifications, .ics invites, refunds). Verify the sending domain and warn the group.
