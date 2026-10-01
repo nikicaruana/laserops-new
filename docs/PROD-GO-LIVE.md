@@ -39,7 +39,11 @@ Last updated: 2026-10-01
 ## 3. Data
 
 - [ ] **Build the prod DB on staging, then PROMOTE it in place (not a copy-migrate).** Stand up ONE Supabase project that becomes prod: apply all migrations, seed every config table, carry over the agreed match set, recompute everything (below). The closed group tests against it; before launch delete only the test-generated rows (test accounts, signups, payments, token ledger, test matches) and repoint the prod domain + env at this same project. Avoids a risky dump-and-restore into a second project.
-- [ ] **Finalise scoring/XP inputs BEFORE the recompute (hard gate).** Lock the scoring formula, exploit controls, XP progression + rewards, and the rating system, and decide exactly which matches carry over. THEN recompute XP/stats/ratings for every carried match. XP for all past games will change - expected.
+- [~] **Finalise scoring/XP inputs BEFORE the recompute (hard gate).** Lock the scoring formula, exploit controls, XP progression + rewards, and the rating system, and decide exactly which matches carry over. THEN recompute XP/stats/ratings for every carried match. XP for all past games will change - expected.
+  - [x] **Scoring formula + exploit controls LOCKED & WIRED (2026-10-01).** The admin panels (/admin/scoring + /admin/exploit-control) are now authoritative - commit.ts/buildMatchReportV2 load the per-mode config at publish (was hardcoded). Locked Domination values: Kill = (frags x50 + damage x0.2) x (1+acc x0.2) x (1+kd x0.12); Objective = captures x100 + hold x1.5 + recaptures x75; streaks on top (code + streak config). Exploit: spawn window 4s/void, min hold 3s for a cap, recapture window 20s. One mode. Offline = kill-only. Verified end-to-end.
+  - [ ] XP progression + rewards (step 3).
+  - [ ] Rating system (step 4).
+  - [ ] Carryover match list (step 5).
 - [ ] **Retrospective unlocks on account create/claim.** When a player creates or claims their account, grant the level-based unlocks their recomputed XP/level earns, so they immediately see the right guns/perks unlocked.
 - [ ] **Launch match-backlog ingestion** — ingest the backlog of past matches at launch.
 - [ ] **Player accounts / historical data** — decide/handle any migration from V1 (open question — confirm scope).
