@@ -68,42 +68,55 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
 
   let result: CommitResult;
   if (isOffline) {
-    // Offline: one .lwa (or several) -> whole-match per-player aggregate.
-    const onlineWinners: (string | null)[] = [];
-    let hasLwa = false;
-    // Kill counters from BOTH the .lwa AND any online JSON rounds (a match that
-    // started online then switched) — every round scored kill-only.
-    const players: OfflinePlayerStat[] = [];
-    for (const r of ingested) {
-      const raw = r.raw_file as string;
-      if (isLwa(raw)) {
-        hasLwa = true;
-        try { players.push(...lwaMatchPlayers(raw)); } catch { /* skip bad file */ }
-      } else {
-        try {
-          const round = parseRound(raw, { spawnWindowSeconds: 3 });
-          const ov = (r.winner_override as string | null) ?? null;
-          onlineWinners.push(ov === "draw" ? null : (ov || round.result.winner_team || null));
-          for (const pl of round.players) {
-            const c = round.final_player_counters[pl.in_game_player_id];
-            if (!c) continue;
-            players.push({ headband: pl.name, team: pl.team, frags: c.frags, deaths: c.deaths, hits: c.hits, shots: c.shots, wounds: c.wounds ?? 0, revivals: 0 });
-          }
-        } catch { /* skip unparseable */ }
-      }
-    }
-    if (players.length === 0) return NextResponse.json({ error: "No players found in the ingested files." }, { status: 400 });
-    // Online rounds first (JSON-derived/overridden winners), then the marshal-entered
-    // offline rounds, numbered continuously across the whole match.
+    // A match with offline data is either PURE OFFLINE (only .lwa rounds -> every
+    // round kill-only) or HYBRID (online JSON rounds + offline .lwa rounds -> the
+    // online rounds score in full, the offline rounds kill-only, summed).
+    const jsonRows = ingested.filter((r) => !isLwa(r.raw_file as string));
+    const lwaRows = ingested.filter((r) => isLwa(r.raw_file as string));
     const offlineWinners = ((mFlags?.offline_round_results ?? []) as (string | null)[]).map((c) => c || null);
-    if (hasLwa && offlineWinners.length === 0) return NextResponse.json({ error: "Enter the round results for the offline rounds before publishing." }, { status: 400 });
-    const roundResults = [...onlineWinners, ...offlineWinners].map((w) => ({ winnerColour: w }));
-    // Resolve every gun's damage-per-hit at the game's date; Unknown Gun fallback.
+    // Date-scoped gun damage (offline damage = hits × gun profile; Unknown Gun fallback).
     const { data: gd } = await supabase.rpc("all_gun_damage_at", { p_at: playedOn });
     const dmgMap = new Map(((gd ?? []) as { name: string; damage: number | null }[]).map((x) => [String(x.name).toLowerCase().trim(), Number(x.damage) || 0]));
     const unknownDmg = dmgMap.get("unknown gun") ?? 0;
     const gunDamage = (name: string | null | undefined) => (name ? dmgMap.get(name.toLowerCase().trim()) ?? unknownDmg : unknownDmg);
-    result = computeOfflineMatchCommit(players, roundResults, identity, gunDamage, cfg, isDoubleXp, scoringRuntime.formula);
+
+    if (jsonRows.length > 0 && lwaRows.length > 0) {
+      // HYBRID (option B): online rounds full (kill + objective + streak) via
+      // buildMatchReportV2; offline .lwa kill stats injected (merged into kill
+      // totals, no objective/streaks) with the marshal-entered offline winners.
+      if (offlineWinners.length === 0) return NextResponse.json({ error: "Enter the round results for the offline rounds before publishing." }, { status: 400 });
+      const statsByHeadband: Record<number, { frags: number; deaths: number; hits: number; shots: number; damage: number; wounds: number; team: string }> = {};
+      const opsTagByHeadband: Record<number, string> = {};
+      for (const r of lwaRows) {
+        let pls: ReturnType<typeof lwaMatchPlayers> = [];
+        try { pls = lwaMatchPlayers(r.raw_file as string); } catch { pls = []; }
+        for (const pl of pls) {
+          const hb = Number(String(pl.headband).match(/d+/)?.[0]);
+          if (!Number.isFinite(hb)) continue;
+          const e = identity(String(hb));
+          const prev = statsByHeadband[hb];
+          statsByHeadband[hb] = {
+            frags: (prev?.frags ?? 0) + pl.frags, deaths: (prev?.deaths ?? 0) + pl.deaths,
+            hits: (prev?.hits ?? 0) + pl.hits, shots: (prev?.shots ?? 0) + pl.shots,
+            damage: (prev?.damage ?? 0) + pl.hits * gunDamage(e.gun), wounds: (prev?.wounds ?? 0) + (pl.wounds ?? 0),
+            team: pl.team,
+          };
+          if (e.accountId) opsTagByHeadband[hb] = e.nickname;
+        }
+      }
+      const onlineRounds = jsonRows.map((r) => ({ raw: r.raw_file as string, resolutions: (r.resolutions ?? {}) as RoundResolutions, winnerOverride: (r.winner_override as string | null) ?? null }));
+      result = computeMatchCommit(onlineRounds, accoladeByKey, identity, cfg, isDoubleXp, streakConfig, scoringRuntime, { statsByHeadband, roundWinners: offlineWinners, opsTagByHeadband });
+    } else {
+      // Pure offline: one or more .lwa whole-match aggregates, scored kill-only.
+      const players: OfflinePlayerStat[] = [];
+      for (const r of lwaRows) {
+        try { players.push(...lwaMatchPlayers(r.raw_file as string)); } catch { /* skip bad file */ }
+      }
+      if (players.length === 0) return NextResponse.json({ error: "No players found in the ingested files." }, { status: 400 });
+      if (offlineWinners.length === 0) return NextResponse.json({ error: "Enter the round results for the offline rounds before publishing." }, { status: 400 });
+      const roundResults = offlineWinners.map((w) => ({ winnerColour: w }));
+      result = computeOfflineMatchCommit(players, roundResults, identity, gunDamage, cfg, isDoubleXp, scoringRuntime.formula);
+    }
   } else {
     // Online: JSON event-stream rounds.
     const rounds = ingested.filter((r) => !isLwa(r.raw_file as string)).map((r) => ({ raw: r.raw_file as string, resolutions: (r.resolutions ?? {}) as RoundResolutions, winnerOverride: (r.winner_override as string | null) ?? null }));
