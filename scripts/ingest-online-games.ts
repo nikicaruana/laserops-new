@@ -37,6 +37,8 @@ type GameCfg = {
   opsByHead: Record<number, string>;    // headband -> ops tag (also merges switches)
   roundMeta?: RoundMeta[];              // per JSON (file-sorted); default = all derived + counted
   gunOverride?: Record<string, string>; // ops -> gun (when the LWA Type is ambiguous)
+  onlineFiles?: { file: string; win: string | null }[]; // explicit online rounds (hybrid / when not all JSONs are real)
+  offline?: { lwaFile: string; winners: (string | null)[] }; // HYBRID: the offline rounds' LWA + winners
 };
 
 const GAMES: Record<string, GameCfg> = {
@@ -54,6 +56,16 @@ const GAMES: Record<string, GameCfg> = {
     opsByHead: { 4: "Tompa", 21: "Hasapardi", 25: "Farru", 26: "Kini", 27: "Maltese Predator", 51: "ChrisKyle", 7: "Mustafa", 32: "Glenn", 38: "Snaaaaaaake", 39: "PourHoneyOnMyBun", 42: "TheHolySpirit", 43: "Buwdha", 47: "Dre" },
     roundMeta: [ { win: "Yellow", counts: true }, { win: null, counts: false }, { win: "Blue", counts: true }, { win: "Blue", counts: true }, { win: "Yellow", counts: true }, { win: "Yellow", counts: true } ],
     gunOverride: { Glenn: "MG21 Berserk" },
+  },
+  "32": {
+    date: "2026-09-26",
+    opsByHead: { 1: "Seb PT", 4: "Chuck Joey", 5: "JRilez", 7: "Buwdha", 9: "Lupita", 12: "Boulton", 13: "Alejkilmister", 15: "Spooble", 20: "Snaaaaaaake", 21: "Umut", 25: "Alejkilmister", 26: "aximus", 27: "Stev-o", 32: "Glenn", 37: "PT", 38: "Tompa", 39: "Maltese Predator", 40: "Piet", 41: "Dogukan", 42: "ChrisKyle", 43: "Huntress", 44: "LuXyz", 45: "Mustafa", 46: "Uros", 47: "Jens", 48: "M1hoTD", 49: "Hasapardi", 50: "Anna", 51: "Umut", 52: "TFG", 53: "Didi", 54: "Glenn", 55: "Dina", 56: "Dobi", 57: "Cinti", 59: "TheHolySpirit", 60: "Amy", 61: "LuXyz", 62: "OrteGaTD" },
+    onlineFiles: [
+      { file: "RealtimeStatistics_20260926_080541.json", win: "Blue" },
+      { file: "RealtimeStatistics_20260926_083159.json", win: "Yellow" },
+      { file: "RealtimeStatistics_20260926_090022.json", win: "Blue" },
+    ],
+    offline: { lwaFile: "AlphaTag.Statistic_2026.09.26_13.28.08_OfflineRounds.lwa", winners: ["Blue", "Yellow"] },
   },
 };
 
@@ -108,11 +120,6 @@ async function main() {
     const cfg = GAMES[code]; if (!cfg) { console.log(`No config for ${code}`); continue; }
     const matchCode = `LO-2026-${code}`;
     const dir = `${INGEST_ROOT}/${matchCode}`;
-    const jsonFiles = readdirSync(`${dir}/jsons`).filter((f) => f.toLowerCase().endsWith(".json")).sort();
-    const meta = cfg.roundMeta ?? jsonFiles.map(() => ({ win: null as string | null, counts: true }));
-    if (meta.length !== jsonFiles.length) { console.log(`${matchCode}: config has ${meta.length} rounds but ${jsonFiles.length} JSON files - skipping`); continue; }
-    const rawRounds = jsonFiles.map((f, i) => ({ raw: readFileSync(`${dir}/jsons/${f}`, "utf8"), winnerOverride: meta[i].win, countsAsRound: meta[i].counts }));
-
     const gunByOps = gunsByOps(`${dir}/lwas`, cfg.opsByHead, cfg.gunOverride);
     // identity() is called with a headband number ("6"), a raw label ("Head 06"),
     // OR an already-resolved ops tag ("Jens") - commit.ts passes p.name. Resolve all.
@@ -126,10 +133,38 @@ async function main() {
       return { nickname: ops, accountId: byOps.get(norm(ops)) ?? null, gun: gunByOps[ops] ?? null };
     };
 
-    // Pure online: pass opsTagByHeadband (via the offline hook with empty stats) so
-    // headband renames + switch-merges apply exactly like the beta report.
-    const offlineHook = { statsByHeadband: {}, roundWinners: [] as (string | null)[], opsTagByHeadband: cfg.opsByHead };
-    const result = computeMatchCommit(rawRounds, accoladeByKey, identity, xpCfg, false, streakConfig, scoring, offlineHook);
+    // Online rounds: an explicit list (hybrid / when not all JSONs are real rounds),
+    // else all sorted JSONs with roundMeta.
+    let rawRounds: { raw: string; winnerOverride: string | null; countsAsRound: boolean }[];
+    if (cfg.onlineFiles) {
+      rawRounds = cfg.onlineFiles.map((o) => ({ raw: readFileSync(`${dir}/jsons/${o.file}`, "utf8"), winnerOverride: o.win, countsAsRound: true }));
+    } else {
+      const jsonFiles = readdirSync(`${dir}/jsons`).filter((f) => f.toLowerCase().endsWith(".json")).sort();
+      const meta = cfg.roundMeta ?? jsonFiles.map(() => ({ win: null as string | null, counts: true }));
+      if (meta.length !== jsonFiles.length) { console.log(`${matchCode}: config has ${meta.length} rounds but ${jsonFiles.length} JSON files - skipping`); continue; }
+      rawRounds = jsonFiles.map((f, i) => ({ raw: readFileSync(`${dir}/jsons/${f}`, "utf8"), winnerOverride: meta[i].win, countsAsRound: meta[i].counts }));
+    }
+
+    // opsTagByHeadband is passed (via the offline hook) so headband renames +
+    // switch-merges apply exactly like the beta report. For HYBRID games the hook
+    // also carries the offline rounds' kill stats + winners.
+    const offlineInj: { statsByHeadband: Record<number, any>; roundWinners: (string | null)[]; opsTagByHeadband: Record<number, string> } =
+      { statsByHeadband: {}, roundWinners: [], opsTagByHeadband: cfg.opsByHead };
+    if (cfg.offline) {
+      const { data: gd } = await svc.rpc("all_gun_damage_at", { p_at: cfg.date });
+      const dmgMap = new Map(((gd ?? []) as any[]).map((x) => [norm(x.name), Number(x.damage) || 0]));
+      const unknownDmg = dmgMap.get(norm("Unknown Gun")) ?? 0;
+      const gunDamage = (ops: string) => { const g = gunByOps[ops]; const d = g ? dmgMap.get(norm(g)) : undefined; return d ?? unknownDmg; };
+      const offLwa: any = parseLwa(readFileSync(`${dir}/lwas/${cfg.offline.lwaFile}`, "utf8"));
+      for (const t of offLwa.Teams ?? []) for (const p of t.Players ?? []) {
+        const hb = hbNum(String(p.NickName ?? p.Name ?? "")); if (hb == null) continue;
+        const ops = cfg.opsByHead[hb] ?? `Head ${hb}`;
+        const hits = +p.HitsCount || 0;
+        offlineInj.statsByHeadband[hb] = { frags: +p.FragsCount || 0, deaths: +p.DeathsCount || 0, hits, shots: +p.ShotsCount || 0, damage: hits * gunDamage(ops), wounds: +p.WoundsCount || 0, team: String(t.Color) };
+      }
+      offlineInj.roundWinners = cfg.offline.winners;
+    }
+    const result = computeMatchCommit(rawRounds, accoladeByKey, identity, xpCfg, false, streakConfig, scoring, offlineInj);
 
     const top = [...result.aggregates].sort((a, b) => b.score - a.score).slice(0, 5).map((a) => `${a.nickname} ${a.score}`).join(", ");
     console.log(`${matchCode}  ${cfg.date}  players=${result.aggregates.length}  rounds=${result.roundCount}  winner=${result.winnerColour ?? "-"}  top: ${top}`);
@@ -139,10 +174,12 @@ async function main() {
       let matchId = existing?.id as string | undefined;
       const yr = Number(matchCode.slice(3, 7));
       const seq = Number(matchCode.slice(8));
+      const offCount = cfg.offline ? cfg.offline.winners.length : 0;
       const fields = {
-        status: "completed", scoring_mode: "online", played_on: cfg.date,
+        status: "completed", scoring_mode: cfg.offline ? "offline" : "online", played_on: cfg.date,
         winning_team_colour: result.winnerColour, net_result_summary: result.netResultSummary,
-        round_count: result.roundCount, online_round_count: result.roundCount, offline_round_count: 0,
+        round_count: result.roundCount, online_round_count: result.roundCount - offCount, offline_round_count: offCount,
+        offline_round_results: cfg.offline ? cfg.offline.winners : null,
         xp_distributed_at: new Date().toISOString(),
       };
       if (!matchId) {
