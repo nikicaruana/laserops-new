@@ -82,6 +82,9 @@ export function buildMatchReportV2(
       statsByHeadband: Record<number, { frags: number; deaths: number; hits: number; shots: number; damage: number; wounds?: number; team: string }>;
       roundWinners: (string | null)[];
     };
+    /** Headbands to drop before aggregation (e.g. a no-show/offline headband in an
+     *  online match) - excluded from stats AND the match average. */
+    excludeHeadbands?: number[];
   },
 ): MatchReportV2 {
   const { spawnWindowSeconds, minHoldSeconds, recaptureWindowSeconds, capturePoints, recapturePoints, holdPerSecond } = { ...V2_SCORING, ...(opts?.scoring ?? {}) };
@@ -91,6 +94,10 @@ export function buildMatchReportV2(
   const streakPointsOf = (key: string) => opts?.streakConfig?.[key]?.points ?? STREAK_POINTS[key] ?? 0;
   const streakNameOf = (key: string) => opts?.streakConfig?.[key]?.name ?? STREAK_NAMES[key] ?? key;
   const parsed: Round[] = rawRounds.map((r) => parseRound(r.raw, { spawnWindowSeconds }));
+  if (opts?.excludeHeadbands?.length) {
+    const ex = new Set(opts.excludeHeadbands);
+    for (const r of parsed) r.players = r.players.filter((p) => p.headband_no == null || !ex.has(p.headband_no));
+  }
   // Optional headband -> display-name remap, applied to the parsed roster BEFORE
   // aggregation — so it also MERGES multiple headbands worn by one person (e.g.
   // Head 06 + Head 39 both -> "Kyle") into one player everywhere downstream.

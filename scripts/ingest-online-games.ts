@@ -39,12 +39,19 @@ type GameCfg = {
   gunOverride?: Record<string, string>; // ops -> gun (when the LWA Type is ambiguous)
   onlineFiles?: { file: string; win: string | null }[]; // explicit online rounds (hybrid / when not all JSONs are real)
   offline?: { lwaFile: string; winners: (string | null)[] }; // HYBRID: the offline rounds' LWA + winners
+  excludeHeadbands?: number[];          // drop these headbands before scoring (no-show / offline in an online match)
 };
 
 const GAMES: Record<string, GameCfg> = {
   "27": {
     date: "2026-09-05",
     opsByHead: { 1: "Snaaaaaaake", 2: "Buwdha", 4: "Sina", 6: "Jens", 37: "BSoD", 39: "Jinnies", 40: "TheHolySpirit", 41: "Glenn", 42: "Tompa", 45: "aximus" },
+  },
+  "29": {
+    date: "2026-09-12",
+    opsByHead: { 1: "Sina", 2: "Mustafa", 6: "Maltese Predator", 9: "Hasapardi", 26: "Wugy", 39: "ChrisKyle", 40: "Jens", 41: "Snaaaaaaake", 47: "BlueJay", 53: "PourHoneyOnMyBun" },
+    roundMeta: [ { win: "Blue", counts: true }, { win: "Yellow", counts: true }, { win: "Yellow", counts: true }, { win: "Blue", counts: true }, { win: "Blue", counts: true } ],
+    excludeHeadbands: [45], // HB45 was an offline no-show in R1 (all zeros) - excluded, per the beta report
   },
   "30": {
     date: "2026-09-19",
@@ -148,8 +155,8 @@ async function main() {
     // opsTagByHeadband is passed (via the offline hook) so headband renames +
     // switch-merges apply exactly like the beta report. For HYBRID games the hook
     // also carries the offline rounds' kill stats + winners.
-    const offlineInj: { statsByHeadband: Record<number, any>; roundWinners: (string | null)[]; opsTagByHeadband: Record<number, string> } =
-      { statsByHeadband: {}, roundWinners: [], opsTagByHeadband: cfg.opsByHead };
+    const offlineInj: { statsByHeadband: Record<number, any>; roundWinners: (string | null)[]; opsTagByHeadband: Record<number, string>; excludeHeadbands?: number[] } =
+      { statsByHeadband: {}, roundWinners: [], opsTagByHeadband: cfg.opsByHead, excludeHeadbands: cfg.excludeHeadbands };
     if (cfg.offline) {
       const { data: gd } = await svc.rpc("all_gun_damage_at", { p_at: cfg.date });
       const dmgMap = new Map(((gd ?? []) as any[]).map((x) => [norm(x.name), Number(x.damage) || 0]));

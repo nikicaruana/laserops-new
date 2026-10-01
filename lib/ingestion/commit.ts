@@ -67,9 +67,10 @@ export function computeMatchCommit(
     statsByHeadband: Record<number, { frags: number; deaths: number; hits: number; shots: number; damage: number; wounds?: number; team: string }>;
     roundWinners: (string | null)[];
     opsTagByHeadband?: Record<number, string>;
+    excludeHeadbands?: number[];
   },
 ): CommitResult {
-  const report = buildMatchReportV2(rawRounds, { matchId: "commit", label: "commit" }, { identityByHeadband: (hb) => { const e = identity(String(hb)); return e.accountId ? e.nickname : ""; }, opsTagByHeadband: offline?.opsTagByHeadband, streakConfig, scoring: scoringRuntime?.scoring, formula: scoringRuntime?.formula, offline: offline ? { statsByHeadband: offline.statsByHeadband, roundWinners: offline.roundWinners } : undefined, });
+  const report = buildMatchReportV2(rawRounds, { matchId: "commit", label: "commit" }, { identityByHeadband: (hb) => { const e = identity(String(hb)); return e.accountId ? e.nickname : ""; }, opsTagByHeadband: offline?.opsTagByHeadband, streakConfig, scoring: scoringRuntime?.scoring, formula: scoringRuntime?.formula, offline: offline ? { statsByHeadband: offline.statsByHeadband, roundWinners: offline.roundWinners } : undefined, excludeHeadbands: offline?.excludeHeadbands, });
   const P = report.players;
   const rankOf = (vals: number[], v: number, higher = true) => 1 + vals.filter((x) => (higher ? x > v : x < v)).length;
   const scores = P.map((p) => p.totalScore), kills = P.map((p) => p.frags), deaths = P.map((p) => p.deaths);
