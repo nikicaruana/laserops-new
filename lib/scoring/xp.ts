@@ -8,16 +8,16 @@
  *
  *   xp_points     = round((base + pool * min(rating, cap)) * multiplier)
  *   xp_wins       = round((roundWin * roundsWon + matchWin * win) * multiplier)
- *   xp_accolades  = round(accoladeXp)                 // flat, NOT multiplied
+ *   xp_accolades  = round(accoladeXp * multiplier)    // boosted like points/wins
  *   xp_total      = points + wins + accolades
  *
  * `rating` = the player's score / the match's average score (lobby-relative), so
  * it is fair across online and offline games; the pool * rating term replaces the
- * old raw-score term. The token/double-XP multiplier boosts points + wins only.
+ * old raw-score term. The token/double-XP multiplier boosts points, wins AND accolades.
  */
 export type XpConfig = { base: number; roundWin: number; matchWin: number; perfPool: number; ratingCap: number };
 
-export const DEFAULT_XP_CONFIG: XpConfig = { base: 0, roundWin: 750, matchWin: 500, perfPool: 2500, ratingCap: 4 };
+export const DEFAULT_XP_CONFIG: XpConfig = { base: 250, roundWin: 750, matchWin: 500, perfPool: 3000, ratingCap: 4 };
 
 /** Keys as stored in the xp_config table (key/value rows). */
 export const XP_CONFIG_KEYS = {
@@ -56,6 +56,6 @@ export function computeMatchXp(inp: XpInputs, cfg: XpConfig): XpBreakdown {
   const perf = cfg.perfPool * Math.min(rating, cfg.ratingCap);
   const xpFromPoints = Math.round((cfg.base + perf) * mult);
   const xpFromWins = Math.round((cfg.roundWin * (inp.roundsWon || 0) + (inp.isWinner ? cfg.matchWin : 0)) * mult);
-  const xpFromAccolades = Math.round(inp.accoladeXp || 0);
+  const xpFromAccolades = Math.round((inp.accoladeXp || 0) * mult);
   return { xpFromPoints, xpFromWins, xpFromAccolades, xpTotal: xpFromPoints + xpFromWins + xpFromAccolades };
 }
