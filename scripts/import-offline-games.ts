@@ -20,10 +20,11 @@ import { getScoringConfig } from "../lib/scoring/config";
 import { parseXpConfig } from "../lib/scoring/xp";
 
 const LIVE = process.argv.includes("--live");
+const ONLY = (process.argv.find((a) => a.startsWith("--only=")) || "").split("=")[1];
 const GAME_DATA_CSV =
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vTTLlM4fIfh52DiovbJT2b9A6UyqoiQtoG0c2HoVRCG_OCtLPZvz-uBSC6y1voM8d4jBVCNcpCGctco/pub?gid=116322811&single=true&output=csv";
 // Scored elsewhere (online JSON / hybrid JSON+LWA) - never import these as offline.
-const SKIP = new Set(["LO-2026-23", "LO-2026-27", "LO-2026-28", "LO-2026-29", "LO-2026-30", "LO-2026-31", "LO-2026-32"]);
+const SKIP = new Set(["LO-2026-27", "LO-2026-28", "LO-2026-29", "LO-2026-30", "LO-2026-31", "LO-2026-32"]);
 
 const norm = (s: string) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 const toNum = (v: string) => { const x = Number(v); return Number.isFinite(x) ? x : 0; };
@@ -105,6 +106,7 @@ async function main() {
   let wrote = 0;
 
   for (const code of games) {
+    if (ONLY && code !== ONLY) continue;
     const rs = byMatch.get(code)!;
     const dateIso = toIso(rs[0][COL.date]);
     // Gun damage at the game's date.
