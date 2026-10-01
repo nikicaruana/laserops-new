@@ -20,10 +20,12 @@ export type AdminMatchPhoto = {
   taggedOps?: string[];
 };
 
-export function MatchPhotosManager({ matchId, initial }: { matchId: string; initial: AdminMatchPhoto[] }) {
+export function MatchPhotosManager({ matchId, initial, notifiedAt = null }: { matchId: string; initial: AdminMatchPhoto[]; notifiedAt?: string | null }) {
   const [photos, setPhotos] = useState<AdminMatchPhoto[]>(initial);
   const [caption, setCaption] = useState("");
   const [busy, setBusy] = useState(false);
+  const [notified, setNotified] = useState<string | null>(notifiedAt);
+  const [notifying, setNotifying] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [error, setError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -58,6 +60,25 @@ export function MatchPhotosManager({ matchId, initial }: { matchId: string; init
     setProgress(null);
     setCaption("");
     if (inputRef.current) inputRef.current.value = "";
+  }
+
+  async function notifyPlayers() {
+    setNotifying(true);
+    setError("");
+    try {
+      const res = await fetch("/api/admin/match-image/notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ matchId }),
+      });
+      const data = (await res.json()) as { ok: boolean; notifiedAt?: string; already?: boolean; error?: string };
+      if (!data.ok) setError(data.error || "Could not notify players.");
+      else setNotified(data.notifiedAt ?? new Date().toISOString());
+    } catch {
+      setError("Could not notify players.");
+    } finally {
+      setNotifying(false);
+    }
   }
 
   async function remove(id: string) {
@@ -101,6 +122,27 @@ export function MatchPhotosManager({ matchId, initial }: { matchId: string; init
             {busy ? `Uploading ${progress?.done ?? 0}/${progress?.total ?? 0}…` : "Upload photos"}
           </button>
         </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3 border border-border bg-bg-elevated p-4">
+        <div className="min-w-0 flex-1">
+          <p className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-text-muted">Notify players</p>
+          <p className="mt-0.5 text-xs text-text-subtle">
+            {notified
+              ? `Players were notified on ${new Date(notified).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}.`
+              : "Sends an email + in-app alert to everyone who played, letting them know the photos are up."}
+          </p>
+        </div>
+        {!notified && (
+          <button
+            type="button"
+            onClick={notifyPlayers}
+            disabled={notifying || photos.length === 0}
+            className="inline-flex items-center justify-center gap-2 border border-accent bg-accent/10 px-4 py-2 text-sm font-bold uppercase tracking-[0.12em] text-accent transition-colors hover:bg-accent/20 disabled:opacity-50"
+          >
+            {notifying ? "Notifying…" : "Notify players"}
+          </button>
+        )}
       </div>
 
       {error && <p className="text-xs font-semibold text-red-400">{error}</p>}

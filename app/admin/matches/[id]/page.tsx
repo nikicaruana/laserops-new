@@ -148,6 +148,14 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
 
   // Photos linked to this match (Cloudinary + match_photos).
   const matchPhotos = await fetchMatchPhotos(supabase, match.id as string);
+  // photos_notified_at drives the Photos "Notify players" button; read it on its
+  // own so a pre-migration DB (missing column) never errors the whole page.
+  const { data: photoNotifyRow } = await supabase
+    .from("matches")
+    .select("photos_notified_at")
+    .eq("id", match.id)
+    .maybeSingle();
+  const photosNotifiedAt = (photoNotifyRow as { photos_notified_at: string | null } | null)?.photos_notified_at ?? null;
 
   // Ladder / casual squad-vs-squad match: names for the two squads (record the
   // winner + assign team colours). Present whenever both squads are set; ladder
@@ -713,6 +721,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
       >
         <MatchPhotosManager
           matchId={match.id}
+          notifiedAt={photosNotifiedAt}
           initial={matchPhotos.map((p) => ({ id: p.id, url: p.url, caption: p.caption, width: p.width, height: p.height, taggedOps: p.taggedOps }))}
         />
       </CollapsibleSection>
