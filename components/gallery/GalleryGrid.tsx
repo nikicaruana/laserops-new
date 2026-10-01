@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/cn";
 import type { CloudinaryImage } from "@/lib/cloudinary";
 import { GalleryLightbox } from "./GalleryLightbox";
+import { createClient } from "@/lib/supabase/client";
 
 /**
  * GalleryGrid
@@ -48,6 +49,30 @@ export function GalleryGrid({ images, folders }: Props) {
 
   const [activeFilter, setActiveFilter] = useState<string>(initialFilter);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [mineOnly, setMineOnly] = useState(false);
+  const [myCodes, setMyCodes] = useState<string[] | null>(null);
+
+  // "My games" is per-viewer, so it is fetched client-side to keep /gallery
+  // statically cached. Stays null for signed-out visitors (toggle hidden).
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) return;
+        const { data } = await supabase.rpc("my_participated_match_codes");
+        if (active && Array.isArray(data) && data.length) setMyCodes(data as string[]);
+      } catch {
+        /* signed out or unavailable - no toggle */
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Sync filter → URL. "all" and default "featured" clear the param so
   // the base /gallery URL stays clean.
@@ -69,38 +94,51 @@ export function GalleryGrid({ images, folders }: Props) {
   const showPills = hasFeatured || folders.length > 1;
 
   // Build the visible subset for the grid and lightbox.
-  const visibleImages =
+  const baseImages =
     activeFilter === "all"
       ? images
       : activeFilter === "featured"
         ? images.filter((img) => img.tags.includes("featured"))
         : images.filter((img) => img.folder === activeFilter);
+  // Match code = last segment of the asset folder (e.g. .../LO-2026-29);
+  // uploads are also tagged with the code, so match on either.
+  const codeOf = (img: CloudinaryImage) => img.folder.split("/").at(-1) ?? "";
+  const visibleImages =
+    mineOnly && myCodes
+      ? baseImages.filter((img) => img.tags.some((t) => myCodes.includes(t)) || myCodes.includes(codeOf(img)))
+      : baseImages;
 
   return (
     <>
-      {/* Filter pills */}
-      {showPills && (
-        <div className="mb-6 flex flex-wrap gap-2 sm:mb-8">
+      {/* Filters: Featured/All pills, a match dropdown (keeps the bar tidy as
+          the number of games grows), and a per-viewer "my games" toggle. */}
+      {(showPills || (myCodes?.length ?? 0) > 0) && (
+        <div className="mb-6 flex flex-wrap items-center gap-2 sm:mb-8">
           {hasFeatured && (
-            <FilterPill
-              label="Featured"
-              active={activeFilter === "featured"}
-              onClick={() => setFilter("featured")}
-            />
+            <FilterPill label="Featured" active={activeFilter === "featured"} onClick={() => setFilter("featured")} />
           )}
-          <FilterPill
-            label="All"
-            active={activeFilter === "all"}
-            onClick={() => setFilter("all")}
-          />
-          {folders.map((f) => (
-            <FilterPill
-              key={f}
-              label={folderLabel(f)}
-              active={activeFilter === f}
-              onClick={() => setFilter(f)}
-            />
-          ))}
+          <FilterPill label="All" active={activeFilter === "all"} onClick={() => setFilter("all")} />
+          {folders.length > 0 && (
+            <select
+              value={folders.includes(activeFilter) ? activeFilter : ""}
+              onChange={(e) => { if (e.target.value) setFilter(e.target.value); }}
+              aria-label="Filter by game"
+              className="h-9 border border-border-strong bg-bg px-3 text-xs font-semibold uppercase tracking-[0.1em] text-text focus:border-accent focus:outline-none"
+            >
+              <option value="">Jump to a game…</option>
+              {folders.map((f) => (
+                <option key={f} value={f}>
+                  {folderLabel(f)}
+                </option>
+              ))}
+            </select>
+          )}
+          {(myCodes?.length ?? 0) > 0 && (
+            <label className="ml-auto flex cursor-pointer items-center gap-2 text-xs font-semibold uppercase tracking-[0.1em] text-text-muted">
+              <input type="checkbox" checked={mineOnly} onChange={(e) => setMineOnly(e.target.checked)} className="h-4 w-4 accent-[color:var(--color-accent)]" />
+              My games only
+            </label>
+          )}
         </div>
       )}
 
