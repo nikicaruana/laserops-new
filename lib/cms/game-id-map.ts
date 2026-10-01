@@ -56,6 +56,10 @@ export type GameInfo = {
   isDoubleXp: boolean;
   /** Offline (.lwa) match: objective / streak / kill-matrix stats aren't captured, so the report omits them. */
   offline?: boolean;
+  /** Online rounds in this match (hybrid = some online + some offline). */
+  onlineRoundCount?: number;
+  /** Offline rounds in this match (hybrid). */
+  offlineRoundCount?: number;
   // Per-team data – stored for all three colours regardless of whether
   // each team played. Consumers filter by non-zero rating/rounds to
   // know which teams actually participated.

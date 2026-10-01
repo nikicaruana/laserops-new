@@ -50,6 +50,15 @@ export function MatchOverview({ game, matchDate }: Props) {
           {game.matchKind === "squad" && <Flag label="Squad vs Squad" tone="accent" />}
           {game.isDoubleXp && <Flag label="Double XP" tone="accent" />}
           {game.isPrivate && <Flag label="Private" tone="muted" />}
+          {game.onlineRoundCount != null &&
+            game.offlineRoundCount != null &&
+            game.onlineRoundCount > 0 &&
+            game.offlineRoundCount > 0 && (
+              <Flag
+                label={`Rounds 1-${game.onlineRoundCount} online · ${game.onlineRoundCount + 1}-${game.onlineRoundCount + game.offlineRoundCount} offline`}
+                tone="muted"
+              />
+            )}
         </div>
       </div>
 

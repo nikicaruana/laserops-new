@@ -67,6 +67,8 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   const isOffline = mFlags?.scoring_mode === "offline";
 
   let result: CommitResult;
+  let onlineRoundCount = 0;
+  let offlineRoundCount = 0;
   if (isOffline) {
     // A match with offline data is either PURE OFFLINE (only .lwa rounds -> every
     // round kill-only) or HYBRID (online JSON rounds + offline .lwa rounds -> the
@@ -105,6 +107,8 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
         }
       }
       const onlineRounds = jsonRows.map((r) => ({ raw: r.raw_file as string, resolutions: (r.resolutions ?? {}) as RoundResolutions, winnerOverride: (r.winner_override as string | null) ?? null }));
+      onlineRoundCount = onlineRounds.length;
+      offlineRoundCount = offlineWinners.length;
       result = computeMatchCommit(onlineRounds, accoladeByKey, identity, cfg, isDoubleXp, streakConfig, scoringRuntime, { statsByHeadband, roundWinners: offlineWinners, opsTagByHeadband });
     } else {
       // Pure offline: one or more .lwa whole-match aggregates, scored kill-only.
@@ -115,6 +119,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
       if (players.length === 0) return NextResponse.json({ error: "No players found in the ingested files." }, { status: 400 });
       if (offlineWinners.length === 0) return NextResponse.json({ error: "Enter the round results for the offline rounds before publishing." }, { status: 400 });
       const roundResults = offlineWinners.map((w) => ({ winnerColour: w }));
+      offlineRoundCount = offlineWinners.length;
       result = computeOfflineMatchCommit(players, roundResults, identity, gunDamage, cfg, isDoubleXp, scoringRuntime.formula);
     }
   } else {
@@ -125,6 +130,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     let unreviewed = 0;
     for (const rd of rounds) unreviewed += unreviewedCount(parseRound(rd.raw, { spawnWindowSeconds: scoringRuntime.scoring.spawnWindowSeconds }), rd.resolutions);
     if (unreviewed > 0) return NextResponse.json({ error: `${unreviewed} unreviewed capture ambiguity${unreviewed === 1 ? "" : "ies"} — resolve them before publishing.` }, { status: 400 });
+    onlineRoundCount = rounds.length;
     result = computeMatchCommit(rounds, accoladeByKey, identity, cfg, isDoubleXp, streakConfig, scoringRuntime);
   }
 
@@ -161,6 +167,8 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     winning_team_colour: result.winnerColour,
     net_result_summary: result.netResultSummary,
     round_count: result.roundCount,
+    online_round_count: onlineRoundCount,
+    offline_round_count: offlineRoundCount,
     played_on: playedOn,
     xp_distributed_at: now,
   }).eq("id", id);

@@ -129,7 +129,7 @@ export async function fetchMatchReportSupabase(
 ): Promise<MatchReportResult> {
   const { data: match } = await supabase
     .from("matches")
-    .select("id, match_code, year, sequence_no, source_game_id, is_private, is_double_xp, winning_team_colour, net_result_summary, played_on, ladder_id, home_squad_id, away_squad_id, home_squad_colour, away_squad_colour, scoring_mode")
+    .select("id, match_code, year, sequence_no, source_game_id, is_private, is_double_xp, winning_team_colour, net_result_summary, played_on, ladder_id, home_squad_id, away_squad_id, home_squad_colour, away_squad_colour, scoring_mode, online_round_count, offline_round_count")
     .eq("match_code", matchId)
     .maybeSingle<{
       id: string;
@@ -148,6 +148,8 @@ export async function fetchMatchReportSupabase(
       home_squad_colour: string | null;
       away_squad_colour: string | null;
       scoring_mode: string | null;
+      online_round_count: number | null;
+      offline_round_count: number | null;
     }>();
 
   if (!match) return { ok: false, reason: "match-not-found" };
@@ -335,6 +337,8 @@ function buildGameInfo(
     winning_team_colour: string | null;
     net_result_summary: Summary | null;
     scoring_mode: string | null;
+    online_round_count: number | null;
+    offline_round_count: number | null;
   },
   teamBadge: Map<string, string>,
   squadCtx: SquadCtx | null,
@@ -357,7 +361,12 @@ function buildGameInfo(
     gameNo: match.sequence_no != null ? String(match.sequence_no) : "",
     isPrivate: match.is_private === true,
     isDoubleXp: match.is_double_xp === true,
-    offline: match.scoring_mode === "offline",
+    // Hybrid (some online rounds) uses the ONLINE report format; only a PURE
+    // offline match (no online rounds) hides objective/streak/matrix. Fall back
+    // to scoring_mode for matches published before the counts existed.
+    offline: match.online_round_count != null ? match.online_round_count === 0 : match.scoring_mode === "offline",
+    onlineRoundCount: match.online_round_count ?? undefined,
+    offlineRoundCount: match.offline_round_count ?? undefined,
     teams: {
       red: { roundWins: rw.Red ?? 0, rating: tr.Red ?? 0 },
       blue: { roundWins: rw.Blue ?? 0, rating: tr.Blue ?? 0 },
