@@ -65,9 +65,9 @@ Last updated: 2026-10-01
 
 ## 6. Dev-only — must NOT ship to prod (keep uncommitted or dev-gate)
 
-- [ ] `/scoring-lab` page.
-- [ ] Progression Calibrator's legacy old-vs-new + games-to-level planner additions.
-- [ ] Any throwaway routes / preview reports left in `lib/match-report-v2/reports` if not intended for the live report page.
+- [x] `/scoring-lab` page — DEV-GATED 2026-10-02 (commit 428fa4f): app/scoring-lab/layout.tsx notFound()s the route in production (NODE_ENV), + noindex. Renders in dev only.
+- [x] Progression Calibrator legacy old-vs-new + games-to-level planner additions — DEV-GATED 2026-10-02 (commit 428fa4f): both sections wrapped in `process.env.NODE_ENV !== "production"` so they are dead-code-eliminated from prod builds; the real Calibrator (XP formula/level curve/token modeling/publish) stays.
+- [x] `lib/match-report-v2/reports` — NO ACTION NEEDED: imported only by dev scripts (scripts/build-live-report*.ts), never by the app, so it is not in the production bundle. Left in place so the report-building scripts keep working.
 
 ## 7. Post-launch audits (once V2 is live)
 
