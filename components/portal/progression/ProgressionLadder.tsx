@@ -35,6 +35,24 @@ export type LevelRow = {
 
 const TIER_SIZE = 5;
 
+function CompleteTick({ title = "Complete" }: { title?: string }) {
+  return (
+    <svg role="img" aria-label={title} viewBox="0 0 16 16" className="h-4 w-4 text-emerald-400" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 8.5l3.5 3.5L13 4.5" />
+    </svg>
+  );
+}
+function LockIcon() {
+  return (
+    <svg role="img" aria-label="Locked" viewBox="0 0 16 16" className="h-3.5 w-3.5 text-text-subtle" fill="currentColor">
+      <path d="M8 1a3 3 0 0 0-3 3v2H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1h-1V4a3 3 0 0 0-3-3zm0 1.5A1.5 1.5 0 0 1 9.5 4v2h-3V4A1.5 1.5 0 0 1 8 2.5z" />
+    </svg>
+  );
+}
+function InProgressDot() {
+  return <span role="img" aria-label="In progress" className="block h-2.5 w-2.5 rounded-full bg-accent" />;
+}
+
 function fmtTokens(n: number): string {
   return Number.isInteger(n) ? String(n) : String(parseFloat(n.toFixed(2)));
 }
@@ -72,6 +90,9 @@ function LevelItem({ r, currentLevel }: { r: LevelRow; currentLevel: number }) {
   const [open, setOpen] = useState(false);
   const isCurrent = r.level === currentLevel;
   const locked = !r.reached;
+  // The reward is earned only once this level is COMPLETED (you've moved past
+  // it), not merely reached - so it stays blurred until level < currentLevel.
+  const rewardUnlocked = r.level < currentLevel;
   const rewardChips: string[] = [];
   if (r.rewardTokens > 0) rewardChips.push(`${fmtTokens(r.rewardTokens)} game token${r.rewardTokens === 1 ? "" : "s"}`);
   if (r.rewardDoubleXp > 0) rewardChips.push(`${r.rewardDoubleXp} × Double XP`);
@@ -112,7 +133,7 @@ function LevelItem({ r, currentLevel }: { r: LevelRow; currentLevel: number }) {
               Level {r.level}
             </span>
             {r.level < currentLevel ? (
-              <span className="shrink-0 text-[0.6rem] font-bold uppercase tracking-[0.12em] text-emerald-400">Completed</span>
+              <CompleteTick />
             ) : r.reached ? (
               <span className="shrink-0 text-[0.6rem] font-bold uppercase tracking-[0.12em] text-accent">Reached</span>
             ) : (
@@ -125,7 +146,7 @@ function LevelItem({ r, currentLevel }: { r: LevelRow; currentLevel: number }) {
           </div>
 
           {prize && (
-            <div className={cn("mt-3 min-w-0", locked && "select-none blur-[4px]")}>
+            <div className={cn("mt-3 min-w-0", !rewardUnlocked && "select-none blur-[4px]")}>
               {r.prizeTitle ? (
                 <p className="truncate text-xs font-bold uppercase tracking-[0.08em] text-accent">{r.prizeTitle}</p>
               ) : rewardChips.length > 0 ? (
@@ -140,7 +161,7 @@ function LevelItem({ r, currentLevel }: { r: LevelRow; currentLevel: number }) {
             reached; clickable once unlocked to explain the reward. */}
         <div className="flex w-14 shrink-0 items-center justify-center">
           {rewardArt &&
-            (locked ? (
+            (!rewardUnlocked ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={rewardArt} alt="" aria-hidden className="h-12 w-12 object-contain blur-md opacity-70 sm:h-14 sm:w-14" />
             ) : (
@@ -236,21 +257,15 @@ export function ProgressionLadder({ rows, currentLevel }: { rows: LevelRow[]; cu
 
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-3">
-                  <span className="flex items-baseline gap-2">
+                  <span className="flex min-w-0 items-baseline gap-2">
                     <span className={cn("text-sm font-extrabold uppercase tracking-[0.08em]", isCurrentTier ? "text-accent" : "text-text")}>
                       Levels {t.min}–{t.max}
                     </span>
                     {/* Rank name shown once here, and hidden until the tier is reached. */}
                     {!locked && rankLabel && <span className="truncate text-xs text-text-muted">{rankLabel}</span>}
                   </span>
-                  <span className="shrink-0 text-[0.6rem] font-bold uppercase tracking-[0.12em]">
-                    {complete ? (
-                      <span className="text-emerald-400">Complete</span>
-                    ) : locked ? (
-                      <span className="text-text-subtle">Locked</span>
-                    ) : (
-                      <span className="text-accent">In progress</span>
-                    )}
+                  <span className="flex shrink-0 items-center" title={complete ? "Complete" : locked ? "Locked" : "In progress"}>
+                    {complete ? <CompleteTick /> : locked ? <LockIcon /> : <InProgressDot />}
                   </span>
                 </div>
 
