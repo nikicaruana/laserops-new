@@ -3,16 +3,16 @@
 /**
  * components/portal/rivalries/RivalriesView.tsx
  * --------------------------------------------------------------------
- * The Rivalries tab body: Nemesis + Favourite Prey hero cards, then the all-time
- * head-to-head table (kills for / against / net, with a rivalry badge per row).
- * Empty until ingestion writes per-opponent kills; renders a graceful empty state
- * until then. Reuses LeaderboardTable for the same sortable UX as the rest of the
- * portal.
+ * The Rivalries tab body: three hero cards - Nemesis (biggest rivalry = most
+ * combined kills + deaths, same as the match report), Favourite Prey (you kill
+ * them most) and Hunted By (they kill you most) - then the all-time head-to-head
+ * table (kills for / against / net). Reuses LeaderboardTable for the same
+ * sortable UX as the rest of the portal.
  */
 import { useMemo } from "react";
 import Link from "next/link";
 import { LeaderboardTable, type LeaderboardColumn } from "@/components/portal/tables/LeaderboardTable";
-import type { PlayerRivalries, RivalStat, RivalBadge } from "@/lib/player-rivalries/engine";
+import type { PlayerRivalries, RivalStat } from "@/lib/player-rivalries/engine";
 
 function profileHref(ops: string) {
   return `/player-portal/player-stats/summary?ops=${encodeURIComponent(ops)}`;
@@ -20,43 +20,46 @@ function profileHref(ops: string) {
 
 function Avatar({ url, ops, size = "h-10 w-10" }: { url: string | null; ops: string; size?: string }) {
   return (
-    <span className={`flex ${size} shrink-0 items-center justify-center overflow-hidden rounded-sm border border-border bg-bg-overlay text-xs font-bold text-text-muted`}>
+    <span className={`flex ${size} shrink-0 items-center justify-center overflow-hidden rounded-sm border border-border-strong bg-bg/40 text-xs font-bold text-text-muted`}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       {url ? <img src={url} alt="" className="h-full w-full object-cover" /> : ops.slice(0, 2).toUpperCase()}
     </span>
   );
 }
 
-const BADGE_STYLES: Record<Exclude<RivalBadge, null>, { label: string; cls: string }> = {
-  bully: { label: "Bully", cls: "border-green-500/50 bg-green-500/10 text-green-400" },
-  victim: { label: "Victim", cls: "border-red-500/50 bg-red-500/10 text-red-400" },
-  even: { label: "Even", cls: "border-border-strong bg-bg text-text-muted" },
+type HeroKind = "nemesis" | "prey" | "hunter";
+const HERO: Record<HeroKind, { label: string; labelCls: string; border: string }> = {
+  nemesis: { label: "Nemesis", labelCls: "text-red-400", border: "border-red-500/40" },
+  prey: { label: "Favourite Prey", labelCls: "text-accent", border: "border-accent/50" },
+  hunter: { label: "Hunted By", labelCls: "text-red-400", border: "border-red-500/40" },
 };
 
-function Badge({ badge }: { badge: RivalBadge }) {
-  if (!badge) return null;
-  const s = BADGE_STYLES[badge];
-  return <span className={`inline-block border px-1.5 py-0.5 text-[0.55rem] font-bold uppercase tracking-[0.1em] ${s.cls}`}>{s.label}</span>;
-}
-
-function HeroCard({ kind, rival }: { kind: "nemesis" | "prey"; rival: RivalStat }) {
-  const isNemesis = kind === "nemesis";
-  const accent = isNemesis ? "border-red-500/40" : "border-accent/50";
-  const label = isNemesis ? "Nemesis" : "Favourite Prey";
-  const labelCls = isNemesis ? "text-red-400" : "text-accent";
-  const stat = isNemesis ? rival.killsAgainst : rival.killsFor;
-  const caption = isNemesis ? "times they've killed you" : "times you've killed them";
+function HeroCard({ kind, rival }: { kind: HeroKind; rival: RivalStat }) {
+  const h = HERO[kind];
   return (
     <Link
       href={profileHref(rival.opsTag)}
-      className={`flex items-center gap-4 border ${accent} bg-bg-elevated p-5 transition-colors hover:border-accent`}
+      className={`flex items-center gap-4 rounded-sm portal-card border ${h.border} p-5 transition-colors hover:border-accent`}
     >
       <Avatar url={rival.profilePicUrl} ops={rival.opsTag} size="h-16 w-16" />
       <div className="min-w-0">
-        <p className={`text-[0.6rem] font-bold uppercase tracking-[0.16em] ${labelCls}`}>{label}</p>
+        <p className={`text-[0.6rem] font-bold uppercase tracking-[0.16em] ${h.labelCls}`}>{h.label}</p>
         <p className="truncate text-lg font-extrabold text-text">{rival.opsTag}</p>
         <p className="mt-0.5 text-sm text-text-muted">
-          <span className="font-mono text-xl font-bold text-text">{stat}</span> {caption}
+          {kind === "nemesis" ? (
+            <>
+              <span className="font-mono font-bold text-green-400">{rival.killsFor}</span> killed ·{" "}
+              <span className="font-mono font-bold text-red-400">{rival.killsAgainst}</span> killed by
+            </>
+          ) : kind === "prey" ? (
+            <>
+              <span className="font-mono text-xl font-bold text-text">{rival.killsFor}</span> times you&rsquo;ve killed them
+            </>
+          ) : (
+            <>
+              <span className="font-mono text-xl font-bold text-text">{rival.killsAgainst}</span> times they&rsquo;ve killed you
+            </>
+          )}
         </p>
       </div>
     </Link>
@@ -78,10 +81,7 @@ export function RivalriesView({ ops, data }: { ops: string; data: PlayerRivalrie
         cell: (row) => (
           <span className="flex items-center gap-2.5">
             <Avatar url={row.profilePicUrl} ops={row.opsTag} size="h-8 w-8" />
-            <span className="min-w-0">
-              <span className="block truncate text-xs font-semibold text-text sm:text-sm">{row.opsTag}</span>
-              {row.badge && <span className="mt-0.5 block"><Badge badge={row.badge} /></span>}
-            </span>
+            <span className="block min-w-0 truncate text-xs font-semibold text-text sm:text-sm">{row.opsTag}</span>
           </span>
         ),
       },
@@ -129,11 +129,11 @@ export function RivalriesView({ ops, data }: { ops: string; data: PlayerRivalrie
 
   if (data.opponents.length === 0) {
     return (
-      <div className="mt-8 border border-dashed border-border bg-bg-elevated px-6 py-16 text-center">
+      <div className="mt-8 rounded-sm portal-card px-6 py-16 text-center">
         <p className="text-sm font-semibold uppercase tracking-[0.14em] text-text-muted">No rivalries yet</p>
         <p className="mx-auto mt-2 max-w-md text-sm text-text-subtle">
-          Head-to-head rivalries build up as {ops} plays matches. Once games are processed, your Nemesis, your
-          favourite prey and a full kills-for / kills-against table appear here.
+          Head-to-head rivalries build up as {ops} plays matches. Once games are processed, your Nemesis, favourite
+          prey and who hunts you most appear here.
         </p>
       </div>
     );
@@ -141,10 +141,11 @@ export function RivalriesView({ ops, data }: { ops: string; data: PlayerRivalrie
 
   return (
     <div className="mt-8 flex flex-col gap-6">
-      {(data.nemesis || data.favouritePrey) && (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {data.favouritePrey && <HeroCard kind="prey" rival={data.favouritePrey} />}
+      {(data.nemesis || data.favouritePrey || data.huntedBy) && (
+        <div className="grid gap-4 sm:grid-cols-3">
           {data.nemesis && <HeroCard kind="nemesis" rival={data.nemesis} />}
+          {data.favouritePrey && <HeroCard kind="prey" rival={data.favouritePrey} />}
+          {data.huntedBy && <HeroCard kind="hunter" rival={data.huntedBy} />}
         </div>
       )}
 

@@ -32,10 +32,12 @@ export type RivalStat = {
 };
 
 export type PlayerRivalries = {
-  /** Opponent who has killed this player the most, all-time. */
+  /** Biggest rivalry: most COMBINED kills + deaths (matches the match report). */
   nemesis: RivalStat | null;
   /** Opponent this player has killed the most, all-time. */
   favouritePrey: RivalStat | null;
+  /** Opponent who has killed this player the most, all-time. */
+  huntedBy: RivalStat | null;
   /** Every opponent interacted with, richest rivalry first. */
   opponents: RivalStat[];
 };
@@ -65,14 +67,20 @@ export function buildRivalries(
   // Richest rivalry first: total interactions, then absolute dominance.
   opponents.sort((a, b) => (b.killsFor + b.killsAgainst) - (a.killsFor + a.killsAgainst) || Math.abs(b.net) - Math.abs(a.net));
 
+  // Nemesis = the biggest rivalry: most combined kills + deaths, matching the
+  // match report (lib/ingestion/kill-matrix.ts).
+  const combined = (o: RivalStat | null) => (o ? o.killsFor + o.killsAgainst : -1);
   const nemesis = raw.length
-    ? opponents.reduce((best, o) => (o.killsAgainst > (best?.killsAgainst ?? -1) ? o : best), null as RivalStat | null)
+    ? opponents.reduce((best, o) => (o.killsFor + o.killsAgainst > combined(best) ? o : best), null as RivalStat | null)
     : null;
   const favouritePrey = raw.length
     ? opponents.reduce((best, o) => (o.killsFor > (best?.killsFor ?? -1) ? o : best), null as RivalStat | null)
     : null;
+  const huntedBy = raw.length
+    ? opponents.reduce((best, o) => (o.killsAgainst > (best?.killsAgainst ?? -1) ? o : best), null as RivalStat | null)
+    : null;
 
-  return { nemesis, favouritePrey, opponents };
+  return { nemesis, favouritePrey, huntedBy, opponents };
 }
 
 type KillEntry = { nickname?: string | null; headband?: string | null; count?: number | null };
@@ -113,10 +121,9 @@ export async function getPlayerRivalries(supabase: SupabaseServer, ops: string):
   // Opponent avatars from their aggregate rows (public-readable; avoids accounts RLS).
   const names = [...agg.keys()];
   const { data: picRows } = await supabase
-    .from("match_player_aggregate")
+    .from("player_stats_lifetime")
     .select("nickname, profile_pic_url")
-    .in("nickname", names)
-    .not("profile_pic_url", "is", null);
+    .in("nickname", names);
   const picByTag = new Map<string, string>();
   for (const pr of (picRows ?? []) as { nickname: string; profile_pic_url: string | null }[]) {
     if (pr.profile_pic_url && !picByTag.has(pr.nickname)) picByTag.set(pr.nickname, pr.profile_pic_url);
