@@ -32,6 +32,7 @@ const SECTIONS: { heading: string; items: Item[] }[] = [
     items: [
       { label: "Match Manager", href: "/admin/matches" },
       { label: "Booking calendar", href: "/admin/booking-calendar" },
+      { label: "Locations", href: "/admin/locations" },
     ],
   },
   {
