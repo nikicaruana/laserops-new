@@ -15,9 +15,9 @@
  *      was earned in that match.
  *   3. Look up the accolade in the CMS to get its XP value.
  *   4. Derive the tier from XP:
- *        100 XP → Tier 1
+ *        100 XP → Tier 3
  *         75 XP → Tier 2
- *         50 XP → Tier 3
+ *         50 XP → Tier 1
  *      Anything else → unrated, doesn't increment any tier counter
  *      but DOES increment the total. This is defensive – if a new
  *      accolade is added with an unmapped XP value, it still counts
@@ -41,9 +41,9 @@ const DISPLAY_LIMIT = 50;
 
 /**
  * Tier-from-XP mapping. Niki defined:
- *   - Tier 1 = 100 XP (most prestigious)
+ *   - Tier 3 = 100 XP (most prestigious)
  *   - Tier 2 = 75 XP
- *   - Tier 3 = 50 XP
+ *   - Tier 1 = 50 XP
  * Other XP values aren't mapped to a tier and are treated as
  * "unrated" – they still count toward the player's total
  * accolades but don't increment any tier-specific counter. This
@@ -52,9 +52,9 @@ const DISPLAY_LIMIT = 50;
  * formally decided.
  */
 function deriveTier(xp: number): 1 | 2 | 3 | null {
-  if (xp === 100) return 1;
+  if (xp === 100) return 3;
   if (xp === 75) return 2;
-  if (xp === 50) return 3;
+  if (xp === 50) return 1;
   return null;
 }
 
@@ -171,10 +171,10 @@ export function aggregateAccolades(
 
   projected.sort((a, b) => {
     if (b.total !== a.total) return b.total - a.total;
-    // Tiebreak by tier prestige: more T1s win, then T2s, then T3s.
-    if (b.tier1 !== a.tier1) return b.tier1 - a.tier1;
-    if (b.tier2 !== a.tier2) return b.tier2 - a.tier2;
+    // Tiebreak by tier prestige: more T3s win (100 XP), then T2s, then T1s.
     if (b.tier3 !== a.tier3) return b.tier3 - a.tier3;
+    if (b.tier2 !== a.tier2) return b.tier2 - a.tier2;
+    if (b.tier1 !== a.tier1) return b.tier1 - a.tier1;
     return a.nickname.localeCompare(b.nickname);
   });
 

@@ -329,7 +329,7 @@ export function CompareView({ allRows, uniqueGunsMap, accolades }: Props) {
                 (playerB.accoladesByName[def.name] ?? 0) > 0,
             );
             if (visibleDefs.length === 0) return null;
-            const tierNumber = tier === 100 ? 1 : tier === 75 ? 2 : 3;
+            const tierNumber = tier === 100 ? 3 : tier === 75 ? 2 : 1;
             return (
               <div key={tier} className="flex flex-col gap-2 sm:gap-3">
                 <TierHeader tier={tier} tierNumber={tierNumber} />

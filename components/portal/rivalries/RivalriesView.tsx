@@ -18,11 +18,13 @@ function profileHref(ops: string) {
   return `/player-portal/player-stats/summary?ops=${encodeURIComponent(ops)}`;
 }
 
+const DEFAULT_AVATAR = "https://i.postimg.cc/sxy2jVMR/Generic-Ops-Profile-Pic.png";
+
 function Avatar({ url, ops, size = "h-10 w-10" }: { url: string | null; ops: string; size?: string }) {
   return (
-    <span className={`flex ${size} shrink-0 items-center justify-center overflow-hidden rounded-sm border border-border-strong bg-bg/40 text-xs font-bold text-text-muted`}>
+    <span className={`flex ${size} shrink-0 items-center justify-center overflow-hidden rounded-sm border border-border-strong bg-bg/40`}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      {url ? <img src={url} alt="" className="h-full w-full object-cover" /> : ops.slice(0, 2).toUpperCase()}
+      <img src={url || DEFAULT_AVATAR} alt={ops} className="h-full w-full object-cover" />
     </span>
   );
 }

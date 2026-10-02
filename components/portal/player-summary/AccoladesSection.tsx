@@ -96,9 +96,9 @@ function TierHeader({
   tier: AccoladeTier;
   earnedCount: number;
 }) {
-  // Tier number derived from XP value: 100 → 1, 75 → 2, 50 → 3.
+  // Tier number derived from XP value: 100 → 3 (best), 75 → 2, 50 → 1.
   // Hardcoded mapping is safer than arithmetic over enum values.
-  const tierNumber = tier === 100 ? 1 : tier === 75 ? 2 : 3;
+  const tierNumber = tier === 100 ? 3 : tier === 75 ? 2 : 1;
   return (
     <div className="flex items-baseline justify-between border-b border-border-strong pb-2">
       <div className="flex items-baseline gap-3">
