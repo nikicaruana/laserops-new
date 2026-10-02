@@ -1,30 +1,45 @@
 import Link from "next/link";
 import { fetchGalleryImages } from "@/lib/cloudinary";
+import { getFeaturedPhotos } from "@/lib/cms/home-featured";
 import { Container } from "@/components/ui/Container";
 
 /**
  * GalleryPreview
  * --------------------------------------------------------------------
- * Homepage section. Async server component – fetches gallery images
- * (ISR-cached), filters to those tagged "featured", and renders up to
- * 9 in a compact 3-column masonry grid with a "View All Photos" CTA.
+ * Homepage section. Async server component. Shows the admin-selected featured
+ * photos (home_featured_photos, edited at /admin/homepage); when none are
+ * selected it falls back to Cloudinary images tagged "featured". Renders up to 9
+ * in a compact masonry grid with a "View All Photos" CTA.
  *
- * Returns null silently when:
- *   - Cloudinary env vars are not configured
- *   - No images are tagged "featured"
- *
- * So the homepage degrades cleanly while the gallery is being set up.
+ * Returns null silently when there is nothing to show (no selection AND no
+ * Cloudinary creds / no tagged images), so the homepage degrades cleanly.
  */
 
 const MAX_PREVIEW = 9;
 
-export async function GalleryPreview() {
-  const allImages = await fetchGalleryImages();
-  const featured = allImages
-    .filter((img) => img.tags.includes("featured"))
-    .slice(0, MAX_PREVIEW);
+type PreviewImage = { key: string; src: string; caption: string; width?: number; height?: number };
 
-  // Nothing to show – render nothing rather than a broken/empty section.
+export async function GalleryPreview() {
+  const selected = await getFeaturedPhotos();
+  let featured: PreviewImage[];
+  if (selected.length > 0) {
+    featured = selected
+      .slice(0, MAX_PREVIEW)
+      .map((p, i) => ({ key: `sel-${i}`, src: p.imageUrl, caption: p.caption }));
+  } else {
+    const allImages = await fetchGalleryImages();
+    featured = allImages
+      .filter((img) => img.tags.includes("featured"))
+      .slice(0, MAX_PREVIEW)
+      .map((img) => ({
+        key: img.publicId,
+        src: img.secureUrl,
+        caption: img.caption ?? "",
+        width: img.width || undefined,
+        height: img.height || undefined,
+      }));
+  }
+
   if (featured.length === 0) return null;
 
   return (
@@ -55,16 +70,16 @@ export async function GalleryPreview() {
         <div className="columns-2 gap-3 sm:columns-3 sm:gap-4">
           {featured.map((img) => (
             <Link
-              key={img.publicId}
+              key={img.key}
               href="/gallery"
               className="group mb-3 block break-inside-avoid overflow-hidden rounded-sm sm:mb-4"
-              aria-label={img.caption ?? "View photo in gallery"}
+              aria-label={img.caption || "View photo in gallery"}
             >
               <img
-                src={img.secureUrl}
-                alt={img.caption ?? "LaserOps Malta outdoor laser tag"}
-                width={img.width || undefined}
-                height={img.height || undefined}
+                src={img.src}
+                alt={img.caption || "LaserOps Malta outdoor laser tag"}
+                width={img.width}
+                height={img.height}
                 loading="lazy"
                 decoding="async"
                 draggable={false}
