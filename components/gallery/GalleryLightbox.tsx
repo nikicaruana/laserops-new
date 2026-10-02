@@ -33,9 +33,11 @@ type Props = {
   /** null = closed */
   index: number | null;
   onClose: () => void;
+  /** Optional action bar rendered under the image for the current index. */
+  renderActions?: (index: number) => import("react").ReactNode;
 };
 
-export function GalleryLightbox({ images, index, onClose }: Props) {
+export function GalleryLightbox({ images, index, onClose, renderActions }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -178,6 +180,11 @@ export function GalleryLightbox({ images, index, onClose }: Props) {
               <p className="max-w-lg text-center text-sm text-white/60">
                 {img.caption}
               </p>
+            )}
+            {renderActions && (
+              <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md">
+                {renderActions(currentIndex)}
+              </div>
             )}
           </div>
         )}

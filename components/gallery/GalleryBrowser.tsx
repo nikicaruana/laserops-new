@@ -6,17 +6,26 @@
  * Public gallery, sourced from match-linked photos (match_photos). Client
  * component so filtering is instant and per-viewer. Filters: game dropdown,
  * year dropdown, month dropdown, and a "my matches" toggle for signed-in
- * players (match codes from the my_participated_match_codes RPC). Each photo
- * opens in the shared lightbox and links to its match report.
+ * players (match codes from the my_participated_match_codes RPC).
+ *
+ * In the lightbox a signed-in player can tag themselves ("I'm in this photo")
+ * and, once tagged, share the photo to a story: the overlay (their live stats
+ * band) is fetched on demand from /api/photos/overlay and handed to the shared
+ * PhotoStoryComposer, same flow as the match report. Each photo also links to
+ * its match report.
  */
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { cldImage } from "@/lib/cld";
 import { GalleryLightbox, type LightboxImage } from "./GalleryLightbox";
+import { PhotoStoryComposer } from "@/components/match-report/PhotoStoryComposer";
+import type { OverlayData } from "@/lib/story/meta";
 import type { GalleryPhoto } from "@/lib/match-photos";
 
 const MONTHS = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+type Composer = { photoUrl: string; matchCode: string; ops: string; overlayData?: OverlayData };
 
 export function GalleryBrowser({ photos }: { photos: GalleryPhoto[] }) {
   const [matchCode, setMatchCode] = useState("all");
@@ -24,21 +33,30 @@ export function GalleryBrowser({ photos }: { photos: GalleryPhoto[] }) {
   const [month, setMonth] = useState("all");
   const [mineOnly, setMineOnly] = useState(false);
   const [myCodes, setMyCodes] = useState<string[] | null>(null);
+  const [ops, setOps] = useState("");
+  const [tags, setTags] = useState<Record<string, string[]>>(() => Object.fromEntries(photos.map((p) => [p.id, p.taggedOps])));
   const [lightbox, setLightbox] = useState<number | null>(null);
+  const [composer, setComposer] = useState<Composer | null>(null);
+  const [sharing, setSharing] = useState(false);
 
-  // Per-viewer "my matches" (codes the signed-in player played in). Fetched
-  // client-side so the page itself needs no auth; stays null when signed out.
+  // Per-viewer context (fetched client-side so the page needs no auth):
+  // the signed-in player's ops tag + the match codes they played in.
   useEffect(() => {
     let active = true;
     (async () => {
       try {
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-        const { data } = await supabase.rpc("my_participated_match_codes");
-        if (active && Array.isArray(data) && data.length) setMyCodes(data as string[]);
+        if (!user || !active) return;
+        const [{ data: acc }, { data: codes }] = await Promise.all([
+          supabase.from("accounts").select("ops_tag").eq("auth_user_id", user.id).maybeSingle(),
+          supabase.rpc("my_participated_match_codes"),
+        ]);
+        if (!active) return;
+        if (acc?.ops_tag) setOps(String(acc.ops_tag).trim());
+        if (Array.isArray(codes) && codes.length) setMyCodes(codes as string[]);
       } catch {
-        /* signed out or unavailable - no toggle */
+        /* signed out or unavailable */
       }
     })();
     return () => { active = false; };
@@ -81,6 +99,83 @@ export function GalleryBrowser({ photos }: { photos: GalleryPhoto[] }) {
     height: p.height ?? 800,
     caption: [p.matchCode, p.caption].filter(Boolean).join(" — ") || undefined,
   }));
+
+  const opsLc = ops.toLowerCase();
+  const isTagged = (p: GalleryPhoto) => opsLc !== "" && (tags[p.id] ?? []).some((o) => o.toLowerCase() === opsLc);
+
+  async function toggleSelf(p: GalleryPhoto) {
+    if (!ops) return;
+    const tagged = isTagged(p);
+    setTags((t) => ({
+      ...t,
+      [p.id]: tagged ? (t[p.id] ?? []).filter((o) => o.toLowerCase() !== opsLc) : [...(t[p.id] ?? []), ops],
+    }));
+    try {
+      await fetch(`/api/photos/${p.id}/tag`, {
+        method: tagged ? "DELETE" : "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({}),
+      });
+    } catch {
+      /* revert on failure */
+      setTags((t) => ({
+        ...t,
+        [p.id]: tagged ? [...(t[p.id] ?? []), ops] : (t[p.id] ?? []).filter((o) => o.toLowerCase() !== opsLc),
+      }));
+    }
+  }
+
+  async function openShare(p: GalleryPhoto) {
+    if (!p.matchCode || sharing) return;
+    setSharing(true);
+    try {
+      const res = await fetch(`/api/photos/overlay?match=${encodeURIComponent(p.matchCode)}`);
+      const j = (await res.json()) as { ops: string; overlayData: OverlayData | null };
+      if (!j.ops) return;
+      setLightbox(null); // close the lightbox so the composer isn't behind it
+      setComposer({ photoUrl: p.url, matchCode: p.matchCode, ops: j.ops, overlayData: j.overlayData ?? undefined });
+    } catch {
+      /* ignore - share stays unopened */
+    } finally {
+      setSharing(false);
+    }
+  }
+
+  const renderActions = (i: number) => {
+    const p = filtered[i];
+    if (!p) return null;
+    const tagged = tags[p.id] ?? [];
+    const self = isTagged(p);
+    const btn = "rounded-sm border px-3 py-1.5 text-xs font-bold uppercase tracking-[0.1em] transition-colors";
+    return (
+      <div className="flex flex-col items-center gap-2">
+        {tagged.length > 0 && <p className="text-xs text-white/60">In this photo: {tagged.join(", ")}</p>}
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          {p.matchCode && (
+            <Link href={`/match-report?match=${p.matchCode}`} className={`${btn} border-white/30 text-white/80 hover:border-accent hover:text-accent`}>
+              View match
+            </Link>
+          )}
+          {ops ? (
+            <>
+              <button type="button" onClick={() => toggleSelf(p)} className={`${btn} ${self ? "border-accent text-accent" : "border-white/30 text-white/80 hover:border-accent hover:text-accent"}`}>
+                {self ? "Remove my tag" : "I'm in this photo"}
+              </button>
+              {self && (
+                <button type="button" onClick={() => openShare(p)} disabled={sharing} className={`${btn} border-accent bg-accent text-bg hover:bg-accent-soft disabled:opacity-60`}>
+                  {sharing ? "Opening…" : "Share to story"}
+                </button>
+              )}
+            </>
+          ) : (
+            <Link href="/player-portal" className={`${btn} border-white/30 text-white/70 hover:border-accent hover:text-accent`}>
+              Sign in to tag &amp; share
+            </Link>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   const select =
     "h-9 border border-border-strong bg-bg px-3 text-xs font-semibold uppercase tracking-[0.1em] text-text focus:border-accent focus:outline-none";
@@ -156,6 +251,7 @@ export function GalleryBrowser({ photos }: { photos: GalleryPhoto[] }) {
                   >
                     {p.matchCode} →
                   </Link>
+                  {isTagged(p) && <span className="text-[0.6rem] font-bold uppercase tracking-[0.1em] text-accent">You&rsquo;re in this</span>}
                 </div>
               )}
             </div>
@@ -163,7 +259,17 @@ export function GalleryBrowser({ photos }: { photos: GalleryPhoto[] }) {
         </div>
       )}
 
-      <GalleryLightbox images={lightboxImages} index={lightbox} onClose={() => setLightbox(null)} />
+      <GalleryLightbox images={lightboxImages} index={lightbox} onClose={() => setLightbox(null)} renderActions={renderActions} />
+
+      {composer && (
+        <PhotoStoryComposer
+          matchId={composer.matchCode}
+          ops={composer.ops}
+          photoUrl={composer.photoUrl}
+          overlayData={composer.overlayData}
+          onClose={() => setComposer(null)}
+        />
+      )}
     </>
   );
 }

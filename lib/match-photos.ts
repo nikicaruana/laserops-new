@@ -166,6 +166,7 @@ export type GalleryPhoto = {
   playedOn: string | null;
   year: number | null;
   month: number | null;
+  taggedOps: string[];
 };
 
 type GalleryRow = {
@@ -196,11 +197,28 @@ function mapGalleryRow(r: GalleryRow): GalleryPhoto {
     playedOn: played,
     year: valid ? d!.getUTCFullYear() : null,
     month: valid ? d!.getUTCMonth() + 1 : null,
+    taggedOps: [],
   };
 }
 
 const GALLERY_SELECT =
   "id, secure_url, width, height, caption, created_at, match:matches(match_code, title, played_on)";
+
+async function mergePhotoTags(supabase: SupabaseClient, photos: GalleryPhoto[]): Promise<void> {
+  const ids = photos.map((p) => p.id);
+  if (ids.length === 0) return;
+  const { data } = await supabase.from("match_photo_tags").select("photo_id, account:accounts(ops_tag)").in("photo_id", ids);
+  if (!data) return;
+  const byPhoto = new Map<string, string[]>();
+  for (const t of data as unknown as { photo_id: string; account: { ops_tag: string | null } | { ops_tag: string | null }[] | null }[]) {
+    const acc = Array.isArray(t.account) ? t.account[0] : t.account;
+    if (!acc?.ops_tag) continue;
+    const arr = byPhoto.get(t.photo_id) ?? [];
+    arr.push(acc.ops_tag);
+    byPhoto.set(t.photo_id, arr);
+  }
+  for (const p of photos) p.taggedOps = byPhoto.get(p.id) ?? [];
+}
 
 /** Every match photo, joined to its match, newest game first. Used by /gallery. */
 export async function fetchGalleryPhotos(supabase: SupabaseClient): Promise<GalleryPhoto[]> {
@@ -213,6 +231,7 @@ export async function fetchGalleryPhotos(supabase: SupabaseClient): Promise<Gall
     return [];
   }
   const photos = ((data ?? []) as unknown as GalleryRow[]).map(mapGalleryRow);
+  await mergePhotoTags(supabase, photos);
   photos.sort((a, b) => (b.playedOn ?? "").localeCompare(a.playedOn ?? ""));
   return photos;
 }
