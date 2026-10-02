@@ -75,8 +75,59 @@ export function buildRivalries(
   return { nemesis, favouritePrey, opponents };
 }
 
-export async function getPlayerRivalries(_supabase: SupabaseServer, _ops: string): Promise<PlayerRivalries> {
-  // TODO(ingestion): replace with the real per-opponent aggregate once ingestion
-  // writes head-to-head kills. Until then, empty -> the tab shows its empty state.
-  return buildRivalries([]);
+type KillEntry = { nickname?: string | null; headband?: string | null; count?: number | null };
+
+/**
+ * All-time head-to-head kills for a player, aggregated across their matches from
+ * match_player_aggregate.killed / killed_by (populated for online rounds only).
+ * Unresolved walk-ins ("Head NN") are skipped - a rivalry needs a real opponent.
+ */
+export async function getPlayerRivalries(supabase: SupabaseServer, ops: string): Promise<PlayerRivalries> {
+  const tag = ops.trim();
+  if (!tag) return buildRivalries([]);
+
+  // Resolve the player's account (best-effort; falls back to nickname match).
+  const { data: acc } = await supabase.from("accounts").select("id").ilike("ops_tag", tag).maybeSingle();
+  let q = supabase.from("match_player_aggregate").select("match_id, killed, killed_by");
+  q = acc?.id ? q.eq("account_id", acc.id as string) : q.eq("nickname", tag);
+  const { data: rows } = await q;
+  if (!rows || rows.length === 0) return buildRivalries([]);
+
+  const isHead = (n: string) => /^head\s*\d+$/i.test(n);
+  const agg = new Map<string, { killsFor: number; killsAgainst: number; matches: Set<string> }>();
+  const bump = (name: string | null | undefined, matchId: string, forK: number, againstK: number) => {
+    const key = (name ?? "").trim();
+    if (!key || isHead(key) || key.toLowerCase() === tag.toLowerCase()) return;
+    const e = agg.get(key) ?? { killsFor: 0, killsAgainst: 0, matches: new Set<string>() };
+    e.killsFor += forK;
+    e.killsAgainst += againstK;
+    e.matches.add(matchId);
+    agg.set(key, e);
+  };
+  for (const r of rows as { match_id: string; killed: KillEntry[] | null; killed_by: KillEntry[] | null }[]) {
+    for (const k of r.killed ?? []) bump(k.nickname || k.headband, r.match_id, Number(k.count) || 0, 0);
+    for (const k of r.killed_by ?? []) bump(k.nickname || k.headband, r.match_id, 0, Number(k.count) || 0);
+  }
+  if (agg.size === 0) return buildRivalries([]);
+
+  // Opponent avatars from their aggregate rows (public-readable; avoids accounts RLS).
+  const names = [...agg.keys()];
+  const { data: picRows } = await supabase
+    .from("match_player_aggregate")
+    .select("nickname, profile_pic_url")
+    .in("nickname", names)
+    .not("profile_pic_url", "is", null);
+  const picByTag = new Map<string, string>();
+  for (const pr of (picRows ?? []) as { nickname: string; profile_pic_url: string | null }[]) {
+    if (pr.profile_pic_url && !picByTag.has(pr.nickname)) picByTag.set(pr.nickname, pr.profile_pic_url);
+  }
+
+  const raw = names.map((n) => ({
+    opsTag: n,
+    profilePicUrl: picByTag.get(n) ?? null,
+    killsFor: agg.get(n)!.killsFor,
+    killsAgainst: agg.get(n)!.killsAgainst,
+    encounters: agg.get(n)!.matches.size,
+  }));
+  return buildRivalries(raw);
 }
