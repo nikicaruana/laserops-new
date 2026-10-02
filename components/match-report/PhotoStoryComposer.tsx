@@ -154,13 +154,16 @@ export function PhotoStoryComposer({ matchId, ops, photoUrl, overlayData, onClos
     setOffset({ x: 0, y: 0 });
   }
 
+  // Touch: a single finger scrolls the modal (never grabs the photo); two
+  // fingers pinch-zoom and drag-move. Mouse/pen: single-pointer drag moves.
   function onPointerDown(e: React.PointerEvent) {
-    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (pointers.current.size === 2) {
+    if (e.pointerType === "touch" && pointers.current.size < 2) return; // let it scroll
+    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+    if (pointers.current.size >= 2) {
       const [a, b] = [...pointers.current.values()];
       pinch.current = { dist: Math.hypot(a.x - b.x, a.y - b.y) || 1, scale };
-      pan.current = null;
+      pan.current = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
     } else {
       pan.current = { x: e.clientX, y: e.clientY };
     }
@@ -172,9 +175,14 @@ export function PhotoStoryComposer({ matchId, ops, photoUrl, overlayData, onClos
       const [a, b] = [...pointers.current.values()];
       const dist = Math.hypot(a.x - b.x, a.y - b.y) || 1;
       setScale(clamp(pinch.current.scale * (dist / pinch.current.dist), 1, MAX_ZOOM));
+      const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+      if (pan.current) {
+        setOffset((o) => ({ x: o.x + (mid.x - pan.current!.x) / S, y: o.y + (mid.y - pan.current!.y) / S }));
+      }
+      pan.current = mid;
       return;
     }
-    if (pan.current) {
+    if (pan.current && e.pointerType !== "touch" && pointers.current.size === 1) {
       const dx = (e.clientX - pan.current.x) / S;
       const dy = (e.clientY - pan.current.y) / S;
       pan.current = { x: e.clientX, y: e.clientY };
@@ -183,11 +191,8 @@ export function PhotoStoryComposer({ matchId, ops, photoUrl, overlayData, onClos
   }
   function onPointerUp(e: React.PointerEvent) {
     pointers.current.delete(e.pointerId);
-    if (pointers.current.size < 2) pinch.current = null;
-    if (pointers.current.size === 1) {
-      const [p] = [...pointers.current.values()];
-      pan.current = { x: p.x, y: p.y };
-    } else if (pointers.current.size === 0) {
+    if (pointers.current.size < 2) {
+      pinch.current = null;
       pan.current = null;
     }
   }
@@ -285,7 +290,7 @@ export function PhotoStoryComposer({ matchId, ops, photoUrl, overlayData, onClos
               onPointerMove={onPointerMove}
               onPointerUp={onPointerUp}
               onPointerCancel={onPointerUp}
-              className="relative touch-none overflow-hidden rounded-sm border border-border-strong bg-black"
+              className="relative touch-pan-y overflow-hidden rounded-sm border border-border-strong bg-black"
               style={{ width: FRAME_W, height: FRAME_H, cursor: "grab" }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -324,7 +329,7 @@ export function PhotoStoryComposer({ matchId, ops, photoUrl, overlayData, onClos
             </div>
           </div>
 
-          <p className="text-center text-[0.65rem] text-text-subtle">Drag to move · pinch to zoom · scroll down for overlays ↓</p>
+          <p className="text-center text-[0.65rem] text-text-subtle">Pinch to zoom · two-finger drag to move · swipe to scroll for overlays ↓</p>
 
           {/* Fit / Fill + zoom */}
           <div className="flex items-center gap-2">
