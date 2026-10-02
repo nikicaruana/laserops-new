@@ -154,11 +154,12 @@ export function PhotoStoryComposer({ matchId, ops, photoUrl, overlayData, onClos
     setOffset({ x: 0, y: 0 });
   }
 
-  // Touch: a single finger scrolls the modal (never grabs the photo); two
-  // fingers pinch-zoom and drag-move. Mouse/pen: single-pointer drag moves.
+  // One finger drags the photo; two fingers pinch-zoom and drag. The frame
+  // has touch-action:none so the gesture never scrolls the page or triggers
+  // iOS pull-to-refresh - scroll to the overlay controls by swiping OUTSIDE
+  // the frame. Mouse/pen: single-pointer drag moves.
   function onPointerDown(e: React.PointerEvent) {
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (e.pointerType === "touch" && pointers.current.size < 2) return; // let it scroll
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
     if (pointers.current.size >= 2) {
       const [a, b] = [...pointers.current.values()];
@@ -187,7 +188,7 @@ export function PhotoStoryComposer({ matchId, ops, photoUrl, overlayData, onClos
       pan.current = mid;
       return;
     }
-    if (pan.current && e.pointerType !== "touch" && pointers.current.size === 1) {
+    if (pan.current && pointers.current.size === 1) {
       const dx = (e.clientX - pan.current.x) / S;
       const dy = (e.clientY - pan.current.y) / S;
       pan.current = { x: e.clientX, y: e.clientY };
@@ -196,8 +197,13 @@ export function PhotoStoryComposer({ matchId, ops, photoUrl, overlayData, onClos
   }
   function onPointerUp(e: React.PointerEvent) {
     pointers.current.delete(e.pointerId);
-    if (pointers.current.size < 2) {
-      pinch.current = null;
+    if (pointers.current.size < 2) pinch.current = null;
+    if (pointers.current.size === 1) {
+      // Lifted one finger of a pinch - re-anchor pan to the finger still down
+      // so the photo does not jump on the next move.
+      const [pt] = [...pointers.current.values()];
+      pan.current = pt ? { x: pt.x, y: pt.y } : null;
+    } else if (pointers.current.size === 0) {
       pan.current = null;
     }
   }
@@ -295,7 +301,7 @@ export function PhotoStoryComposer({ matchId, ops, photoUrl, overlayData, onClos
               onPointerMove={onPointerMove}
               onPointerUp={onPointerUp}
               onPointerCancel={onPointerUp}
-              className="relative touch-pan-y overflow-hidden rounded-sm border border-border-strong bg-black"
+              className="relative touch-none overflow-hidden rounded-sm border border-border-strong bg-black"
               style={{ width: FRAME_W, height: FRAME_H, cursor: "grab" }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -334,7 +340,7 @@ export function PhotoStoryComposer({ matchId, ops, photoUrl, overlayData, onClos
             </div>
           </div>
 
-          <p className="text-center text-[0.65rem] text-text-subtle">Pinch to zoom · two-finger drag to move · swipe to scroll for overlays ↓</p>
+          <p className="text-center text-[0.65rem] text-text-subtle">Drag to move · pinch to zoom · scroll below the frame for overlays ↓</p>
 
           {/* Fit / Fill + zoom */}
           <div className="flex items-center gap-2">
