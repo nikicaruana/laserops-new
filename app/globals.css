@@ -60,6 +60,17 @@
     color: var(--color-accent);
   }
 
+  /* Native <select> dropdowns: brand-yellow highlight instead of the browser
+     blue, to fit the site. accent-color tints the open-list highlight in modern
+     Chromium; option:checked covers the selected item across browsers. */
+  select {
+    accent-color: var(--color-accent);
+  }
+  option:checked {
+    background-color: var(--color-accent);
+    color: var(--color-bg);
+  }
+
   html {
     background-color: var(--color-bg);
     color: var(--color-text);
