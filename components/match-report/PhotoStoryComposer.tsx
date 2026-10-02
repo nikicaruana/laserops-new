@@ -128,7 +128,7 @@ export function PhotoStoryComposer({ matchId, ops, photoUrl, overlayData, onClos
   const [mode, setMode] = useState<Mode>("fill");
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 }); // in frame px
-  const [overlay, setOverlay] = useState<PhotoOverlay>("main");
+  const [overlay, setOverlay] = useState<PhotoOverlay>(overlayData ? "main" : "none");
   const branding = true; // branding is always on
   const [stage, setStage] = useState<"edit" | "result">("edit");
   const [busy, setBusy] = useState(false);
@@ -265,6 +265,7 @@ export function PhotoStoryComposer({ matchId, ops, photoUrl, overlayData, onClos
           {/* Overlay preset */}
           <div>
             <p className="mb-1.5 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-text-muted">Stats overlay</p>
+            {overlayData ? (
             <div className="grid grid-cols-2 gap-2">
               {PHOTO_OVERLAYS.map((o) => (
                 <button
@@ -278,6 +279,11 @@ export function PhotoStoryComposer({ matchId, ops, photoUrl, overlayData, onClos
                 </button>
               ))}
             </div>
+            ) : (
+              <p className="rounded-sm border border-border px-3 py-2 text-[0.65rem] leading-relaxed text-text-muted">
+                You have no stats for this match, so the story is photo only (with branding).
+              </p>
+            )}
           </div>
 
           <button type="button" onClick={() => setStage("result")} disabled={!nat} className="rounded-sm bg-accent px-4 py-2.5 text-sm font-bold uppercase tracking-[0.12em] text-bg transition-colors hover:bg-accent-soft disabled:opacity-60">
