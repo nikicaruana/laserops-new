@@ -24,7 +24,8 @@
  */
 import { computeMatchXp, DEFAULT_XP_CONFIG, type XpConfig } from "../scoring/xp";
 import { computeGroupValue, type ScoreFormula } from "../scoring/formula";
-import type { CommitAggregate, CommitResult, NetResultSummary } from "./commit";
+import type { CommitAggregate, CommitAward, CommitResult, NetResultSummary } from "./commit";
+import { computeAccolades, type AccoladeStat } from "./accolades";
 
 export type OfflinePlayerStat = {
   headband: string; // e.g. "Head 10" or "10"
@@ -71,6 +72,7 @@ export function computeOfflineMatchCommit(
   cfg: XpConfig = DEFAULT_XP_CONFIG,
   isDoubleXp = false,
   formula?: ScoreFormula,
+  accoladeByKey?: Map<string, { id: string; xp: number }>,
 ): CommitResult {
   // --- 1. Merge headbands that resolve to the same account -----------------
   const groups = new Map<string, Group>();
@@ -122,13 +124,39 @@ export function computeOfflineMatchCommit(
   const matchAvg = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
   const rankOf = (vals: number[], v: number, higher = true) => 1 + vals.filter((x) => (higher ? x > v : x < v)).length;
 
-  const aggregates: CommitAggregate[] = scored.map((s) => {
+  // --- Accolades: offline = stat-based only. CAP-Tain + Fortress need the
+  // objective data the offline file doesn't carry, so they're skipped here;
+  // Specialist is omitted to match the online path (needs per-round gun). ---
+  const normKey = (x: string) => x.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const OFFLINE_EXCLUDE = new Set(["CAP-Tain", "Fortress"]);
+  const accoladeStats: AccoladeStat[] = scored.map((s, i) => ({
+    id: i,
+    name: identity(s.primaryHeadband).nickname || s.primaryHeadband,
+    team: s.team,
+    score: s.score, frags: s.frags, deaths: s.deaths, kd: s.kd, shots: s.shots, hits: s.hits,
+    accuracy: s.accuracy, wounds: s.wounds, damage: Math.round(s.damage), captures: 0, holdSeconds: 0,
+  }));
+  const accoladeXpByIndex = new Map<number, number>();
+  const awards: CommitAward[] = [];
+  if (accoladeByKey) {
+    for (const w of computeAccolades(accoladeStats)) {
+      if (OFFLINE_EXCLUDE.has(w.name)) continue;
+      const def = accoladeByKey.get(normKey(w.name));
+      if (!def) continue;
+      const g = scored[w.winnerId];
+      const idn = identity(g.primaryHeadband);
+      awards.push({ account_id: idn.accountId, headset_label: g.primaryHeadband, nickname: idn.nickname, accolade_definition_id: def.id, xp_granted: def.xp });
+      accoladeXpByIndex.set(w.winnerId, (accoladeXpByIndex.get(w.winnerId) ?? 0) + def.xp);
+    }
+  }
+
+  const aggregates: CommitAggregate[] = scored.map((s, i) => {
     const idn = identity(s.primaryHeadband);
     const isWinner = winner != null && s.team === winner;
     const oppTeam = Object.keys(teamScore).find((t) => t !== s.team);
     const mult = Math.max(idn.xpMultiplier ?? 1, isDoubleXp ? 2 : 1);
     const rating = matchAvg > 0 ? s.score / matchAvg : 0;
-    const xpb = computeMatchXp({ rating, roundsWon: roundsWonByTeam[s.team] ?? 0, isWinner, accoladeXp: 0, multiplier: mult }, cfg);
+    const xpb = computeMatchXp({ rating, roundsWon: roundsWonByTeam[s.team] ?? 0, isWinner, accoladeXp: accoladeXpByIndex.get(i) ?? 0, multiplier: mult }, cfg);
     return {
       account_id: idn.accountId, nickname: idn.nickname, headset_label: s.primaryHeadband, team_colour: s.team,
       profile_pic_url: idn.profilePicUrl ?? null, gun_used: idn.gun ?? null,
@@ -156,6 +184,5 @@ export function computeOfflineMatchCommit(
     losing_rounds: loser ? roundsWonByTeam[loser] ?? 0 : 0,
   };
 
-  // Offline: no accolades in Phase 1 (most need the event stream).
-  return { aggregates, awards: [], winnerColour: winner, losingColour: loser, roundsWonByTeam, roundCount, netResultSummary };
+  return { aggregates, awards, winnerColour: winner, losingColour: loser, roundsWonByTeam, roundCount, netResultSummary };
 }

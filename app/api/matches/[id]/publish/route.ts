@@ -120,7 +120,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
       if (offlineWinners.length === 0) return NextResponse.json({ error: "Enter the round results for the offline rounds before publishing." }, { status: 400 });
       const roundResults = offlineWinners.map((w) => ({ winnerColour: w }));
       offlineRoundCount = offlineWinners.length;
-      result = computeOfflineMatchCommit(players, roundResults, identity, gunDamage, cfg, isDoubleXp, scoringRuntime.formula);
+      result = computeOfflineMatchCommit(players, roundResults, identity, gunDamage, cfg, isDoubleXp, scoringRuntime.formula, accoladeByKey);
     }
   } else {
     // Online: JSON event-stream rounds.
