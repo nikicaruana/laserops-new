@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
   const cutoff = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString();
   const { data: due, error } = await supabase
     .from("matches")
-    .select("id, title, scheduled_at, invite_code, duration_minutes")
+    .select("id, title, scheduled_at, invite_code, duration_minutes, location_id")
     .eq("status", "confirmed")
     .is("reminder_sent_at", null)
     .not("scheduled_at", "is", null)
@@ -39,8 +39,13 @@ export async function GET(req: NextRequest) {
   if (error) return Response.json({ ok: false, error: error.message }, { status: 500 });
   if (!due || due.length === 0) return Response.json({ ok: true, reminded: 0 });
 
+  const { data: locRows } = await supabase.from("locations").select("id, parking_url, playing_url, is_default");
+  const locList = (locRows ?? []) as { id: string; parking_url: string | null; playing_url: string | null; is_default: boolean }[];
+  const defaultLoc = locList.find((l) => l.is_default) ?? locList[0] ?? null;
+  const locFor = (id: string | null) => (id ? locList.find((l) => l.id === id) : null) ?? defaultLoc;
+
   let reminded = 0;
-  for (const m of due as { id: string; title: string | null; scheduled_at: string; invite_code: string | null; duration_minutes: number | null }[]) {
+  for (const m of due as { id: string; title: string | null; scheduled_at: string; invite_code: string | null; duration_minutes: number | null; location_id: string | null }[]) {
     // Claim it first so it can't double-fire.
     const { data: claimed } = await supabase
       .from("matches")
@@ -57,6 +62,7 @@ export async function GET(req: NextRequest) {
     const signupFormUrl = m.invite_code ? `${BASE}/invite/${m.invite_code}` : `${BASE}/player-portal/games`;
     const whatsappShareUrl = `https://wa.me/?text=${encodeURIComponent(`Join my LaserOps game (${m.title || "match"}) on ${matchDate}: ${signupFormUrl}`)}`;
 
+    const loc = locFor(m.location_id);
     const { data: signups } = await supabase.from("match_signups").select("account_id").eq("match_id", m.id).eq("status", "registered");
     for (const s of (signups ?? []) as { account_id: string | null }[]) {
       if (!s.account_id) continue;
@@ -64,7 +70,7 @@ export async function GET(req: NextRequest) {
         title: m.title || "Match reminder",
         body: `Your game is on ${matchDate} at ${matchTime}.`,
         href: `/player-portal/games/${m.id}`,
-        data: { matchDate, matchTime, matchTimeRange: matchTimeRangeLabel(m.scheduled_at, m.duration_minutes), signupFormUrl, whatsappShareUrl },
+        data: { matchDate, matchTime, matchTimeRange: matchTimeRangeLabel(m.scheduled_at, m.duration_minutes), signupFormUrl, whatsappShareUrl, ...(loc?.playing_url ? { matchLocationUrl: loc.playing_url } : {}), ...(loc?.parking_url ? { parkingUrl: loc.parking_url } : {}) },
       });
     }
     reminded++;

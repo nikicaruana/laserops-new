@@ -11,6 +11,7 @@
 import { Resend } from "resend";
 import { createServiceClient } from "@/lib/supabase/service";
 import { buildIcs, type IcsAttendee } from "@/lib/ics";
+import { resolveMatchLocation } from "@/lib/locations";
 
 const BUSINESS_EMAIL = "bookings@laseropsmalta.com";
 const BUSINESS_NAME = "LaserOps Malta";
@@ -24,6 +25,7 @@ type MatchRow = {
   match_code: string | null;
   scheduled_at: string | null;
   calendar_sequence: number | null;
+  location_id: string | null;
 };
 
 export async function sendMatchInvites(matchId: string, method: "REQUEST" | "CANCEL"): Promise<{ ok: boolean; sent: number; reason?: string }> {
@@ -34,7 +36,7 @@ export async function sendMatchInvites(matchId: string, method: "REQUEST" | "CAN
 
   const { data: match } = await svc
     .from("matches")
-    .select("id, title, match_code, scheduled_at, calendar_sequence")
+    .select("id, title, match_code, scheduled_at, calendar_sequence, location_id")
     .eq("id", matchId)
     .maybeSingle();
   const m = match as MatchRow | null;
@@ -54,6 +56,9 @@ export async function sendMatchInvites(matchId: string, method: "REQUEST" | "CAN
   const appUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://laseropsmalta.com";
   const gameUrl = `${appUrl}/player-portal/games/${m.id}`;
   const label = m.title || m.match_code || "LaserOps game";
+  const loc = await resolveMatchLocation(m.location_id);
+  const locationName = loc?.name || LOCATION;
+  const mapsHtml = [locationName, loc?.playingUrl ? `<a href="${loc.playingUrl}" style="color:#111;">Directions</a>` : "", loc?.parkingUrl ? `<a href="${loc.parkingUrl}" style="color:#111;">Parking</a>` : ""].filter(Boolean).join(" &middot; ");
   const start = new Date(m.scheduled_at);
   const end = new Date(start.getTime() + SESSION_MINUTES * 60_000);
   const attendees: IcsAttendee[] = [...players, { email: BUSINESS_EMAIL, name: BUSINESS_NAME }];
@@ -64,7 +69,7 @@ export async function sendMatchInvites(matchId: string, method: "REQUEST" | "CAN
     method,
     summary: method === "CANCEL" ? `Cancelled: ${label}` : label,
     description: `Your LaserOps match.\\nDetails and payment: ${gameUrl}`,
-    location: LOCATION,
+    location: loc?.playingUrl || locationName,
     url: gameUrl,
     start,
     end,
@@ -83,7 +88,8 @@ export async function sendMatchInvites(matchId: string, method: "REQUEST" | "CAN
   const bodyHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
 <body style="margin:0;padding:24px;font-family:Arial,sans-serif;background:#fff;color:#111;">
   <h2 style="margin:0 0 4px;font-size:20px;">${cancelled ? "This game was cancelled" : label}</h2>
-  <p style="margin:0 0 16px;font-size:13px;color:#666;">${when}</p>
+  <p style="margin:0 0 4px;font-size:13px;color:#666;">${when}</p>
+  <p style="margin:0 0 16px;font-size:13px;color:#666;">${mapsHtml}</p>
   <p style="margin:0 0 16px;font-size:14px;">${cancelled ? "The calendar event has been removed." : "Add this to your calendar - the invite is attached. Confirm your place and pay online:"}</p>
   ${cancelled ? "" : `<p style="margin:0;"><a href="${gameUrl}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:10px 18px;font-size:13px;font-weight:700;">Open the game</a></p>`}
 </body></html>`;
