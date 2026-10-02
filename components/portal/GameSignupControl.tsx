@@ -51,6 +51,7 @@ export function GameSignupControl({
   tokensApplied = 0,
   tokenImageUrl = "",
   beginnerLock = null,
+  refundPolicy = REFUND_POLICY,
 }: {
   matchId: string;
   accountId: string;
@@ -80,6 +81,7 @@ export function GameSignupControl({
   tokenImageUrl?: string;
   /** Set when THIS viewer is above a beginners game's level cap: blocks sign-up with a notice. */
   beginnerLock?: { yourLevel: number; maxLevel: number } | null;
+  refundPolicy?: string;
 }) {
   const router = useRouter();
   const col = align === "center" ? "items-center text-center" : align === "start" ? "items-start" : "items-start sm:items-end";
@@ -308,7 +310,7 @@ export function GameSignupControl({
                   {busy ? "Starting checkout…" : `Pay ${formatEur(remainderEur)} online`}
                 </button>
                 {error && <p className="text-xs text-red-400">{error}</p>}
-                <p className="text-[0.65rem] leading-relaxed text-text-subtle">{REFUND_POLICY}</p>
+                <p className="text-[0.65rem] leading-relaxed text-text-subtle">{refundPolicy}</p>
               </div>
             </Modal>
           )}

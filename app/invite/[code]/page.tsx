@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/Button";
 import { Logo } from "@/components/ui/Logo";
 import { createClient } from "@/lib/supabase/server";
 import { GameSignupControl } from "@/components/portal/GameSignupControl";
+import { getRefundConfig } from "@/lib/payments/refund-config";
 import { getUnlockedGuns, type UnlockedGun } from "@/lib/matches/guns";
 
 export const metadata: Metadata = { title: "Game invite", robots: { index: false, follow: false } };
@@ -202,6 +203,7 @@ export default async function GameInvitePage({ params }: { params: Promise<{ cod
                   priceEur={g.pricing_mode === "per_player" ? (familyFriendsPrice != null ? familyFriendsPrice : Number(g.price_eur)) : null}
                   familyFriends={familyFriendsPrice != null}
                   isPrivate={Boolean(g.is_private)}
+                  refundPolicy={(await getRefundConfig()).policyText}
                 />
               </div>
             )

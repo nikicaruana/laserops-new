@@ -10,7 +10,8 @@
  */
 import type { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getPaymentProvider, REFUND_POLICY } from "@/lib/payments";
+import { getPaymentProvider } from "@/lib/payments";
+import { getRefundConfig } from "@/lib/payments/refund-config";
 import { toCents } from "@/lib/money";
 import { createServiceClient } from "@/lib/supabase/service";
 import { markSignupPaid } from "@/lib/payments/apply";
@@ -101,7 +102,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ mat
       customerEmail: account.email,
       matchId: match.id,
       accountId: account.id,
-      policyText: REFUND_POLICY,
+      policyText: (await getRefundConfig()).policyText,
     });
     return Response.json({ ok: true, url });
   } catch (err) {

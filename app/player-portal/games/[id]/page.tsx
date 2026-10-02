@@ -14,6 +14,7 @@ import { notFound, redirect } from "next/navigation";
 import { Container } from "@/components/ui/Container";
 import { createClient } from "@/lib/supabase/server";
 import { GameSignupControl } from "@/components/portal/GameSignupControl";
+import { getRefundConfig } from "@/lib/payments/refund-config";
 import { PlayerBar } from "@/components/portal/PlayerBar";
 import { GamesLiveRefresh } from "@/components/portal/GamesLiveRefresh";
 import { MatchInviteMenu } from "@/components/portal/MatchInviteMenu";
@@ -212,6 +213,7 @@ export default async function GameDetailPage({
             tokenBalance={Number(tokenBalance ?? 0)}
             tokensApplied={tokensApplied}
             tokenImageUrl={tokenImageUrl}
+            refundPolicy={(await getRefundConfig()).policyText}
             hideCancel
           />
         )}

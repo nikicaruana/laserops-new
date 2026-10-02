@@ -13,6 +13,7 @@ import { redirect } from "next/navigation";
 import { Container } from "@/components/ui/Container";
 import { createClient } from "@/lib/supabase/server";
 import { GameSignupControl } from "@/components/portal/GameSignupControl";
+import { getRefundConfig } from "@/lib/payments/refund-config";
 import { PlayerBar } from "@/components/portal/PlayerBar";
 import { GamesViewToggle } from "@/components/portal/GamesViewToggle";
 import { GamesLiveRefresh } from "@/components/portal/GamesLiveRefresh";
@@ -108,6 +109,7 @@ export default async function GamesPage({
     supabase.from("player_stats_lifetime").select("current_level").eq("account_id", account.id).maybeSingle(),
   ]);
   const viewerLevel = (levelRow as { current_level: number | null } | null)?.current_level ?? 1;
+  const refundPolicyText = (await getRefundConfig()).policyText;
 
   const joinedIds = new Set(((participantRows ?? []) as { match_id: string }[]).map((p) => p.match_id));
   const mine = new Map<string, MySignup>();
@@ -256,6 +258,7 @@ export default async function GamesPage({
                 familyFriends={account.discount_price_eur != null}
                 isPrivate={Boolean(g.is_private)}
                 isOrganiser={isCreated}
+                refundPolicy={refundPolicyText}
                 beginnerLock={beginnerLock}
                 hideCancel
               />
