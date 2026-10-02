@@ -24,6 +24,11 @@ export type HomeHeroConfig = {
   ctaPrimaryHref: string;
   ctaSecondaryLabel: string;
   ctaSecondaryHref: string;
+  /** Signed-in CTA pair (swapped in client-side when a player is logged in). */
+  ctaInPrimaryLabel: string;
+  ctaInPrimaryHref: string;
+  ctaInSecondaryLabel: string;
+  ctaInSecondaryHref: string;
   stats: HeroStat[];
 };
 
@@ -48,6 +53,11 @@ export const DEFAULT_HOME_HERO: HomeHeroConfig = {
   // sells the persistent-stats system) rather than straight to leaderboards.
   ctaSecondaryLabel: "Create your free profile",
   ctaSecondaryHref: "/player-portal/login",
+  // Signed-in players: straight into the game + their stats.
+  ctaInPrimaryLabel: "Join a Game",
+  ctaInPrimaryHref: "/player-portal/games",
+  ctaInSecondaryLabel: "View Stats",
+  ctaInSecondaryHref: "/player-portal/player-stats",
   stats: [
     { value: "15+", label: "Weapons" },
     { value: "6+", label: "Game Modes" },
@@ -93,6 +103,10 @@ export async function getHomeHeroConfig(): Promise<HomeHeroConfig> {
       ctaPrimaryHref: str(data.cta_primary_href, d.ctaPrimaryHref),
       ctaSecondaryLabel: str(data.cta_secondary_label, d.ctaSecondaryLabel),
       ctaSecondaryHref: str(data.cta_secondary_href, d.ctaSecondaryHref),
+      ctaInPrimaryLabel: str(data.cta_in_primary_label, d.ctaInPrimaryLabel),
+      ctaInPrimaryHref: str(data.cta_in_primary_href, d.ctaInPrimaryHref),
+      ctaInSecondaryLabel: str(data.cta_in_secondary_label, d.ctaInSecondaryLabel),
+      ctaInSecondaryHref: str(data.cta_in_secondary_href, d.ctaInSecondaryHref),
       stats: stats.length > 0 ? stats : d.stats,
     };
   } catch {

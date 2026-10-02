@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
+import { useAccount } from "@/lib/hooks/useAccount";
 import { DEFAULT_HOME_HERO, type HomeHeroConfig } from "@/lib/cms/home-config";
 
 /**
@@ -29,6 +30,15 @@ export function HomeHero({ config = DEFAULT_HOME_HERO }: { config?: HomeHeroConf
   const [isHovered, setIsHovered] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const sectionRef = useRef<HTMLElement>(null);
+
+  // Login-aware CTAs: signed-in players get the "play / stats" pair, everyone
+  // else the "book / register" pair. While the account is still loading we show
+  // the signed-out pair (signedIn is false), then swap in once known.
+  const { signedIn } = useAccount();
+  const ctaPrimaryLabel = signedIn ? config.ctaInPrimaryLabel : config.ctaPrimaryLabel;
+  const ctaPrimaryHref = signedIn ? config.ctaInPrimaryHref : config.ctaPrimaryHref;
+  const ctaSecondaryLabel = signedIn ? config.ctaInSecondaryLabel : config.ctaSecondaryLabel;
+  const ctaSecondaryHref = signedIn ? config.ctaInSecondaryHref : config.ctaSecondaryHref;
 
   useEffect(() => {
     const update = () => {
@@ -201,11 +211,11 @@ export function HomeHero({ config = DEFAULT_HOME_HERO }: { config?: HomeHeroConf
               "mt-4 inline-flex items-center gap-2 text-sm text-text-muted transition-colors hover:text-text 2xl:mt-5",
             )}
             <div className="mt-6 flex gap-3 2xl:mt-8 2xl:gap-4">
-              <Button href={config.ctaPrimaryHref} variant="primary" size="md">
-                {config.ctaPrimaryLabel}
+              <Button href={ctaPrimaryHref} variant="primary" size="md">
+                {ctaPrimaryLabel}
               </Button>
-              <Button href={config.ctaSecondaryHref} variant="secondary" size="md">
-                {config.ctaSecondaryLabel}
+              <Button href={ctaSecondaryHref} variant="secondary" size="md">
+                {ctaSecondaryLabel}
               </Button>
             </div>
             {config.stats.length > 0 && (
@@ -245,11 +255,11 @@ export function HomeHero({ config = DEFAULT_HOME_HERO }: { config?: HomeHeroConf
       <div className="absolute inset-x-0 bottom-0 z-20 xl:hidden">
         <Container size="wide">
           <div className="flex flex-col gap-2 pb-4">
-            <Button href={config.ctaPrimaryHref} variant="primary" size="md">
-              {config.ctaPrimaryLabel}
+            <Button href={ctaPrimaryHref} variant="primary" size="md">
+              {ctaPrimaryLabel}
             </Button>
-            <Button href={config.ctaSecondaryHref} variant="secondary" size="md">
-              {config.ctaSecondaryLabel}
+            <Button href={ctaSecondaryHref} variant="secondary" size="md">
+              {ctaSecondaryLabel}
             </Button>
           </div>
         </Container>

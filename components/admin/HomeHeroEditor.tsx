@@ -41,6 +41,10 @@ export function HomeHeroEditor({ initial }: { initial: HomeHeroConfig }) {
     ctaPrimaryHref: initial.ctaPrimaryHref,
     ctaSecondaryLabel: initial.ctaSecondaryLabel,
     ctaSecondaryHref: initial.ctaSecondaryHref,
+    ctaInPrimaryLabel: initial.ctaInPrimaryLabel,
+    ctaInPrimaryHref: initial.ctaInPrimaryHref,
+    ctaInSecondaryLabel: initial.ctaInSecondaryLabel,
+    ctaInSecondaryHref: initial.ctaInSecondaryHref,
     stat1Value: s0.value,
     stat1Label: s0.label,
     stat2Value: s1.value,
@@ -68,6 +72,10 @@ export function HomeHeroEditor({ initial }: { initial: HomeHeroConfig }) {
       p_cta_primary_href: f.ctaPrimaryHref,
       p_cta_secondary_label: f.ctaSecondaryLabel,
       p_cta_secondary_href: f.ctaSecondaryHref,
+      p_cta_in_primary_label: f.ctaInPrimaryLabel,
+      p_cta_in_primary_href: f.ctaInPrimaryHref,
+      p_cta_in_secondary_label: f.ctaInSecondaryLabel,
+      p_cta_in_secondary_href: f.ctaInSecondaryHref,
       p_stat1_value: f.stat1Value,
       p_stat1_label: f.stat1Label,
       p_stat2_value: f.stat2Value,
@@ -128,9 +136,9 @@ export function HomeHeroEditor({ initial }: { initial: HomeHeroConfig }) {
         </div>
       </section>
 
-      {/* CTAs */}
+      {/* CTAs – signed-out visitors */}
       <section className={card}>
-        <h2 className={cardH}>Call-to-action buttons</h2>
+        <h2 className={cardH}>CTAs — signed-out visitors</h2>
         <div className="grid gap-5 sm:grid-cols-2">
           <div className="rounded-none border border-border p-4">
             <p className="mb-3 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-text-subtle">Primary (filled)</p>
@@ -148,9 +156,34 @@ export function HomeHeroEditor({ initial }: { initial: HomeHeroConfig }) {
           </div>
         </div>
         <p className="mt-3 max-w-2xl text-xs text-text-subtle">
-          The primary button stays the booking action (revenue). The secondary defaults to a free-profile sign-up
-          (<code>/player-portal/login</code>) – a lower-friction entry for new visitors than the leaderboards. Change
-          either here anytime. (The top-nav &ldquo;Book a Game&rdquo; button is separate and unaffected.)
+          Shown to visitors who are not logged in. Primary stays the booking action (revenue); secondary defaults to a
+          free-profile sign-up (<code>/player-portal/login</code>) – lower friction than leaderboards for new visitors.
+          (The top-nav &ldquo;Book a Game&rdquo; button is separate and unaffected.)
+        </p>
+      </section>
+
+      {/* CTAs – signed-in players */}
+      <section className={card}>
+        <h2 className={cardH}>CTAs — signed-in players</h2>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <div className="rounded-none border border-border p-4">
+            <p className="mb-3 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-text-subtle">Primary (filled)</p>
+            <label className={labelCls}>Label</label>
+            <input className={input} value={f.ctaInPrimaryLabel} onChange={set("ctaInPrimaryLabel")} />
+            <label className={`${labelCls} mt-3`}>Link</label>
+            <input className={input} value={f.ctaInPrimaryHref} onChange={set("ctaInPrimaryHref")} />
+          </div>
+          <div className="rounded-none border border-border p-4">
+            <p className="mb-3 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-text-subtle">Secondary (outline)</p>
+            <label className={labelCls}>Label</label>
+            <input className={input} value={f.ctaInSecondaryLabel} onChange={set("ctaInSecondaryLabel")} />
+            <label className={`${labelCls} mt-3`}>Link</label>
+            <input className={input} value={f.ctaInSecondaryHref} onChange={set("ctaInSecondaryHref")} />
+          </div>
+        </div>
+        <p className="mt-3 max-w-2xl text-xs text-text-subtle">
+          Swapped in automatically once a player is logged in – e.g. straight into a game and their stats instead of
+          booking / registering.
         </p>
       </section>
 
