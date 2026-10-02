@@ -31,7 +31,7 @@ export const FAQS: Faq[] = [
   {
     question: "How much does it cost?",
     answer:
-      "Standard rate is €30 per person for a 3-hour session. There is a €300 minimum flat fee for groups smaller than 10.",
+      "Standard rate is €35 per person for a 3-hour session. There is a €300 minimum flat fee for groups smaller than 10.",
   },
   {
     question: "Do I need any experience?",

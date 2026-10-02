@@ -67,10 +67,10 @@ const FAQ_ITEMS: FaqItem[] = [
     id: "cost",
     question: "How much does it cost?",
     searchText:
-      "how much cost price €30 per person 3 hour session €300 minimum flat fee groups smaller than 10",
+      "how much cost price €35 per person 3 hour session €300 minimum flat fee groups smaller than 10",
     answer: (
       <p>
-        Standard rate is €30 per person for a 3-hour session. There is a €300
+        Standard rate is €35 per person for a 3-hour session. There is a €300
         minimum flat fee for groups smaller than 10.
       </p>
     ),

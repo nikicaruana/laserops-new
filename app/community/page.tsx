@@ -42,7 +42,7 @@ const FEATURED_TRANSFORM = "w_1200,c_fill,ar_4:3,q_auto,f_auto";
 const faqs: { q: string; a: string }[] = [
   {
     q: "How much does it cost to join an open game?",
-    a: "Open games are pay as you play, priced at €30 per 3-hour session.",
+    a: "Open games are pay as you play, priced at €35 per 3-hour session.",
   },
   {
     q: "Do I need to bring a team or friends with me?",
