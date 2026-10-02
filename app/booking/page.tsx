@@ -4,6 +4,7 @@ import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
 import { BookingForm } from "@/components/booking/BookingForm";
 import { getUpcomingOpenGames, type OpenGameTeaser } from "@/lib/booking/open-games";
+import { createPublicClient } from "@/lib/supabase/public";
 
 export const metadata: Metadata = {
   title: "Book a Laser Tag Session",
@@ -72,8 +73,21 @@ function OpenGameCard({ g }: { g: OpenGameTeaser }) {
   );
 }
 
+/** "3-hour" / "3.5-hour" from a minute count. */
+function hoursLabel(minutes: number): string {
+  const h = minutes / 60;
+  const rounded = Math.round(h * 10) / 10;
+  return `${Number.isInteger(rounded) ? rounded : rounded.toFixed(1)}-hour`;
+}
+
 export default async function BookingPage() {
-  const openGames = await getUpcomingOpenGames(6);
+  const sb = createPublicClient();
+  const [openGames, { data: cfg }] = await Promise.all([
+    getUpcomingOpenGames(6),
+    sb.from("pricing_config").select("default_price_eur, session_minutes").eq("id", 1).maybeSingle(),
+  ]);
+  const price = Number(cfg?.default_price_eur ?? 35);
+  const sessionMinutes = Number(cfg?.session_minutes ?? 180);
 
   return (
     <>
@@ -90,9 +104,9 @@ export default async function BookingPage() {
           </p>
 
           <div className="mt-8 inline-flex flex-wrap items-baseline gap-x-3 gap-y-1 border border-accent bg-bg-elevated px-6 py-4">
-            <span className="font-mono text-3xl font-extrabold tabular-nums text-accent sm:text-4xl">€30</span>
+            <span className="font-mono text-3xl font-extrabold tabular-nums text-accent sm:text-4xl">€{price}</span>
             <span className="text-sm font-semibold uppercase tracking-[0.1em] text-text-muted">
-              per person · 3-hour session · outdoor
+              per person · {hoursLabel(sessionMinutes)} session · outdoor
             </span>
           </div>
         </Container>
@@ -128,13 +142,13 @@ export default async function BookingPage() {
                 <Link href="/player-portal/login" className="font-semibold text-accent hover:text-accent-soft">
                   Create a free profile
                 </Link>{" "}
-                to get notified when the next one drops — or book a private session below.
+                to get notified when the next one drops, or book a private session below.
               </p>
             </div>
           )}
 
           <p className="mt-5 text-xs text-text-subtle">
-            New here? You&apos;ll create a free player profile when you reserve your first spot — that&apos;s what tracks
+            New here? You&apos;ll create a free player profile when you reserve your first spot. That&apos;s what tracks
             your stats and unlocks.
           </p>
         </Container>

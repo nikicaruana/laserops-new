@@ -138,7 +138,7 @@ export function HomeHeroEditor({ initial }: { initial: HomeHeroConfig }) {
 
       {/* CTAs – signed-out visitors */}
       <section className={card}>
-        <h2 className={cardH}>CTAs — signed-out visitors</h2>
+        <h2 className={cardH}>CTAs (signed-out visitors)</h2>
         <div className="grid gap-5 sm:grid-cols-2">
           <div className="rounded-none border border-border p-4">
             <p className="mb-3 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-text-subtle">Primary (filled)</p>
@@ -164,7 +164,7 @@ export function HomeHeroEditor({ initial }: { initial: HomeHeroConfig }) {
 
       {/* CTAs – signed-in players */}
       <section className={card}>
-        <h2 className={cardH}>CTAs — signed-in players</h2>
+        <h2 className={cardH}>CTAs (signed-in players)</h2>
         <div className="grid gap-5 sm:grid-cols-2">
           <div className="rounded-none border border-border p-4">
             <p className="mb-3 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-text-subtle">Primary (filled)</p>
