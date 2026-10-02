@@ -64,11 +64,21 @@ export function TokenWallet({
   boosts?: { double: number; oneFive: number };
   boostImages?: { double: string; oneFive: string };
 }) {
-  const active = lots
-    .map((l) => ({ ...l, amount: Number(l.amount_remaining) }))
-    .filter((l) => l.amount > 0 && l.expires_at)
-    .sort((a, b) => new Date(a.expires_at as string).getTime() - new Date(b.expires_at as string).getTime());
-  const nextExpiry = active[0];
+  // Group remaining, non-expired tokens by expiry date for a full breakdown.
+  const now = Date.now();
+  const expiryGroups = (() => {
+    const map = new Map<string, { amount: number; ts: number }>();
+    for (const l of lots) {
+      const amount = Number(l.amount_remaining);
+      if (!(amount > 0)) continue;
+      const ts = l.expires_at ? new Date(l.expires_at).getTime() : Infinity;
+      if (ts <= now) continue; // already expired - excluded from the balance too
+      const key = l.expires_at ? fmtDate(l.expires_at) : "__none__";
+      const prev = map.get(key);
+      map.set(key, { amount: (prev?.amount ?? 0) + amount, ts: Math.min(prev?.ts ?? Infinity, ts) });
+    }
+    return [...map.entries()].map(([key, v]) => ({ key, amount: v.amount, ts: v.ts })).sort((a, b) => a.ts - b.ts);
+  })();
 
   return (
     <section className="portal-card px-5 py-6 sm:px-7">
@@ -88,11 +98,20 @@ export function TokenWallet({
       </div>
       <p className="mt-1 text-xs text-text-subtle">1 token = 1 free game. Use them when you pay for a game.</p>
 
-      {nextExpiry && (
-        <p className="mt-3 text-xs text-text-muted">
-          {fmtTokens(nextExpiry.amount)} {nextExpiry.amount === 1 ? "token expires" : "tokens expire"} on{" "}
-          <span className="text-text">{fmtDate(nextExpiry.expires_at as string)}</span>.
-        </p>
+      {expiryGroups.length > 0 && (
+        <div className="mt-3 space-y-1">
+          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-text-subtle">Expiry</p>
+          {expiryGroups.map((g) => (
+            <p key={g.key} className="text-xs text-text-muted">
+              <span className="font-semibold text-text">{fmtTokens(g.amount)}</span> {g.amount === 1 ? "token" : "tokens"}{" "}
+              {g.key === "__none__" ? "never expire" : (
+                <>
+                  expire on <span className="text-text">{g.key}</span>
+                </>
+              )}
+            </p>
+          ))}
+        </div>
       )}
       <p className="mt-2 text-[0.7rem] text-text-subtle">
         Tokens expire after their validity period; once expired they can&apos;t be used or refunded.{" "}
