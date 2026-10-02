@@ -6,6 +6,7 @@
  * match_photo_tags). Public read (RLS allows anon select).
  */
 import type { createClient } from "@/lib/supabase/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 type SupabaseServer = Awaited<ReturnType<typeof createClient>>;
 
@@ -16,6 +17,8 @@ export type MatchPhoto = {
   width: number | null;
   height: number | null;
   caption: string | null;
+  /** Starred to show on the homepage "LaserOps in Action" strip. */
+  featuredHome: boolean;
   /** Ops tags of players tagged in this photo (simple "in this photo" membership). */
   taggedOps: string[];
 };
@@ -27,6 +30,7 @@ type PhotoRow = {
   width: number | null;
   height: number | null;
   caption: string | null;
+  featured_home: boolean | null;
 };
 
 /**
@@ -37,7 +41,7 @@ type PhotoRow = {
 export async function fetchMatchPhotos(supabase: SupabaseServer, matchDbId: string): Promise<MatchPhoto[]> {
   const { data: rows, error } = await supabase
     .from("match_photos")
-    .select("id, public_id, secure_url, width, height, caption, created_at")
+    .select("id, public_id, secure_url, width, height, caption, created_at, featured_home")
     .eq("match_id", matchDbId)
     .order("created_at", { ascending: false });
   if (error) console.error("[match-photos] read failed:", error.message);
@@ -50,6 +54,7 @@ export async function fetchMatchPhotos(supabase: SupabaseServer, matchDbId: stri
     width: r.width,
     height: r.height,
     caption: r.caption,
+    featuredHome: r.featured_home ?? false,
     taggedOps: [],
   }));
 
@@ -143,4 +148,85 @@ export async function fetchPlayerTaggedPhotos(
     caption: r.caption,
     matchCode: r.match_id ? codeById.get(r.match_id) ?? null : null,
   }));
+}
+
+// --- Public gallery (match-photo sourced) --------------------------------
+// /gallery and the homepage strip read match-linked photos straight from
+// match_photos (joined to their match for code/title/date), so they no longer
+// depend on listing a Cloudinary folder. featured_home powers the homepage.
+
+export type GalleryPhoto = {
+  id: string;
+  url: string;
+  width: number | null;
+  height: number | null;
+  caption: string | null;
+  matchCode: string | null;
+  matchTitle: string | null;
+  playedOn: string | null;
+  year: number | null;
+  month: number | null;
+};
+
+type GalleryRow = {
+  id: string;
+  secure_url: string;
+  width: number | null;
+  height: number | null;
+  caption: string | null;
+  match:
+    | { match_code: string | null; title: string | null; played_on: string | null }
+    | { match_code: string | null; title: string | null; played_on: string | null }[]
+    | null;
+};
+
+function mapGalleryRow(r: GalleryRow): GalleryPhoto {
+  const m = Array.isArray(r.match) ? r.match[0] : r.match;
+  const played = m?.played_on ?? null;
+  const d = played ? new Date(played) : null;
+  const valid = d != null && !Number.isNaN(d.getTime());
+  return {
+    id: r.id,
+    url: r.secure_url,
+    width: r.width,
+    height: r.height,
+    caption: r.caption,
+    matchCode: m?.match_code ?? null,
+    matchTitle: m?.title ?? null,
+    playedOn: played,
+    year: valid ? d!.getUTCFullYear() : null,
+    month: valid ? d!.getUTCMonth() + 1 : null,
+  };
+}
+
+const GALLERY_SELECT =
+  "id, secure_url, width, height, caption, created_at, match:matches(match_code, title, played_on)";
+
+/** Every match photo, joined to its match, newest game first. Used by /gallery. */
+export async function fetchGalleryPhotos(supabase: SupabaseClient): Promise<GalleryPhoto[]> {
+  const { data, error } = await supabase
+    .from("match_photos")
+    .select(GALLERY_SELECT)
+    .order("created_at", { ascending: false });
+  if (error) {
+    console.error("[gallery] read failed:", error.message);
+    return [];
+  }
+  const photos = ((data ?? []) as unknown as GalleryRow[]).map(mapGalleryRow);
+  photos.sort((a, b) => (b.playedOn ?? "").localeCompare(a.playedOn ?? ""));
+  return photos;
+}
+
+/** Admin-starred photos for the homepage "LaserOps in Action" strip. */
+export async function fetchFeaturedHomePhotos(supabase: SupabaseClient, limit = 9): Promise<GalleryPhoto[]> {
+  const { data, error } = await supabase
+    .from("match_photos")
+    .select(GALLERY_SELECT)
+    .eq("featured_home", true)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  // Column may not exist yet (pre-migration) -> fail soft so the homepage
+  // falls back to its existing featured source.
+  if (error) return [];
+  return ((data ?? []) as unknown as GalleryRow[]).map(mapGalleryRow);
 }

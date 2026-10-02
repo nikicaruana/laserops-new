@@ -727,7 +727,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         <MatchPhotosManager
           matchId={match.id}
           notifiedAt={photosNotifiedAt}
-          initial={matchPhotos.map((p) => ({ id: p.id, url: p.url, caption: p.caption, width: p.width, height: p.height, taggedOps: p.taggedOps }))}
+          initial={matchPhotos.map((p) => ({ id: p.id, url: p.url, caption: p.caption, width: p.width, height: p.height, featuredHome: p.featuredHome, taggedOps: p.taggedOps }))}
         />
       </CollapsibleSection>
     </div>

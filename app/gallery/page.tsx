@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { Container } from "@/components/ui/Container";
-import { fetchGalleryImages } from "@/lib/cloudinary";
-import { GalleryGrid } from "@/components/gallery/GalleryGrid";
+import { createClient } from "@/lib/supabase/server";
+import { fetchGalleryPhotos } from "@/lib/match-photos";
+import { GalleryBrowser } from "@/components/gallery/GalleryBrowser";
 
 export const metadata: Metadata = {
   title: "Outdoor Laser Tag Gallery",
@@ -14,27 +14,21 @@ export const metadata: Metadata = {
 /**
  * /gallery
  * --------------------------------------------------------------------
- * Server component. Fetches all Cloudinary images at request time
- * (ISR-cached for 30 min) and passes them to GalleryGrid.
+ * Server component. Sourced from match-linked photos (match_photos joined to
+ * their match), not a Cloudinary folder listing: every photo belongs to a game
+ * and links to its report. The game / year / month / "my matches" filters are
+ * applied client-side in GalleryBrowser.
  *
- * Empty state: fetchGalleryImages() returns [] on missing credentials
- * or any API error – the page renders a non-alarming placeholder.
+ * Empty state: fetchGalleryPhotos() returns [] on any error so the page renders
+ * a non-alarming placeholder.
  */
-
 export default async function GalleryPage() {
-  const images = await fetchGalleryImages();
-
-  // Derive unique folder names for the filter pills. Sort descending
-  // so newest matches (YYYY-MM-DD suffix) appear first – reverse
-  // lexicographic order works because ISO dates sort correctly.
-  const folders = Array.from(new Set(images.map((img) => img.folder)))
-    .filter(Boolean)
-    .sort((a, b) => b.localeCompare(a));
+  const supabase = await createClient();
+  const photos = await fetchGalleryPhotos(supabase);
 
   return (
     <main className="min-h-screen pb-16 pt-10 sm:pb-24 sm:pt-14 lg:pb-32 lg:pt-20">
       <Container size="wide">
-        {/* Page heading */}
         <header className="mb-8 sm:mb-12 lg:mb-16">
           <div className="flex items-center gap-3">
             <span aria-hidden className="block h-px w-12 bg-accent" />
@@ -46,17 +40,11 @@ export default async function GalleryPage() {
             LaserOps in Action.
           </h1>
           <p className="mt-4 max-w-2xl text-sm text-text-muted sm:text-base">
-            Moments from the arena. Matches, events, and everything in between.
+            Every shot from every game. Filter by match, month, or just your own games.
           </p>
         </header>
 
-        {images.length === 0 ? (
-          <EmptyState />
-        ) : (
-          <Suspense>
-            <GalleryGrid images={images} folders={folders} />
-          </Suspense>
-        )}
+        {photos.length === 0 ? <EmptyState /> : <GalleryBrowser photos={photos} />}
       </Container>
     </main>
   );

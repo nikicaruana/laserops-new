@@ -10,6 +10,7 @@
  */
 import { useRef, useState } from "react";
 import { cn } from "@/lib/cn";
+import { createClient } from "@/lib/supabase/client";
 
 export type AdminMatchPhoto = {
   id: string;
@@ -17,6 +18,7 @@ export type AdminMatchPhoto = {
   caption: string | null;
   width: number | null;
   height: number | null;
+  featuredHome?: boolean;
   taggedOps?: string[];
 };
 
@@ -29,6 +31,16 @@ export function MatchPhotosManager({ matchId, initial, notifiedAt = null }: { ma
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [error, setError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const supabase = createClient();
+
+  async function toggleFeatured(id: string, next: boolean) {
+    setPhotos((p) => p.map((x) => (x.id === id ? { ...x, featuredHome: next } : x))); // optimistic
+    const { error } = await supabase.from("match_photos").update({ featured_home: next }).eq("id", id);
+    if (error) {
+      setPhotos((p) => p.map((x) => (x.id === id ? { ...x, featuredHome: !next } : x)));
+      setError(error.message || "Could not update the homepage flag.");
+    }
+  }
 
   async function uploadFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
@@ -157,6 +169,18 @@ export function MatchPhotosManager({ matchId, initial, notifiedAt = null }: { ma
             <div key={p.id} className="group relative overflow-hidden border border-border bg-bg-elevated">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={p.url} alt={p.caption ?? "Match photo"} loading="lazy" className="block aspect-square w-full object-cover" />
+              <button
+                type="button"
+                onClick={() => toggleFeatured(p.id, !p.featuredHome)}
+                aria-label={p.featuredHome ? "Unfeature from homepage" : "Feature on homepage"}
+                title={p.featuredHome ? "Featured on homepage" : "Feature on homepage"}
+                className={cn(
+                  "absolute left-1.5 top-1.5 flex h-8 w-8 items-center justify-center rounded-full bg-bg/80 text-base leading-none transition-opacity",
+                  p.featuredHome ? "text-accent opacity-100" : "text-text-muted opacity-0 hover:text-accent group-hover:opacity-100",
+                )}
+              >
+                {p.featuredHome ? "\u2605" : "\u2606"}
+              </button>
               <button
                 type="button"
                 onClick={() => remove(p.id)}

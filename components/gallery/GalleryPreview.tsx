@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { fetchGalleryImages } from "@/lib/cloudinary";
 import { getFeaturedPhotos } from "@/lib/cms/home-featured";
+import { fetchFeaturedHomePhotos } from "@/lib/match-photos";
+import { createPublicClient } from "@/lib/supabase/public";
 import { Container } from "@/components/ui/Container";
 
 /**
@@ -20,9 +22,21 @@ const MAX_PREVIEW = 9;
 type PreviewImage = { key: string; src: string; caption: string; width?: number; height?: number };
 
 export async function GalleryPreview() {
-  const selected = await getFeaturedPhotos();
+  // Priority: admin-starred match photos (featured_home) -> the featured-photo
+  // CMS -> Cloudinary 'featured' tag. Keeps the homepage populated through the
+  // gallery migration.
+  const featuredMatch = await fetchFeaturedHomePhotos(createPublicClient(), MAX_PREVIEW);
+  const selected = featuredMatch.length > 0 ? [] : await getFeaturedPhotos();
   let featured: PreviewImage[];
-  if (selected.length > 0) {
+  if (featuredMatch.length > 0) {
+    featured = featuredMatch.map((p, i) => ({
+      key: `mp-${i}`,
+      src: p.url,
+      caption: p.caption ?? "",
+      width: p.width ?? undefined,
+      height: p.height ?? undefined,
+    }));
+  } else if (selected.length > 0) {
     featured = selected
       .slice(0, MAX_PREVIEW)
       .map((p, i) => ({ key: `sel-${i}`, src: p.imageUrl, caption: p.caption }));
