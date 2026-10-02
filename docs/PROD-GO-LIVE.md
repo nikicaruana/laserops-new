@@ -4,7 +4,7 @@ A running list of everything that must be done to take `v2-rebuild` live on the
 main site. Living document — add items as they come up, tick them as they land.
 Legend: `[ ]` todo · `[~]` in progress / partial · `[x]` done · `[!]` blocked / waiting.
 
-Last updated: 2026-10-01
+Last updated: 2026-10-02
 
 ---
 
@@ -105,3 +105,58 @@ Every tag-driven Cloudinary call today (all must survive the match-photos folder
 - `stag` -> /stag-and-hen
 - (folder, not tag) -> /gallery + homepage preview via fetchGalleryImages(asset_folder)
 Corporate-events + birthday-parties pages do NOT pull Cloudinary today (static). Plan: keep match photos (new match-linked folder) and marketing/content images (featured/community/olt-*/stag) in SEPARATE folders so the match-photo switch cannot break content pages; then retire tags into the CMS per-surface, starting with the homepage featured strip.
+
+
+---
+
+## 10. DB migration sync + staging→prod decision (added 2026-10-02)
+
+**Decision (user, 2026-10-02): promote the staging DB in place.** Keep this Supabase
+project (`cmsodupwwtquifennogy`), clean it up, and make it prod — no dump/restore into
+a fresh project. Confirms the §3 approach.
+
+- [ ] **HARD GATE — sync the DB to the code before promoting.** Migrations have been
+  applied to staging BY HAND (pasting SQL), so the live DB has drifted from the code:
+  several SQL functions on staging are older than their migration files. Symptoms hit
+  this session (each was a "migration never run on this DB"):
+  - `refresh_player_stats_lifetime` — stale: objective (capture/hold) lifetime stats
+    excluded hybrid matches. Fixed in migration `20260819000000`; **run it on staging**
+    (the `create or replace function … ; select public.rollup_match_careers();` block).
+  - `grant_level_rewards` — old "reached" logic; corrected to "completed" in
+    `20260818000000` + re-granted.
+  Before go-live, run `npx supabase db push` (or `supabase migration up`) against the
+  project so EVERY migration is applied, then do one full `recompute-all`. Don't keep
+  patching functions one at a time. Verify with a drift audit first (see below).
+- [ ] **Drift audit.** List which migrations are actually applied on staging vs. the
+  `supabase/migrations/` folder, so there's one clear "still to run" list rather than
+  discovering stale functions via bug reports.
+- [ ] **Split dev off the prod DB.** Local `.env.local` currently points at
+  `cmsodupwwtquifennogy`. Once it's prod, give local dev its OWN Supabase project (or a
+  branch) so dev work can't mutate live data.
+
+## 11. This-session fixes landed (2026-10-02) — verify after cutover
+
+- [x] Offline accolades (14 stat-based) + Specialist (per-gun top scorer) awarded
+  online+offline; backfill scripts `backfill-offline-accolades.ts` + `backfill-specialist.ts`
+  (re-run on prod after backlog ingest).
+- [x] Level rewards granted on **completed** (not reached); perks backfilled.
+- [x] Rivalries tab wired (head-to-head from kill data): Nemesis (combined) + Favourite
+  Prey + Hunted By, avatars from `player_stats_lifetime`.
+- [x] Story composer: gesture-safe share (pre-fetch), pinch-zoom + crash fix, no blank
+  overlays without stats. Avatar-from-tagged-photo positioning. Gallery/report photo
+  previewer unified (full-screen lightbox + tag/share).
+- [x] Match Manager dual online/offline labels for hybrids; ELO recomputed/stamped.
+- [ ] **Objective stats fix (`20260819000000`)** — run on staging (pending user).
+- [ ] History match-summaries table now shows per-match Caps/Hold (code committed
+  `05ac7fd`); verify after deploy.
+
+## 12. Viva — go live (still in SANDBOX as of 2026-10-02)
+
+Currently `VIVA_ENV` = demo/sandbox. To go live:
+- [ ] Switch to the **production Viva account**: `VIVA_ENV=production` + prod Merchant/API
+  credentials + prod webhook secret.
+- [ ] Point the Viva webhook at the real domain; Source success/failure URLs →
+  `https://laseropsmalta.com/checkout/complete`.
+- [ ] One real low-value live payment + refund to confirm, then refund it.
+- [ ] Token-bundle webhook path still untested — seed a bundle and test once before relying on it.
+- Diagnostic: `GET /api/admin/viva-check`. Runbook: `docs/VIVA-SANDBOX-SETUP.md`.
