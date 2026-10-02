@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // Lint runs in the editor/CI, not during the production build (a stale
+  // eslint-disable directive for an unconfigured rule was failing `next build`).
+  eslint: { ignoreDuringBuilds: true },
   // Recharts ships ESM-only modules that historically have had compat
   // issues with Next.js's default bundling. Adding it to transpilePackages
   // tells Next to bundle and transform recharts through SWC, sidestepping
