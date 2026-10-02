@@ -61,7 +61,7 @@ export async function fetchMatchPhotos(supabase: SupabaseServer, matchDbId: stri
   // Tags in one query, merged in. Best-effort.
   const { data: tagRows } = await supabase
     .from("match_photo_tags")
-    .select("photo_id, account:accounts(ops_tag)")
+    .select("photo_id, account:accounts!account_id(ops_tag)")
     .in(
       "photo_id",
       photos.map((p) => p.id),
@@ -207,7 +207,7 @@ const GALLERY_SELECT =
 async function mergePhotoTags(supabase: SupabaseClient, photos: GalleryPhoto[]): Promise<void> {
   const ids = photos.map((p) => p.id);
   if (ids.length === 0) return;
-  const { data } = await supabase.from("match_photo_tags").select("photo_id, account:accounts(ops_tag)").in("photo_id", ids);
+  const { data } = await supabase.from("match_photo_tags").select("photo_id, account:accounts!account_id(ops_tag)").in("photo_id", ids);
   if (!data) return;
   const byPhoto = new Map<string, string[]>();
   for (const t of data as unknown as { photo_id: string; account: { ops_tag: string | null } | { ops_tag: string | null }[] | null }[]) {
