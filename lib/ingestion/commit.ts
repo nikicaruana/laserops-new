@@ -11,6 +11,7 @@
  */
 import { buildMatchReportV2 } from "../match-report-v2/build";
 import type { RoundResolutions } from "./resolutions";
+import { specialistWinners } from "./accolades";
 import { computeMatchXp, DEFAULT_XP_CONFIG, type XpConfig } from "../scoring/xp";
 import type { ScoringRuntime } from "../scoring/config";
 
@@ -83,7 +84,12 @@ export function computeMatchCommit(
   // Resolve an opponent's headband to their display name (for nemesis + kill lists).
   const nameFor = (headband: string) => identity(headband).nickname;
 
-  const aggregates: CommitAggregate[] = P.map((p) => {
+  const specialistXp = accoladeByKey.get("specialist")?.xp ?? 0;
+  const specialistIdx = new Set(
+    specialistWinners(P.map((p, i) => ({ id: i, gun: identity(p.name).gun ?? null, score: p.totalScore, frags: p.frags, name: identity(p.name).nickname }))),
+  );
+
+  const aggregates: CommitAggregate[] = P.map((p, i) => {
     const idn = identity(p.name);
     const teamRoundsWon = report.roundsWonByTeam[p.team] ?? 0;
     const isWinner = p.team === winner;
@@ -93,7 +99,7 @@ export function computeMatchCommit(
     // They don't stack; a player gets whichever is larger.
     const mult = Math.max(idn.xpMultiplier ?? 1, isDoubleXp ? 2 : 1);
     const rating = matchAvg > 0 ? p.totalScore / matchAvg : 0;
-    const accoladeBase = p.accolades.reduce((s, nm) => s + (accoladeByKey.get(norm(nm))?.xp ?? 0), 0);
+    const accoladeBase = p.accolades.reduce((s, nm) => s + (accoladeByKey.get(norm(nm))?.xp ?? 0), 0) + (specialistIdx.has(i) ? specialistXp : 0);
     const xpb = computeMatchXp({ rating, roundsWon: teamRoundsWon, isWinner, accoladeXp: accoladeBase, multiplier: mult }, cfg);
     const xpPoints = xpb.xpFromPoints, xpWins = xpb.xpFromWins, xpAcc = xpb.xpFromAccolades;
     const nemesis: CommitNemesis = p.nemesis
@@ -117,14 +123,18 @@ export function computeMatchCommit(
   });
 
   const awards: CommitAward[] = [];
-  for (const p of P) {
+  const specialistDef = accoladeByKey.get("specialist");
+  P.forEach((p, i) => {
     const idn = identity(p.name);
     for (const nm of p.accolades) {
       const a = accoladeByKey.get(norm(nm));
       if (!a) continue;
       awards.push({ account_id: idn.accountId, headset_label: p.name, nickname: idn.nickname, accolade_definition_id: a.id, xp_granted: a.xp });
     }
-  }
+    if (specialistDef && specialistIdx.has(i)) {
+      awards.push({ account_id: idn.accountId, headset_label: p.name, nickname: idn.nickname, accolade_definition_id: specialistDef.id, xp_granted: specialistDef.xp });
+    }
+  });
 
   const loser = winner ? Object.keys(teamScore).find((t) => t !== winner) ?? null : null;
   const netResultSummary: NetResultSummary = {

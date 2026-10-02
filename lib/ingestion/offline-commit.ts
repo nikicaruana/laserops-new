@@ -25,7 +25,7 @@
 import { computeMatchXp, DEFAULT_XP_CONFIG, type XpConfig } from "../scoring/xp";
 import { computeGroupValue, type ScoreFormula } from "../scoring/formula";
 import type { CommitAggregate, CommitAward, CommitResult, NetResultSummary } from "./commit";
-import { computeAccolades, type AccoladeStat } from "./accolades";
+import { computeAccolades, specialistWinners, type AccoladeStat } from "./accolades";
 
 export type OfflinePlayerStat = {
   headband: string; // e.g. "Head 10" or "10"
@@ -147,6 +147,15 @@ export function computeOfflineMatchCommit(
       const idn = identity(g.primaryHeadband);
       awards.push({ account_id: idn.accountId, headset_label: g.primaryHeadband, nickname: idn.nickname, accolade_definition_id: def.id, xp_granted: def.xp });
       accoladeXpByIndex.set(w.winnerId, (accoladeXpByIndex.get(w.winnerId) ?? 0) + def.xp);
+    }
+    const specDef = accoladeByKey.get(normKey("Specialist"));
+    if (specDef) {
+      for (const wi of specialistWinners(scored.map((s, i) => ({ id: i, gun: identity(s.primaryHeadband).gun ?? null, score: s.score, frags: s.frags, name: identity(s.primaryHeadband).nickname || s.primaryHeadband })))) {
+        const g = scored[wi];
+        const idn = identity(g.primaryHeadband);
+        awards.push({ account_id: idn.accountId, headset_label: g.primaryHeadband, nickname: idn.nickname, accolade_definition_id: specDef.id, xp_granted: specDef.xp });
+        accoladeXpByIndex.set(wi, (accoladeXpByIndex.get(wi) ?? 0) + specDef.xp);
+      }
     }
   }
 

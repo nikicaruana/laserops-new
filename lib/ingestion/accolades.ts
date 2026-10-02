@@ -94,3 +94,25 @@ export function computeAccolades(players: AccoladeStat[]): AccoladeWin[] {
   }
   return out;
 }
+
+/**
+ * Specialist: the top scorer with each distinct weapon (score max, grouped by
+ * gun), one winner per non-empty gun. Computed from aggregates (gun + score),
+ * not the round JSON. Ties: more frags, then name. Score must be > 0.
+ */
+export function specialistWinners(rows: { id: number; gun: string | null; score: number; frags: number; name: string }[]): number[] {
+  const byGun = new Map<string, { id: number; score: number; frags: number; name: string }[]>();
+  for (const r of rows) {
+    const gun = (r.gun ?? "").trim();
+    if (!gun) continue;
+    const arr = byGun.get(gun) ?? [];
+    arr.push({ id: r.id, score: r.score, frags: r.frags, name: r.name });
+    byGun.set(gun, arr);
+  }
+  const winners: number[] = [];
+  for (const group of byGun.values()) {
+    const w = [...group].sort((a, b) => b.score - a.score || b.frags - a.frags || a.name.localeCompare(b.name, undefined, { numeric: true }))[0];
+    if (w && w.score > 0) winners.push(w.id);
+  }
+  return winners;
+}
