@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useId } from "react";
 import Link from "next/link";
+import { brand } from "@/lib/brand";
 
 // ---------------------------------------------------------------------------
 // FAQ data
@@ -67,11 +68,10 @@ const FAQ_ITEMS: FaqItem[] = [
     id: "cost",
     question: "How much does it cost?",
     searchText:
-      "how much cost price €35 per person 3 hour session €300 minimum flat fee groups smaller than 10",
+      "how much cost price €35 per person 3 hour session €350 minimum flat fee groups smaller than 10",
     answer: (
       <p>
-        Standard rate is €35 per person for a 3-hour session. There is a €300
-        minimum flat fee for groups smaller than 10.
+        Standard rate is €{brand.pricing.perPlayerEur} per person for a {brand.pricing.sessionHours}-hour session. There is a €{brand.pricing.minGroupFeeEur} minimum flat fee for groups smaller than {brand.pricing.minGroupSize}.
       </p>
     ),
   },

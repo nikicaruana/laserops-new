@@ -32,4 +32,13 @@ export const brand = {
 
   /** Public-facing site URL – fallback if env var not set */
   siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "https://www.laseropsmalta.com",
+
+  /** Marketing-copy pricing. The authoritative transactional price lives in
+   *  pricing_config (admin); keep this in sync when the price changes. */
+  pricing: {
+    perPlayerEur: 35,
+    sessionHours: 3,
+    minGroupSize: 10,
+    minGroupFeeEur: 350,
+  },
 } as const;

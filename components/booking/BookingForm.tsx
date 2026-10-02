@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
+import { brand } from "@/lib/brand";
 
 // ---------------------------------------------------------------------------
 // Time helpers
@@ -296,7 +297,7 @@ export function BookingForm({ onAccent = false }: { onAccent?: boolean }) {
         />
         {showMinFeeWarning && (
           <p className={`mt-2 text-xs ${onAccent ? "font-semibold text-bg" : "text-amber-400"}`}>
-            Sessions under 10 players are subject to a €300 minimum fee.
+            Sessions under {brand.pricing.minGroupSize} players are subject to a €{brand.pricing.minGroupFeeEur} minimum fee.
           </p>
         )}
       </div>

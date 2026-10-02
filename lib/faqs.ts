@@ -10,6 +10,8 @@
  * schema. Keep the two in sync when FAQ copy changes.
  */
 
+import { brand } from "@/lib/brand";
+
 export type Faq = { question: string; answer: string };
 
 export const FAQS: Faq[] = [
@@ -31,7 +33,7 @@ export const FAQS: Faq[] = [
   {
     question: "How much does it cost?",
     answer:
-      "Standard rate is €35 per person for a 3-hour session. There is a €300 minimum flat fee for groups smaller than 10.",
+      "Standard rate is €" + brand.pricing.perPlayerEur + " per person for a " + brand.pricing.sessionHours + "-hour session. There is a €" + brand.pricing.minGroupFeeEur + " minimum flat fee for groups smaller than " + brand.pricing.minGroupSize + ".",
   },
   {
     question: "Do I need any experience?",

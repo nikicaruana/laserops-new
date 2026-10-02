@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { brand } from "@/lib/brand";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
 import { BracketFrame } from "@/components/portal/BracketFrame";
@@ -39,7 +40,7 @@ export const metadata: Metadata = {
     absolute: "Play Outdoor Laser Tag in Malta | LaserOps Malta",
   },
   description:
-    "Malta's ultimate outdoor laser tag experience. Join an open game from €35 or book a private session for birthdays, stags, and team building. 13+ for open games, no experience needed.",
+    "Malta's ultimate outdoor laser tag experience. Join an open game from €" + brand.pricing.perPlayerEur + " or book a private session for birthdays, stags, and team building. 13+ for open games, no experience needed.",
   alternates: { canonical: "/play" },
   robots: { index: false, follow: true },
   openGraph: {
@@ -48,7 +49,7 @@ export const metadata: Metadata = {
     siteName: "LaserOps Malta",
     title: "Play Outdoor Laser Tag in Malta",
     description:
-      "Join an open game from €35 or book a private session for birthdays, stags, and team building. 13+ for open games, no experience needed.",
+      "Join an open game from €" + brand.pricing.perPlayerEur + " or book a private session for birthdays, stags, and team building. 13+ for open games, no experience needed.",
   },
 };
 
@@ -88,7 +89,7 @@ function Stars({ rating }: { rating: number }) {
 }
 
 const PROOF_POINTS = [
-  "€35/player",
+  "€" + brand.pricing.perPlayerEur + "/player",
   "3-hour sessions",
   "13+ for open games",
   "No experience needed",
@@ -261,7 +262,7 @@ export default async function PlayPage() {
                     </Button>
                   </CtaTrack>
                   <p className="mt-2.5 text-base font-medium leading-snug text-white [text-shadow:0_1px_10px_rgba(0,0,0,0.9)]">
-                    Open to everyone ages 13+. €35 for 3-hour session.
+                    Open to everyone ages 13+. €{brand.pricing.perPlayerEur} for {brand.pricing.sessionHours}-hour session.
                   </p>
                 </div>
                 <CtaTrack cta="hero_whatsapp">
