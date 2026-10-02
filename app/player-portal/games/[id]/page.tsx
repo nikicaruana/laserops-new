@@ -14,6 +14,7 @@ import { notFound, redirect } from "next/navigation";
 import { Container } from "@/components/ui/Container";
 import { createClient } from "@/lib/supabase/server";
 import { GameSignupControl } from "@/components/portal/GameSignupControl";
+import { resolveMatchLocation } from "@/lib/locations";
 import { getRefundConfig } from "@/lib/payments/refund-config";
 import { PlayerBar } from "@/components/portal/PlayerBar";
 import { GamesLiveRefresh } from "@/components/portal/GamesLiveRefresh";
@@ -67,11 +68,12 @@ export default async function GameDetailPage({
   const { data: match } = await supabase
     .from("matches")
     .select(
-      "id, match_code, title, status, scheduled_at, min_players, max_players, price_eur, pricing_mode, registered_count, is_double_xp, is_private, is_beginner, beginner_max_level, invite_code, created_by",
+      "id, match_code, title, status, scheduled_at, min_players, max_players, price_eur, pricing_mode, registered_count, is_double_xp, is_private, is_beginner, beginner_max_level, invite_code, created_by, location_id",
     )
     .eq("id", id)
     .maybeSingle();
   if (!match) notFound();
+  const location = await resolveMatchLocation((match as { location_id: string | null }).location_id);
 
   const [{ data: mySignup }, guns, { data: participant }, { data: wlRows }, { data: levelRow }] = await Promise.all([
     supabase
@@ -223,6 +225,21 @@ export default async function GameDetailPage({
       <div className="mt-8 max-w-sm">
         <PlayerBar reg={reg} min={min} max={match.max_players} status={match.status} />
       </div>
+
+      {location && (location.name || location.playingUrl || location.parkingUrl) && (
+        <div className="mt-8 max-w-sm">
+          <h2 className="text-xs font-bold uppercase tracking-[0.16em] text-text-subtle">Location</h2>
+          {location.name && <p className="mt-2 text-sm font-semibold text-text">{location.name}</p>}
+          <div className="mt-2 flex flex-wrap gap-2">
+            {location.playingUrl && (
+              <a href={location.playingUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 border border-border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-text transition-colors hover:border-accent hover:text-accent">Playing location &rarr;</a>
+            )}
+            {location.parkingUrl && (
+              <a href={location.parkingUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 border border-border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-text transition-colors hover:border-accent hover:text-accent">Parking &rarr;</a>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Invite – only while the game is still filling (not once live/over). Last
           minute joiners come in on-site via the live entry code, not invites. */}

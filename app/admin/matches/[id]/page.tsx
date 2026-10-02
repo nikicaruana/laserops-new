@@ -11,6 +11,7 @@ import { createClient } from "@/lib/supabase/server";
 import { MatchStatusBadge } from "@/components/admin/MatchStatusBadge";
 import { PlayerBar } from "@/components/portal/PlayerBar";
 import { MatchPricingEditor } from "@/components/admin/MatchPricingEditor";
+import { MatchLocationEditor } from "@/components/admin/MatchLocationEditor";
 import { MatchAdminActions } from "@/components/admin/MatchAdminActions";
 import { RescheduleMatchButton } from "@/components/admin/RescheduleMatchButton";
 import { LadderResultActions } from "@/components/admin/LadderResultActions";
@@ -100,7 +101,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
     supabase
       .from("matches")
       .select(
-        "id, match_code, title, status, scheduled_at, played_on, round_count, source_file_type, xp_distributed_at, elo_calculated_at, results_stale_at, live_feed_enabled, winning_team_colour, is_private, is_double_xp, min_players, max_players, price_eur, pricing_mode, deposit_eur, registered_count, paid_count, on_day_count, reached_quorum_at, entry_code, invite_code, ladder_id, home_squad_id, away_squad_id, winner_squad_id, home_squad_colour, away_squad_colour, scoring_mode",
+        "id, match_code, title, status, scheduled_at, played_on, round_count, source_file_type, xp_distributed_at, elo_calculated_at, results_stale_at, live_feed_enabled, winning_team_colour, is_private, is_double_xp, min_players, max_players, price_eur, pricing_mode, deposit_eur, registered_count, paid_count, on_day_count, reached_quorum_at, entry_code, invite_code, ladder_id, home_squad_id, away_squad_id, winner_squad_id, home_squad_colour, away_squad_colour, scoring_mode, location_id",
       )
       .eq("id", id)
       .maybeSingle(),
@@ -499,6 +500,10 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
           pricingMode={match.pricing_mode ?? null}
           deposit={match.deposit_eur != null ? Number(match.deposit_eur) : null}
         />
+      )}
+
+      {["tentative", "awaiting_confirm", "confirmed"].includes(match.status ?? "") && (
+        <MatchLocationEditor matchId={match.id} currentLocationId={(match as { location_id: string | null }).location_id} />
       )}
 
       {/* Players & headbands – roster + file headbands + assignment (pre/post publish) */}
