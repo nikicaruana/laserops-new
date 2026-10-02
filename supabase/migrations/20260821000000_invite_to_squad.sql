@@ -3,7 +3,7 @@
 -- which is wrong when managing a non-primary squad from its page).
 create or replace function public.invite_to_squad(p_squad_id uuid, p_ops_tag text)
 returns void language plpgsql security definer set search_path = public as $$
-declare acct uuid := public.current_account_id(); target uuid;
+declare acct uuid := public.current_account_id(); target uuid; sq_name text; me_tag text;
 begin
   if acct is null then raise exception 'Sign in first.'; end if;
   if not exists (
@@ -22,6 +22,11 @@ begin
     return; -- already invited; no-op
   end if;
   insert into public.squad_invites (squad_id, invitee_id, invited_by) values (p_squad_id, target, acct);
+  select name into sq_name from public.squads where id = p_squad_id;
+  select ops_tag into me_tag from public.accounts where id = acct;
+  perform public.emit_notification(target, 'squad_invite',
+    coalesce(me_tag, 'Someone') || ' invited you to ' || coalesce(sq_name, 'their squad'), null,
+    '/player-portal/squads');
 end;
 $$;
 grant execute on function public.invite_to_squad(uuid, text) to authenticated;
