@@ -398,6 +398,11 @@ export function PhotoStoryComposer({ matchId, ops, photoUrl, overlayData, onClos
               Download
             </button>
           </div>
+          <p className="text-center text-xs text-text-muted">
+            📸 Loved your game? Tag{" "}
+            <a href="https://www.instagram.com/laserops.mt/" target="_blank" rel="noreferrer" className="font-semibold text-accent hover:underline">@laserops.mt</a>{" "}
+            in your story - we love resharing!
+          </p>
           <div className="flex items-center justify-between">
             <button type="button" onClick={() => setStage("edit")} className="text-xs font-semibold uppercase tracking-[0.12em] text-text-muted hover:text-accent">
               ‹ Edit
