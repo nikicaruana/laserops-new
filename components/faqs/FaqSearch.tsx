@@ -177,6 +177,161 @@ const FAQ_ITEMS: FaqItem[] = [
     ),
   },
   {
+    id: "player-profile",
+    question: "Do I need an account to play?",
+    searchText:
+      "account player profile sign in google free stats xp levels unlocks history follows email claim register",
+    answer: (
+      <p>
+        You can just show up and play, but a free{" "}
+        <Link href="/player-portal" className="text-accent hover:underline">
+          player profile
+        </Link>{" "}
+        is what tracks your stats, XP, levels and unlocks, and lets you join open games online. Sign
+        in with Google, and if you&apos;ve played with us before, your past games attach to your
+        profile automatically when you use the email you registered with.
+      </p>
+    ),
+  },
+  {
+    id: "xp-levels",
+    question: "How do XP and levels work?",
+    searchText:
+      "xp levels progression earn points performance wins accolades level up unlocks rewards boosts carry over between sessions",
+    answer: (
+      <p>
+        You earn XP every game, from your performance, round and match wins, and any accolades you
+        pick up. XP builds your level, and levelling up unlocks rewards like XP boosts. It all
+        carries over between sessions.
+      </p>
+    ),
+  },
+  {
+    id: "tokens",
+    question: "What are LaserOps game tokens?",
+    searchText:
+      "game tokens prepaid credits 1 token 1 game bundle store part pay online cheaper buy",
+    answer: (
+      <p>
+        Prepaid game credits, where 1 token = 1 game. Buy them in bundles from the{" "}
+        <Link href="/player-portal/store" className="text-accent hover:underline">
+          store
+        </Link>{" "}
+        (cheaper per game than paying each time), then use them to pay for any game. You can even
+        part-pay, putting a fraction of a token towards a game and paying the rest online.
+      </p>
+    ),
+  },
+  {
+    id: "token-expiry",
+    question: "Do game tokens expire?",
+    searchText:
+      "tokens expire 6 months validity wallet soonest first lose expiry breakdown earned gifted bought",
+    answer: (
+      <p>
+        Yes, tokens are valid for 6 months from when you get them, whether bought, gifted or earned.
+        Your wallet shows exactly how many expire and when, and when you spend tokens the ones
+        expiring soonest are always used first, so you never lose them unnecessarily. The details are
+        in our{" "}
+        <Link href="/terms" className="text-accent hover:underline">
+          terms
+        </Link>
+        .
+      </p>
+    ),
+  },
+  {
+    id: "token-gift",
+    question: "Can I gift game tokens?",
+    searchText:
+      "gift tokens present someone email claim no account 6 months validity",
+    answer: (
+      <p>
+        Yes. You can buy tokens as a gift, even for someone who doesn&apos;t have an account yet, and
+        they claim them when they sign in. Gifted tokens carry the same 6-month validity.
+      </p>
+    ),
+  },
+  {
+    id: "open-games",
+    question: "What are open games and how do I join one?",
+    searchText:
+      "open games public join solo friends reserve spot pay token online booking portal community teams filled",
+    answer: (
+      <p>
+        Open games are public games anyone can join. Browse upcoming games on the{" "}
+        <Link href="/booking" className="text-accent hover:underline">
+          booking page
+        </Link>{" "}
+        or in your player portal, reserve your spot, and pay with a token or online. Perfect if
+        you&apos;re coming solo or with a few friends, teams get filled out from the community.
+      </p>
+    ),
+  },
+  {
+    id: "beginner-games",
+    question: "What are beginner games?",
+    searchText:
+      "beginner games level cap new players maximum level veterans fair over cap",
+    answer: (
+      <p>
+        Some open games are flagged for beginners, with a maximum player level so newer players can
+        enjoy a game without going up against seasoned veterans. If you&apos;re above the cap
+        you&apos;ll see it noted on the game and won&apos;t be able to join that one.
+      </p>
+    ),
+  },
+  {
+    id: "cancellation",
+    question: "What is the cancellation and refund policy?",
+    searchText:
+      "cancel cancellation refund policy 48 hours full automatic 24 hours request non refundable pass spot",
+    answer: (
+      <p>
+        Cancel more than 48 hours before a game for an automatic full refund. Between 48 and 24 hours
+        before, refunds are by request. Within 24 hours the game is non-refundable, but you can
+        always pass your spot to another player. Full details are in our{" "}
+        <Link href="/terms" className="text-accent hover:underline">
+          terms
+        </Link>
+        .
+      </p>
+    ),
+  },
+  {
+    id: "squads-ladders",
+    question: "What are squads, ladders and accolades?",
+    searchText:
+      "squads team friends banner ladders competitive seasonal rankings leaderboards accolades streaks badges portal",
+    answer: (
+      <p>
+        Squads let you team up with friends under one banner; ladders are competitive seasonal
+        rankings; and{" "}
+        <Link href="/accolades" className="text-accent hover:underline">
+          accolades and streaks
+        </Link>{" "}
+        are badges you earn for standout performances, like topping the kills or stringing together a
+        streak. You&apos;ll find them all in your player portal.
+      </p>
+    ),
+  },
+  {
+    id: "match-report-photos",
+    question: "Can I see my match report and photos?",
+    searchText:
+      "match report stats breakdown scores kills accuracy objectives photos gallery games played filter",
+    answer: (
+      <p>
+        Yes. After each game you get a full match report, with scores, kills, accuracy, objectives
+        and more, and any photos from your sessions appear in the{" "}
+        <Link href="/gallery" className="text-accent hover:underline">
+          gallery
+        </Link>
+        , filterable to the games you played in.
+      </p>
+    ),
+  },
+  {
     id: "how-to-book",
     question: "How do I book?",
     searchText:
