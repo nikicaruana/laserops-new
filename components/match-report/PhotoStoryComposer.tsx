@@ -4,9 +4,9 @@
  * components/match-report/PhotoStoryComposer.tsx
  * --------------------------------------------------------------------
  * Turns a match photo into a 1080x1920 story. Stage 1: position the photo in
- * the 9:16 frame (Fit / Fill / drag + zoom) and pick a stats overlay. Stage 2:
- * the real server-rendered result, with Share (native sheet on mobile) or
- * Download. Placement is computed in 1080x1920 space and sent to the story
+ * the 9:16 frame (Fit / Fill / drag / pinch-zoom) and pick a stats overlay.
+ * Stage 2: the real server-rendered result, with Share (native sheet on mobile)
+ * or Download. Placement is computed in 1080x1920 space and sent to the story
  * route, so the output matches the preview exactly.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -18,11 +18,14 @@ import { cn } from "@/lib/cn";
 
 const FW = 1080;
 const FH = 1920;
-const FRAME_W = 288; // on-screen preview width
+const FRAME_W = 232; // on-screen preview width (kept small so the controls below stay reachable on phones)
 const FRAME_H = (FRAME_W * FH) / FW;
 const S = FRAME_W / FW; // screen px per frame px
+const MAX_ZOOM = 4;
 
 type Mode = "fit" | "fill";
+
+const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
 function baseSize(natW: number, natH: number, mode: Mode) {
   const fAR = FW / FH;
@@ -33,9 +36,6 @@ function baseSize(natW: number, natH: number, mode: Mode) {
   return pAR > fAR ? { w: FW, h: FW / pAR } : { w: FH * pAR, h: FH };
 }
 
-/** Live, readable representation of the overlay band shown in the crop frame so
- *  you can see what's baked on and position the photo around it. The exact,
- *  full-scale version comes from the server on "Preview result". */
 function CropBand({ overlay, data }: { overlay: PhotoOverlay; data: OverlayData }) {
   if (overlay === "none" || !data) return null;
   const Stat = ({ s }: { s: OverlayData["stats"][number] }) => (
@@ -104,7 +104,6 @@ function CropBand({ overlay, data }: { overlay: PhotoOverlay; data: OverlayData 
       </div>
     );
   } else {
-    // identity - centered: ops tag, level badge, level text
     body = (
       <div className="flex flex-col items-center">
         <span className="text-[20px] font-extrabold text-accent">{data.nickname}</span>
@@ -131,9 +130,15 @@ export function PhotoStoryComposer({ matchId, ops, photoUrl, overlayData, onClos
   const [overlay, setOverlay] = useState<PhotoOverlay>(overlayData ? "main" : "none");
   const branding = true; // branding is always on
   const [stage, setStage] = useState<"edit" | "result">("edit");
-  const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
-  const drag = useRef<{ x: number; y: number } | null>(null);
+  const [resultFile, setResultFile] = useState<File | null>(null);
+  const [resultErr, setResultErr] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  // Multi-touch: track active pointers for single-finger pan + two-finger pinch.
+  const pointers = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const pan = useRef<{ x: number; y: number } | null>(null);
+  const pinch = useRef<{ dist: number; scale: number } | null>(null);
 
   const placement = useMemo(() => {
     if (!nat) return { w: FW, h: FH, left: 0, top: 0 };
@@ -150,18 +155,41 @@ export function PhotoStoryComposer({ matchId, ops, photoUrl, overlayData, onClos
   }
 
   function onPointerDown(e: React.PointerEvent) {
-    drag.current = { x: e.clientX, y: e.clientY };
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.current.size === 2) {
+      const [a, b] = [...pointers.current.values()];
+      pinch.current = { dist: Math.hypot(a.x - b.x, a.y - b.y) || 1, scale };
+      pan.current = null;
+    } else {
+      pan.current = { x: e.clientX, y: e.clientY };
+    }
   }
   function onPointerMove(e: React.PointerEvent) {
-    if (!drag.current) return;
-    const dx = (e.clientX - drag.current.x) / S;
-    const dy = (e.clientY - drag.current.y) / S;
-    drag.current = { x: e.clientX, y: e.clientY };
-    setOffset((o) => ({ x: o.x + dx, y: o.y + dy }));
+    if (!pointers.current.has(e.pointerId)) return;
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.current.size >= 2 && pinch.current) {
+      const [a, b] = [...pointers.current.values()];
+      const dist = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+      setScale(clamp(pinch.current.scale * (dist / pinch.current.dist), 1, MAX_ZOOM));
+      return;
+    }
+    if (pan.current) {
+      const dx = (e.clientX - pan.current.x) / S;
+      const dy = (e.clientY - pan.current.y) / S;
+      pan.current = { x: e.clientX, y: e.clientY };
+      setOffset((o) => ({ x: o.x + dx, y: o.y + dy }));
+    }
   }
-  function onPointerUp() {
-    drag.current = null;
+  function onPointerUp(e: React.PointerEvent) {
+    pointers.current.delete(e.pointerId);
+    if (pointers.current.size < 2) pinch.current = null;
+    if (pointers.current.size === 1) {
+      const [p] = [...pointers.current.values()];
+      pan.current = { x: p.x, y: p.y };
+    } else if (pointers.current.size === 0) {
+      pan.current = null;
+    }
   }
 
   const storyUrl = useMemo(() => {
@@ -180,24 +208,71 @@ export function PhotoStoryComposer({ matchId, ops, photoUrl, overlayData, onClos
 
   const fileName = `laserops-${ops}-photo.png`.replace(/[^a-z0-9.\-]/gi, "-");
 
-  async function act(share: boolean) {
+  // Pre-fetch the rendered story when the result stage opens, so Share fires
+  // synchronously inside the tap (navigator.share loses the user gesture if it
+  // runs after an awaited fetch, which was making "Share" error out on mobile).
+  useEffect(() => {
+    if (stage !== "result") return;
+    let active = true;
+    setResultFile(null);
+    setResultErr(false);
+    setStatus("");
+    fetchStoryFile(storyUrl, fileName)
+      .then((f) => { if (active) setResultFile(f); })
+      .catch(() => { if (active) setResultErr(true); });
+    return () => { active = false; };
+  }, [stage, storyUrl, fileName]);
+
+  async function shareNow() {
+    if (!resultFile) return;
+    setStatus("");
+    if (canShareFile(resultFile)) {
+      try {
+        await shareFile(resultFile);
+        setStatus("Shared.");
+      } catch (err) {
+        if ((err as Error)?.name === "AbortError") return; // user dismissed the sheet
+        downloadFile(resultFile);
+        setStatus("Couldn't open the share sheet, so we downloaded it instead.");
+      }
+    } else {
+      downloadFile(resultFile);
+      setStatus("Your browser can't share files, so we downloaded it instead.");
+    }
+  }
+
+  function downloadNow() {
+    if (!resultFile) return;
+    downloadFile(resultFile);
+    setStatus("Downloaded.");
+  }
+
+  // Fallback when the pre-fetch failed: fetch + act in one go (used only on retry).
+  async function retry(share: boolean) {
     setBusy(true);
     setStatus("");
     try {
       const file = await fetchStoryFile(storyUrl, fileName);
+      setResultFile(file);
+      setResultErr(false);
       if (share && canShareFile(file)) {
         await shareFile(file);
         setStatus("Shared.");
       } else {
         downloadFile(file);
-        setStatus(share ? "Saved to your device." : "Downloaded.");
+        setStatus("Downloaded.");
       }
     } catch (err) {
-      if ((err as Error)?.name !== "AbortError") setStatus("Something went wrong. Try Download.");
+      if ((err as Error)?.name !== "AbortError") setStatus("Something went wrong. Please try again.");
     } finally {
       setBusy(false);
     }
   }
+
+  const overlayOptions = overlayData
+    ? PHOTO_OVERLAYS.filter((o) => o.key !== "captures" || overlayData.captureStats.length > 0)
+    : [];
+  const preparing = !resultFile && !resultErr;
 
   return (
     <Modal title="Share photo to story" onClose={onClose} maxWidth="max-w-md">
@@ -213,7 +288,6 @@ export function PhotoStoryComposer({ matchId, ops, photoUrl, overlayData, onClos
               className="relative touch-none overflow-hidden rounded-sm border border-border-strong bg-black"
               style={{ width: FRAME_W, height: FRAME_H, cursor: "grab" }}
             >
-              {/* Blurred cover fill so Fit-mode bars show the image, not black. */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={photoUrl}
@@ -239,7 +313,6 @@ export function PhotoStoryComposer({ matchId, ops, photoUrl, overlayData, onClos
                   userSelect: "none",
                 }}
               />
-              {/* live overlay band (readable representation of the baked result) */}
               {overlayData && overlay !== "none" && <CropBand overlay={overlay} data={overlayData} />}
               {branding && (
                 <div className="pointer-events-none absolute inset-x-0 top-0 flex flex-col items-center bg-gradient-to-b from-black/90 via-black/70 to-transparent px-3 pb-24 pt-9">
@@ -251,6 +324,8 @@ export function PhotoStoryComposer({ matchId, ops, photoUrl, overlayData, onClos
             </div>
           </div>
 
+          <p className="text-center text-[0.65rem] text-text-subtle">Drag to move · pinch to zoom · scroll down for overlays ↓</p>
+
           {/* Fit / Fill + zoom */}
           <div className="flex items-center gap-2">
             <button type="button" onClick={() => preset("fit")} className={cn("flex-1 rounded-sm border px-3 py-2 text-xs font-bold uppercase tracking-[0.1em]", mode === "fit" ? "border-accent bg-accent/10 text-accent" : "border-border text-text")}>Fit</button>
@@ -258,27 +333,26 @@ export function PhotoStoryComposer({ matchId, ops, photoUrl, overlayData, onClos
           </div>
           <label className="flex items-center gap-3 text-[0.65rem] uppercase tracking-[0.12em] text-text-muted">
             Zoom
-            <input type="range" min={1} max={3} step={0.01} value={scale} onChange={(e) => setScale(Number(e.target.value))} className="flex-1 accent-accent" />
+            <input type="range" min={1} max={MAX_ZOOM} step={0.01} value={scale} onChange={(e) => setScale(Number(e.target.value))} className="flex-1 accent-accent" />
           </label>
-          <p className="text-center text-[0.65rem] text-text-subtle">Drag the photo to reposition.</p>
 
           {/* Overlay preset */}
           <div>
             <p className="mb-1.5 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-text-muted">Stats overlay</p>
             {overlayData ? (
-            <div className="grid grid-cols-2 gap-2">
-              {PHOTO_OVERLAYS.map((o) => (
-                <button
-                  key={o.key}
-                  type="button"
-                  onClick={() => setOverlay(o.key)}
-                  className={cn("flex flex-col items-start rounded-sm border px-2.5 py-1.5 text-left", overlay === o.key ? "border-accent bg-accent/10" : "border-border")}
-                >
-                  <span className={cn("text-[0.7rem] font-bold uppercase tracking-[0.08em]", overlay === o.key ? "text-accent" : "text-text")}>{o.label}</span>
-                  <span className="text-[0.6rem] leading-tight text-text-muted">{o.blurb}</span>
-                </button>
-              ))}
-            </div>
+              <div className="grid grid-cols-2 gap-2">
+                {overlayOptions.map((o) => (
+                  <button
+                    key={o.key}
+                    type="button"
+                    onClick={() => setOverlay(o.key)}
+                    className={cn("flex flex-col items-start rounded-sm border px-2.5 py-1.5 text-left", overlay === o.key ? "border-accent bg-accent/10" : "border-border")}
+                  >
+                    <span className={cn("text-[0.7rem] font-bold uppercase tracking-[0.08em]", overlay === o.key ? "text-accent" : "text-text")}>{o.label}</span>
+                    <span className="text-[0.6rem] leading-tight text-text-muted">{o.blurb}</span>
+                  </button>
+                ))}
+              </div>
             ) : (
               <p className="rounded-sm border border-border px-3 py-2 text-[0.65rem] leading-relaxed text-text-muted">
                 You have no stats for this match, so the story is photo only (with branding).
@@ -297,10 +371,20 @@ export function PhotoStoryComposer({ matchId, ops, photoUrl, overlayData, onClos
             <img key={storyUrl} src={storyUrl} alt="Story preview" className="max-h-[56vh] w-auto rounded-sm border border-border-strong" style={{ aspectRatio: "9 / 16" }} />
           </div>
           <div className="flex gap-2">
-            <button type="button" onClick={() => act(true)} disabled={busy} className="flex flex-1 items-center justify-center rounded-sm bg-accent px-4 py-2.5 text-sm font-bold uppercase tracking-[0.12em] text-bg transition-colors hover:bg-accent-soft disabled:opacity-60">
-              {busy ? "Working…" : "Share"}
+            <button
+              type="button"
+              onClick={resultErr ? () => retry(true) : shareNow}
+              disabled={busy || preparing}
+              className="flex flex-1 items-center justify-center rounded-sm bg-accent px-4 py-2.5 text-sm font-bold uppercase tracking-[0.12em] text-bg transition-colors hover:bg-accent-soft disabled:opacity-60"
+            >
+              {busy ? "Working…" : preparing ? "Preparing…" : "Share"}
             </button>
-            <button type="button" onClick={() => act(false)} disabled={busy} className="flex flex-1 items-center justify-center rounded-sm border border-border-strong px-4 py-2.5 text-sm font-bold uppercase tracking-[0.12em] text-text hover:border-accent hover:text-accent disabled:opacity-60">
+            <button
+              type="button"
+              onClick={resultErr ? () => retry(false) : downloadNow}
+              disabled={busy || preparing}
+              className="flex flex-1 items-center justify-center rounded-sm border border-border-strong px-4 py-2.5 text-sm font-bold uppercase tracking-[0.12em] text-text hover:border-accent hover:text-accent disabled:opacity-60"
+            >
               Download
             </button>
           </div>
@@ -308,7 +392,7 @@ export function PhotoStoryComposer({ matchId, ops, photoUrl, overlayData, onClos
             <button type="button" onClick={() => setStage("edit")} className="text-xs font-semibold uppercase tracking-[0.12em] text-text-muted hover:text-accent">
               ‹ Edit
             </button>
-            <p className="text-[0.7rem] text-text-muted">{status || "On mobile, Share opens Instagram Stories."}</p>
+            <p className="text-[0.7rem] text-text-muted">{status || (preparing ? "Preparing your story…" : "On mobile, Share opens Instagram Stories.")}</p>
           </div>
         </div>
       )}

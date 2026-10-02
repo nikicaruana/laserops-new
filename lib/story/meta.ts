@@ -57,6 +57,9 @@ export type OverlayData = {
 };
 
 export function buildOverlayData(report: MatchReport, player: MatchPlayer): OverlayData {
+  // Capture/objective stats are 0 for everyone when a game had no objective
+  // scoring; drop them so a tied #1 of "0 Caps" never bubbles up as a best stat.
+  const hasObjectivePlay = report.players.some((pl) => (pl.objCaps ?? 0) > 0 || (pl.capTime ?? 0) > 0);
   const stats: OverlayStat[] = [
     { label: "Score", value: player.score.toLocaleString("en-US"), rank: player.scoreRank },
     { label: "Kills", value: String(player.kills), rank: player.killsRank },
@@ -64,14 +67,20 @@ export function buildOverlayData(report: MatchReport, player: MatchPlayer): Over
     { label: "K/D", value: player.kd.toFixed(2), rank: player.kdRank },
     { label: "Accuracy", value: `${Math.round(player.accuracy * 100)}%`, rank: player.accuracyRank },
     { label: "Damage", value: player.damage.toLocaleString("en-US"), rank: player.damageRank },
-    { label: "Caps", value: String(player.objCaps ?? 0), rank: player.objCapsRank ?? 0 },
-    { label: "Cap Time", value: `${player.capTime ?? 0}s`, rank: player.capTimeRank ?? 0 },
+    ...(hasObjectivePlay
+      ? [
+          { label: "Caps", value: String(player.objCaps ?? 0), rank: player.objCapsRank ?? 0 },
+          { label: "Cap Time", value: `${player.capTime ?? 0}s`, rank: player.capTimeRank ?? 0 },
+        ]
+      : []),
   ];
-  const captureStats: OverlayStat[] = [
-    { label: "Score", value: player.score.toLocaleString("en-US"), rank: player.scoreRank },
-    { label: "Captures", value: String(player.objCaps ?? 0), rank: player.objCapsRank ?? 0 },
-    { label: "Cap Time", value: `${player.capTime ?? 0}s`, rank: player.capTimeRank ?? 0 },
-  ];
+  const captureStats: OverlayStat[] = hasObjectivePlay
+    ? [
+        { label: "Score", value: player.score.toLocaleString("en-US"), rank: player.scoreRank },
+        { label: "Captures", value: String(player.objCaps ?? 0), rank: player.objCapsRank ?? 0 },
+        { label: "Cap Time", value: `${player.capTime ?? 0}s`, rank: player.capTimeRank ?? 0 },
+      ]
+    : [];
   const accolades: OverlayBadge[] = [...player.earnedAccolades]
     .sort((a, b) => (b.accolade.xp ?? 0) - (a.accolade.xp ?? 0))
     .map((e) => ({ name: e.accolade.name, badgeUrl: e.accolade.badgeUrl }));

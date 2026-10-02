@@ -462,7 +462,9 @@ function OverlayBand(report: MatchReport, p: MatchPlayer, overlay: PhotoOverlay)
   );
 
   if (overlay === "main" || overlay === "highlights") {
-    const items = overlay === "main" ? allStats(p).slice(0, 4) : [...allStats(p)].sort((a, b) => a.rank - b.rank).slice(0, 4);
+    const hasObjectivePlay = report.players.some((pl) => (pl.objCaps ?? 0) > 0 || (pl.capTime ?? 0) > 0);
+    const base = allStats(p).filter((s) => hasObjectivePlay || (s.label !== "Caps" && s.label !== "Cap Time"));
+    const items = overlay === "main" ? base.slice(0, 4) : [...base].sort((a, b) => a.rank - b.rank).slice(0, 4);
     return (
       <div style={{ display: "flex", flexDirection: "column" }}>
         {nameRow}
