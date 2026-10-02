@@ -71,6 +71,8 @@ export function CreateMatchForm() {
   const [isBeginner, setIsBeginner] = useState(false);
   const [beginnerMaxLevel, setBeginnerMaxLevel] = useState("");
   const [depositEur, setDepositEur] = useState("");
+  const [locations, setLocations] = useState<{ id: string; name: string; is_default: boolean }[]>([]);
+  const [locationId, setLocationId] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -94,6 +96,16 @@ export function CreateMatchForm() {
     const supabase = createClient();
     supabase.from("pricing_config").select("default_price_eur").eq("id", 1).maybeSingle().then(({ data }) => {
       if (data?.default_price_eur != null) setPriceEur(String(Number(data.default_price_eur)));
+    });
+  }, []);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.from("locations").select("id, name, is_default").order("sort_order").then(({ data }) => {
+      const list = (data ?? []) as { id: string; name: string; is_default: boolean }[];
+      setLocations(list);
+      const def = list.find((l) => l.is_default) ?? list[0];
+      if (def) setLocationId((cur) => cur || def.id);
     });
   }, []);
 
@@ -139,6 +151,7 @@ export function CreateMatchForm() {
         is_private: isPrivate,
         is_beginner: !isPrivate && isBeginner,
         beginner_max_level: !isPrivate && isBeginner ? (Number(beginnerMaxLevel) || null) : null,
+        location_id: locationId || null,
       })
       .select("id")
       .single();
@@ -210,6 +223,20 @@ export function CreateMatchForm() {
             <p className="mt-1 text-[0.65rem] text-text-subtle">Defaults to 3 hours after the start.</p>
           </div>
         </div>
+      </fieldset>
+
+      <fieldset className="border border-border bg-bg-elevated px-5 py-5">
+        <legend className="px-2 text-[0.65rem] font-bold uppercase tracking-[0.16em] text-accent">
+          Where
+        </legend>
+        <label className={lbl}>Location</label>
+        <select className={input} value={locationId} onChange={(e) => setLocationId(e.target.value)}>
+          {locations.length === 0 && <option value="">No locations set up</option>}
+          {locations.map((l) => (
+            <option key={l.id} value={l.id}>{l.name}{l.is_default ? " (default)" : ""}</option>
+          ))}
+        </select>
+        <p className="mt-1.5 text-[0.65rem] text-text-subtle">Sets the parking + playing map links sent in reminders and calendar invites. Manage at Admin &rarr; Locations.</p>
       </fieldset>
 
       <fieldset className="border border-border bg-bg-elevated px-5 py-5">
