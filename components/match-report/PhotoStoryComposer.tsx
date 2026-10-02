@@ -172,12 +172,17 @@ export function PhotoStoryComposer({ matchId, ops, photoUrl, overlayData, onClos
     if (!pointers.current.has(e.pointerId)) return;
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pointers.current.size >= 2 && pinch.current) {
-      const [a, b] = [...pointers.current.values()];
+      const pts = [...pointers.current.values()];
+      const a = pts[0], b = pts[1];
+      if (!a || !b) return;
       const dist = Math.hypot(a.x - b.x, a.y - b.y) || 1;
       setScale(clamp(pinch.current.scale * (dist / pinch.current.dist), 1, MAX_ZOOM));
       const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
-      if (pan.current) {
-        setOffset((o) => ({ x: o.x + (mid.x - pan.current!.x) / S, y: o.y + (mid.y - pan.current!.y) / S }));
+      const prev = pan.current;
+      if (prev) {
+        const dx = (mid.x - prev.x) / S;
+        const dy = (mid.y - prev.y) / S;
+        setOffset((o) => ({ x: o.x + dx, y: o.y + dy }));
       }
       pan.current = mid;
       return;
