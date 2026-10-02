@@ -1,0 +1,24 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/go-live",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/waitlist-notify",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/ladder-idle-drop",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/notifications-dispatch",
+      "schedule": "*/2 * * * *"
+    },
+    {
+      "path": "/api/cron/match-reminders",
+      "schedule": "0 * * * *"
+    }
+  ]
+}
