@@ -60,6 +60,7 @@ export const STREAK_BADGES_FOLDER = "laseropsmalta.com/streak-badges";
 export const KILLSTREAK_BADGES_FOLDER = "laseropsmalta.com/killstreak-badges";
 export const REWARD_IMAGES_FOLDER = "laseropsmalta.com/reward-images";
 export const BLOG_FOLDER = "laseropsmalta.com/blog";
+export const HOME_SOCIAL_FOLDER = "laseropsmalta.com/home-social";
 
 /** Allowed image-upload kinds -> Cloudinary folder. */
 export const ADMIN_IMAGE_FOLDERS: Record<string, string> = {
@@ -72,6 +73,7 @@ export const ADMIN_IMAGE_FOLDERS: Record<string, string> = {
   killstreak: KILLSTREAK_BADGES_FOLDER,
   reward: REWARD_IMAGES_FOLDER,
   blog: BLOG_FOLDER,
+  social: HOME_SOCIAL_FOLDER,
 };
 
 function isProfilePic(folder: string): boolean {

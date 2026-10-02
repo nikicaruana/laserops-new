@@ -7,58 +7,46 @@ import { GalleryPreview } from "@/components/gallery/GalleryPreview";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
 import { brand } from "@/lib/brand";
-import { fetchInstagramPosts } from "@/lib/cms/instagram-posts";
-import { fetchGoogleReviews } from "@/lib/cms/google-reviews";
-import { fetchSiteConfig, configString } from "@/lib/cms/site-config";
 import { getHomeHeroConfig } from "@/lib/cms/home-config";
+import { getHomeSocialPosts, getHomeReviews } from "@/lib/cms/home-social";
 import { SectionAmbient } from "@/components/layout/SectionAmbient";
 
 /**
  * Homepage.
  *
- * Server-side fetches CMS data for the hero + GallerySection, transforms it
- * into the shapes those components expect, and passes it as props. The hero
- * content comes from Supabase (home_config) via getHomeHeroConfig; editing it
- * lives at /admin/homepage. The gallery/review CMS data still flows from the
- * Sheets-backed fetchers until those areas are migrated too.
- *
- * If a fetch returns no data, each component falls back to its baked-in sample
- * / default – the homepage always stays meaningful.
+ * All homepage content now comes from Supabase (off Google Sheets):
+ *   - hero       -> home_config        (getHomeHeroConfig)
+ *   - social     -> home_social_posts  (getHomeSocialPosts)
+ *   - reviews    -> home_reviews       (getHomeReviews)
+ * Each is read through the cookieless public client, so the page stays static /
+ * ISR, and each has a built-in fallback so this never throws. Edited from
+ * /admin/homepage. GallerySection falls back to its own sample data if social
+ * and reviews are both empty.
  */
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
 export default async function HomePage() {
-  // Fetch CMS data in parallel. Each has built-in fallback so this
-  // never throws.
-  const [instagramPosts, googleReviews, siteConfig, homeHero] = await Promise.all([
-    fetchInstagramPosts(),
-    fetchGoogleReviews(),
-    fetchSiteConfig(),
+  const [homeHero, socialPosts, reviews] = await Promise.all([
     getHomeHeroConfig(),
+    getHomeSocialPosts(),
+    getHomeReviews(),
   ]);
 
-  // Resolve the Google Reviews link from Site_Config for the review cards in
-  // GallerySection. (The hero's own reviews link comes from home_config.)
-  const googleReviewsUrl = configString(
-    siteConfig,
-    "google_reviews_url",
-    "https://www.google.com/maps/place/LaserOps+Malta/@35.9351506,14.0734794,11z/data=!4m12!1m2!2m1!1slaserops+malta!3m8!1s0x130e4ddaeadfe003:0xda30f052e79ffef8!8m2!3d35.9351506!4d14.37835!9m1!1b1!15sCg5sYXNlcm9wcyBtYWx0YVoQIg5sYXNlcm9wcyBtYWx0YZIBGm91dGRvb3JfYWN0aXZpdHlfb3JnYW5pemVymgFEQ2k5RFFVbFJRVU52WkVOb2RIbGpSamx2VDJwc2EyUkZSa3haYm1SYVpVaENTbVZHYkZWV1JscHlWVWRXTlZSSVl4QULgAQD6AQQIQBA6!16s%2Fg%2F11z6lk5clw!5m2!1e4!1e1?entry=ttu&g_ep=EgoyMDI2MDUwNi4wIKXMDSoASAFQAw%3D%3D",
-  );
+  // The review cards all link to the same Google destination – reuse the hero's
+  // configured reviews URL (home_config) so there is a single source for it.
+  const googleReviewsUrl = homeHero.reviewsUrl;
 
-  // Transform CMS shapes into the GallerySection's props shape.
-  const instagramItems = instagramPosts.map((post, idx) => ({
-    id: `cms-ig-${idx}`,
-    imageSrc: post.imagePath,
-    caption: post.captionOverride,
+  const instagramItems = socialPosts.map((post, idx) => ({
+    id: `social-${idx}`,
+    imageSrc: post.imageUrl,
+    caption: post.caption,
     postUrl: post.postUrl,
   }));
 
-  // For reviews, the existing component shape includes a "relativeTime"
-  // string (e.g. "3 weeks ago"). The CMS stores an absolute date.
-  const reviewItems = googleReviews.map((review, idx) => ({
-    id: `cms-gr-${idx}`,
+  const reviewItems = reviews.map((review, idx) => ({
+    id: `review-${idx}`,
     rating: review.rating,
     quote: review.reviewText,
     reviewer: review.reviewerName,
