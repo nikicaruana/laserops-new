@@ -16,6 +16,7 @@ import { RatingPill } from "@/components/portal/player-summary/RatingPill";
 import { RequestToJoinButton } from "@/components/portal/RequestToJoinButton";
 import { BracketFrame } from "@/components/portal/BracketFrame";
 import { SquadLeaderboardTable, type SquadLeaderRow } from "@/components/portal/SquadLeaderboardTable";
+import { SquadInviteSearch } from "@/components/portal/SquadInviteSearch";
 
 export const metadata: Metadata = { title: "Squad" };
 
@@ -227,6 +228,12 @@ export default async function SquadPage({
       {activeTab === "members" && (
       <section className="mt-8">
         <h2 className="mb-4 text-sm font-bold uppercase tracking-[0.12em] text-accent">Members ({roster.length})</h2>
+        {canManage && (
+          <div className="mb-5">
+            <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-text-muted">Invite a player</p>
+            <SquadInviteSearch squadId={id} squadName={squad.name} />
+          </div>
+        )}
         {me == null && (
           <div className="mb-4 flex flex-col items-center gap-2 border border-dashed border-border px-4 py-5 text-center">
             {squad.is_searchable ? (

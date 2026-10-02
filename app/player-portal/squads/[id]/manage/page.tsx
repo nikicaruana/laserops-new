@@ -11,6 +11,7 @@ import { notFound, redirect } from "next/navigation";
 import { Container } from "@/components/ui/Container";
 import { createClient } from "@/lib/supabase/server";
 import { SquadControls, type RosterMember } from "@/components/portal/SquadControls";
+import { SquadInviteSearch } from "@/components/portal/SquadInviteSearch";
 import { SquadBadgeUploader } from "@/components/portal/SquadBadgeUploader";
 import { SquadJoinRequests, type JoinRequest } from "@/components/portal/SquadJoinRequests";
 
@@ -52,6 +53,11 @@ export default async function ManageSquadPage({ params }: { params: Promise<{ id
         <h1 className="text-3xl font-extrabold uppercase tracking-tight text-text sm:text-4xl">Manage Squad</h1>
         <p className="mt-2 text-sm text-text-muted">Invite players, manage roles, and edit your squad.</p>
       </header>
+
+      <section className="mb-8">
+        <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-text-muted">Invite a player</p>
+        <SquadInviteSearch squadId={squad.id} squadName={squad.name} />
+      </section>
 
       <SquadJoinRequests requests={requests} />
 
