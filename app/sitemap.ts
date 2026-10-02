@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { brand } from "@/lib/brand";
 import { fetchImagesByTag } from "@/lib/cloudinary";
+import { createPublicClient } from "@/lib/supabase/public";
 
 /**
  * sitemap.ts
@@ -46,6 +47,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const oltHero = await fetchImagesByTag("olt-hero");
   const oltHeroUrl = oltHero[0]?.secureUrl;
 
+  // Published blog posts, added to the sitemap dynamically.
+  let blogUrls: MetadataRoute.Sitemap = [];
+  try {
+    const sb = createPublicClient();
+    const { data: posts } = await sb.from("blog_posts").select("slug, published_at").eq("is_published", true);
+    blogUrls = (posts ?? []).map((p) => ({
+      url: `${base}/blog/${p.slug}`,
+      lastModified: p.published_at ? new Date(p.published_at as string) : now,
+      changeFrequency: "monthly" as const,
+      priority: 0.5,
+    }));
+  } catch {}
+
   return [
     url("/",                          1.0, "weekly"),
     url("/outdoor-laser-tag-malta",   0.9, "monthly", oltHeroUrl ? [oltHeroUrl] : undefined),
@@ -63,5 +77,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     url("/match-report",              0.4, "monthly"),
     url("/privacy",                   0.2, "yearly"),
     url("/cookies",                   0.2, "yearly"),
+    url("/accolades",                 0.6, "monthly"),
+    url("/blog",                      0.6, "weekly"),
+    url("/terms",                     0.2, "yearly"),
+    ...blogUrls,
   ];
 }

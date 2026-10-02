@@ -16,7 +16,8 @@ import { AwardCard, type AwardCardData } from "@/components/portal/awards/AwardC
 export const metadata: Metadata = {
   title: "Streaks & Accolades",
   description:
-    "Every accolade and streak you can earn at LaserOps Malta — what each one is for, its tier, and the XP and ranking points it awards.",
+    "Every accolade and streak you can earn at LaserOps Malta: what each one is for, its tier, and the XP and ranking points it awards.",
+  alternates: { canonical: "/accolades" },
 };
 
 type Accolade = AwardCardData & { scope: string };
