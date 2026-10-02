@@ -36,7 +36,9 @@ type AggRow = {
   xp_total: number | null;
   level_after: number | null;
   nickname: string | null;
-  matches: { match_code: string; played_on: string | null } | null;
+  captures: number | null;
+  hold_seconds: number | null;
+  matches: { match_code: string; played_on: string | null; online_round_count: number | null } | null;
 };
 
 const n = (v: number | null | undefined) => v ?? 0;
@@ -61,7 +63,7 @@ export async function getPlayerHistory(
     supabase
       .from("match_player_aggregate")
       .select(
-        "frags,deaths,shots,damage,score,accuracy,kd,match_rating,match_average_score,score_performance_delta,gun_used,team_colour,was_winner,rounds_won,rounds_lost,elo_before,elo_after,elo_change,xp_total,level_after,nickname, matches!inner(match_code, played_on)",
+        "frags,deaths,shots,damage,score,accuracy,kd,match_rating,match_average_score,score_performance_delta,gun_used,team_colour,was_winner,rounds_won,rounds_lost,elo_before,elo_after,elo_change,xp_total,level_after,nickname,captures,hold_seconds, matches!inner(match_code, played_on, online_round_count)",
       )
       .eq("account_id", life.account_id),
     supabase.from("guns").select("name, image_url"),
@@ -114,6 +116,9 @@ export async function getPlayerHistory(
       eloChange: n(r.elo_change),
       xpEarned: n(r.xp_total),
       level: n(r.level_after),
+      // Objective stats only apply to matches with online rounds; offline-only
+      // games leave them undefined so the table shows a dash, not a false 0.
+      ...((r.matches?.online_round_count ?? 0) > 0 ? { objCaps: n(r.captures), capTime: n(r.hold_seconds) } : {}),
     };
   });
 
