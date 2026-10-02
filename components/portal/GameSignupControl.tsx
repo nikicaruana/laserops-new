@@ -13,7 +13,7 @@
  * Writes match_signups via the player's own session (RLS: own rows, open
  * matches). Online payment itself is a later phase – 'online' records intent.
  */
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { type CarouselGun } from "@/components/portal/GunCarousel";
@@ -86,6 +86,11 @@ export function GameSignupControl({
   const router = useRouter();
   const col = align === "center" ? "items-center text-center" : align === "start" ? "items-start" : "items-start sm:items-end";
   const [busy, setBusy] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  // Keep controls disabled until the server re-render finishes, not just until
+  // the write resolves - otherwise the stale button is clickable during the
+  // refresh and feels like it "didn't work" (users re-click several times).
+  const pending = busy || isPending;
   const [error, setError] = useState<string | null>(null);
   const [needsPhone, setNeedsPhone] = useState(false);
   const [booking, setBooking] = useState(false);
@@ -125,7 +130,7 @@ export function GameSignupControl({
       if (/mobile number/i.test(err.message)) setNeedsPhone(true);
       return setError(err.message);
     }
-    router.refresh();
+    startTransition(() => router.refresh());
   }
 
   async function patch(fields: Record<string, unknown>) {
@@ -143,14 +148,14 @@ export function GameSignupControl({
   }
 
   async function setIntent(intent: "online" | "on_day") {
-    if (await patch({ payment_intent: intent })) router.refresh();
+    if (await patch({ payment_intent: intent })) startTransition(() => router.refresh());
   }
   async function cancel() {
     const msg = isOrganiser
       ? "Back out of this game? If others have signed up, it carries on with a new organiser. If you're the only one, it gets cancelled."
       : "Cancel your signup for this game?";
     if (!window.confirm(msg)) return;
-    if (await patch({ status: "cancelled" })) router.refresh();
+    if (await patch({ status: "cancelled" })) startTransition(() => router.refresh());
   }
   async function payNow() {
     setBusy(true);
@@ -176,7 +181,7 @@ export function GameSignupControl({
       });
       const data = (await res.json()) as { ok?: boolean; error?: string };
       if (!res.ok || !data.ok) throw new Error(data.error || "Couldn't use your tokens.");
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't use your tokens.");
     } finally {
@@ -216,7 +221,7 @@ export function GameSignupControl({
           You&apos;ll be moved in automatically (and emailed) if a spot opens up.
         </span>
         {!hideCancel && (
-          <button type="button" onClick={cancel} disabled={busy} className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-text-subtle hover:text-red-400 disabled:opacity-50">
+          <button type="button" onClick={cancel} disabled={pending} className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-text-subtle hover:text-red-400 disabled:opacity-50">
             Leave the waitlist
           </button>
         )}
@@ -250,7 +255,7 @@ export function GameSignupControl({
           <button
             type="button"
             onClick={() => setPayOpen(true)}
-            disabled={busy}
+            disabled={pending}
             className="border border-accent bg-accent px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-bg transition-transform active:scale-[0.98] disabled:opacity-50"
           >
             {applied > 0 ? `Pay ${formatEur(remainderEur)} remainder` : "Pay now"}
@@ -285,29 +290,29 @@ export function GameSignupControl({
                   <button
                     type="button"
                     onClick={useFullToken}
-                    disabled={busy}
+                    disabled={pending}
                     className="w-full border border-accent bg-accent px-4 py-3 text-sm font-bold uppercase tracking-[0.1em] text-bg transition-transform active:scale-[0.98] disabled:opacity-50"
                   >
-                    {busy ? "Working…" : "Use 1 token (free game)"}
+                    {pending ? "Working…" : "Use 1 token (free game)"}
                   </button>
                 )}
                 {canUseFraction && (
                   <button
                     type="button"
                     onClick={useFractionThenViva}
-                    disabled={busy}
+                    disabled={pending}
                     className="w-full border border-accent bg-accent/10 px-4 py-3 text-sm font-bold uppercase tracking-[0.1em] text-accent transition-colors hover:bg-accent/20 disabled:opacity-50"
                   >
-                    {busy ? "Working…" : `Use ${fmtTok(tokenBalance)} token + pay ${formatEur((priceEur as number) * (1 - tokenBalance))} online`}
+                    {pending ? "Working…" : `Use ${fmtTok(tokenBalance)} token + pay ${formatEur((priceEur as number) * (1 - tokenBalance))} online`}
                   </button>
                 )}
                 <button
                   type="button"
                   onClick={payNow}
-                  disabled={busy}
+                  disabled={pending}
                   className={`w-full border px-4 py-3 text-sm font-bold uppercase tracking-[0.1em] transition-colors disabled:opacity-50 ${canUseFullToken ? "border-border-strong bg-bg-overlay text-text hover:border-accent" : "border-accent bg-accent text-bg active:scale-[0.98]"}`}
                 >
-                  {busy ? "Starting checkout…" : `Pay ${formatEur(remainderEur)} online`}
+                  {pending ? "Starting checkout…" : `Pay ${formatEur(remainderEur)} online`}
                 </button>
                 {error && <p className="text-xs text-red-400">{error}</p>}
                 <p className="text-[0.65rem] leading-relaxed text-text-subtle">{refundPolicy}</p>
@@ -362,7 +367,7 @@ export function GameSignupControl({
               Paying offline – arrange with the LaserOps team
             </span>
             {hasPrice && (
-              <button type="button" onClick={() => setIntent("online")} disabled={busy} className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-text-muted hover:text-accent disabled:opacity-50">
+              <button type="button" onClick={() => setIntent("online")} disabled={pending} className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-text-muted hover:text-accent disabled:opacity-50">
                 Switch to pay online
               </button>
             )}
@@ -392,14 +397,14 @@ export function GameSignupControl({
                 {payFlow}
               </>
             )}
-            <button type="button" onClick={() => setIntent("on_day")} disabled={busy} className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-text-muted hover:text-accent disabled:opacity-50">
+            <button type="button" onClick={() => setIntent("on_day")} disabled={pending} className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-text-muted hover:text-accent disabled:opacity-50">
               Request to pay offline
             </button>
           </div>
         )}
 
         {!hideCancel && (
-          <button type="button" onClick={cancel} disabled={busy} className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-text-subtle hover:text-red-400 disabled:opacity-50">
+          <button type="button" onClick={cancel} disabled={pending} className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-text-subtle hover:text-red-400 disabled:opacity-50">
             Cancel signup
           </button>
         )}
@@ -440,10 +445,10 @@ export function GameSignupControl({
       <button
         type="button"
         onClick={signUp}
-        disabled={busy}
+        disabled={pending}
         className="border border-accent bg-accent px-5 py-2.5 text-xs font-bold uppercase tracking-[0.12em] text-bg transition-transform active:scale-[0.98] disabled:opacity-50"
       >
-        {busy ? "Signing up…" : isFull ? "Join the waitlist" : "Sign up to this game"}
+        {pending ? "Signing up…" : isFull ? "Join the waitlist" : "Sign up to this game"}
       </button>
       <p className="text-[0.65rem] text-text-subtle">Payment is sorted once the game&apos;s confirmed.</p>
       {error && <span className="text-xs text-red-400">{error}</span>}
