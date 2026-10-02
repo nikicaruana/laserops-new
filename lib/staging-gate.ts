@@ -46,7 +46,11 @@ export function isEmailAllowed(email: string | null | undefined): boolean {
   if (!email) return false;
   const e = email.trim().toLowerCase();
   if (e === "") return false;
-  for (const entry of allowlist()) {
+  const list = allowlist();
+  // No allowlist configured -> soft gate: ANY signed-in user may access (keeps
+  // anonymous visitors + search engines out, but no need to collect emails).
+  if (list.length === 0) return true;
+  for (const entry of list) {
     if (entry.startsWith("@")) {
       if (e.endsWith(entry)) return true;
     } else if (e === entry) {
