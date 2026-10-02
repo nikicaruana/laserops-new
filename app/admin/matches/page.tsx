@@ -25,6 +25,8 @@ type Row = {
   round_count: number | null;
   source_file_type: string | null;
   scoring_mode: string | null;
+  online_round_count: number | null;
+  offline_round_count: number | null;
   xp_distributed_at: string | null;
   elo_calculated_at: string | null;
   results_stale_at: string | null;
@@ -85,6 +87,31 @@ function fmtDateTime(iso: string | null, dateOnly: string | null): React.ReactNo
   });
 }
 
+// MODE column. Reads the per-mode round split (online_round_count /
+// offline_round_count, stamped at publish); a game with both > 0 is a hybrid
+// and shows BOTH badges with their round counts. Falls back to scoring_mode
+// for any legacy row missing the counts.
+function ModeBadges({ online, offline, mode }: { online: number | null; offline: number | null; mode: string | null }) {
+  const pill = "inline-block rounded px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-[0.1em]";
+  const sky = "bg-sky-500/15 text-sky-300";
+  const amber = "bg-amber-500/15 text-amber-300";
+  if (online == null && offline == null) {
+    return <span className={`${pill} ${mode === "offline" ? amber : sky}`}>{mode === "offline" ? "Offline" : "Online"}</span>;
+  }
+  const on = online ?? 0;
+  const off = offline ?? 0;
+  if (on === 0 && off === 0) {
+    return <span className={`${pill} ${mode === "offline" ? amber : sky}`}>{mode === "offline" ? "Offline" : "Online"}</span>;
+  }
+  const hybrid = on > 0 && off > 0;
+  return (
+    <span className="inline-flex flex-wrap items-center justify-center gap-1">
+      {on > 0 && <span className={`${pill} ${sky}`}>{hybrid ? `Online ${on}` : "Online"}</span>}
+      {off > 0 && <span className={`${pill} ${amber}`}>{hybrid ? `Offline ${off}` : "Offline"}</span>}
+    </span>
+  );
+}
+
 export default async function AdminMatchesPage({
   searchParams,
 }: {
@@ -98,7 +125,7 @@ export default async function AdminMatchesPage({
   let query = supabase
     .from("matches")
     .select(
-      "id, match_code, title, status, scheduled_at, played_on, round_count, source_file_type, scoring_mode, xp_distributed_at, elo_calculated_at, results_stale_at, registered_count, paid_count, on_day_count, is_private, is_double_xp, created_by, match_player_aggregate(count)",
+      "id, match_code, title, status, scheduled_at, played_on, round_count, source_file_type, scoring_mode, online_round_count, offline_round_count, xp_distributed_at, elo_calculated_at, results_stale_at, registered_count, paid_count, on_day_count, is_private, is_double_xp, created_by, match_player_aggregate(count)",
     )
     .order("scheduled_at", { ascending: false, nullsFirst: false })
     .order("played_on", { ascending: false, nullsFirst: false })
@@ -232,9 +259,7 @@ export default async function AdminMatchesPage({
                       )}
                     </td>
                     <td className="px-3 py-2.5 text-center">
-                      <span className={`inline-block rounded px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-[0.1em] ${m.scoring_mode === "offline" ? "bg-amber-500/15 text-amber-300" : "bg-sky-500/15 text-sky-300"}`}>
-                        {m.scoring_mode === "offline" ? "Offline" : "Online"}
-                      </span>
+                      <ModeBadges online={m.online_round_count} offline={m.offline_round_count} mode={m.scoring_mode} />
                     </td>
                     <td className="px-3 py-2.5 text-center text-xs uppercase text-text-muted">{m.source_file_type ?? EMPTY}</td>
                     <td className="px-3 py-2.5 text-right font-mono tabular-nums text-text-muted">{m.round_count ?? EMPTY}</td>
