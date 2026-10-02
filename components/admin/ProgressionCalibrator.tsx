@@ -271,6 +271,8 @@ export function ProgressionCalibrator({ config, levels, rows }: { config: CfgRow
         </section>
       </div>
 
+      {process.env.NODE_ENV !== "production" && (
+      <>
       <div className="rounded-lg border border-border bg-bg-elevated">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
           <h2 className="text-sm font-bold uppercase tracking-[0.1em] text-text">
@@ -346,6 +348,8 @@ export function ProgressionCalibrator({ config, levels, rows }: { config: CfgRow
           </table>
         </div>
       </section>
+      </>
+      )}
 
       <TotpGate open={gate} action="publish XP changes" onCancel={() => setGate(false)} onVerified={() => { setGate(false); publish(); }} />
     </div>
