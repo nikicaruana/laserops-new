@@ -82,9 +82,15 @@ const SECTIONS: { heading: string; items: Item[] }[] = [
     items: [{ label: "Exploit control", href: "/admin/exploit-control" }],
   },
   {
+    heading: "Content",
+    items: [
+      { label: "Homepage", href: "/admin/homepage" },
+      { label: "Blog", href: "/admin/blog" },
+    ],
+  },
+  {
     heading: "Other",
     items: [
-      { label: "Blog", href: "/admin/blog" },
       { label: "Teams", href: "/admin/teams" },
       { label: "Excluded players", href: "/admin/excluded-players" },
     ],

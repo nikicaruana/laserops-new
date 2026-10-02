@@ -4,10 +4,15 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
-import { ctaLinks } from "@/lib/nav";
+import { DEFAULT_HOME_HERO, type HomeHeroConfig } from "@/lib/cms/home-config";
 
 /**
  * Home hero.
+ *
+ * Content (headline, subhead, Google-reviews badge, the two CTAs, stat tiles)
+ * is CMS-driven from home_config (edited at /admin/homepage) and passed in as
+ * `config`. Falls back to DEFAULT_HOME_HERO so the component is safe to render
+ * standalone. Layout/animation is unchanged from the original hardcoded hero.
  *
  * MOBILE: Full-viewport composition with layered figure + background.
  *   - Background (yellow textured) fills the section
@@ -20,7 +25,7 @@ import { ctaLinks } from "@/lib/nav";
  *
  * DESKTOP (lg+): unchanged horizontal landscape hero with hover-driven duotone.
  */
-export function HomeHero() {
+export function HomeHero({ config = DEFAULT_HOME_HERO }: { config?: HomeHeroConfig }) {
   const [isHovered, setIsHovered] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const sectionRef = useRef<HTMLElement>(null);
@@ -46,6 +51,20 @@ export function HomeHero() {
     };
   }, []);
 
+  // Google-reviews badge (star rating + link). Shared markup for both breakpoints.
+  const reviewsBadge = (className: string) => (
+    <a
+      href={config.reviewsUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={className}
+    >
+      <span className="text-base leading-none text-yellow-400">★★★★★</span>
+      <span className="font-semibold text-text">{config.rating}</span>
+      <span>{config.reviewsLabel}</span>
+    </a>
+  );
+
   return (
     <section
       ref={sectionRef}
@@ -55,24 +74,6 @@ export function HomeHero() {
       // the image renders at its natural framing instead of being
       // zoomed-in by object-cover when the section happens to be
       // shorter than 16:9 due to compact content.
-      //
-      // Without this constraint, on a typical laptop (~1500×800)
-      // the section becomes content-height (~600-700px from the
-      // pass-23 dialed-down content), giving the section a ~15:6
-      // aspect against the image's 16:9. Object-cover compensates
-      // by zooming the image vertically to fill – which scales the
-      // figure up enormously and pushes their head out of frame.
-      //
-      // max-h prevents the 16:9 ratio from making the section
-      // TALLER than the viewport on roomy xl widths (e.g. a 1500px
-      // viewport at 16:9 → 844px section, slightly over an 800px
-      // viewport). When the cap kicks in, aspect mismatch returns
-      // but at most by ~5-10% – far less aggressive than the
-      // unconstrained case and barely visible.
-      //
-      // 2xl restores `aspect-auto` so the original full-svh
-      // behaviour kicks back in for big monitors where the
-      // unconstrained section happens to be close to 16:9 anyway.
       className="relative isolate overflow-hidden xl:bg-[#ffde00] xl:min-h-[calc(100svh-72px)]"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -94,9 +95,7 @@ export function HomeHero() {
       </div>
 
       {/* Layer 2 + 3: FIGURE – anchored to bottom, height-capped via .hero-figure
-          class which uses media queries to vary cap by viewport height:
-          50vh on short phones (iPhone SE) so layout fits;
-          60vh on taller phones for stronger figure presence. */}
+          class which uses media queries to vary cap by viewport height. */}
       <div className="absolute inset-x-0 bottom-0 xl:hidden flex justify-center pointer-events-none" aria-hidden>
         <div className="hero-figure relative max-w-none">
           <Image
@@ -148,11 +147,7 @@ export function HomeHero() {
         />
       </div>
 
-      {/* Layer 2 + 3: FIGURE – transparent PNG pair, right-anchored.
-          Container spans full height and sticks to the right edge.
-          h-full w-auto on the images scales them to the section height
-          while letting width be proportional – figure is never cropped.
-          Any left-side overflow sits behind the text/scrim area. */}
+      {/* Layer 2 + 3: FIGURE – transparent PNG pair, right-anchored. */}
       <div className="absolute inset-y-0 right-0 hidden xl:flex items-end pointer-events-none" aria-hidden>
         <div className="relative h-full">
           <Image
@@ -192,90 +187,56 @@ export function HomeHero() {
           =================================================================== */}
 
       <Container size="wide" className="relative z-10 xl:h-full">
-        {/*
-          MOBILE: text vertically centered within the yellow zone above the figure.
-          The bottom-padding reserves space equal to the figure's visible height
-          (figure is 130vw wide × 890/1080 aspect = ~107vw tall), so the flex
-          centering ignores that area and centers text in what's left above.
-
-          DESKTOP: vertically centered single content block, no figure-area
-          reservation needed.
-        */}
         <div className="hero-content flex h-[calc(100svh-72px)] flex-col items-stretch pt-8 sm:pt-12 xl:h-full xl:min-h-0 xl:py-10 2xl:min-h-[calc(100svh-72px)] 2xl:py-28">
-          {/* DESKTOP CONTENT BLOCK – vertically centered with my-auto.
-              Two desktop tiers:
-                xl  (1280-1535px, typical laptop): content sized to fit
-                                                    on a 13-15" screen
-                                                    without scrolling.
-                2xl (1536px+, monitors / big screens): the original
-                                                       generous sizing
-                                                       Niki designed against.
-              The xl tier dials down: 5xl heading (was 7xl), md buttons
-              (was lg), text-base paragraph (was lg), tighter stats. The
-              2xl tier restores everything to the original sizing. */}
+          {/* DESKTOP CONTENT BLOCK – vertically centered with my-auto. */}
           <div className="hidden xl:block xl:my-auto max-w-[640px]">
             <h1 className="text-balance text-5xl font-extrabold leading-[1.02] 2xl:text-7xl">
-              Malta&rsquo;s Ultimate Outdoor Laser Tag Experience.{" "}
-              <span className="text-accent">Built for Competition.</span>
+              {config.lead}{" "}
+              <span className="text-accent">{config.highlight}</span>
             </h1>
             <p className="mt-4 max-w-xl text-base text-text-muted 2xl:mt-5 2xl:text-lg">
-              Tactical missions, different scenarios, and Malta&rsquo;s only persistent stat and
-              progressive unlock system. LaserOps is changing the game.
+              {config.subhead}
             </p>
-            <a
-              href="https://www.google.com/maps/place/LaserOps+Malta/@35.9351506,14.0734794,11z/data=!4m12!1m2!2m1!1slaserops+malta!3m8!1s0x130e4ddaeadfe003:0xda30f052e79ffef8!8m2!3d35.9351506!4d14.37835!9m1!1b1!15sCg5sYXNlcm9wcyBtYWx0YVoQIg5sYXNlcm9wcyBtYWx0YZIBGm91dGRvb3JfYWN0aXZpdHlfb3JnYW5pemVymgFEQ2k5RFFVbFJRVU52WkVOb2RIbGpSamx2VDJwc2EyUkZSa3haYm1SYVpVaENTbVZHYkZWV1JscHlWVWRXTlZSSVl4QULgAQD6AQQIQBA6!16s%2Fg%2F11z6lk5clw!5m2!1e4!1e1?entry=ttu&g_ep=EgoyMDI2MDUwNi4wIKXMDSoASAFQAw%3D%3D"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-4 inline-flex items-center gap-2 text-sm text-text-muted transition-colors hover:text-text 2xl:mt-5"
-            >
-              <span className="text-base leading-none text-yellow-400">★★★★★</span>
-              <span className="font-semibold text-text">5.0</span>
-              <span>on Google Reviews</span>
-            </a>
+            {reviewsBadge(
+              "mt-4 inline-flex items-center gap-2 text-sm text-text-muted transition-colors hover:text-text 2xl:mt-5",
+            )}
             <div className="mt-6 flex gap-3 2xl:mt-8 2xl:gap-4">
-              <Button href={ctaLinks.primary.href} variant="primary" size="md">
-                {ctaLinks.primary.label}
+              <Button href={config.ctaPrimaryHref} variant="primary" size="md">
+                {config.ctaPrimaryLabel}
               </Button>
-              <Button href={ctaLinks.secondary.href} variant="secondary" size="md">
-                {ctaLinks.secondary.label}
+              <Button href={config.ctaSecondaryHref} variant="secondary" size="md">
+                {config.ctaSecondaryLabel}
               </Button>
             </div>
-            <dl className="mt-10 grid max-w-xl grid-cols-3 gap-px border-y border-border bg-border 2xl:mt-16">
-              {[
-                { value: "15+", label: "Weapons" },
-                { value: "6+", label: "Game Modes" },
-                { value: "Outdoor", label: "Real Terrain" },
-              ].map((stat) => (
-                <div key={stat.label} className="bg-bg p-4 2xl:p-5">
-                  <dt className="text-[10px] font-semibold uppercase tracking-[0.16em] text-text-subtle">
-                    {stat.label}
-                  </dt>
-                  <dd className="mt-2 text-2xl font-bold text-text 2xl:text-3xl">{stat.value}</dd>
-                </div>
-              ))}
-            </dl>
+            {config.stats.length > 0 && (
+              <dl
+                className="mt-10 grid max-w-xl gap-px border-y border-border bg-border 2xl:mt-16"
+                style={{ gridTemplateColumns: `repeat(${config.stats.length}, minmax(0, 1fr))` }}
+              >
+                {config.stats.map((stat) => (
+                  <div key={stat.label} className="bg-bg p-4 2xl:p-5">
+                    <dt className="text-[10px] font-semibold uppercase tracking-[0.16em] text-text-subtle">
+                      {stat.label}
+                    </dt>
+                    <dd className="mt-2 text-2xl font-bold text-text 2xl:text-3xl">{stat.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
           </div>
 
           {/* MOBILE TEXT BLOCK – centered in the yellow zone above the figure */}
           <div className="max-w-2xl xl:hidden">
             <h1 className="text-balance text-4xl font-extrabold leading-[1.02] sm:text-5xl">
-              Malta&rsquo;s Ultimate Outdoor Laser Tag Experience.{" "}
-              <span className="text-accent">Built for Competition.</span>
+              {config.lead}{" "}
+              <span className="text-accent">{config.highlight}</span>
             </h1>
             <p className="mt-5 max-w-xl text-base text-white/80 sm:text-lg">
-              Tactical missions, different scenarios, and Malta&rsquo;s only persistent stat and
-              progressive unlock system. LaserOps is changing the game.
+              {config.subhead}
             </p>
-            <a
-              href="https://www.google.com/maps/place/LaserOps+Malta/@35.9351506,14.0734794,11z/data=!4m12!1m2!2m1!1slaserops+malta!3m8!1s0x130e4ddaeadfe003:0xda30f052e79ffef8!8m2!3d35.9351506!4d14.37835!9m1!1b1!15sCg5sYXNlcm9wcyBtYWx0YVoQIg5sYXNlcm9wcyBtYWx0YZIBGm91dGRvb3JfYWN0aXZpdHlfb3JnYW5pemVymgFEQ2k5RFFVbFJRVU52WkVOb2RIbGpSamx2VDJwc2EyUkZSa3haYm1SYVpVaENTbVZHYkZWV1JscHlWVWRXTlZSSVl4QULgAQD6AQQIQBA6!16s%2Fg%2F11z6lk5clw!5m2!1e4!1e1?entry=ttu&g_ep=EgoyMDI2MDUwNi4wIKXMDSoASAFQAw%3D%3D"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-4 inline-flex items-center gap-2 text-sm text-white/70 transition-colors hover:text-white bg-black/40 px-3 py-1.5 rounded-full backdrop-blur-sm"
-            >
-              <span className="text-base leading-none text-yellow-400">★★★★★</span>
-              <span className="font-semibold text-white">5.0</span>
-              <span>on Google Reviews</span>
-            </a>
+            {reviewsBadge(
+              "mt-4 inline-flex items-center gap-2 text-sm text-white/70 transition-colors hover:text-white bg-black/40 px-3 py-1.5 rounded-full backdrop-blur-sm",
+            )}
           </div>
         </div>
       </Container>
@@ -284,11 +245,11 @@ export function HomeHero() {
       <div className="absolute inset-x-0 bottom-0 z-20 xl:hidden">
         <Container size="wide">
           <div className="flex flex-col gap-2 pb-4">
-            <Button href={ctaLinks.primary.href} variant="primary" size="md">
-              {ctaLinks.primary.label}
+            <Button href={config.ctaPrimaryHref} variant="primary" size="md">
+              {config.ctaPrimaryLabel}
             </Button>
-            <Button href={ctaLinks.secondary.href} variant="secondary" size="md">
-              {ctaLinks.secondary.label}
+            <Button href={config.ctaSecondaryHref} variant="secondary" size="md">
+              {config.ctaSecondaryLabel}
             </Button>
           </div>
         </Container>
