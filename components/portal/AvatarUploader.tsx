@@ -4,10 +4,12 @@
  * components/portal/AvatarUploader.tsx
  * --------------------------------------------------------------------
  * Profile-picture control. Changing the photo first asks the source:
- *   - Upload a photo   -> pick a file, position/zoom in a locked 1:1 frame, and
- *                         upload the cropped square blob to /api/profile-pic.
- *   - From tagged photos-> pick one of the photos this player is tagged in;
- *                         Cloudinary copies it to their avatar (sourceUrl POST).
+ *   - Upload a photo    -> pick a file, position/zoom in a locked 1:1 frame, and
+ *                          upload the cropped square blob to /api/profile-pic.
+ *   - From tagged photos-> pick one of the photos this player is tagged in, then
+ *                          position/zoom it in the SAME 1:1 frame. The crop is
+ *                          applied by Cloudinary (c_crop on the source) and saved
+ *                          via the sourceUrl POST - no canvas, no cross-origin.
  * If the player has no tagged photos, "Change photo" goes straight to upload.
  * Profile photos render SQUARE (circles are reserved for squad logos).
  */
@@ -22,6 +24,15 @@ import { Button } from "@/components/ui/Button";
 function squareUrl(url: string, w = 400): string {
   if (!url.includes("/upload/")) return url;
   return url.replace("/upload/", `/upload/c_fill,ar_1:1,g_auto,w_${w},q_auto,f_auto/`);
+}
+
+/** Bake a chosen crop region (in the source image's own pixels) into a Cloudinary
+ *  delivery URL, then square it to a 400x400 avatar. Cloudinary renders it; the
+ *  server copies that rendered URL to the avatar. */
+function croppedSquareUrl(url: string, c: PixelCrop, w = 400): string {
+  if (!url.includes("/upload/")) return url;
+  const crop = `c_crop,x_${Math.round(c.x)},y_${Math.round(c.y)},w_${Math.round(c.width)},h_${Math.round(c.height)}`;
+  return url.replace("/upload/", `/upload/${crop}/c_fill,w_${w},h_${w},q_auto,f_auto/`);
 }
 
 type TaggedPhoto = { id: string; url: string };
@@ -39,14 +50,13 @@ export function AvatarUploader({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [currentUrl, setCurrentUrl] = useState<string | null>(initialUrl);
-  const [imageSrc, setImageSrc] = useState<string | null>(null); // object URL being cropped
+  const [imageSrc, setImageSrc] = useState<string | null>(null); // the image being cropped (object URL or a tagged photo URL)
+  const [taggedSource, setTaggedSource] = useState<string | null>(null); // set when cropping a tagged photo (vs an uploaded file)
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedPixels, setCroppedPixels] = useState<PixelCrop | null>(null);
   const [status, setStatus] = useState<"idle" | "saving">("idle");
   const [error, setError] = useState<string | null>(null);
-  // Which step of the change flow is showing: the source chooser, or the
-  // tagged-photo picker. null = neither.
   const [step, setStep] = useState<null | "choose" | "tagged">(null);
 
   const hasTagged = taggedPhotos.length > 0;
@@ -70,14 +80,26 @@ export function AvatarUploader({
       return;
     }
     setStep(null);
+    setTaggedSource(null);
     setCrop({ x: 0, y: 0 });
     setZoom(1);
     setImageSrc(URL.createObjectURL(file));
   }
 
+  // Picking a tagged photo now opens the SAME position/zoom frame.
+  function pickTagged(url: string) {
+    setError(null);
+    setStep(null);
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+    setTaggedSource(url);
+    setImageSrc(url);
+  }
+
   function cancelCrop() {
-    if (imageSrc) URL.revokeObjectURL(imageSrc);
+    if (imageSrc && imageSrc.startsWith("blob:")) URL.revokeObjectURL(imageSrc);
     setImageSrc(null);
+    setTaggedSource(null);
     setCroppedPixels(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
@@ -103,42 +125,30 @@ export function AvatarUploader({
     setStatus("saving");
     setError(null);
     try {
-      const blob = await getCroppedBlob(imageSrc, croppedPixels);
-      const form = new FormData();
-      form.append("file", blob, "avatar.jpg");
-
-      const res = await fetch("/api/profile-pic", { method: "POST", body: form });
+      let res: Response;
+      if (taggedSource) {
+        // Cloudinary applies the crop; the server copies the rendered URL.
+        const sourceUrl = croppedSquareUrl(taggedSource, croppedPixels);
+        res = await fetch("/api/profile-pic", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sourceUrl }),
+        });
+      } else {
+        const blob = await getCroppedBlob(imageSrc, croppedPixels);
+        const form = new FormData();
+        form.append("file", blob, "avatar.jpg");
+        res = await fetch("/api/profile-pic", { method: "POST", body: form });
+      }
       const data = (await res.json()) as { ok: boolean; url?: string; error?: string };
       if (!res.ok || !data.ok || !data.url) {
         throw new Error(data.error || "Upload failed.");
       }
-
       setCurrentUrl(data.url);
       cancelCrop();
       router.refresh(); // update the badge / server-rendered avatar
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed.");
-    } finally {
-      setStatus("idle");
-    }
-  }
-
-  async function useTaggedPhoto(url: string) {
-    setStatus("saving");
-    setError(null);
-    try {
-      const res = await fetch("/api/profile-pic", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sourceUrl: url }),
-      });
-      const data = (await res.json()) as { ok: boolean; url?: string; error?: string };
-      if (!res.ok || !data.ok || !data.url) throw new Error(data.error || "Couldn't set that photo.");
-      setCurrentUrl(data.url);
-      setStep(null);
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't set that photo.");
     } finally {
       setStatus("idle");
     }
@@ -198,15 +208,15 @@ export function AvatarUploader({
       {step === "tagged" && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setStep(null)}>
           <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto border border-border bg-bg-overlay p-5" onClick={(e) => e.stopPropagation()}>
-            <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.12em] text-accent">Pick a tagged photo</h3>
+            <h3 className="mb-1 text-sm font-semibold uppercase tracking-[0.12em] text-accent">Pick a tagged photo</h3>
+            <p className="mb-4 text-xs text-text-muted">You&rsquo;ll position and zoom it next.</p>
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
               {taggedPhotos.map((p) => (
                 <button
                   key={p.id}
                   type="button"
-                  disabled={status === "saving"}
-                  onClick={() => useTaggedPhoto(p.url)}
-                  className="group relative aspect-square overflow-hidden rounded-sm border border-border bg-bg transition-colors hover:border-accent disabled:opacity-50"
+                  onClick={() => pickTagged(p.url)}
+                  className="group relative aspect-square overflow-hidden rounded-sm border border-border bg-bg transition-colors hover:border-accent"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={p.url} alt="" className="h-full w-full object-cover" loading="lazy" />
@@ -222,7 +232,7 @@ export function AvatarUploader({
         </div>
       )}
 
-      {/* Crop editor (shown after picking a file) */}
+      {/* Crop editor (shown after picking a file OR a tagged photo) */}
       {imageSrc && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
           <div className="w-full max-w-md portal-card p-5">
@@ -259,8 +269,8 @@ export function AvatarUploader({
               <Button type="button" variant="secondary" size="sm" className="flex-1" onClick={cancelCrop} disabled={status === "saving"}>
                 Cancel
               </Button>
-              <Button type="button" size="sm" className="flex-1" onClick={saveCrop} disabled={status === "saving"}>
-                {status === "saving" ? "Uploading…" : "Save"}
+              <Button type="button" size="sm" className="flex-1" onClick={saveCrop} disabled={status === "saving" || !croppedPixels}>
+                {status === "saving" ? "Saving…" : "Save"}
               </Button>
             </div>
           </div>
