@@ -26,6 +26,9 @@ export const hbKey = (s: string | null | undefined) => {
   return m ? String(parseInt(m[0], 10)) : "";
 };
 
+/** Normalise an identity label (ops tag / display name) for nickname matching. */
+const normName = (s: string | null | undefined) => String(s ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+
 export async function resolveRoster(supabase: SupabaseClient, matchId: string): Promise<RosterResolver> {
   const { data: parts } = await supabase
     .from("match_participants")
@@ -39,6 +42,11 @@ export async function resolveRoster(supabase: SupabaseClient, matchId: string): 
   const accById = new Map((accRows ?? []).map((a) => [a.id as string, a]));
 
   const byHb = new Map<string, RosterEntry>();
+  // Also index by resolved nickname (ops tag / display name): the scoring engine
+  // renames each resolved player to their nickname and then re-looks them up, so
+  // the resolver must accept a nickname, not just a headband number - otherwise
+  // the account link is lost at aggregation.
+  const byName = new Map<string, RosterEntry>();
   for (const p of parts ?? []) {
     const acc = p.account_id ? accById.get(p.account_id as string) : undefined;
     const entry: RosterEntry = {
@@ -48,6 +56,7 @@ export async function resolveRoster(supabase: SupabaseClient, matchId: string): 
       gun: (p.gun_used as string) || null,
       xpMultiplier: Number(p.xp_multiplier ?? 1) || 1,
     };
+    if (entry.nickname) { const nk = normName(entry.nickname); if (nk && !byName.has(nk)) byName.set(nk, entry); }
     const k = hbKey(p.headset_label as string);
     if (k) byHb.set(k, entry);
     // Extra headbands (mid-game swaps) resolve to the SAME player, so their
@@ -59,10 +68,20 @@ export async function resolveRoster(supabase: SupabaseClient, matchId: string): 
   }
 
   return (headband: string) => {
-    const hit = byHb.get(hbKey(headband));
+    const raw = String(headband);
+    // A nickname/ops-tag match (how the engine re-looks-up a renamed player).
+    // Tried first for non-numeric input so a nickname like "Agius89" isn't
+    // mis-read as headband 89; a bare number is treated as a headband.
+    if (!/^\d+$/.test(raw.trim())) {
+      const named = byName.get(normName(raw));
+      if (named && named.nickname) return named;
+    }
+    const hit = byHb.get(hbKey(raw));
     if (hit && hit.nickname) return hit;
+    const named = byName.get(normName(raw));
+    if (named && named.nickname) return named;
     return {
-      nickname: headband,
+      nickname: raw,
       accountId: hit?.accountId ?? null,
       profilePicUrl: hit?.profilePicUrl ?? null,
       gun: hit?.gun ?? null,

@@ -71,7 +71,7 @@ export function computeMatchCommit(
     excludeHeadbands?: number[];
   },
 ): CommitResult {
-  const report = buildMatchReportV2(rawRounds, { matchId: "commit", label: "commit" }, { identityByHeadband: (hb) => { const e = identity(String(hb)); return e.accountId ? e.nickname : ""; }, opsTagByHeadband: offline?.opsTagByHeadband, streakConfig, scoring: scoringRuntime?.scoring, formula: scoringRuntime?.formula, offline: offline ? { statsByHeadband: offline.statsByHeadband, roundWinners: offline.roundWinners } : undefined, excludeHeadbands: offline?.excludeHeadbands, });
+  const report = buildMatchReportV2(rawRounds, { matchId: "commit", label: "commit" }, { identityByHeadband: (hb) => { const e = identity(String(hb)); return e.nickname && e.nickname !== String(hb) ? e.nickname : ""; }, opsTagByHeadband: offline?.opsTagByHeadband, streakConfig, scoring: scoringRuntime?.scoring, formula: scoringRuntime?.formula, offline: offline ? { statsByHeadband: offline.statsByHeadband, roundWinners: offline.roundWinners } : undefined, excludeHeadbands: offline?.excludeHeadbands, });
   const P = report.players;
   const rankOf = (vals: number[], v: number, higher = true) => 1 + vals.filter((x) => (higher ? x > v : x < v)).length;
   const scores = P.map((p) => p.totalScore), kills = P.map((p) => p.frags), deaths = P.map((p) => p.deaths);
