@@ -28,7 +28,7 @@ export type CommitAggregate = {
   frags: number; deaths: number; hits: number; shots: number; wounds: number; spawn_kills: number; spawn_damage: number; captures: number; hold_seconds: number;
   accuracy: number; kd: number; damage: number; score: number; match_rating: number; match_average_score: number; score_performance_delta: number; xp_multiplier: number;
   score_rank: number; kills_rank: number; deaths_rank: number; kd_rank: number; accuracy_rank: number; damage_rank: number;
-  was_winner: boolean; rounds_won: number; rounds_lost: number; rounds_played: number; rounds_won_present: number; team_score: number; opponent_team_score: number;
+  was_winner: boolean; rounds_won: number; rounds_lost: number; rounds_played: number; rounds_won_present: number; online_rounds_played: number; team_score: number; opponent_team_score: number;
   xp_from_points: number; xp_from_wins: number; xp_from_accolades: number; xp_total: number;
   streaks: CommitStreak[]; nemesis: CommitNemesis; killed: CommitTally[]; killed_by: CommitTally[];
 };
@@ -119,7 +119,7 @@ export function computeMatchCommit(
       match_rating: avgRatingScore > 0 ? Math.round((ratingScores[i] / avgRatingScore) * 100) / 100 : 0, match_average_score: Math.round(matchAvg), score_performance_delta: Math.round(p.totalScore - matchAvg), xp_multiplier: mult,
       score_rank: rankOf(scores, p.totalScore), kills_rank: rankOf(kills, p.frags), deaths_rank: rankOf(deaths, p.deaths, false),
       kd_rank: rankOf(kds, p.kd), accuracy_rank: rankOf(accs, p.accuracy), damage_rank: rankOf(dmgs, p.damage),
-      was_winner: isWinner, rounds_won: teamRoundsWon, rounds_lost: report.roundCount - teamRoundsWon, rounds_played: p.roundsPlayed ?? R, rounds_won_present: p.roundsWonPresent ?? teamRoundsWon,
+      was_winner: isWinner, rounds_won: teamRoundsWon, rounds_lost: report.roundCount - teamRoundsWon, rounds_played: p.roundsPlayed ?? R, rounds_won_present: p.roundsWonPresent ?? teamRoundsWon, online_rounds_played: p.onlineRoundsPlayed ?? R,
       team_score: teamScore[p.team] ?? 0, opponent_team_score: oppTeam ? teamScore[oppTeam] ?? 0 : 0,
       xp_from_points: xpPoints, xp_from_wins: xpWins, xp_from_accolades: xpAcc, xp_total: xpb.xpTotal,
       streaks: p.streaks.map((s) => ({ key: s.key, count: s.count, points: s.points })),

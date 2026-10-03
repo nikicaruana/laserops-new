@@ -45,6 +45,7 @@ export type PlayerReport = {
   excludedCaptures: number;
   roundsPlayed: number;
   roundsWonPresent: number;
+  onlineRoundsPlayed: number;
   holdSeconds: number;
   killScore: number;
   objectiveScore: number;
