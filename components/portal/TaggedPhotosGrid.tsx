@@ -36,6 +36,12 @@ export function TaggedPhotosGrid({
   const [composer, setComposer] = useState<Composer | null>(null);
   const [sharing, setSharing] = useState(false);
 
+  // Re-sync when the parent passes a different profile's photos. useState only
+  // seeds the INITIAL value, so without this the grid keeps showing the previous
+  // profile's photos after a client-side nav - e.g. your OWN tagged photos would
+  // wrongly persist when you open someone else's summary.
+  useEffect(() => { setList(photos); setExpanded(false); setLightbox(null); }, [photos]);
+
   // The share / remove-tag actions act on the signed-in viewer, so only offer
   // them when the viewer is looking at their OWN profile.
   useEffect(() => {
