@@ -177,8 +177,8 @@ export function OpenGamesTable({ games }: Props) {
         /* On desktop: min-width forces horizontal scroll rather than
            collapsing columns. On mobile: no min-width, columns narrow
            naturally and text is allowed to wrap. */
-        <div className="overflow-x-auto rounded-sm portal-card">
-          <table className="w-full border-collapse text-sm sm:min-w-[540px]">
+        <div className="max-h-[75vh] overflow-auto rounded-sm portal-card lg:max-h-none lg:overflow-visible">
+          <table className="w-full border-collapse text-sm sm:min-w-[540px] [&_thead_th]:sticky [&_thead_th]:top-0 [&_thead_th]:z-10 lg:[&_thead_th]:static [&_thead_th]:bg-accent">
             {/* ── Header ─────────────────────────────────────────────── */}
             <thead>
               <tr className="bg-accent">

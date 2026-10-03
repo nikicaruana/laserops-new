@@ -115,8 +115,8 @@ export default async function LadderPage({ params }: { params: Promise<{ key: st
           No squads on this ladder yet.
         </p>
       ) : (
-        <div className="overflow-x-auto border border-border">
-          <table className="w-full min-w-[520px] text-left text-sm">
+        <div className="max-h-[75vh] overflow-auto border border-border lg:max-h-none lg:overflow-visible">
+          <table className="w-full min-w-[520px] text-left text-sm [&_thead_th]:sticky [&_thead_th]:top-0 [&_thead_th]:z-10 lg:[&_thead_th]:static [&_thead_th]:bg-bg-elevated">
             <thead>
               <tr className="border-b border-border portal-surface text-[0.6rem] uppercase tracking-[0.14em] text-text-muted">
                 <th className="px-4 py-3 font-semibold">#</th>

@@ -226,18 +226,13 @@ export default async function GameDetailPage({
         <PlayerBar reg={reg} min={min} max={match.max_players} status={match.status} />
       </div>
 
-      {location && (location.name || location.playingUrl || location.parkingUrl) && (
+      {/* Location NAME only. The playing-location + parking map links live in the
+          confirmation / reminder emails + .ics invite - enough there, and just
+          clutter on-screen. */}
+      {location && location.name && (
         <div className="mt-8 max-w-sm">
           <h2 className="text-xs font-bold uppercase tracking-[0.16em] text-text-subtle">Location</h2>
-          {location.name && <p className="mt-2 text-sm font-semibold text-text">{location.name}</p>}
-          <div className="mt-2 flex flex-wrap gap-2">
-            {location.playingUrl && (
-              <a href={location.playingUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 border border-border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-text transition-colors hover:border-accent hover:text-accent">Playing location &rarr;</a>
-            )}
-            {location.parkingUrl && (
-              <a href={location.parkingUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 border border-border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-text transition-colors hover:border-accent hover:text-accent">Parking &rarr;</a>
-            )}
-          </div>
+          <p className="mt-2 text-sm font-semibold text-text">{location.name}</p>
         </div>
       )}
 

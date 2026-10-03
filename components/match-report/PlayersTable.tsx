@@ -113,7 +113,7 @@ export function PlayersTable({ players, matchId, selectedPlayer, linkNamesToProf
         // Scroll only on smaller screens. On desktop (lg+) the table is
         // compacted enough to fit the container, so we drop the scroll and
         // the min-width and let every column show at once.
-        className="overflow-x-auto lg:overflow-x-visible"
+        className="max-h-[75vh] overflow-auto lg:max-h-none lg:overflow-x-visible lg:overflow-y-visible"
         // Custom scrollbar styling for an "intentional" feel – fine to
         // leave default if you'd rather; this is just a polish touch.
         style={{ scrollbarWidth: "thin" }}
@@ -214,6 +214,9 @@ function Th({
       className={cn(
         // Base typography for column headers
         "py-2.5 text-[0.55rem] font-bold uppercase tracking-[0.12em] text-text-muted sm:text-[0.65rem] sm:tracking-[0.16em]",
+        // Freeze the header row to the top of the scroll box while scrolling a long
+        // table on mobile; static on desktop where the whole table already fits.
+        "sticky top-0 z-20 bg-bg-overlay lg:static lg:z-auto",
         align === "left" && "text-left",
         align === "center" && "text-center",
         align === "right" && "text-right",
@@ -229,9 +232,9 @@ function Th({
         // content in the visible viewport. The ops column's `left-7` and
         // `left-12` MUST match the rank column's `w-7` and `w-12`.
         sticky === "rank" &&
-          "sticky left-0 z-10 w-7 min-w-7 bg-bg-overlay sm:w-12 sm:min-w-12",
+          "left-0 z-30 w-7 min-w-7 bg-bg-overlay sm:w-12 sm:min-w-12 lg:z-auto",
         sticky === "ops" &&
-          "sticky left-7 z-10 bg-bg-overlay px-2 sm:left-12 sm:px-3",
+          "left-7 z-30 bg-bg-overlay px-2 sm:left-12 sm:px-3 lg:z-auto",
       )}
     >
       {children}
