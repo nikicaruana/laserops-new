@@ -80,7 +80,7 @@ returns integer language plpgsql
 security definer set search_path = public as $$
 declare n integer;
 begin
-  delete from public.leaderboard_period_stats;
+  delete from public.leaderboard_period_stats where true;
   insert into public.leaderboard_period_stats (
     account_id, nickname, profile_pic_url, period_type, period_key, games, rounds, wins, losses, win_rate,
     rounds_won, rounds_lost,
