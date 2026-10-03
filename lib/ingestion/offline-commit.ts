@@ -175,7 +175,7 @@ export function computeOfflineMatchCommit(
       score_performance_delta: Math.round(s.score - matchAvg), xp_multiplier: mult,
       score_rank: rankOf(scores, s.score), kills_rank: rankOf(kills, s.frags), deaths_rank: rankOf(deathsArr, s.deaths, false),
       kd_rank: rankOf(kds, s.kd), accuracy_rank: rankOf(accs, s.accuracy), damage_rank: rankOf(dmgs, s.damage),
-      was_winner: isWinner, rounds_won: roundsWonByTeam[s.team] ?? 0, rounds_lost: roundCount - (roundsWonByTeam[s.team] ?? 0),
+      was_winner: isWinner, rounds_won: roundsWonByTeam[s.team] ?? 0, rounds_lost: roundCount - (roundsWonByTeam[s.team] ?? 0), rounds_played: roundCount, rounds_won_present: roundsWonByTeam[s.team] ?? 0,
       team_score: teamScore[s.team] ?? 0, opponent_team_score: oppTeam ? teamScore[oppTeam] ?? 0 : 0,
       xp_from_points: xpb.xpFromPoints, xp_from_wins: xpb.xpFromWins, xp_from_accolades: xpb.xpFromAccolades, xp_total: xpb.xpTotal,
       // Offline: no event timeline -> no streaks, nemesis, kill lists.

@@ -60,6 +60,7 @@ type Acc = {
   spawnKills: number; spawnDamage: number;
   captures: number; recaptures: number; excluded: number; hold: number;
   streakPoints: number; streaks: Record<string, number>;
+  roundsPlayed: Set<number>; roundsWon: Set<number>;
 };
 
 export function buildMatchReportV2(
@@ -119,7 +120,7 @@ export function buildMatchReportV2(
 
   const acc: Record<string, Acc> = {};
   const A = (id: number, name: string, team: string): Acc =>
-    (acc[name] ??= { id, name, team, frags: 0, deaths: 0, hits: 0, shots: 0, wounds: 0, damage: 0, spawnKills: 0, spawnDamage: 0, captures: 0, recaptures: 0, excluded: 0, hold: 0, streakPoints: 0, streaks: {} });
+    (acc[name] ??= { id, name, team, frags: 0, deaths: 0, hits: 0, shots: 0, wounds: 0, damage: 0, spawnKills: 0, spawnDamage: 0, captures: 0, recaptures: 0, excluded: 0, hold: 0, streakPoints: 0, streaks: {}, roundsPlayed: new Set(), roundsWon: new Set() });
 
   const roundsWonByTeam: Record<string, number> = {};
   const rounds: MatchReportV2["rounds"] = [];
@@ -150,6 +151,7 @@ export function buildMatchReportV2(
     for (const p of r.players) {
       const c = r.final_player_counters[p.in_game_player_id]; if (!c) continue;
       const a = A(p.in_game_player_id, p.name, p.team); a.team = p.team; a.id = p.in_game_player_id;
+      a.roundsPlayed.add(i); if (countsAsRound && winnerTeam && p.team === winnerTeam) a.roundsWon.add(i);
       a.frags += c.frags; a.deaths += c.deaths; a.hits += c.hits; a.shots += c.shots; a.wounds += c.wounds;
       a.damage += r.damage_dealt[p.in_game_player_id] ?? 0;
     }
@@ -203,11 +205,13 @@ export function buildMatchReportV2(
   // winner counts toward the series (the offline export can't split the rounds).
   if (opts?.offline) {
     const m = opts.opsTagByHeadband ?? {};
+    const offlineBaseIdx = rounds.length; // offline rounds are appended after the online ones
     for (const [hbStr, st] of Object.entries(opts.offline.statsByHeadband)) {
       const hb = Number(hbStr);
       const name = m[hb] ?? `Head ${hb}`;
       const a = A(-hb, name, st.team); // existing online player keeps their team
       a.frags += st.frags; a.deaths += st.deaths; a.hits += st.hits; a.shots += st.shots; a.damage += st.damage; a.wounds += st.wounds ?? 0;
+      opts.offline.roundWinners.forEach((w, k) => { a.roundsPlayed.add(offlineBaseIdx + k); if (w && w === st.team) a.roundsWon.add(offlineBaseIdx + k); });
       (teamMembers[a.team] ??= new Set()).add(name);
     }
     for (const w of opts.offline.roundWinners) {
@@ -258,6 +262,7 @@ export function buildMatchReportV2(
       id: a.id, name: a.name, team: a.team, frags: f, deaths: a.deaths, kd: Math.round(kd * 100) / 100,
       accuracy: Math.round(accuracy * 1000) / 1000, shots: a.shots, hits: a.hits, wounds: a.wounds, damage: dmg,
       spawnKills: a.spawnKills, spawnDamage: a.spawnDamage, captures: a.captures, recaptures: a.recaptures, excludedCaptures: a.excluded, holdSeconds: a.hold,
+      roundsPlayed: a.roundsPlayed.size, roundsWonPresent: a.roundsWon.size,
       killScore, objectiveScore, streakScore, totalScore: killScore + objectiveScore + streakScore,
       streaks, accolades: [], killed: pp.killed, killedBy: pp.killedBy, nemesis: pp.nemesis,
     };

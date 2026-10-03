@@ -28,7 +28,7 @@ export type CommitAggregate = {
   frags: number; deaths: number; hits: number; shots: number; wounds: number; spawn_kills: number; spawn_damage: number; captures: number; hold_seconds: number;
   accuracy: number; kd: number; damage: number; score: number; match_rating: number; match_average_score: number; score_performance_delta: number; xp_multiplier: number;
   score_rank: number; kills_rank: number; deaths_rank: number; kd_rank: number; accuracy_rank: number; damage_rank: number;
-  was_winner: boolean; rounds_won: number; rounds_lost: number; team_score: number; opponent_team_score: number;
+  was_winner: boolean; rounds_won: number; rounds_lost: number; rounds_played: number; rounds_won_present: number; team_score: number; opponent_team_score: number;
   xp_from_points: number; xp_from_wins: number; xp_from_accolades: number; xp_total: number;
   streaks: CommitStreak[]; nemesis: CommitNemesis; killed: CommitTally[]; killed_by: CommitTally[];
 };
@@ -89,6 +89,13 @@ export function computeMatchCommit(
     specialistWinners(P.map((p, i) => ({ id: i, gun: identity(p.name).gun ?? null, score: p.totalScore, frags: p.frags, name: identity(p.name).nickname }))),
   );
 
+  // Extrapolate each player's score to a FULL-match equivalent for the RATING
+  // only (score x totalRounds / roundsPlayed), so playing fewer rounds doesn't drag
+  // down match_rating + its lifetime/HoF rollups. Full-match players are unchanged.
+  // Raw score / average / delta and performance XP stay on ACTUAL play.
+  const R = report.roundCount;
+  const ratingScores = P.map((p) => { const rp = p.roundsPlayed && p.roundsPlayed > 0 ? p.roundsPlayed : R; return rp > 0 ? (p.totalScore * R) / rp : p.totalScore; });
+  const avgRatingScore = ratingScores.length ? ratingScores.reduce((s, v) => s + v, 0) / ratingScores.length : 0;
   const aggregates: CommitAggregate[] = P.map((p, i) => {
     const idn = identity(p.name);
     const teamRoundsWon = report.roundsWonByTeam[p.team] ?? 0;
@@ -100,7 +107,7 @@ export function computeMatchCommit(
     const mult = Math.max(idn.xpMultiplier ?? 1, isDoubleXp ? 2 : 1);
     const rating = matchAvg > 0 ? p.totalScore / matchAvg : 0;
     const accoladeBase = p.accolades.reduce((s, nm) => s + (accoladeByKey.get(norm(nm))?.xp ?? 0), 0) + (specialistIdx.has(i) ? specialistXp : 0);
-    const xpb = computeMatchXp({ rating, roundsWon: teamRoundsWon, isWinner, accoladeXp: accoladeBase, multiplier: mult }, cfg);
+    const xpb = computeMatchXp({ rating, roundsWon: p.roundsWonPresent ?? teamRoundsWon, isWinner, accoladeXp: accoladeBase, multiplier: mult }, cfg);
     const xpPoints = xpb.xpFromPoints, xpWins = xpb.xpFromWins, xpAcc = xpb.xpFromAccolades;
     const nemesis: CommitNemesis = p.nemesis
       ? { headband: p.nemesis.name, nickname: nameFor(p.nemesis.name), profilePicUrl: identity(p.nemesis.name).profilePicUrl ?? null, level: 0, killsFor: p.nemesis.killsFor, killsAgainst: p.nemesis.killsAgainst }
@@ -109,10 +116,10 @@ export function computeMatchCommit(
       account_id: idn.accountId, nickname: idn.nickname, headset_label: p.name, team_colour: p.team, profile_pic_url: idn.profilePicUrl ?? null, gun_used: idn.gun ?? null,
       frags: p.frags, deaths: p.deaths, hits: p.hits, shots: p.shots, wounds: p.wounds, spawn_kills: p.spawnKills, spawn_damage: Math.round(p.spawnDamage), captures: p.captures + p.recaptures, hold_seconds: Math.round(p.holdSeconds),
       accuracy: Math.round(p.accuracy * 10000) / 10000, kd: p.kd, damage: p.damage, score: p.totalScore,
-      match_rating: matchAvg > 0 ? Math.round((p.totalScore / matchAvg) * 100) / 100 : 0, match_average_score: Math.round(matchAvg), score_performance_delta: Math.round(p.totalScore - matchAvg), xp_multiplier: mult,
+      match_rating: avgRatingScore > 0 ? Math.round((ratingScores[i] / avgRatingScore) * 100) / 100 : 0, match_average_score: Math.round(matchAvg), score_performance_delta: Math.round(p.totalScore - matchAvg), xp_multiplier: mult,
       score_rank: rankOf(scores, p.totalScore), kills_rank: rankOf(kills, p.frags), deaths_rank: rankOf(deaths, p.deaths, false),
       kd_rank: rankOf(kds, p.kd), accuracy_rank: rankOf(accs, p.accuracy), damage_rank: rankOf(dmgs, p.damage),
-      was_winner: isWinner, rounds_won: teamRoundsWon, rounds_lost: report.roundCount - teamRoundsWon,
+      was_winner: isWinner, rounds_won: teamRoundsWon, rounds_lost: report.roundCount - teamRoundsWon, rounds_played: p.roundsPlayed ?? R, rounds_won_present: p.roundsWonPresent ?? teamRoundsWon,
       team_score: teamScore[p.team] ?? 0, opponent_team_score: oppTeam ? teamScore[oppTeam] ?? 0 : 0,
       xp_from_points: xpPoints, xp_from_wins: xpWins, xp_from_accolades: xpAcc, xp_total: xpb.xpTotal,
       streaks: p.streaks.map((s) => ({ key: s.key, count: s.count, points: s.points })),
