@@ -134,5 +134,18 @@ export async function recomputeProgression(client: SupabaseClient, fromMatchId?:
     const { error } = await client.rpc("apply_match_progression", { rows: updates });
     if (error) throw new Error(`apply_match_progression failed: ${error.message}`);
   }
+
+  // Stamp every match whose Elo we just (re)computed so the Match Manager shows
+  // "Elo calculated" instead of "pending", and clear any stale flag (the results
+  // are now current). Covers the published/edited match AND all later matches
+  // whose ratings shifted. matches_admin_all RLS lets the admin session do this.
+  const processedIds = matches.slice(startIndex).map((m) => m.id);
+  if (processedIds.length) {
+    const { error: stampErr } = await client
+      .from("matches")
+      .update({ elo_calculated_at: new Date().toISOString(), results_stale_at: null })
+      .in("id", processedIds);
+    if (stampErr) throw new Error(`elo_calculated_at stamp failed: ${stampErr.message}`);
+  }
   return { matches: matches.length - startIndex, rows: updates.length };
 }
