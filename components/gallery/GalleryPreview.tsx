@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { fetchGalleryImages } from "@/lib/cloudinary";
 import { Container } from "@/components/ui/Container";
+import { cldImage, cldSrcSet } from "@/lib/cld";
 
 /**
  * GalleryPreview
@@ -61,7 +62,8 @@ export async function GalleryPreview() {
               aria-label={img.caption ?? "View photo in gallery"}
             >
               <img
-                src={img.secureUrl}
+                src={cldImage(img.secureUrl, { w: 600, dpr: false })}
+                srcSet={cldSrcSet(img.secureUrl, 600, 1200)}
                 alt={img.caption ?? "LaserOps Malta outdoor laser tag"}
                 width={img.width || undefined}
                 height={img.height || undefined}

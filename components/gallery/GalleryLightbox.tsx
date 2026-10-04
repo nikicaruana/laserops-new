@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { cldImage } from "@/lib/cld";
 
 /**
  * GalleryLightbox
@@ -164,7 +165,7 @@ export function GalleryLightbox({ images, index, onClose }: Props) {
           <div className="relative flex w-full flex-1 flex-col items-center justify-center gap-3">
             <img
               key={img.secureUrl}
-              src={img.secureUrl}
+              src={cldImage(img.secureUrl, { w: 1600, dpr: false })}
               alt={img.caption ?? "LaserOps Malta outdoor laser tag"}
               width={img.width || undefined}
               height={img.height || undefined}
