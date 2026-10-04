@@ -215,9 +215,10 @@ export function BroadcastComposer({
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className={lbl}>From address</label>
-              <select className={input} value={fromEmail} onChange={(e) => setFromEmail(e.target.value)}>
-                {mailboxes.map((m) => <option key={m} value={m}>{m}</option>)}
-              </select>
+              <input className={input} value={fromEmail} onChange={(e) => setFromEmail(e.target.value)} list="lo-mailboxes" placeholder="name@laseropsmalta.com" />
+              <datalist id="lo-mailboxes">
+                {mailboxes.map((m) => <option key={m} value={m} />)}
+              </datalist>
             </div>
             <div>
               <label className={lbl}>Display name</label>

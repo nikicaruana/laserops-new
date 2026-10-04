@@ -27,6 +27,7 @@ import { parseXpConfig } from "@/lib/scoring/xp";
 import { resolveRoster } from "@/lib/ingestion/roster";
 import { recomputeProgression } from "@/lib/ingestion/progression";
 import { emitNotification } from "@/lib/notifications";
+import { matchDateLabel, matchTimeRangeLabel } from "@/lib/match-time";
 
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
@@ -61,7 +62,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   const scoringRuntime = await getScoringConfig(supabase);
 
   // Match flags + date (date drives date-scoped gun damage for offline).
-  const { data: mFlags } = await supabase.from("matches").select("played_on, scheduled_at, is_double_xp, offline_round_results, scoring_mode").eq("id", id).maybeSingle();
+  const { data: mFlags } = await supabase.from("matches").select("played_on, scheduled_at, is_double_xp, offline_round_results, scoring_mode, title, match_code, duration_minutes").eq("id", id).maybeSingle();
   const now = new Date().toISOString();
   const playedOn = (mFlags?.played_on as string | null) || ((mFlags?.scheduled_at as string | null)?.slice(0, 10)) || now.slice(0, 10);
   const isDoubleXp = mFlags?.is_double_xp === true;
@@ -184,6 +185,39 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   }
   const { error: rollupErr } = await supabase.rpc("rollup_match_careers");
   if (rollupErr) return NextResponse.json({ error: `Scores saved, but the career rollup failed: ${rollupErr.message}` }, { status: 500 });
+
+  // Report is live: tell everyone who played that their report is up (bell for
+  // all who played, email for those with an address). Recency-guarded (14d) so
+  // the launch backlog ingestion of old games does not notify for months-old
+  // matches, and deduped per match so re-publishing does not re-notify.
+  try {
+    const reportRecent = Date.now() - new Date(playedOn).getTime() < 14 * 86400000;
+    if (reportRecent) {
+      const matchCode = (mFlags?.match_code as string | null) ?? null;
+      const rlHref = matchCode ? `/match-report?match=${encodeURIComponent(matchCode)}` : "/player-portal/player-stats";
+      const matchLabel = (mFlags?.title as string | null) || matchCode || "your recent game";
+      const schedAt = (mFlags?.scheduled_at as string | null) || null;
+      const matchDate = schedAt ? matchDateLabel(schedAt) : "";
+      const matchTimeRange = schedAt ? matchTimeRangeLabel(schedAt, (mFlags?.duration_minutes as number | null) ?? null) : "";
+      const { data: rlParts } = await svc.from("match_player_aggregate").select("account_id").eq("match_id", id).not("account_id", "is", null);
+      const rlIds = [...new Set(((rlParts ?? []) as { account_id: string }[]).map((p) => p.account_id))];
+      if (rlIds.length) {
+        const { data: rlAlready } = await svc.from("notifications").select("account_id").eq("type_key", "match_report_live").eq("href", rlHref).in("account_id", rlIds);
+        const rlSent = new Set(((rlAlready ?? []) as { account_id: string }[]).map((n) => n.account_id));
+        for (const accId of rlIds) {
+          if (rlSent.has(accId)) continue;
+          await emitNotification(svc, accId, "match_report_live", {
+            title: "Your match report is live",
+            body: `The report for ${matchLabel} is up. See your kills, captures, accolades and where you ranked.`,
+            href: rlHref,
+            data: { matchLabel, matchDate, matchTimeRange },
+          });
+        }
+      }
+    }
+  } catch (e) {
+    console.error("[publish] match-report-live emit failed:", e);
+  }
 
   // First-game welcome: congratulate genuine first-timers (claimed accounts with
   // an email whose only game so far is this one), with a review ask + unlocks
