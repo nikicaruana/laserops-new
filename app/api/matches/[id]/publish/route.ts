@@ -26,6 +26,7 @@ import { lwaMatchPlayers, isLwa } from "@/lib/ingestion/lwa";
 import { parseXpConfig } from "@/lib/scoring/xp";
 import { resolveRoster } from "@/lib/ingestion/roster";
 import { recomputeProgression } from "@/lib/ingestion/progression";
+import { emitNotification } from "@/lib/notifications";
 
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
@@ -183,6 +184,37 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   }
   const { error: rollupErr } = await supabase.rpc("rollup_match_careers");
   if (rollupErr) return NextResponse.json({ error: `Scores saved, but the career rollup failed: ${rollupErr.message}` }, { status: 500 });
+
+  // First-game welcome: congratulate genuine first-timers (claimed accounts with
+  // an email whose only game so far is this one), with a review ask + unlocks
+  // nudge. Runs after the rollup so lifetime games is current; recency-guarded so
+  // the launch backlog ingestion of old games does not retro-spam. Best-effort.
+  try {
+    const recentFirstGame = Date.now() - new Date(playedOn).getTime() < 14 * 86400000;
+    if (recentFirstGame) {
+      const { data: fgParts } = await svc.from("match_player_aggregate").select("account_id").eq("match_id", id).not("account_id", "is", null);
+      const fgIds = [...new Set(((fgParts ?? []) as { account_id: string }[]).map((p) => p.account_id))];
+      if (fgIds.length) {
+        const [{ data: lifetimes }, { data: fgAccs }, { data: fgAlready }] = await Promise.all([
+          svc.from("player_stats_lifetime").select("account_id, games").in("account_id", fgIds),
+          svc.from("accounts").select("id, email, auth_user_id").in("id", fgIds),
+          svc.from("notifications").select("account_id").eq("type_key", "first_game_followup").in("account_id", fgIds),
+        ]);
+        const firstTimers = new Set(((lifetimes ?? []) as { account_id: string; games: number }[]).filter((l) => Number(l.games) === 1).map((l) => l.account_id));
+        const fgSent = new Set(((fgAlready ?? []) as { account_id: string }[]).map((n) => n.account_id));
+        for (const a of ((fgAccs ?? []) as { id: string; email: string | null; auth_user_id: string | null }[])) {
+          if (!firstTimers.has(a.id) || fgSent.has(a.id) || !a.auth_user_id || !a.email) continue;
+          await emitNotification(svc, a.id, "first_game_followup", {
+            title: "Great first game!",
+            body: "You just played your first LaserOps game. Here is how to make the most of it.",
+            href: "/player-portal/player-stats",
+          });
+        }
+      }
+    }
+  } catch (e) {
+    console.error("[publish] first-game follow-up emit failed:", e);
+  }
 
   // Refresh the cached, player-agnostic leaderboard/Hall of Fame boards.
   revalidateTag("leaderboards");
