@@ -1,12 +1,13 @@
 /**
  * app/api/admin/broadcast/route.ts
  * --------------------------------------------------------------------
- * Admin sends a one-off notification (announcement) to everyone, a single
- * player, or a squad. Inserts notification rows (type admin_broadcast) with the
+ * Admin sends a one-off notification (announcement) to everyone, one or more
+ * players, or a squad. Inserts notification rows (type admin_broadcast) with the
  * service role. Email is per-send: when off we pre-stamp email_sent_at so the
  * dispatch cron skips it; when on we leave it null and the cron emails it using
- * the admin_broadcast HTML template. Admin-gated. Body:
- * { mode, opsTag?, squadId?, title, body?, href?, sendEmail }.
+ * the admin_broadcast HTML template, honouring any per-send fromEmail/senderName
+ * stamped on the row. Admin-gated. Body:
+ * { mode, opsTags?, squadId?, title, body?, href?, sendEmail, fromEmail?, senderName? }.
  */
 import type { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest) {
   const { data: isAdmin } = await supabase.rpc("is_admin");
   if (!isAdmin) return Response.json({ ok: false, error: "Admins only." }, { status: 403 });
 
-  let body: { mode?: string; opsTag?: string; squadId?: string; title?: string; body?: string; href?: string; sendEmail?: boolean };
+  let body: { mode?: string; opsTags?: string[]; opsTag?: string; squadId?: string; title?: string; body?: string; href?: string; sendEmail?: boolean; fromEmail?: string; senderName?: string };
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -39,11 +40,12 @@ export async function POST(req: NextRequest) {
   // Resolve recipients.
   let accountIds: string[] = [];
   if (body.mode === "player") {
-    const tag = (body.opsTag ?? "").trim();
-    if (!tag) return Response.json({ ok: false, error: "Pick a player." }, { status: 400 });
-    const { data } = await svc.from("accounts").select("id").ilike("ops_tag", tag).limit(1);
+    // Accept the new multi-select (opsTags) and the old single field (opsTag).
+    const tags = Array.from(new Set([...(body.opsTags ?? []), ...(body.opsTag ? [body.opsTag] : [])].map((t) => (t ?? "").trim()).filter(Boolean)));
+    if (tags.length === 0) return Response.json({ ok: false, error: "Pick at least one player." }, { status: 400 });
+    const { data } = await svc.from("accounts").select("id").in("ops_tag", tags);
     accountIds = ((data ?? []) as { id: string }[]).map((a) => a.id);
-    if (accountIds.length === 0) return Response.json({ ok: false, error: "No player with that ops tag." }, { status: 400 });
+    if (accountIds.length === 0) return Response.json({ ok: false, error: "No players matched those ops tags." }, { status: 400 });
   } else if (body.mode === "squad") {
     if (!body.squadId) return Response.json({ ok: false, error: "Pick a squad." }, { status: 400 });
     const { data } = await svc.from("squad_members").select("account_id").eq("squad_id", body.squadId);
@@ -57,6 +59,8 @@ export async function POST(req: NextRequest) {
   if (accountIds.length === 0) return Response.json({ ok: true, sent: 0 });
 
   const emailStamp = body.sendEmail ? null : new Date().toISOString();
+  const fromEmail = body.sendEmail ? body.fromEmail?.trim() || null : null;
+  const senderName = body.sendEmail ? body.senderName?.trim() || null : null;
   const rows = accountIds.map((id) => ({
     account_id: id,
     type_key: "admin_broadcast",
@@ -65,6 +69,8 @@ export async function POST(req: NextRequest) {
     body: body.body?.trim() || null,
     href: body.href?.trim() || null,
     email_sent_at: emailStamp,
+    email_from: fromEmail,
+    email_sender_name: senderName,
   }));
 
   // Insert in chunks to stay well within row limits.

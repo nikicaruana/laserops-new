@@ -4,7 +4,9 @@
  * Sends the emails for notifications whose type has email on. Picks up rows that
  * are due (deliver_at <= now) and not yet emailed, substitutes {{title}}/{{body}}
  * /{{link}} into the type's HTML template, sends via Resend, and stamps
- * email_sent_at so each fires once. Guarded by CRON_SECRET, service role.
+ * email_sent_at so each fires once. A row may carry its own email_from /
+ * email_sender_name (set by the admin broadcast composer) which overrides the
+ * type's sender for that one send. Guarded by CRON_SECRET, service role.
  */
 import type { NextRequest } from "next/server";
 import { Resend } from "resend";
@@ -21,6 +23,8 @@ type Row = {
   body: string | null;
   href: string | null;
   data: Record<string, unknown> | null;
+  email_from: string | null;
+  email_sender_name: string | null;
   account: { email: string | null; ops_tag: string | null } | null;
   type: { sends_email: boolean; email_subject: string | null; email_html: string | null; email_from: string | null; email_sender_name: string | null; email_reply_to: string | null } | null;
 };
@@ -43,7 +47,7 @@ export async function GET(req: NextRequest) {
   if (gameTokenImg) config.tokenImageUrl = gameTokenImg;
   const { data, error } = await supabase
     .from("notifications")
-    .select("id, title, body, href, data, account:accounts(email, ops_tag), type:notification_types(sends_email, email_subject, email_html, email_from, email_sender_name, email_reply_to)")
+    .select("id, title, body, href, data, email_from, email_sender_name, account:accounts(email, ops_tag), type:notification_types(sends_email, email_subject, email_html, email_from, email_sender_name, email_reply_to)")
     .is("email_sent_at", null)
     .lte("deliver_at", new Date().toISOString())
     .limit(50);
@@ -56,7 +60,12 @@ export async function GET(req: NextRequest) {
     const link = r.href ? (r.href.startsWith("http") ? r.href : `${BASE_URL}${r.href}`) : BASE_URL;
     const tokens = buildEmailTokens(config, { opsTag: r.account!.ops_tag, title: r.title, body: r.body, link, data: r.data });
     const html = renderEmailTemplate(r.type!.email_html as string, tokens);
-    const sender = resolveSender(config, { from: r.type!.email_from, senderName: r.type!.email_sender_name, replyTo: r.type!.email_reply_to });
+    // Per-send sender (admin broadcast) wins over the type's, which wins over config.
+    const sender = resolveSender(config, {
+      from: r.email_from ?? r.type!.email_from,
+      senderName: r.email_sender_name ?? r.type!.email_sender_name,
+      replyTo: r.type!.email_reply_to,
+    });
     try {
       await resend.emails.send({
         from: sender.from,
