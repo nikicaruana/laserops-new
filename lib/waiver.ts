@@ -16,5 +16,20 @@ export const WAIVER_PARAGRAPHS = [
   "If I am under 18, I confirm that a parent or legal guardian is signing this waiver on my behalf.",
 ];
 
+// Benefit-led marketing opt-in, used at onboarding and at the account-claim
+// gate (see components/portal/MarketingConsent.tsx). Leads with the match-stats
+// benefit - the strongest hook - and folds the broader marketing consent in
+// underneath, to lift the acceptance rate. All three strings together are the
+// full, specific consent statement; consent means accounts.marketing_opt_in.
+export const MARKETING_CONSENT_HEADLINE = "Receive your match stats by email?";
+
+export const MARKETING_CONSENT_DETAIL =
+  "Get your performance reports and seasonal challenges straight to your inbox, plus the occasional game discount, promotion and news from LaserOps. Unsubscribe anytime.";
+
+export const MARKETING_CONSENT_CHECKBOX =
+  "Yes, email me my match stats, challenges and the occasional offer from LaserOps.";
+
+// Full single-sentence statement, used on the profile settings toggle (a plain
+// preference control rather than a first-time prompt).
 export const MARKETING_CONSENT_TEXT =
   "I agree to have my email address used to receive match stats, performance reports, seasonal challenges, game discounts, promotional content, and other news from LaserOps. I understand I can unsubscribe at any time.";

@@ -16,8 +16,8 @@ import { Button } from "@/components/ui/Button";
 import {
   WAIVER_TITLE,
   WAIVER_PARAGRAPHS,
-  MARKETING_CONSENT_TEXT,
 } from "@/lib/waiver";
+import { MarketingConsent } from "@/components/portal/MarketingConsent";
 
 const inputStyles =
   "h-14 w-full rounded-none border border-border bg-bg-overlay px-4 text-sm text-text placeholder:text-text-subtle focus:border-accent focus:outline-none";
@@ -228,16 +228,8 @@ export function OnboardingForm({
           </label>
         </div>
 
-        {/* Marketing (optional) */}
-        <label className="flex cursor-pointer items-start gap-2.5 text-xs leading-relaxed text-text-muted">
-          <input
-            type="checkbox"
-            checked={marketingOptIn}
-            onChange={(e) => setMarketingOptIn(e.target.checked)}
-            className="mt-0.5 h-4 w-4 shrink-0 accent-accent"
-          />
-          <span>{MARKETING_CONSENT_TEXT}</span>
-        </label>
+        {/* Marketing (optional) - benefit-led block to lift acceptance. */}
+        <MarketingConsent checked={marketingOptIn} onChange={setMarketingOptIn} />
 
         {error && (
           <p className="border border-red-800 bg-red-950/40 px-4 py-3 text-sm text-red-400">{error}</p>

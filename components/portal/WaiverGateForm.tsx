@@ -10,7 +10,8 @@
  */
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { WAIVER_TITLE, WAIVER_PARAGRAPHS, MARKETING_CONSENT_TEXT } from "@/lib/waiver";
+import { WAIVER_TITLE, WAIVER_PARAGRAPHS } from "@/lib/waiver";
+import { MarketingConsent } from "@/components/portal/MarketingConsent";
 
 export function WaiverGateForm({ initialMarketing }: { initialMarketing: boolean }) {
   const [accept, setAccept] = useState(false);
@@ -62,15 +63,8 @@ export function WaiverGateForm({ initialMarketing }: { initialMarketing: boolean
         </label>
       </div>
 
-      <label className="flex cursor-pointer items-start gap-2.5 text-xs leading-relaxed text-text-muted">
-        <input
-          type="checkbox"
-          checked={marketing}
-          onChange={(e) => setMarketing(e.target.checked)}
-          className="mt-0.5 h-4 w-4 shrink-0 accent-accent"
-        />
-        <span>{MARKETING_CONSENT_TEXT}</span>
-      </label>
+      {/* Already-consented players keep their opt-in silently; only ask the rest. */}
+      {!initialMarketing && <MarketingConsent checked={marketing} onChange={setMarketing} />}
 
       {error && (
         <p className="border border-red-800 bg-red-950/40 px-4 py-3 text-sm text-red-400">{error}</p>
