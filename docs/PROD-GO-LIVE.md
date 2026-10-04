@@ -115,7 +115,7 @@ Corporate-events + birthday-parties pages do NOT pull Cloudinary today (static).
 project (`cmsodupwwtquifennogy`), clean it up, and make it prod — no dump/restore into
 a fresh project. Confirms the §3 approach.
 
-- [ ] **HARD GATE — sync the DB to the code before promoting.** Migrations have been
+- [x] **HARD GATE DONE (2026-10-04) — DB synced to code via `npx supabase db push`.** The 8 untracked migrations (20260817-20260824, all idempotent) were caught up; `supabase migration list` now shows every migration in both Local and Remote, and the db-push workflow is restored (no more SQL-editor pasting). Original drift: migrations had been
   applied to staging BY HAND (pasting SQL), so the live DB has drifted from the code:
   several SQL functions on staging are older than their migration files. Symptoms hit
   this session (each was a "migration never run on this DB"):
@@ -127,7 +127,7 @@ a fresh project. Confirms the §3 approach.
   Before go-live, run `npx supabase db push` (or `supabase migration up`) against the
   project so EVERY migration is applied, then do one full `recompute-all`. Don't keep
   patching functions one at a time. Verify with a drift audit first (see below).
-- [ ] **Drift audit.** List which migrations are actually applied on staging vs. the
+- [x] **Drift audit DONE (2026-10-04).** The gap was exactly the last 8 local-only migrations (now applied/recorded). Earlier:
   `supabase/migrations/` folder, so there's one clear "still to run" list rather than
   discovering stale functions via bug reports.
 - [ ] **Split dev off the prod DB.** Local `.env.local` currently points at
