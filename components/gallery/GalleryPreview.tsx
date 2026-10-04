@@ -4,6 +4,7 @@ import { getFeaturedPhotos } from "@/lib/cms/home-featured";
 import { fetchFeaturedHomePhotos } from "@/lib/match-photos";
 import { createPublicClient } from "@/lib/supabase/public";
 import { Container } from "@/components/ui/Container";
+import { cldImage, cldSrcSet } from "@/lib/cld";
 
 /**
  * GalleryPreview
@@ -90,7 +91,8 @@ export async function GalleryPreview() {
               aria-label={img.caption || "View photo in gallery"}
             >
               <img
-                src={img.src}
+                src={cldImage(img.src, { w: 600, dpr: false })}
+                srcSet={cldSrcSet(img.src, 600, 1200)}
                 alt={img.caption || "LaserOps Malta outdoor laser tag"}
                 width={img.width}
                 height={img.height}

@@ -17,7 +17,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { cldImage } from "@/lib/cld";
+import { cldImage, cldSrcSet } from "@/lib/cld";
 import { GalleryLightbox, type LightboxImage } from "./GalleryLightbox";
 import { PhotoStoryComposer } from "@/components/match-report/PhotoStoryComposer";
 import type { OverlayData } from "@/lib/story/meta";
@@ -233,7 +233,8 @@ export function GalleryBrowser({ photos }: { photos: GalleryPhoto[] }) {
               <button type="button" onClick={() => setLightbox(i)} className="block w-full" aria-label={p.caption || "View photo"}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={cldImage(p.url, { w: 600 })}
+                  src={cldImage(p.url, { w: 600, dpr: false })}
+                  srcSet={cldSrcSet(p.url, 600, 1200)}
                   alt={p.caption || `Match photo${p.matchCode ? " from " + p.matchCode : ""}`}
                   width={p.width ?? undefined}
                   height={p.height ?? undefined}

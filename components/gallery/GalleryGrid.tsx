@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/cn";
 import type { CloudinaryImage } from "@/lib/cloudinary";
+import { cldImage, cldSrcSet } from "@/lib/cld";
 import { GalleryLightbox } from "./GalleryLightbox";
 import { createClient } from "@/lib/supabase/client";
 
@@ -221,7 +222,8 @@ function GalleryItem({ image, index, onClick }: ItemProps) {
       aria-label={image.caption ?? "View photo"}
     >
       <img
-        src={image.secureUrl}
+        src={cldImage(image.secureUrl, { w: 600, dpr: false })}
+        srcSet={cldSrcSet(image.secureUrl, 600, 1200)}
         alt={image.caption ?? "LaserOps Malta outdoor laser tag"}
         width={image.width || undefined}
         height={image.height || undefined}
