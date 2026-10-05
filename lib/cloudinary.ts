@@ -63,6 +63,16 @@ export const BLOG_FOLDER = "laseropsmalta.com/blog";
 export const HOME_SOCIAL_FOLDER = "laseropsmalta.com/home-social";
 
 /** Allowed image-upload kinds -> Cloudinary folder. */
+export const CONTENT_FOLDER_ROOT = "laseropsmalta.com/content";
+export const CONTENT_IMAGE_SURFACES = [
+  { kind: "community", tag: "community", label: "Community page", folder: `${CONTENT_FOLDER_ROOT}/community` },
+  { kind: "olt-hero", tag: "olt-hero", label: "Outdoor laser tag - Hero", folder: `${CONTENT_FOLDER_ROOT}/outdoor-hero` },
+  { kind: "olt-arena", tag: "olt-arena", label: "Outdoor laser tag - Arena", folder: `${CONTENT_FOLDER_ROOT}/outdoor-arena` },
+  { kind: "olt-kit", tag: "olt-kit", label: "Outdoor laser tag - Kit", folder: `${CONTENT_FOLDER_ROOT}/outdoor-kit` },
+  { kind: "stag", tag: "stag", label: "Stag & Hen", folder: `${CONTENT_FOLDER_ROOT}/stag` },
+] as const;
+export const CONTENT_IMAGE_TAGS: Record<string, string> = Object.fromEntries(CONTENT_IMAGE_SURFACES.map((s) => [s.kind, s.tag]));
+
 export const ADMIN_IMAGE_FOLDERS: Record<string, string> = {
   gun: GUNS_FOLDER,
   accolade: ACCOLADES_FOLDER,
@@ -74,6 +84,7 @@ export const ADMIN_IMAGE_FOLDERS: Record<string, string> = {
   reward: REWARD_IMAGES_FOLDER,
   blog: BLOG_FOLDER,
   social: HOME_SOCIAL_FOLDER,
+  ...Object.fromEntries(CONTENT_IMAGE_SURFACES.map((s) => [s.kind, s.folder])),
 };
 
 function isProfilePic(folder: string): boolean {

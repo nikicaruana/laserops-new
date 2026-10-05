@@ -88,6 +88,7 @@ const SECTIONS: { heading: string; items: Item[] }[] = [
     items: [
       { label: "Homepage", href: "/admin/homepage" },
       { label: "Gallery", href: "/admin/gallery" },
+      { label: "Content images", href: "/admin/content-images" },
       { label: "Blog", href: "/admin/blog" },
     ],
   },

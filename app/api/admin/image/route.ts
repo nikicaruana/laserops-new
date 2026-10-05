@@ -8,7 +8,7 @@
  */
 import crypto from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
-import { ADMIN_IMAGE_FOLDERS } from "@/lib/cloudinary";
+import { ADMIN_IMAGE_FOLDERS, CONTENT_IMAGE_TAGS } from "@/lib/cloudinary";
 
 const MAX_BYTES = 6 * 1024 * 1024; // 6 MB
 
@@ -61,7 +61,8 @@ export async function POST(request: Request) {
 
   // Server-signed upload. No fixed public_id – each image is its own asset.
   const timestamp = Math.floor(Date.now() / 1000);
-  const paramsToSign: Record<string, string | number | boolean> = { folder, timestamp };
+  const contentTag = CONTENT_IMAGE_TAGS[kind];
+  const paramsToSign: Record<string, string | number | boolean> = contentTag ? { folder, tags: contentTag, timestamp } : { folder, timestamp };
   const signatureBase = Object.keys(paramsToSign)
     .sort()
     .map((k) => `${k}=${paramsToSign[k]}`)
@@ -73,6 +74,7 @@ export async function POST(request: Request) {
   uploadForm.append("api_key", apiKey);
   uploadForm.append("timestamp", String(timestamp));
   uploadForm.append("folder", folder);
+  if (contentTag) uploadForm.append("tags", contentTag);
   uploadForm.append("signature", signature);
 
   try {
