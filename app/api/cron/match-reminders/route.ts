@@ -70,7 +70,7 @@ export async function GET(req: NextRequest) {
         title: m.title || "Match reminder",
         body: `Your game is on ${matchDate} at ${matchTime}.`,
         href: `/player-portal/games/${m.id}`,
-        data: { matchDate, matchTime, matchTimeRange: matchTimeRangeLabel(m.scheduled_at, m.duration_minutes), signupFormUrl, whatsappShareUrl, ...(loc?.playing_url ? { matchLocationUrl: loc.playing_url } : {}), ...(loc?.parking_url ? { parkingUrl: loc.parking_url } : {}) },
+        data: { matchLabel: m.title || "your game", matchDate, matchTime, matchTimeRange: matchTimeRangeLabel(m.scheduled_at, m.duration_minutes), signupFormUrl, whatsappShareUrl, ...(loc?.playing_url ? { matchLocationUrl: loc.playing_url } : {}), ...(loc?.parking_url ? { parkingUrl: loc.parking_url } : {}) },
       });
     }
     reminded++;

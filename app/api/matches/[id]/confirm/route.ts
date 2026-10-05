@@ -61,7 +61,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
         title: `${label} is confirmed`,
         body,
         href: `/player-portal/games/${id}`,
-        data: { matchDate: matchDateLabel(match.scheduled_at), matchTimeRange: matchTimeRangeLabel(match.scheduled_at, match.duration_minutes) },
+        data: { matchLabel: label, matchDate: matchDateLabel(match.scheduled_at), matchTimeRange: matchTimeRangeLabel(match.scheduled_at, match.duration_minutes) },
       });
       notified++;
     }

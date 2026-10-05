@@ -70,7 +70,7 @@ export async function GET(req: NextRequest) {
     // Notify registered signups their game is live.
     const { data: liveSignups } = await supabase.from("match_signups").select("account_id").eq("match_id", m.id).eq("status", "registered");
     for (const r of (liveSignups ?? []) as { account_id: string | null }[]) {
-      if (r.account_id) await emitNotification(supabase, r.account_id, "game_live", { title: updated.title || "Your game is live", body: "Your game is live now. Sign in to join.", href: `/player-portal/games/${m.id}/join` });
+      if (r.account_id) await emitNotification(supabase, r.account_id, "game_live", { title: updated.title || "Your game is live", body: "Your game is live now. Sign in to join.", href: `/player-portal/games/${m.id}/join`, data: { matchLabel: updated.title || "your game" } });
     }
 
     if (resend && adminEmails.length > 0) {

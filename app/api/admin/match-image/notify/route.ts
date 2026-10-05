@@ -67,7 +67,7 @@ export async function POST(request: Request) {
   const body = `Photos from ${label} have been uploaded. Take a look and tag yourself.`;
 
   for (const accountId of accountIds) {
-    await emitNotification(svc, accountId, "match_photos_added", { title, body, href });
+    await emitNotification(svc, accountId, "match_photos_added", { title, body, href, data: { matchLabel: label } });
   }
 
   const nowIso = new Date().toISOString();
