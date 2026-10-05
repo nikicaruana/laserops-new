@@ -31,7 +31,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ ma
   const [{ data: signup }, { data: match }] = await Promise.all([
     supabase
       .from("match_signups")
-      .select("status, paid_at, payment_ref, payment_provider, stripe_payment_intent")
+      .select("status, paid_at, payment_ref, payment_provider")
       .eq("match_id", matchId)
       .eq("account_id", account.id)
       .maybeSingle(),
@@ -50,8 +50,8 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ ma
 
   const hours = match?.scheduled_at ? (new Date(match.scheduled_at).getTime() - Date.now()) / 3_600_000 : 0;
   const { autoRefundHours, noRefundHours } = await getRefundConfig();
-  const providerId = signup.payment_provider || (signup.stripe_payment_intent ? "stripe" : null);
-  const ref = signup.payment_ref || signup.stripe_payment_intent;
+  const providerId = signup.payment_provider || null;
+  const ref = signup.payment_ref;
 
   // >= 48h with a captured online payment -> automatic full refund.
   if (hours >= autoRefundHours && providerId && ref) {

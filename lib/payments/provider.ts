@@ -2,7 +2,7 @@
  * lib/payments/provider.ts
  * --------------------------------------------------------------------
  * Provider-agnostic payment contract. The booking/refund logic talks to this
- * interface; concrete providers (Stripe today, Viva next) implement it, so
+ * interface; concrete providers (Viva) implement it, so
  * switching processors is a contained adapter swap. All amounts are in minor
  * units (cents). Server-only.
  */
@@ -37,7 +37,7 @@ export type PaymentEvent =
   | { kind: "ignored" };
 
 export interface PaymentProvider {
-  /** Stable id stored on the signup (e.g. "stripe", "viva"). */
+  /** Stable id stored on the signup (e.g. "viva"). */
   readonly id: string;
   /** Whether the required env/credentials are present. */
   isConfigured(): boolean;

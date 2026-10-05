@@ -6,7 +6,7 @@
  *
  * A player can pay for a game with cash (online), tokens, or a mix. A refund
  * returns a fraction (1 = full) of what they paid, CASH FIRST then tokens:
- *   - cash portion  -> refunded via the provider that captured it (Viva/Stripe)
+ *   - cash portion  -> refunded via the provider that captured it (Viva)
  *                      and logged to the financial ledger,
  *   - token portion -> credited back as a 'refund' token lot (refund_match_tokens).
  * It writes the signup's refund bookkeeping and emits the `refunded`
@@ -65,7 +65,7 @@ export async function refundSignup(
 
   const { data: signup } = await svc
     .from("match_signups")
-    .select("paid_at, paid_amount_eur, payment_ref, payment_provider, stripe_payment_intent, refunded_at")
+    .select("paid_at, paid_amount_eur, payment_ref, payment_provider, refunded_at")
     .eq("match_id", matchId)
     .eq("account_id", accountId)
     .maybeSingle();
@@ -101,8 +101,8 @@ export async function refundSignup(
   const remainderEur = r2(refundEur - cashRefundEur);
   const tokenRefund = price && price > 0 ? r4(remainderEur / price) : 0;
 
-  const providerId = signup.payment_provider || (signup.stripe_payment_intent ? "stripe" : null);
-  const ref = signup.payment_ref || signup.stripe_payment_intent;
+  const providerId = signup.payment_provider || null;
+  const ref = signup.payment_ref;
   const note = opts.note ?? "Game refund";
 
   // 1) Cash portion via the capturing provider + ledger entry.

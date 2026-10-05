@@ -11,7 +11,7 @@ import { emitNotification } from "@/lib/notifications";
 import { sendEmail } from "@/lib/email";
 import type { PaymentEvent } from "@/lib/payments/provider";
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://laseropsmalta.com";
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.laseropsmalta.com";
 
 export async function markSignupPaid(providerId: string, ev: Extract<PaymentEvent, { kind: "paid" }>): Promise<boolean> {
   const svc = createServiceClient();
@@ -27,8 +27,6 @@ export async function markSignupPaid(providerId: string, ev: Extract<PaymentEven
     payment_ref: ev.ref,
     payment_provider: providerId,
   };
-  // Keep the legacy Stripe column populated for Stripe payments.
-  if (providerId === "stripe") update.stripe_payment_intent = ev.ref;
 
   const { data, error } = await svc
     .from("match_signups")

@@ -2,7 +2,7 @@
  * lib/payments/providers/viva.ts
  * --------------------------------------------------------------------
  * Viva.com (Smart Checkout) implementation of PaymentProvider. No SDK - REST via
- * fetch, same pattern as the Stripe/Cloudinary/Resend usage.
+ * fetch, same pattern as the Cloudinary/Resend usage.
  *
  * Flow (https://developer.viva.com/smart-checkout/):
  *   1. OAuth2 client-credentials -> bearer token (scope redirectcheckout).

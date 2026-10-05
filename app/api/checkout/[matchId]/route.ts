@@ -1,11 +1,11 @@
 /**
  * app/api/checkout/[matchId]/route.ts
  * --------------------------------------------------------------------
- * Starts a Stripe hosted-checkout session for a signed-up player to pay their
+ * Starts a hosted-checkout session for a signed-up player to pay their
  * per-player match fee online. Auth-gated to the player; requires the match to
  * be confirmed/live, per-player priced, and the caller to hold a registered
  * signup that isn't already paid. Records payment_intent = 'online' and returns
- * the Checkout URL. Payment is confirmed asynchronously by the Stripe webhook
+ * the Checkout URL. Payment is confirmed asynchronously by the provider webhook
  * (which is the only thing that sets paid_at). Returns { ok, url }.
  */
 import type { NextRequest } from "next/server";

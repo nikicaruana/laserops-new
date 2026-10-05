@@ -6,7 +6,7 @@
  * match fees, token bundles and gifts) with ?t={transactionId}&s={orderCode}
  * appended. This page is UX only: the actual payment is confirmed asynchronously
  * by the /api/viva/webhook handler, so we just reassure the customer and point
- * them onward. (Stripe uses per-checkout success URLs and doesn't land here.)
+ * them onward.
  */
 import Link from "next/link";
 import type { Metadata } from "next";

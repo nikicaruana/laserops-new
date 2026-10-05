@@ -6,7 +6,7 @@ export function formatEur(value: number | string | null | undefined): string {
   return `€${(typeof n === "number" && Number.isFinite(n) ? n : 0).toFixed(2)}`;
 }
 
-/** Euros -> integer cents for Stripe (avoids float drift). */
+/** Euros -> integer cents (providers bill in minor units; avoids float drift). */
 export function toCents(euros: number): number {
   return Math.round(euros * 100);
 }
