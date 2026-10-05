@@ -118,6 +118,7 @@ export async function fulfillTokenCheckout(providerId: string, ev: Extract<Payme
     const { data: buyer } = await svc.from("accounts").select("ops_tag").eq("id", r.buyer as string).maybeSingle();
     const from = buyer?.ops_tag ? `${buyer.ops_tag}` : "A fellow player";
     await emitNotification(svc, r.recipient_account as string, "tokens_gifted", {
+      data: { gifterName: from },
       title: `${from} sent you ${tokens} game ${tokenWord}`,
       body: `${from} gifted you ${tokens} LaserOps game ${tokenWord}.${r.message ? ` "${r.message}"` : ""} They're on your account now. Use them to pay for a game.`,
       href: `/player-portal/profile`,
@@ -133,6 +134,7 @@ export async function fulfillTokenCheckout(providerId: string, ev: Extract<Payme
       to: r.recipient_email as string,
       subject: "You have been gifted LaserOps game tokens",
       typeKey: "tokens_gifted",
+      data: { gifterName: from },
       title: `${from} sent you ${tokens} game ${tokenWord}`,
       body: `${from} gifted you ${tokens} LaserOps game ${tokenWord} (1 token = 1 free game).${r.message ? ` Their message: "${r.message}"` : ""} Create your LaserOps account or sign in, then open the link below to claim them.`,
       link: claimLink,

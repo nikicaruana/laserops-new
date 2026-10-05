@@ -24,6 +24,7 @@ export async function sendEmail(opts: {
   body?: string;
   link?: string;
   opsTag?: string | null;
+  data?: Record<string, unknown> | null;
 }): Promise<boolean> {
   const key = process.env.RESEND_API_KEY;
   if (!key) {
@@ -54,7 +55,7 @@ export async function sendEmail(opts: {
           title: opts.title ?? "",
           body: opts.body ?? "",
           link: opts.link ?? "",
-          data: null,
+          data: opts.data ?? null,
         });
         html = renderEmailTemplate(t.email_html as string, tokens);
       }
