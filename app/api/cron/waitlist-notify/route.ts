@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
   if (rows.length === 0) return Response.json({ ok: true, notified: 0 });
 
   const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-  const appUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://laseropsmalta.com";
+  const appUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.laseropsmalta.com";
   let notified = 0;
 
   for (const r of rows) {

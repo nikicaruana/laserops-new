@@ -50,6 +50,11 @@ export function buildEmailTokens(
   for (const [k, v] of Object.entries(tokens)) urlSafe[k] = dynamicKeys.has(k) ? encodeURIComponent(v) : v;
   if (config.playerProfileUrlTemplate) tokens.playerProfileUrl = renderEmailTemplate(config.playerProfileUrlTemplate, urlSafe);
   if (config.matchReportUrlTemplate) tokens.matchReportUrl = renderEmailTemplate(config.matchReportUrlTemplate, urlSafe);
+  // Expand {{siteUrl}} inside any config value that references it (gameCalendarUrl,
+  // bookingUrl, ...), so one NEXT_PUBLIC_SITE_URL controls every email link.
+  for (const [k, v] of Object.entries(tokens)) {
+    if (typeof v === "string" && v.includes("{{siteUrl}}")) tokens[k] = renderEmailTemplate(v, urlSafe);
+  }
   return tokens;
 }
 

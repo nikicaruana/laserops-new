@@ -53,7 +53,7 @@ export async function sendMatchInvites(matchId: string, method: "REQUEST" | "CAN
     .filter((a): a is AccountEmbed => Boolean(a?.email))
     .map((a) => ({ email: a.email as string, name: a.full_name }));
 
-  const appUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://laseropsmalta.com";
+  const appUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.laseropsmalta.com";
   const gameUrl = `${appUrl}/player-portal/games/${m.id}`;
   const label = m.title || m.match_code || "LaserOps game";
   const loc = await resolveMatchLocation(m.location_id);

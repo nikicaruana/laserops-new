@@ -15,7 +15,7 @@ import { buildEmailTokens, renderEmailTemplate, resolveSender } from "@/lib/emai
 
 export const dynamic = "force-dynamic";
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://laseropsmalta.com";
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.laseropsmalta.com";
 
 type Row = {
   id: string;

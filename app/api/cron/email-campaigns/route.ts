@@ -16,7 +16,7 @@ import { buildEmailTokens, renderEmailTemplate, resolveSender } from "@/lib/emai
 
 export const dynamic = "force-dynamic";
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://laseropsmalta.com";
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.laseropsmalta.com";
 const BATCH = 100; // Resend batch.send caps at 100 emails per request.
 
 type Campaign = {
