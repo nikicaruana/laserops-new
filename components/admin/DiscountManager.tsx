@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { TotpGate } from "@/components/admin/TotpGate";
 import { createClient } from "@/lib/supabase/client";
+import { AccountPicker } from "@/components/admin/AccountPicker";
 import { formatEur } from "@/lib/money";
 
 type Row = { id: string; opsTag: string; price: number };
@@ -84,7 +85,14 @@ export function DiscountManager({ initial }: { initial: Row[] }) {
         <div className="grid gap-3 sm:grid-cols-3">
           <div className="sm:col-span-1">
             <label className={labelCls}>Player ops tag</label>
-            <input className={input} value={opsTag} onChange={(e) => setOpsTag(e.target.value)} placeholder="e.g. Kini" />
+            {opsTag ? (
+              <div className="flex h-11 items-center gap-2 border border-border-strong bg-bg px-3">
+                <span className="text-sm font-semibold text-accent">{opsTag}</span>
+                <button type="button" onClick={() => setOpsTag("")} className="ml-auto text-xs text-text-subtle hover:text-accent">Change</button>
+              </div>
+            ) : (
+              <AccountPicker onPick={(a) => setOpsTag(a.ops_tag ?? "")} autoFocus={false} />
+            )}
           </div>
           <div className="sm:col-span-1">
             <label className={labelCls}>Their price (€ per game)</label>
