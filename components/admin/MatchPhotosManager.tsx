@@ -110,6 +110,25 @@ export function MatchPhotosManager({ matchId, initial, notifiedAt = null }: { ma
     }
   }
 
+  async function deleteAll() {
+    if (photos.length === 0) return;
+    if (!confirm(`Delete ALL ${photos.length} photos for this match? This removes them from the match, the gallery and Cloudinary. This cannot be undone.`)) return;
+    const prev = photos;
+    setBusy(true);
+    setError("");
+    setPhotos([]); // optimistic
+    try {
+      const res = await fetch("/api/admin/match-image", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ matchId }) });
+      const data = (await res.json()) as { ok: boolean; error?: string };
+      if (!data.ok) { setPhotos(prev); setError(data.error || "Could not delete the photos."); }
+    } catch {
+      setPhotos(prev);
+      setError("Could not delete the photos.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 border border-border bg-bg-elevated p-4 sm:flex-row sm:items-end">
@@ -158,6 +177,13 @@ export function MatchPhotosManager({ matchId, initial, notifiedAt = null }: { ma
       </div>
 
       {error && <p className="text-xs font-semibold text-red-400">{error}</p>}
+
+      {photos.length > 0 && (
+        <div className="flex items-center justify-between">
+          <p className="text-[0.65rem] text-text-subtle">{photos.length} photo{photos.length === 1 ? "" : "s"}</p>
+          <button type="button" onClick={deleteAll} disabled={busy} className="text-xs font-semibold uppercase tracking-[0.1em] text-red-400 transition-colors hover:text-red-300 disabled:opacity-50">Delete all</button>
+        </div>
+      )}
 
       {photos.length === 0 ? (
         <p className="border border-dashed border-border px-4 py-10 text-center text-sm text-text-muted">

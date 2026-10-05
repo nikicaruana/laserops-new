@@ -123,3 +123,42 @@ export async function POST(request: Request) {
     photo: { id: photo.id, url: photo.secure_url, caption: photo.caption, width: photo.width, height: photo.height, taggedOps: [] },
   });
 }
+
+// Bulk delete: remove EVERY photo in a match (Cloudinary assets + match_photos
+// rows). Body: { matchId }. Admin-gated. Cloudinary destroys run in parallel.
+export async function DELETE(request: Request) {
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+  const apiKey = process.env.CLOUDINARY_API_KEY;
+  const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return Response.json({ ok: false, error: "Not signed in." }, { status: 401 });
+  const { data: isAdmin } = await supabase.rpc("is_admin");
+  if (!isAdmin) return Response.json({ ok: false, error: "Admins only." }, { status: 403 });
+
+  let matchId = "";
+  try { matchId = String(((await request.json()) as { matchId?: string }).matchId ?? "").trim(); } catch { /* bad body */ }
+  if (!matchId) return Response.json({ ok: false, error: "No match specified." }, { status: 400 });
+
+  const { data: photos } = await supabase.from("match_photos").select("id, public_id").eq("match_id", matchId);
+  const rows = (photos ?? []) as { id: string; public_id: string }[];
+  if (rows.length === 0) return Response.json({ ok: true, deleted: 0 });
+
+  if (cloudName && apiKey && apiSecret) {
+    await Promise.allSettled(rows.map(async (p) => {
+      const timestamp = Math.floor(Date.now() / 1000);
+      const signature = crypto.createHash("sha1").update(`public_id=${p.public_id}&timestamp=${timestamp}` + apiSecret).digest("hex");
+      const form = new FormData();
+      form.append("public_id", p.public_id);
+      form.append("api_key", apiKey);
+      form.append("timestamp", String(timestamp));
+      form.append("signature", signature);
+      return fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/destroy`, { method: "POST", body: form, signal: AbortSignal.timeout(20_000) });
+    }));
+  }
+
+  const { error } = await supabase.from("match_photos").delete().eq("match_id", matchId);
+  if (error) { console.error("[admin/match-image DELETE all] DB delete failed:", error); return Response.json({ ok: false, error: "Could not delete the photos." }, { status: 500 }); }
+  return Response.json({ ok: true, deleted: rows.length });
+}
