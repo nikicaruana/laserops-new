@@ -15,6 +15,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { PlayerStatsRaw } from "@/lib/player-stats/shared";
 import { DEFAULT_AVATAR_URL } from "@/lib/avatar";
+import { unstable_cache } from "next/cache";
+import { createPublicClient } from "@/lib/supabase/public";
 import {
   ACCOLADES,
   accoladeCountCol,
@@ -383,3 +385,12 @@ export async function listSupabaseNicknames(supabase: SupabaseClient): Promise<s
     .filter((n) => n !== "");
   return Array.from(new Set(names)).sort((a, b) => a.localeCompare(b));
 }
+
+// Cached variant for the Compare page (reads ALL players). Player-agnostic data
+// that only changes on publish/recompute, so cache it on the same tags as the
+// leaderboards (30-min window + refresh-on-publish).
+export const getCachedAllPlayerSummaryRows = unstable_cache(
+  async () => getAllPlayerSummaryRows(createPublicClient()),
+  ["all-player-summary-rows"],
+  { revalidate: 1800, tags: ["leaderboards", "sheets"] },
+);

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { createClient } from "@/lib/supabase/server";
-import { getAllPlayerSummaryRows } from "@/lib/player-stats/supabase-summary";
+import { getCachedAllPlayerSummaryRows } from "@/lib/player-stats/supabase-summary";
 import { CompareView } from "@/components/portal/player-compare/CompareView";
 
 export const metadata: Metadata = {
@@ -17,8 +16,7 @@ export const metadata: Metadata = {
  * winner highlighting client-side over the full set, exactly as before.
  */
 export default async function ComparePlayersPage() {
-  const supabase = await createClient();
-  const { rows, uniqueGunsMap, accolades } = await getAllPlayerSummaryRows(supabase);
+  const { rows, uniqueGunsMap, accolades } = await getCachedAllPlayerSummaryRows();
 
   return (
     /* max-w-[680px] ≈ max-w-5xl shrunk by ~35% – keeps the two columns
