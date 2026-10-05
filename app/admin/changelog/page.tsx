@@ -31,7 +31,10 @@ const GROUPS: { key: string; label: string; tables: string[] }[] = [
     ],
   },
   { key: "exploit", label: "Exploit control", tables: ["spawn_camp_config", "base_trading_config"] },
-  { key: "bookings", label: "Bookings & signups", tables: ["match_signups", "match_participants"] },
+  { key: "pricing", label: "Pricing & tokens", tables: ["pricing_config", "refund_config", "token_config", "token_bundles", "reward_images", "accounts"] },
+  { key: "notifications", label: "Notifications & email", tables: ["notification_types", "email_config"] },
+  { key: "homepage", label: "Homepage & locations", tables: ["home_config", "home_social_posts", "home_reviews", "home_featured_photos", "locations"] },
+  { key: "rewards", label: "Level rewards & killstreaks", tables: ["level_unlocks", "killstreak_definitions"] },
 ];
 
 export default async function ChangeLogPage({

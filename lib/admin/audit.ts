@@ -39,8 +39,21 @@ export const TABLE_LABELS: Record<string, string> = {
   streak_definitions: "Streaks",
   streak_rules: "Streak rules",
   excluded_players: "Excluded players",
-  match_signups: "Game signup",
-  match_participants: "Roster entry",
+  pricing_config: "Pricing",
+  refund_config: "Refund config",
+  token_config: "Token config",
+  token_bundles: "Token bundles",
+  reward_images: "Reward images",
+  email_config: "Email settings",
+  notification_types: "Notification type",
+  locations: "Location",
+  killstreak_definitions: "Killstreaks",
+  level_unlocks: "Level rewards",
+  home_config: "Homepage",
+  home_social_posts: "Homepage social post",
+  home_reviews: "Homepage review",
+  home_featured_photos: "Homepage featured photo",
+  accounts: "Player fixed price",
 };
 
 export const tableLabel = (t: string): string => TABLE_LABELS[t] ?? t;
