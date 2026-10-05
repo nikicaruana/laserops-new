@@ -16,7 +16,7 @@ export default async function EditNotificationTypePage({ params }: { params: Pro
   const [{ data }, { data: cfgRows }] = await Promise.all([
     supabase
       .from("notification_types")
-      .select("key, label, description, priority, is_active, sends_email, email_subject, email_html, sends_push, delay_hours, email_from, email_sender_name, email_reply_to")
+      .select("key, label, description, priority, is_active, bell_title, bell_body, sends_email, email_subject, email_html, sends_push, delay_hours, email_from, email_sender_name, email_reply_to")
       .eq("key", key)
       .maybeSingle(),
     supabase.from("email_config").select("key, value"),

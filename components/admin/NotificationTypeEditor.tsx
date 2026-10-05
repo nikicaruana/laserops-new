@@ -3,14 +3,17 @@
 /**
  * components/admin/NotificationTypeEditor.tsx
  * --------------------------------------------------------------------
- * Edit one notification type: label/description, priority, active, whether it
- * also emails (with subject + HTML template), whether it pushes, and an optional
- * delay. Email HTML supports {{title}}, {{body}}, {{link}} tokens, substituted
- * when the email is sent. Saves to notification_types (admin RLS).
+ * Edit one notification type: label/description (admin-only), priority, active,
+ * the IN-APP BELL copy (title + body), whether it also emails (subject + HTML),
+ * whether it pushes, and an optional delay. Bell + email copy both support the
+ * {{token}} system ({{title}}/{{body}} = the auto-generated default, {{nickname}},
+ * {{matchLabel}}, ...), substituted when the notification fires. Saving any change
+ * requires a 2FA (TOTP) step-up, enforced by the aal2 RLS policy.
  */
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
+import { TotpGate } from "@/components/admin/TotpGate";
 import { createClient } from "@/lib/supabase/client";
 import { renderEmailTemplate, sampleEmailTokens, TOKEN_REFERENCE, type EmailConfig } from "@/lib/email-tokens";
 
@@ -23,6 +26,8 @@ export type NotificationType = {
   description: string | null;
   priority: number;
   is_active: boolean;
+  bell_title: string | null;
+  bell_body: string | null;
   sends_email: boolean;
   email_subject: string | null;
   email_html: string | null;
@@ -39,14 +44,14 @@ export function NotificationTypeEditor({ initial, config }: { initial: Notificat
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [gateOpen, setGateOpen] = useState(false);
 
   const set = <K extends keyof NotificationType>(k: K, v: NotificationType[K]) => {
     setF((p) => ({ ...p, [k]: v }));
     setSaved(false);
   };
 
-  // Live preview: every supported token filled with sample content so the admin
-  // sees the real layout (nickname, matchId, brand links, etc.).
+  // Live email preview: every supported token filled with sample content.
   const sample = sampleEmailTokens(config);
   const emailPreview = renderEmailTemplate(f.email_html ?? "", {
     ...sample,
@@ -54,7 +59,16 @@ export function NotificationTypeEditor({ initial, config }: { initial: Notificat
     body: f.description || sample.body,
   });
 
-  async function save() {
+  // Bell preview: render the bell templates against sample tokens.
+  const bellSample: Record<string, string> = {
+    nickname: "Kini", opsTag: "Kini",
+    title: "Auto-generated title", body: "Auto-generated message",
+    matchLabel: "LO-2026-10", matchDate: "Sat, 13 Sep 2026", matchTime: "14:00", matchTimeRange: "14:00 - 17:00",
+  };
+  const bellTitlePreview = renderEmailTemplate(f.bell_title ?? "", bellSample);
+  const bellBodyPreview = renderEmailTemplate(f.bell_body ?? "", bellSample);
+
+  async function doSave() {
     setBusy(true);
     setError(null);
     const supabase = createClient();
@@ -65,6 +79,8 @@ export function NotificationTypeEditor({ initial, config }: { initial: Notificat
         description: f.description?.trim() || null,
         priority: Number(f.priority) || 3,
         is_active: f.is_active,
+        bell_title: f.bell_title?.trim() || null,
+        bell_body: f.bell_body?.trim() || null,
         sends_email: f.sends_email,
         email_subject: f.email_subject?.trim() || null,
         email_html: f.email_html || null,
@@ -89,14 +105,41 @@ export function NotificationTypeEditor({ initial, config }: { initial: Notificat
         <p className={lbl}>Notification</p>
         <p className="mb-4 font-mono text-[0.65rem] text-text-subtle">{f.key}</p>
         <div className="grid gap-4 sm:grid-cols-2">
-          <div className="sm:col-span-2"><label className={lbl}>Label</label><input className={input} value={f.label} onChange={(e) => set("label", e.target.value)} /></div>
-          <div className="sm:col-span-2"><label className={lbl}>Description</label><input className={input} value={f.description ?? ""} onChange={(e) => set("description", e.target.value)} placeholder="Internal note about when this fires" /></div>
+          <div className="sm:col-span-2"><label className={lbl}>Label (admin only)</label><input className={input} value={f.label} onChange={(e) => set("label", e.target.value)} /></div>
+          <div className="sm:col-span-2"><label className={lbl}>Description (admin only)</label><input className={input} value={f.description ?? ""} onChange={(e) => set("description", e.target.value)} placeholder="Internal note about when this fires" /></div>
           <div><label className={lbl}>Priority (1 = top)</label><input type="number" min="1" className={input} value={f.priority} onChange={(e) => set("priority", Number(e.target.value))} /></div>
           <div><label className={lbl}>Delay (hours, 0 = immediate)</label><input type="number" min="0" className={input} value={f.delay_hours} onChange={(e) => set("delay_hours", Number(e.target.value))} /></div>
           <label className="flex cursor-pointer items-center gap-2.5 text-sm text-text sm:col-span-2">
             <input type="checkbox" checked={f.is_active} onChange={(e) => set("is_active", e.target.checked)} className="h-4 w-4 accent-accent" />
             Active (this notification is sent)
           </label>
+        </div>
+      </section>
+
+      {/* In-app bell copy (what the player sees in their notification bell). */}
+      <section className="border border-border bg-bg-elevated px-5 py-5">
+        <p className={lbl}>In-app bell</p>
+        <p className="mb-4 text-[0.6rem] leading-relaxed text-text-subtle">
+          What the player sees in their notification bell. Use <code className="text-text-muted">{"{{title}}"}</code> /
+          <code className="text-text-muted"> {"{{body}}"}</code> to keep the auto-generated text, or write your own
+          (tokens like <code className="text-text-muted">{"{{nickname}}"}</code>, <code className="text-text-muted">{"{{matchLabel}}"}</code> are filled when it fires). Leave a field blank to fall back to the built-in text.
+        </p>
+        <div className="grid gap-4">
+          <div><label className={lbl}>Bell title</label><input className={input} value={f.bell_title ?? ""} onChange={(e) => set("bell_title", e.target.value)} /></div>
+          <div><label className={lbl}>Bell message</label><textarea className={`${input} h-20 py-2`} value={f.bell_body ?? ""} onChange={(e) => set("bell_body", e.target.value)} /></div>
+          <div>
+            <label className={lbl}>Preview</label>
+            <div className="w-72 max-w-full border border-border-strong bg-bg">
+              <div className="border-b border-border px-4 py-2.5 text-[0.6rem] font-bold uppercase tracking-[0.14em] text-text-muted">Notifications</div>
+              <div className="px-4 py-3">
+                <span className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                  <span className="text-xs font-bold uppercase tracking-[0.1em] text-text">{bellTitlePreview || "(empty - uses built-in title)"}</span>
+                </span>
+                <span className="mt-0.5 block text-xs text-text-muted">{bellBodyPreview || "(empty - uses built-in message)"}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -158,9 +201,17 @@ export function NotificationTypeEditor({ initial, config }: { initial: Notificat
       </section>
 
       <div className="flex items-center gap-3">
-        <Button type="button" size="md" onClick={save} disabled={busy}>{busy ? "Saving…" : "Save"}</Button>
+        <Button type="button" size="md" onClick={() => { setError(null); setGateOpen(true); }} disabled={busy}>{busy ? "Saving…" : "Save"}</Button>
         {saved && <span className="text-xs text-accent">Saved.</span>}
+        <span className="text-[0.6rem] text-text-subtle">Saving requires a 2FA code.</span>
       </div>
+
+      <TotpGate
+        open={gateOpen}
+        action="this notification change"
+        onCancel={() => setGateOpen(false)}
+        onVerified={async () => { setGateOpen(false); await doSave(); }}
+      />
     </div>
   );
 }
