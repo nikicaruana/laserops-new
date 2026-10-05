@@ -23,22 +23,25 @@ export async function POST(req: NextRequest) {
   const { data: isAdmin } = await supabase.rpc("is_admin");
   if (!isAdmin) return Response.json({ ok: false, error: "Admins only." }, { status: 403 });
 
-  let body: { subject?: string; title?: string; body?: string; href?: string; fromEmail?: string; senderName?: string };
+  let body: { subject?: string; title?: string; body?: string; href?: string; fromEmail?: string; senderName?: string; typeKey?: string };
   try {
     body = (await req.json()) as typeof body;
   } catch {
     return Response.json({ ok: false, error: "Bad request." }, { status: 400 });
   }
+  const ALLOWED_TEMPLATES = new Set(["admin_broadcast", "launch_announcement"]);
+  const typeKey = ALLOWED_TEMPLATES.has((body.typeKey ?? "").trim()) ? (body.typeKey as string).trim() : "admin_broadcast";
   const title = (body.title ?? "").trim();
-  if (!title) return Response.json({ ok: false, error: "A title is required." }, { status: 400 });
-  const subject = (body.subject ?? "").trim() || title;
+  // admin_broadcast fills the title/body into the template; the launch template is self-contained.
+  if (typeKey === "admin_broadcast" && !title) return Response.json({ ok: false, error: "A title is required." }, { status: 400 });
 
   const svc = createServiceClient();
   if (!svc) return Response.json({ ok: false, error: "Server not configured." }, { status: 500 });
 
-  // Broadcast template must be active, same gate as bell broadcasts.
-  const { data: type } = await svc.from("notification_types").select("is_active").eq("key", "admin_broadcast").maybeSingle();
-  if (!type || !type.is_active) return Response.json({ ok: false, error: "Broadcasts are disabled." }, { status: 400 });
+  // Template must be active.
+  const { data: type } = await svc.from("notification_types").select("is_active, email_subject").eq("key", typeKey).maybeSingle();
+  if (!type || !type.is_active) return Response.json({ ok: false, error: "That email template is disabled." }, { status: 400 });
+  const subject = (body.subject ?? "").trim() || (type.email_subject as string | null) || title || "LaserOps Malta";
 
   // Audience is locked: opted-in accounts with an email. Paginate to be safe.
   const audience: Account[] = [];
@@ -73,7 +76,8 @@ export async function POST(req: NextRequest) {
     .insert({
       created_by: (me as { id: string } | null)?.id ?? null,
       subject,
-      title,
+      title: title || subject,
+      type_key: typeKey,
       body: body.body?.trim() || null,
       href: body.href?.trim() || null,
       email_from: body.fromEmail?.trim() || null,

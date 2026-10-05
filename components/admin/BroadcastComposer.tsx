@@ -42,6 +42,7 @@ export function BroadcastComposer({
   const [squadId, setSquadId] = useState(squads[0]?.id ?? "");
   const [title, setTitle] = useState("");
   const [subject, setSubject] = useState("");
+  const [templateKey, setTemplateKey] = useState("admin_broadcast");
   const [msg, setMsg] = useState("");
   const [href, setHref] = useState("");
   const [sendEmail, setSendEmail] = useState(false);
@@ -53,6 +54,7 @@ export function BroadcastComposer({
   const [error, setError] = useState<string | null>(null);
 
   const emailWillSend = mode === "email" || sendEmail;
+  const launchTemplate = mode === "email" && templateKey === "launch_announcement";
 
   // The mailboxes the admin can send from (all on the verified domain).
   const mailboxes = useMemo(() => {
@@ -88,7 +90,7 @@ export function BroadcastComposer({
   async function send() {
     setError(null);
     setResult(null);
-    if (!title.trim()) return setError("A title is required.");
+    if (!launchTemplate && !title.trim()) return setError("A title is required.");
 
     if (mode === "email") {
       // Email-only blast to the whole mailing list - irreversible, so require a typed confirm.
@@ -99,7 +101,7 @@ export function BroadcastComposer({
       const res = await fetch("/api/admin/email-campaign", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subject: subject.trim() || title.trim(), title, body: msg, href, fromEmail, senderName }),
+        body: JSON.stringify({ subject: subject.trim() || title.trim(), title, body: msg, href, fromEmail, senderName, typeKey: templateKey }),
       });
       const data = (await res.json()) as { ok?: boolean; total?: number; error?: string };
       setBusy(false);
@@ -191,15 +193,26 @@ export function BroadcastComposer({
             Emails <span className="font-bold text-text">{mailingListCount}</span> account{mailingListCount === 1 ? "" : "s"} on your mailing list (opted into email). <span className="text-text-subtle">No bell notification is created.</span>
           </p>
         )}
+
+        {mode === "email" && (
+          <div className="mt-4">
+            <label className={lbl}>Email template</label>
+            <select className={input} value={templateKey} onChange={(e) => setTemplateKey(e.target.value)}>
+              <option value="admin_broadcast">Custom announcement (your title + message)</option>
+              <option value="launch_announcement">Launch announcement (fixed go-live email)</option>
+            </select>
+            {launchTemplate && <p className="mt-1.5 text-[0.6rem] leading-relaxed text-text-subtle">Uses the fixed launch email. The title, message and link below are ignored - only the subject is used. Preview or edit the copy at Notifications &rarr; Launch announcement.</p>}
+          </div>
+        )}
       </section>
 
       <section className="border border-border bg-bg-elevated px-5 py-5 space-y-4">
-        <div><label className={lbl}>Title</label><input className={input} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. The new LaserOps site is live" /></div>
+        {!launchTemplate && <div><label className={lbl}>Title</label><input className={input} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. The new LaserOps site is live" /></div>}
         {mode === "email" && (
           <div><label className={lbl}>Email subject (optional)</label><input className={input} value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Defaults to the title" /></div>
         )}
-        <div><label className={lbl}>Message</label><textarea className={`${input} h-24 py-2`} value={msg} onChange={(e) => setMsg(e.target.value)} placeholder="Shown under the title." /></div>
-        <div><label className={lbl}>Link (optional)</label><input className={input} value={href} onChange={(e) => setHref(e.target.value)} placeholder="/player-portal/games or https://…" /></div>
+        {!launchTemplate && <div><label className={lbl}>Message</label><textarea className={`${input} h-24 py-2`} value={msg} onChange={(e) => setMsg(e.target.value)} placeholder="Shown under the title." /></div>}
+        {!launchTemplate && <div><label className={lbl}>Link (optional)</label><input className={input} value={href} onChange={(e) => setHref(e.target.value)} placeholder="/player-portal/games or https://…" /></div>}
         {mode !== "email" && (
           <label className="flex cursor-pointer items-center gap-2.5 text-sm text-text">
             <input type="checkbox" checked={sendEmail} onChange={(e) => setSendEmail(e.target.checked)} className="h-4 w-4 accent-accent" />
@@ -246,8 +259,8 @@ export function BroadcastComposer({
         </section>
       )}
 
-      {/* Email preview: whenever an email will be sent. */}
-      {emailWillSend && (
+      {/* Email preview: whenever an email will be sent (not for the fixed launch template). */}
+      {emailWillSend && !launchTemplate && (
         <section className="border border-border bg-bg-elevated px-5 py-5">
           <p className={lbl}>Email preview</p>
           <p className="mb-3 text-[0.65rem] text-text-subtle">

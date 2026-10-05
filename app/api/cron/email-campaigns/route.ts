@@ -21,6 +21,7 @@ const BATCH = 100; // Resend batch.send caps at 100 emails per request.
 
 type Campaign = {
   id: string;
+  type_key: string;
   subject: string;
   title: string;
   body: string | null;
@@ -43,7 +44,7 @@ export async function GET(req: NextRequest) {
   // Oldest campaign still sending.
   const { data: camp } = await supabase
     .from("email_campaigns")
-    .select("id, subject, title, body, href, email_from, email_sender_name")
+    .select("id, subject, title, body, href, email_from, email_sender_name, type_key")
     .eq("status", "sending")
     .order("created_at", { ascending: true })
     .limit(1)
@@ -71,7 +72,7 @@ export async function GET(req: NextRequest) {
   const { data: rewardRows } = await supabase.from("reward_images").select("key, image_url");
   const gameTokenImg = ((rewardRows ?? []) as { key: string; image_url: string | null }[]).find((r) => r.key === "game_token")?.image_url;
   if (gameTokenImg) config.tokenImageUrl = gameTokenImg;
-  const { data: type } = await supabase.from("notification_types").select("email_html").eq("key", "admin_broadcast").maybeSingle();
+  const { data: type } = await supabase.from("notification_types").select("email_html").eq("key", campaign.type_key).maybeSingle();
   const template = (type?.email_html as string | undefined) ?? "";
   const sender = resolveSender(config, { from: campaign.email_from, senderName: campaign.email_sender_name, replyTo: null });
   const link = campaign.href ? (campaign.href.startsWith("http") ? campaign.href : `${BASE_URL}${campaign.href}`) : BASE_URL;
