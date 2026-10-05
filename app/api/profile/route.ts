@@ -11,6 +11,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { validateOpsTag } from "@/lib/opsTag";
 import { WAIVER_VERSION } from "@/lib/waiver";
+import { revalidateTag } from "next/cache";
 
 function isValidDob(s: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
@@ -99,5 +100,11 @@ export async function PATCH(request: Request) {
     return Response.json({ ok: false, error: "Couldn't save. Please try again." }, { status: 500 });
   }
 
+  // A rename updates the denormalized nickname on cached leaderboards/stats (a DB
+  // trigger updates the rows); drop the board caches so the new name shows now.
+  if (typeof updates.ops_tag === "string") {
+    revalidateTag("leaderboards");
+    revalidateTag("sheets");
+  }
   return Response.json({ ok: true });
 }
