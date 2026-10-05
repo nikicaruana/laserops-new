@@ -21,7 +21,7 @@ Last updated: 2026-10-02
   - `CLOUDINARY_CLOUD_NAME` / `_API_KEY` / `_API_SECRET`
   - `RESEND_*` (notification emails + .ics invites)
   - `ANTHROPIC_API_KEY` (player match narratives — feature is inert without it)
-  - `STRIPE_*` (payments) · `VIVA_*` (only when Viva goes live — see §4)
+  - `VIVA_*` (only when Viva goes live — see §4; Stripe removed from the codebase, so `STRIPE_*` can be deleted from Vercel)
   - `REVALIDATE_SECRET`
 - [ ] **Supabase: confirm prod = dev project, or migrate.** If prod points at a different Supabase project than dev, run `supabase db push` against it so all migrations (incl. the killstreak tables + RPC) apply. If it's the same project, they're already live.
 - [ ] **Confirm all config tables are seeded in prod** (teams, guns, rank_levels, scoring config, streaks, killstreaks, etc.). See config-seeding notes.
