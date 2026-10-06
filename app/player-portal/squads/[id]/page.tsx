@@ -14,6 +14,7 @@ import { Container } from "@/components/ui/Container";
 import { createClient } from "@/lib/supabase/server";
 import { RatingPill } from "@/components/portal/player-summary/RatingPill";
 import { RequestToJoinButton } from "@/components/portal/RequestToJoinButton";
+import { SquadInviteCta } from "@/components/portal/SquadInviteCta";
 import { BracketFrame } from "@/components/portal/BracketFrame";
 import { SquadLeaderboardTable, type SquadLeaderRow } from "@/components/portal/SquadLeaderboardTable";
 import { SquadInviteSearch } from "@/components/portal/SquadInviteSearch";
@@ -101,6 +102,15 @@ export default async function SquadPage({
       .eq("status", "pending")
       .maybeSingle();
     alreadyRequested = Boolean(reqRow);
+  }
+
+  // Pending invite to THIS squad (works for invite-only squads too). Reuses the
+  // same RPC as the Squads-hub inbox so the viewer can accept it in place.
+  let pendingInviteId: string | null = null;
+  if (!me && account) {
+    const { data: inviteRows } = await supabase.rpc("my_pending_squad_invites");
+    const inv = ((inviteRows ?? []) as { invite_id: string; squad_id: string }[]).find((i) => i.squad_id === id);
+    pendingInviteId = inv?.invite_id ?? null;
   }
 
   // "Challenge squad": the viewer manages a squad OTHER than this one.
@@ -236,7 +246,9 @@ export default async function SquadPage({
         )}
         {me == null && (
           <div className="mb-4 flex flex-col items-center gap-2 border border-dashed border-border px-4 py-5 text-center">
-            {squad.is_searchable ? (
+            {pendingInviteId ? (
+              <SquadInviteCta inviteId={pendingInviteId} squadName={squad.name} />
+            ) : squad.is_searchable ? (
               <RequestToJoinButton squadId={id} alreadyRequested={alreadyRequested} />
             ) : (
               <p className="text-xs text-text-muted">Ask a member for their invite link to join this squad.</p>
