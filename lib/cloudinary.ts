@@ -57,6 +57,7 @@ export const TEAMS_FOLDER = "laseropsmalta.com/team-badges";
 export const RANK_BADGES_FOLDER = "laseropsmalta.com/rank-badges";
 export const TIER_BADGES_FOLDER = "laseropsmalta.com/tier-badges";
 export const STREAK_BADGES_FOLDER = "laseropsmalta.com/streak-badges";
+export const MASTERY_BADGES_FOLDER = "laseropsmalta.com/mastery-badges";
 export const KILLSTREAK_BADGES_FOLDER = "laseropsmalta.com/killstreak-badges";
 export const REWARD_IMAGES_FOLDER = "laseropsmalta.com/reward-images";
 export const BLOG_FOLDER = "laseropsmalta.com/blog";
@@ -80,6 +81,7 @@ export const ADMIN_IMAGE_FOLDERS: Record<string, string> = {
   rank: RANK_BADGES_FOLDER,
   tier: TIER_BADGES_FOLDER,
   streak: STREAK_BADGES_FOLDER,
+  mastery: MASTERY_BADGES_FOLDER,
   killstreak: KILLSTREAK_BADGES_FOLDER,
   reward: REWARD_IMAGES_FOLDER,
   blog: BLOG_FOLDER,

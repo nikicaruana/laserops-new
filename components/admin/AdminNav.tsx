@@ -57,6 +57,7 @@ const SECTIONS: { heading: string; items: Item[] }[] = [
     items: [
       { label: "Guns", href: "/admin/guns" },
       { label: "Classes & Trees", href: "/admin/guns/taxonomy" },
+      { label: "Weapon mastery", href: "/admin/weapon-mastery" },
     ],
   },
   {

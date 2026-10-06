@@ -37,6 +37,7 @@ export const TABLE_LABELS: Record<string, string> = {
   spawn_camp_config: "Spawn-camp config",
   base_trading_config: "Base-trading config",
   streak_definitions: "Streaks",
+  weapon_mastery: "Weapon mastery",
   streak_rules: "Streak rules",
   excluded_players: "Excluded players",
   pricing_config: "Pricing",
