@@ -66,7 +66,7 @@ export type PlayerMatch = {
  * trace back which match the record came from.
  */
 export type PersonalRecord = {
-  metric: "score" | "matchRating" | "kills" | "kd" | "accuracy" | "damage";
+  metric: "score" | "matchRating" | "kills" | "kd" | "accuracy" | "damage" | "caps" | "capTime";
   label: string;
   value: number;
   formatted: string;
@@ -182,6 +182,8 @@ function buildPlayerMatch(row: GameDataRow): PlayerMatch {
     isWinner: parseNumericOr(row.raw.LaserOps_Team_Is_Winner, 0) === 1,
     roundsWon: parseNumericOr(row.raw.LaserOps_Rounds_Won, 0),
     roundsLost: parseNumericOr(row.raw.LaserOps_Rounds_Lost, 0),
+    objCaps: parseNumericOr(row.raw.PlayerDeviceCapturingsCount, 0),
+    capTime: parseNumericOr(row.raw.LaserOps_Cap_Time, 0),
     eloBefore: parseNumericOr(row.raw.ELO_Before_Match, 0),
     eloAfter: parseNumericOr(row.raw.ELO_After_Match, 0),
     eloChange: parseNumericOr(row.raw.ELO_Change, 0),
@@ -214,6 +216,12 @@ function sortByMatchId(a: string, b: string): number {
  * record (value: 0) so the layout stays stable. The matchId will be
  * empty in that case.
  */
+/** Format a hold time in whole seconds as mm:ss (e.g. 95 -> "1:35"). */
+function formatHoldTime(seconds: number): string {
+  const s = Math.max(0, Math.round(seconds));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+
 function computePersonalRecords(matches: PlayerMatch[]): PersonalRecord[] {
   const tracked: Array<{
     metric: PersonalRecord["metric"];
@@ -227,6 +235,8 @@ function computePersonalRecords(matches: PlayerMatch[]): PersonalRecord[] {
     { metric: "kd", label: "K/D", extract: (m) => m.kd, format: (v) => v.toFixed(2) },
     { metric: "accuracy", label: "Accuracy", extract: (m) => m.accuracy, format: (v) => `${Math.round(v * 100)}%` },
     { metric: "damage", label: "Damage", extract: (m) => m.damage, format: (v) => v.toLocaleString("en-US") },
+    { metric: "caps", label: "Caps", extract: (m) => m.objCaps ?? 0, format: (v) => v.toLocaleString("en-US") },
+    { metric: "capTime", label: "Cap Time", extract: (m) => m.capTime ?? 0, format: formatHoldTime },
   ];
 
   const records: PersonalRecord[] = [];

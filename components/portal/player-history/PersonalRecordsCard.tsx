@@ -46,7 +46,7 @@ export function PersonalRecordsCard({ records, ops }: Props) {
           Personal Records
         </h2>
       </header>
-      <div className="grid grid-cols-3 gap-2 p-3 sm:gap-3 sm:p-4 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-4 sm:gap-3 sm:p-4 lg:grid-cols-4">
         {records.map((record) => (
           <RecordTile key={record.metric} record={record} ops={ops} />
         ))}
