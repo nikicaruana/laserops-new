@@ -1,4 +1,5 @@
 import type { ArmoryBranch, ArmoryEntry } from "@/lib/weapons/armory";
+import type { GunMastery } from "@/lib/weapons/mastery";
 import { ArmoryControls } from "./ArmoryControls";
 import { PlayerWeaponMetaChart } from "./PlayerWeaponMetaChart";
 import { PlayerKillDistributionChart } from "./PlayerKillDistributionChart";
@@ -22,9 +23,10 @@ import { PlayerKillDistributionChart } from "./PlayerKillDistributionChart";
 type Props = {
   branches: ArmoryBranch[];
   ops: string;
+  mastery: Record<string, GunMastery>;
 };
 
-export function PlayerArmoryView({ branches }: Props) {
+export function PlayerArmoryView({ branches, mastery }: Props) {
   if (branches.length === 0) {
     return (
       <div className="mt-8 rounded-sm border border-dashed border-border bg-bg-elevated px-6 py-14 text-center">
@@ -46,7 +48,7 @@ export function PlayerArmoryView({ branches }: Props) {
 
   return (
     <div className="mt-8 flex flex-col gap-6 sm:gap-8">
-      <ArmoryControls branches={branches} />
+      <ArmoryControls branches={branches} mastery={mastery} />
 
       <PlayerWeaponMetaChart entries={allEntries} />
       <PlayerKillDistributionChart entries={allEntries} />

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/cn";
 import type { ArmoryBranch, ArmoryEntry } from "@/lib/weapons/armory";
+import type { GunMastery } from "@/lib/weapons/mastery";
 import { ArmoryCard } from "./ArmoryCard";
 
 /**
@@ -35,9 +36,9 @@ const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: "wins", label: "Match Wins" },
 ];
 
-type Props = { branches: ArmoryBranch[] };
+type Props = { branches: ArmoryBranch[]; mastery: Record<string, GunMastery> };
 
-export function ArmoryControls({ branches }: Props) {
+export function ArmoryControls({ branches, mastery }: Props) {
   const branchNames = useMemo(() => branches.map((b) => b.branch), [branches]);
 
   const [showLocked, setShowLocked] = useState(true);
@@ -242,6 +243,7 @@ export function ArmoryControls({ branches }: Props) {
           <ArmoryCard
             key={`${entry.gunName}-${entry.playerNickname}`}
             entry={entry}
+            mastery={mastery[entry.gunName]}
           />
         ))}
         {sortedEntries.length === 0 && <EmptyFilter />}

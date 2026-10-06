@@ -30,6 +30,8 @@ import { fetchPlayerTaggedPhotos, type PlayerTaggedPhoto } from "@/lib/match-pho
 import { FollowersLine } from "@/components/portal/FollowersLine";
 import { TaggedPhotosGrid } from "@/components/portal/TaggedPhotosGrid";
 import { StreaksSection, type StreakItem } from "@/components/portal/player-summary/StreaksSection";
+import { MasterySection } from "@/components/portal/player-summary/MasterySection";
+import { getWeaponMasteryByGun, type GunMastery } from "@/lib/weapons/mastery";
 
 export const metadata: Metadata = {
   title: "Summary",
@@ -52,6 +54,7 @@ export default async function PlayerSummaryPage({
   let squads: SquadChip[] = [];
   let photos: PlayerTaggedPhoto[] = [];
   let streaks: StreakItem[] = [];
+  let masteryGuns: GunMastery[] = [];
   if (result) {
     const [{ data: socialRows }, { data: squadRows }, taggedPhotos, { data: streakDefs }, { data: streakEarned }] = await Promise.all([
       supabase.rpc("player_social", { p_ops_tag: opsTag }),
@@ -68,6 +71,7 @@ export default async function PlayerSummaryPage({
     streaks = ((streakDefs ?? []) as { streak_key: string; name: string; description: string | null; badge_url: string | null; tier: number }[]).map((d) => ({
       streakKey: d.streak_key, name: d.name, description: d.description, badgeUrl: d.badge_url, tier: d.tier, count: earnedMap.get(d.streak_key) ?? 0,
     }));
+    masteryGuns = Array.from((await getWeaponMasteryByGun(supabase, opsTag)).values());
   }
 
   return (
@@ -92,6 +96,7 @@ export default async function PlayerSummaryPage({
           squads={squads}
           photos={photos}
           streaks={streaks}
+          masteryGuns={masteryGuns}
         />
       )}
     </div>
@@ -153,6 +158,7 @@ function SummaryBody({
   squads,
   photos,
   streaks,
+  masteryGuns,
 }: {
   top: ReturnType<typeof projectSummaryTop>;
   row: Parameters<typeof StatsSection>[0]["row"];
@@ -163,6 +169,7 @@ function SummaryBody({
   squads: SquadChip[];
   photos: PlayerTaggedPhoto[];
   streaks: StreakItem[];
+  masteryGuns: GunMastery[];
 }) {
   return (
     <>
@@ -207,6 +214,9 @@ function SummaryBody({
       </CollapsibleSection>
       <CollapsibleSection title="Streaks">
         <StreaksSection streaks={streaks} />
+      </CollapsibleSection>
+      <CollapsibleSection title="Mastery">
+        <MasterySection guns={masteryGuns} />
       </CollapsibleSection>
     </>
   );

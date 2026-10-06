@@ -9,6 +9,7 @@ import { isPrizeIneligible } from "@/lib/cms/excluded-players";
 import { getExcludedNicknamesFromSupabase } from "@/lib/cms/supabase-excluded-players";
 import { getWeaponsFromSupabase } from "@/lib/cms/supabase-weapons";
 import { buildPlayerArmory } from "@/lib/weapons/armory";
+import { getWeaponMasteryByGun } from "@/lib/weapons/mastery";
 
 export const metadata: Metadata = {
   title: "Personal Armory",
@@ -67,13 +68,15 @@ export default async function PlayerArmoryPage({
 
 async function ArmoryContent({ ops }: { ops: string }) {
   const supabase = await createClient();
-  const [armoryRowsRaw, weapons, excludedNicknames, { data: adminRow }, { data: gunStatRows }] = await Promise.all([
+  const [armoryRowsRaw, weapons, excludedNicknames, { data: adminRow }, { data: gunStatRows }, masteryMap] = await Promise.all([
     getPlayerArmoryRows(supabase, ops),
     getWeaponsFromSupabase(),
     getExcludedNicknamesFromSupabase(),
     supabase.from("accounts").select("is_admin").ilike("ops_tag", ops).maybeSingle(),
     supabase.from("player_gun_stats").select("gun_name, kills_per_round").ilike("nickname", ops),
+    getWeaponMasteryByGun(supabase, ops),
   ]);
+  const mastery = Object.fromEntries(masteryMap);
 
   // Per-gun kills/round (online rounds) from the gun-stats read-model, merged
   // onto the armory rows so the meta chart + detail dialog can show per-round.
@@ -124,5 +127,5 @@ async function ArmoryContent({ ops }: { ops: string }) {
 
   const branches = buildPlayerArmory(filtered, weapons);
 
-  return <PlayerArmoryView branches={branches} ops={ops} />;
+  return <PlayerArmoryView branches={branches} ops={ops} mastery={mastery} />;
 }
