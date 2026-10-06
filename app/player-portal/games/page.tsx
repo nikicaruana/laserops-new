@@ -331,7 +331,7 @@ export default async function GamesPage({
         </GamesGroup>
       )}
 
-      <GamesGroup title="Open Games" count={openGamesShown.length}>
+      <GamesGroup title="Join an Open Game" subtitle="These are games anyone can hop in and join" count={openGamesShown.length}>
         <div className="mb-4 flex flex-wrap gap-2">
           <Link
             href="/player-portal/games"
@@ -375,11 +375,13 @@ export default async function GamesPage({
 /** Collapsible game-list group with the compact accent heading + a count. */
 function GamesGroup({
   title,
+  subtitle,
   count,
   children,
   className,
 }: {
   title: string;
+  subtitle?: string;
   count: number;
   children: React.ReactNode;
   className?: string;
@@ -393,7 +395,10 @@ function GamesGroup({
         <h2 className="text-sm font-bold uppercase tracking-[0.14em] text-accent">{title}</h2>
         <span className="text-xs font-semibold text-text-subtle">({count})</span>
       </summary>
-      <div className="pt-1">{children}</div>
+      <div className="pt-1">
+        {subtitle && <p className="mb-3 text-xs text-text-muted">{subtitle}</p>}
+        {children}
+      </div>
     </details>
   );
 }
