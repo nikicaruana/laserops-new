@@ -35,6 +35,7 @@ export function GalleryBrowser({ photos }: { photos: GalleryPhoto[] }) {
   const [myCodes, setMyCodes] = useState<string[] | null>(null);
   const [ops, setOps] = useState("");
   const [tags, setTags] = useState<Record<string, string[]>>(() => Object.fromEntries(photos.map((p) => [p.id, p.taggedOps])));
+  const [followees, setFollowees] = useState<{ accountId: string; ops: string; avatar: string | null }[]>([]);
   const [lightbox, setLightbox] = useState<number | null>(null);
   const [composer, setComposer] = useState<Composer | null>(null);
   const [sharing, setSharing] = useState(false);
@@ -49,12 +50,29 @@ export function GalleryBrowser({ photos }: { photos: GalleryPhoto[] }) {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user || !active) return;
         const [{ data: acc }, { data: codes }] = await Promise.all([
-          supabase.from("accounts").select("ops_tag").eq("auth_user_id", user.id).maybeSingle(),
+          supabase.from("accounts").select("id, ops_tag").eq("auth_user_id", user.id).maybeSingle(),
           supabase.rpc("my_participated_match_codes"),
         ]);
         if (!active) return;
         if (acc?.ops_tag) setOps(String(acc.ops_tag).trim());
         if (Array.isArray(codes) && codes.length) setMyCodes(codes as string[]);
+        // Players this user follows -> taggable in photos. account rows aren't
+        // readable for others, so map ids -> display via the public read-model.
+        if (acc?.id) {
+          const { data: followRows } = await supabase.from("follows").select("followee_id").eq("follower_id", acc.id);
+          const ids = ((followRows ?? []) as { followee_id: string }[]).map((r) => r.followee_id);
+          if (active && ids.length) {
+            const { data: people } = await supabase.from("player_stats_lifetime").select("account_id, nickname, profile_pic_url").in("account_id", ids);
+            if (active) {
+              setFollowees(
+                ((people ?? []) as { account_id: string; nickname: string | null; profile_pic_url: string | null }[])
+                  .filter((p) => p.nickname)
+                  .map((p) => ({ accountId: p.account_id, ops: p.nickname as string, avatar: p.profile_pic_url }))
+                  .sort((a, b) => a.ops.localeCompare(b.ops, undefined, { sensitivity: "base" })),
+              );
+            }
+          }
+        }
       } catch {
         /* signed out or unavailable */
       }
@@ -103,24 +121,28 @@ export function GalleryBrowser({ photos }: { photos: GalleryPhoto[] }) {
   const opsLc = ops.toLowerCase();
   const isTagged = (p: GalleryPhoto) => opsLc !== "" && (tags[p.id] ?? []).some((o) => o.toLowerCase() === opsLc);
 
-  async function toggleSelf(p: GalleryPhoto) {
-    if (!ops) return;
-    const tagged = isTagged(p);
-    setTags((t) => ({
-      ...t,
-      [p.id]: tagged ? (t[p.id] ?? []).filter((o) => o.toLowerCase() !== opsLc) : [...(t[p.id] ?? []), ops],
+  // Tag/untag a target ops on a photo. isSelf uses the self path (no ops body);
+  // otherwise the target must be someone the viewer follows (server-enforced).
+  async function toggleTag(p: GalleryPhoto, targetOps: string, isSelf: boolean) {
+    const t = targetOps.trim();
+    if (!t) return;
+    const tlc = t.toLowerCase();
+    const already = (tags[p.id] ?? []).some((o) => o.toLowerCase() === tlc);
+    setTags((prev) => ({
+      ...prev,
+      [p.id]: already ? (prev[p.id] ?? []).filter((o) => o.toLowerCase() !== tlc) : [...(prev[p.id] ?? []), t],
     }));
     try {
-      await fetch(`/api/photos/${p.id}/tag`, {
-        method: tagged ? "DELETE" : "POST",
+      const res = await fetch(`/api/photos/${p.id}/tag`, {
+        method: already ? "DELETE" : "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({}),
+        body: JSON.stringify(isSelf ? {} : { ops: t }),
       });
+      if (!res.ok) throw new Error("tag request failed");
     } catch {
-      /* revert on failure */
-      setTags((t) => ({
-        ...t,
-        [p.id]: tagged ? [...(t[p.id] ?? []), ops] : (t[p.id] ?? []).filter((o) => o.toLowerCase() !== opsLc),
+      setTags((prev) => ({
+        ...prev,
+        [p.id]: already ? [...(prev[p.id] ?? []), t] : (prev[p.id] ?? []).filter((o) => o.toLowerCase() !== tlc),
       }));
     }
   }
@@ -158,7 +180,7 @@ export function GalleryBrowser({ photos }: { photos: GalleryPhoto[] }) {
           )}
           {ops ? (
             <>
-              <button type="button" onClick={() => toggleSelf(p)} className={`${btn} ${self ? "border-accent text-accent" : "border-white/30 text-white/80 hover:border-accent hover:text-accent"}`}>
+              <button type="button" onClick={() => toggleTag(p, ops, true)} className={`${btn} ${self ? "border-accent text-accent" : "border-white/30 text-white/80 hover:border-accent hover:text-accent"}`}>
                 {self ? "Remove my tag" : "I'm in this photo"}
               </button>
               {self && (
@@ -173,6 +195,31 @@ export function GalleryBrowser({ photos }: { photos: GalleryPhoto[] }) {
             </Link>
           )}
         </div>
+        {ops && followees.length > 0 && (
+          <div className="flex w-full flex-col items-center gap-1.5">
+            <p className="text-[0.55rem] font-bold uppercase tracking-[0.14em] text-white/45">Tag players you follow</p>
+            <div className="flex max-w-md flex-wrap justify-center gap-1.5">
+              {followees.map((f) => {
+                const on = (tags[p.id] ?? []).some((o) => o.toLowerCase() === f.ops.toLowerCase());
+                return (
+                  <button
+                    key={f.accountId}
+                    type="button"
+                    onClick={() => toggleTag(p, f.ops, false)}
+                    className={`flex items-center gap-1.5 rounded-full border px-2 py-1 text-[0.65rem] font-semibold transition-colors ${on ? "border-accent bg-accent/15 text-accent" : "border-white/25 text-white/80 hover:border-accent hover:text-accent"}`}
+                  >
+                    {f.avatar && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={cldImage(f.avatar, { w: 48 })} alt="" className="h-4 w-4 rounded-full object-cover" />
+                    )}
+                    <span>{f.ops}</span>
+                    {on && <span aria-hidden>&#10003;</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     );
   };

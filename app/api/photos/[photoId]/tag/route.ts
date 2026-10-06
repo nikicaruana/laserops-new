@@ -18,11 +18,33 @@ async function resolveTarget(request: Request, supabase: Awaited<ReturnType<type
   }
   const ops = (body.ops ?? "").trim();
   if (!ops) return { me, target: me }; // self
-  // Tagging someone else -> admin only (RLS also enforces).
+
+
+  // Admins can tag anyone (they can read every accounts row directly).
   const { data: isAdmin } = await supabase.rpc("is_admin");
-  if (!isAdmin) return { me, target: null as { id: string; ops_tag: string | null } | null, forbidden: true };
-  const { data: target } = await supabase.from("accounts").select("id, ops_tag").ilike("ops_tag", ops).maybeSingle();
-  return { me, target };
+  if (isAdmin) {
+    const { data: target } = await supabase.from("accounts").select("id, ops_tag").ilike("ops_tag", ops).maybeSingle();
+    return { me, target };
+  }
+
+  // Otherwise a player may tag someone they FOLLOW. Non-admins can't read other
+  // accounts rows (RLS), so resolve the target via the public read-model, then
+  // require a follow (RLS re-checks the follow on insert/delete).
+  if (!me?.id) return { me, target: null, forbidden: true };
+  const { data: life } = await supabase
+    .from("player_stats_lifetime")
+    .select("account_id, nickname")
+    .ilike("nickname", ops)
+    .maybeSingle<{ account_id: string; nickname: string | null }>();
+  if (!life?.account_id) return { me, target: null, forbidden: true };
+  const { data: follow } = await supabase
+    .from("follows")
+    .select("followee_id")
+    .eq("follower_id", me.id)
+    .eq("followee_id", life.account_id)
+    .maybeSingle();
+  if (!follow) return { me, target: null, forbidden: true };
+  return { me, target: { id: life.account_id, ops_tag: life.nickname } };
 }
 
 export async function POST(request: Request, ctx: { params: Promise<{ photoId: string }> }) {
@@ -37,7 +59,7 @@ export async function POST(request: Request, ctx: { params: Promise<{ photoId: s
   if (!photo) return Response.json({ ok: false, error: "Photo not found." }, { status: 404 });
 
   const { me, target, forbidden } = await resolveTarget(request, supabase, user.id);
-  if (forbidden) return Response.json({ ok: false, error: "Only admins can tag other players." }, { status: 403 });
+  if (forbidden) return Response.json({ ok: false, error: "You can only tag yourself or players you follow." }, { status: 403 });
   if (!target?.id) return Response.json({ ok: false, error: "No player to tag." }, { status: 400 });
 
   const { error } = await supabase
@@ -59,7 +81,7 @@ export async function DELETE(request: Request, ctx: { params: Promise<{ photoId:
   if (!user) return Response.json({ ok: false, error: "Not signed in." }, { status: 401 });
 
   const { target, forbidden } = await resolveTarget(request, supabase, user.id);
-  if (forbidden) return Response.json({ ok: false, error: "Only admins can untag other players." }, { status: 403 });
+  if (forbidden) return Response.json({ ok: false, error: "You can only untag yourself or players you follow." }, { status: 403 });
   if (!target?.id) return Response.json({ ok: false, error: "No player to untag." }, { status: 400 });
 
   const { error } = await supabase.from("match_photo_tags").delete().eq("photo_id", photoId).eq("account_id", target.id);
