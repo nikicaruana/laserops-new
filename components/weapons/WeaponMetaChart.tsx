@@ -289,7 +289,7 @@ function TreeFilter({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="block min-w-[200px] cursor-pointer rounded-sm portal-card px-3 py-2 text-center text-sm font-semibold text-text transition-colors [color-scheme:dark] hover:border-border-strong focus-visible:border-accent focus-visible:outline-none"
+        className="block min-w-[200px] cursor-pointer rounded-sm portal-card px-3 py-2 text-center text-sm font-semibold text-text transition-colors hover:border-border-strong focus-visible:border-accent focus-visible:outline-none"
       >
         <option value={FILTER_ALL}>All Trees</option>
         {options.map((opt) => (

@@ -65,6 +65,8 @@
      Chromium; option:checked covers the selected item across browsers. */
   select {
     accent-color: var(--color-accent);
+    /* Render the native options list dark to match the theme (was light grey). */
+    color-scheme: dark;
   }
   option:checked {
     background-color: var(--color-accent);

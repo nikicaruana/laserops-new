@@ -110,7 +110,10 @@ export function NotificationBell() {
 
   function markSeenLocal(id: string) {
     setNotifs((prev) => prev.map((n) => (n.id === id ? { ...n, seen: true } : n)));
-    createClient().rpc("dismiss_notification", { p_id: id });
+    // Fire the request NOW: supabase-js queries are lazy thenables, so a bare
+    // .rpc() with no await/.then() never actually sends - the seen state would
+    // then revert on the next poll/realtime reload.
+    void createClient().rpc("dismiss_notification", { p_id: id }).then(() => {});
   }
 
   async function markAllSeen() {
