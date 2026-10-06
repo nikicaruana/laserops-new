@@ -69,7 +69,7 @@ export function StatsSection({ row, ratingUnlocked }: StatsSectionProps) {
     //   them, and they'd visibly disappear at the open/close edge.
     //   Padding moves them inside the clipping rectangle while keeping
     //   the visual overhang.
-    <div className="grid grid-cols-2 gap-x-3 gap-y-7 pb-4 sm:grid-cols-3 sm:gap-x-4 sm:gap-y-8 sm:pb-5 xl:grid-cols-4">
+    <div className="grid grid-cols-2 gap-x-3 gap-y-7 pb-6 sm:grid-cols-3 sm:gap-x-4 sm:gap-y-8 sm:pb-7 xl:grid-cols-4">
       {cards.map((card) => (
         <StatCard key={card.label} card={card} ratingUnlocked={ratingUnlocked} />
       ))}
