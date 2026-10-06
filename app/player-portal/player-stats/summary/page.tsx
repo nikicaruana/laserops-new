@@ -29,6 +29,7 @@ import { InstallAppButton } from "@/components/portal/AddToHomeScreen";
 import { fetchPlayerTaggedPhotos, type PlayerTaggedPhoto } from "@/lib/match-photos";
 import { FollowersLine } from "@/components/portal/FollowersLine";
 import { TaggedPhotosGrid } from "@/components/portal/TaggedPhotosGrid";
+import { StreaksSection, type StreakItem } from "@/components/portal/player-summary/StreaksSection";
 
 export const metadata: Metadata = {
   title: "Summary",
@@ -50,15 +51,23 @@ export default async function PlayerSummaryPage({
   let social: Social | null = null;
   let squads: SquadChip[] = [];
   let photos: PlayerTaggedPhoto[] = [];
+  let streaks: StreakItem[] = [];
   if (result) {
-    const [{ data: socialRows }, { data: squadRows }, taggedPhotos] = await Promise.all([
+    const [{ data: socialRows }, { data: squadRows }, taggedPhotos, { data: streakDefs }, { data: streakEarned }] = await Promise.all([
       supabase.rpc("player_social", { p_ops_tag: opsTag }),
       supabase.rpc("player_squads", { p_ops_tag: opsTag }),
       fetchPlayerTaggedPhotos(supabase, opsTag, 24),
+      supabase.from("streak_definitions").select("streak_key, name, description, badge_url, tier").eq("is_active", true).order("tier", { ascending: false }).order("name"),
+      supabase.from("v_hof_streak_leaders").select("streak_key, times_earned").eq("ops_tag", opsTag),
     ]);
     social = ((socialRows ?? []) as Social[])[0] ?? null;
     squads = (squadRows ?? []) as SquadChip[];
     photos = taggedPhotos;
+    const earnedMap = new Map<string, number>();
+    for (const r of (streakEarned ?? []) as { streak_key: string; times_earned: number }[]) earnedMap.set(r.streak_key, Number(r.times_earned) || 0);
+    streaks = ((streakDefs ?? []) as { streak_key: string; name: string; description: string | null; badge_url: string | null; tier: number }[]).map((d) => ({
+      streakKey: d.streak_key, name: d.name, description: d.description, badgeUrl: d.badge_url, tier: d.tier, count: earnedMap.get(d.streak_key) ?? 0,
+    }));
   }
 
   return (
@@ -82,6 +91,7 @@ export default async function PlayerSummaryPage({
           social={social}
           squads={squads}
           photos={photos}
+          streaks={streaks}
         />
       )}
     </div>
@@ -142,6 +152,7 @@ function SummaryBody({
   social,
   squads,
   photos,
+  streaks,
 }: {
   top: ReturnType<typeof projectSummaryTop>;
   row: Parameters<typeof StatsSection>[0]["row"];
@@ -151,6 +162,7 @@ function SummaryBody({
   social: Social | null;
   squads: SquadChip[];
   photos: PlayerTaggedPhoto[];
+  streaks: StreakItem[];
 }) {
   return (
     <>
@@ -192,6 +204,9 @@ function SummaryBody({
       </CollapsibleSection>
       <CollapsibleSection title="Accolades">
         <AccoladesSection data={accolades} />
+      </CollapsibleSection>
+      <CollapsibleSection title="Streaks">
+        <StreaksSection streaks={streaks} />
       </CollapsibleSection>
     </>
   );
