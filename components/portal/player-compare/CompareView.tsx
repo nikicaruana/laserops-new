@@ -216,7 +216,7 @@ export function CompareView({ allRows, uniqueGunsMap, accolades }: Props) {
       {playerA && playerB && winners && (
         <>
           {/* ── Head to Head overall tally ─────────────────────── */}
-          {tally && (
+          {tally && recordWinners && (
             <OverallBanner
               nameA={playerA.nickname}
               nameB={playerB.nickname}
