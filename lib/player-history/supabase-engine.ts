@@ -142,6 +142,62 @@ export async function getPlayerHistory(
   };
 }
 
+type RecAggRow = {
+  score: number | null;
+  match_rating: number | null;
+  frags: number | null;
+  kd: number | null;
+  accuracy: number | null;
+  damage: number | null;
+  captures: number | null;
+  hold_seconds: number | null;
+  matches: { match_code: string; online_round_count: number | null } | null;
+};
+
+/**
+ * Single-match personal records for one player, by ops tag. Lightweight version
+ * of getPlayerHistory used by the Compare page - only the columns the records
+ * need, no guns/ranks joins. Returns [] when the player has no data.
+ */
+export async function getPlayerRecords(
+  supabase: SupabaseClient,
+  opsTag: string,
+): Promise<PersonalRecord[]> {
+  const needle = opsTag.trim();
+  if (needle === "") return [];
+
+  const { data: life } = await supabase
+    .from("player_stats_lifetime")
+    .select("account_id")
+    .ilike("nickname", needle)
+    .maybeSingle<{ account_id: string }>();
+  if (!life) return [];
+
+  const { data: aggs } = await supabase
+    .from("match_player_aggregate")
+    .select(
+      "score,match_rating,frags,kd,accuracy,damage,captures,hold_seconds, matches!inner(match_code, online_round_count)",
+    )
+    .eq("account_id", life.account_id);
+
+  const rows = (aggs ?? []) as unknown as RecAggRow[];
+  if (rows.length === 0) return [];
+
+  const matches: RecordInput[] = rows.map((r) => ({
+    matchId: r.matches?.match_code ?? "",
+    score: n(r.score),
+    matchRating: n(r.match_rating),
+    kills: n(r.frags),
+    kd: n(r.kd),
+    accuracy: n(r.accuracy),
+    damage: n(r.damage),
+    // Objective records only count for online matches (offline games have none).
+    ...((r.matches?.online_round_count ?? 0) > 0 ? { objCaps: n(r.captures), capTime: n(r.hold_seconds) } : {}),
+  }));
+
+  return computePersonalRecords(matches);
+}
+
 /** Format a hold time in whole seconds as mm:ss (e.g. 95 -> "1:35"). */
 function formatHoldTime(seconds: number): string {
   const sec = Math.max(0, Math.round(seconds));
@@ -149,11 +205,16 @@ function formatHoldTime(seconds: number): string {
 }
 
 /** Player's all-time best per tracked metric (earliest achievement wins ties). */
-function computePersonalRecords(matches: PlayerMatch[]): PersonalRecord[] {
+type RecordInput = Pick<
+  PlayerMatch,
+  "matchId" | "score" | "matchRating" | "kills" | "kd" | "accuracy" | "damage" | "objCaps" | "capTime"
+>;
+
+function computePersonalRecords(matches: RecordInput[]): PersonalRecord[] {
   const tracked: Array<{
     metric: PersonalRecord["metric"];
     label: string;
-    extract: (m: PlayerMatch) => number;
+    extract: (m: RecordInput) => number;
     format: (v: number) => string;
   }> = [
     { metric: "score", label: "Score", extract: (m) => m.score, format: (v) => v.toLocaleString("en-US") },

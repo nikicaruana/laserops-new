@@ -20,6 +20,7 @@ import {
 } from "@/lib/player-stats/summary-accolades";
 import { RatingPill } from "@/components/portal/player-summary/RatingPill";
 import { AnimatedValue } from "@/components/portal/player-summary/AnimatedValue";
+import type { PersonalRecord } from "@/lib/player-history/engine";
 
 /* ============================================================
    Main component
@@ -92,6 +93,65 @@ export function CompareView({ allRows, uniqueGunsMap, accolades }: Props) {
     [playerA, playerB],
   );
 
+  // Single-match personal records for each selected player, fetched on demand
+  // from /api/player-records and cached per ops tag so toggling is cheap.
+  const recCache = useRef<Map<string, PersonalRecord[]>>(new Map());
+  const [recordsA, setRecordsA] = useState<PersonalRecord[] | null>(null);
+  const [recordsB, setRecordsB] = useState<PersonalRecord[] | null>(null);
+  const nickA = playerA?.nickname;
+  const nickB = playerB?.nickname;
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load(tag: string | undefined, set: (r: PersonalRecord[] | null) => void) {
+      if (!tag) { set(null); return; }
+      const key = tag.toLowerCase();
+      const cached = recCache.current.get(key);
+      if (cached) { set(cached); return; }
+      set(null);
+      try {
+        const res = await fetch(`/api/player-records?ops=${encodeURIComponent(tag)}`);
+        const json = (await res.json()) as { records?: PersonalRecord[] };
+        if (cancelled) return;
+        const recs = json.records ?? [];
+        recCache.current.set(key, recs);
+        set(recs);
+      } catch {
+        if (!cancelled) set(null);
+      }
+    }
+    load(nickA, setRecordsA);
+    load(nickB, setRecordsB);
+    return () => { cancelled = true; };
+  }, [nickA, nickB]);
+
+  // Winner per single-match record metric (higher is better for all of them).
+  const recordWinners = useMemo(() => {
+    if (!recordsA || !recordsB) return null;
+    const bByMetric = new Map(recordsB.map((r) => [r.metric, r.value]));
+    const map = new Map<string, StatWinner>();
+    for (const r of recordsA) {
+      const bv = bByMetric.get(r.metric) ?? 0;
+      map.set(r.metric, r.value > bv ? "a" : bv > r.value ? "b" : "tie");
+    }
+    return map;
+  }, [recordsA, recordsB]);
+
+  // Overall "who's on top" tally: categories each player leads across the Stats
+  // section, the single-match records, and total accolades.
+  const tally = useMemo(() => {
+    if (!winners) return null;
+    const statKeys: StatWinner[] = [
+      winners.matchesPlayed, winners.uniqueGuns, winners.matchWinRate, winners.roundsWinRate,
+      winners.killsPerMatch, winners.damagePerMatch, winners.capturesPerMatch, winners.holdPerMatch,
+      winners.accuracy, winners.kd, winners.matchRating, winners.totalAccolades,
+    ];
+    let a = 0, b = 0;
+    for (const w of statKeys) { if (w === "a") a++; else if (w === "b") b++; }
+    if (recordWinners) for (const w of recordWinners.values()) { if (w === "a") a++; else if (w === "b") b++; }
+    return { a, b };
+  }, [winners, recordWinners]);
+
   // ── No main player selected ──────────────────────────────
   if (!opsParam) {
     return (
@@ -155,6 +215,16 @@ export function CompareView({ allRows, uniqueGunsMap, accolades }: Props) {
       {/* ── Full comparison grid ───────────────────────────── */}
       {playerA && playerB && winners && (
         <>
+          {/* ── Head to Head overall tally ─────────────────────── */}
+          {tally && (
+            <OverallBanner
+              nameA={playerA.nickname}
+              nameB={playerB.nickname}
+              scoreA={tally.a}
+              scoreB={tally.b}
+            />
+          )}
+
           {/* Profile */}
           <TwoCol>
             <ProfileCell data={playerA} />
@@ -307,6 +377,29 @@ export function CompareView({ allRows, uniqueGunsMap, accolades }: Props) {
             }}
             winner={winners.matchRating}
           />
+
+          {/* ── Game Records section (single-match bests) ──────── */}
+          {recordsA && recordsB && recordsA.length > 0 && recordsB.length > 0 && (
+            <>
+              <SectionHeader title="Game Records" />
+              <p className="-mt-1 text-center text-[0.65rem] text-text-subtle sm:text-xs">
+                Each player&rsquo;s best in a single game
+              </p>
+              {recordsA.map((ra) => {
+                const rb = recordsB.find((r) => r.metric === ra.metric);
+                if (!rb) return null;
+                return (
+                  <StatRow
+                    key={ra.metric}
+                    label={ra.label}
+                    a={{ primary: ra.formatted }}
+                    b={{ primary: rb.formatted }}
+                    winner={recordWinners?.get(ra.metric) ?? "tie"}
+                  />
+                );
+              })}
+            </>
+          )}
 
           {/* ── Accolades section ──────────────────────────────── */}
           <SectionHeader title="Accolades" />
@@ -693,6 +786,70 @@ function AccoladeCell({
 /* ============================================================
    Section + tier headers
    ============================================================ */
+
+function OverallBanner({
+  nameA,
+  nameB,
+  scoreA,
+  scoreB,
+}: {
+  nameA: string;
+  nameB: string;
+  scoreA: number;
+  scoreB: number;
+}) {
+  const winner: StatWinner = scoreA > scoreB ? "a" : scoreB > scoreA ? "b" : "tie";
+  return (
+    <div className="flex flex-col gap-1.5">
+      <SectionHeader title="Head to Head" />
+      <TwoCol>
+        <OverallCell name={nameA} score={scoreA} side="a" winner={winner} />
+        <OverallCell name={nameB} score={scoreB} side="b" winner={winner} />
+      </TwoCol>
+      <p className="text-center text-[0.65rem] text-text-subtle sm:text-xs">
+        Categories won across stats, game records &amp; accolades
+      </p>
+    </div>
+  );
+}
+
+function OverallCell({
+  name,
+  score,
+  side,
+  winner,
+}: {
+  name: string;
+  score: number;
+  side: "a" | "b";
+  winner: StatWinner;
+}) {
+  const leads = winner === side;
+  const tie = winner === "tie";
+  return (
+    <div
+      className={cn(
+        "flex flex-col items-center gap-1.5 p-3 text-center transition-colors sm:gap-2 sm:p-4",
+        cellHighlight(side, winner),
+      )}
+    >
+      <span className="w-full break-words text-center text-[0.7rem] font-bold uppercase tracking-[0.08em] text-text [overflow-wrap:anywhere] sm:text-xs">
+        {name}
+      </span>
+      <span className="font-mono text-3xl font-extrabold leading-none tabular-nums text-accent sm:text-4xl">
+        {score}
+      </span>
+      <span
+        className={cn(
+          "rounded-sm px-2 py-0.5 text-[0.55rem] font-bold uppercase tracking-[0.12em] sm:text-[0.65rem]",
+          leads ? "bg-accent text-bg" : tie ? "bg-bg-overlay text-text-muted" : "bg-bg-overlay text-text-subtle",
+        )}
+      >
+        {tie ? "Tied" : leads ? "Leading" : "Trailing"}
+      </span>
+    </div>
+  );
+}
 
 function SectionHeader({ title }: { title: string }) {
   return (
