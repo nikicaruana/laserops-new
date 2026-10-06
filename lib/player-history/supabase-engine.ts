@@ -142,6 +142,12 @@ export async function getPlayerHistory(
   };
 }
 
+/** Format a hold time in whole seconds as mm:ss (e.g. 95 -> "1:35"). */
+function formatHoldTime(seconds: number): string {
+  const sec = Math.max(0, Math.round(seconds));
+  return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
+}
+
 /** Player's all-time best per tracked metric (earliest achievement wins ties). */
 function computePersonalRecords(matches: PlayerMatch[]): PersonalRecord[] {
   const tracked: Array<{
@@ -156,6 +162,8 @@ function computePersonalRecords(matches: PlayerMatch[]): PersonalRecord[] {
     { metric: "kd", label: "K/D", extract: (m) => m.kd, format: (v) => v.toFixed(2) },
     { metric: "accuracy", label: "Accuracy", extract: (m) => m.accuracy, format: (v) => `${Math.round(v * 100)}%` },
     { metric: "damage", label: "Damage", extract: (m) => m.damage, format: (v) => v.toLocaleString("en-US") },
+    { metric: "caps", label: "Caps", extract: (m) => m.objCaps ?? 0, format: (v) => v.toLocaleString("en-US") },
+    { metric: "capTime", label: "Cap Time", extract: (m) => m.capTime ?? 0, format: formatHoldTime },
   ];
 
   return tracked.map((t) => {
