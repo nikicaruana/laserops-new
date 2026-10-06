@@ -2,11 +2,15 @@
  * components/portal/mastery/MasteryViews.tsx
  * --------------------------------------------------------------------
  * Presentational pieces for Weapon Mastery, shared by the armory accordion and
- * the player-summary Mastery section. Pure (no hooks) so they render on the
- * server or inside a client component. Earned badges show in full colour;
+ * the player-summary Mastery section. Earned badges show in full colour;
  * unearned ones (and unmet requirements) are greyed + desaturated.
+ *
+ * Requirements render as a TILE grid with big streak/accolade icons; each tile
+ * is click/tap-able and opens the shared BadgeDetailDialog popup (same "what is
+ * this?" popup used on the summary + match report).
  */
 import { cldImage } from "@/lib/cld";
+import { BadgeDetailDialog } from "@/components/portal/BadgeDetailDialog";
 import type { GunMastery, MasteryLevel, MasteryRequirement } from "@/lib/weapons/mastery";
 
 /** A mastery badge image, greyed when not earned. */
@@ -62,78 +66,95 @@ export function MasteryPreview({ mastery }: { mastery: GunMastery | undefined })
           alt={`${l.label} mastery`}
           title={`${l.label} mastery`}
           loading="lazy"
-          className="block h-7 w-7 object-contain sm:h-8 sm:w-8"
+          className="block h-8 w-8 object-contain sm:h-9 sm:w-9"
         />
       ))}
     </span>
   );
 }
 
-function CheckIcon() {
+function CornerCheck() {
   return (
-    <svg aria-hidden viewBox="0 0 16 16" className="h-3.5 w-3.5 shrink-0 text-accent" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="square">
-      <path d="M3 8.5l3.5 3.5L13 4" />
-    </svg>
+    <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-bg bg-accent">
+      <svg aria-hidden viewBox="0 0 16 16" className="h-3 w-3 text-bg" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="square">
+        <path d="M3 8.5l3.5 3.5L13 4" />
+      </svg>
+    </span>
   );
 }
 
-/** One requirement (a streak or accolade to earn with the gun), greyed if unmet. */
-function ReqChip({ req }: { req: MasteryRequirement }) {
+/** One requirement tile: big streak/accolade icon, click to open its popup. */
+function ReqTile({ req }: { req: MasteryRequirement }) {
   return (
-    <div
-      className={`flex items-center gap-2 rounded-sm border px-2 py-1.5 ${
-        req.met ? "border-accent/40 bg-accent/5" : "border-border bg-bg-overlay/30 opacity-55"
-      }`}
+    <BadgeDetailDialog
+      kind={req.kind === "streak" ? "Streak" : "Accolade"}
+      name={req.label}
+      description={req.description}
+      badgeUrl={req.badgeUrl}
+      footer={req.met ? "Earned with this gun" : "Not yet earned with this gun"}
+      ariaLabel={`${req.label} - tap for details`}
+      triggerClassName="h-full"
     >
-      {req.badgeUrl && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={cldImage(req.badgeUrl, { w: 64 })}
-          alt=""
-          aria-hidden
-          loading="lazy"
-          className={`block h-6 w-6 shrink-0 object-contain ${req.met ? "" : "grayscale"}`}
-        />
-      )}
-      <span className="min-w-0 flex-1 truncate text-[0.65rem] font-semibold text-text" title={req.label}>
-        {req.label}
-      </span>
-      {req.met && <CheckIcon />}
-    </div>
-  );
-}
-
-/** One mastery level: big badge + its requirements, with earned/locked state. */
-export function MasteryLevelBlock({ level }: { level: MasteryLevel }) {
-  return (
-    <div className={`flex gap-3 rounded-sm border p-3 ${level.earned ? "border-accent/50 bg-accent/5" : "border-border bg-bg-overlay/30"}`}>
-      <div className="flex w-16 shrink-0 flex-col items-center gap-1 sm:w-20">
-        <MasteryBadgeImg url={level.badgeUrl} earned={level.earned} w={200} />
-        <span className={`text-[0.55rem] font-bold uppercase tracking-[0.1em] ${level.earned ? "text-accent" : "text-text-subtle"}`}>
-          {level.label}
+      <div
+        className={`flex h-full flex-col items-center gap-1.5 rounded-sm border p-2 text-center ${
+          req.met ? "border-accent/40 bg-accent/5" : "border-border bg-bg-overlay/30"
+        }`}
+      >
+        <div className="relative">
+          {req.badgeUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={cldImage(req.badgeUrl, { w: 192 })}
+              alt=""
+              aria-hidden
+              loading="lazy"
+              className={`block h-14 w-14 object-contain sm:h-16 sm:w-16 ${req.met ? "" : "opacity-40 grayscale"}`}
+            />
+          ) : (
+            <span aria-hidden className="flex h-14 w-14 items-center justify-center text-2xl text-text-subtle sm:h-16 sm:w-16">
+              &#9733;
+            </span>
+          )}
+          {req.met && <CornerCheck />}
+        </div>
+        <span className={`text-[0.6rem] font-semibold leading-tight ${req.met ? "text-text" : "text-text-subtle"}`}>
+          {req.label}
         </span>
       </div>
-      <div className="min-w-0 flex-1">
-        <div className="mb-1.5 flex items-center justify-between gap-2">
-          <span className="text-[0.55rem] font-bold uppercase tracking-[0.14em] text-text-muted">Requirements</span>
+    </BadgeDetailDialog>
+  );
+}
+
+/** One mastery level: badge + label header, then a tile grid of requirements. */
+export function MasteryLevelBlock({ level }: { level: MasteryLevel }) {
+  return (
+    <div className={`rounded-sm border p-3 sm:p-4 ${level.earned ? "border-accent/50 bg-accent/5" : "border-border bg-bg-overlay/20"}`}>
+      <div className="mb-3 flex items-center gap-3">
+        <div className="w-14 shrink-0 sm:w-16">
+          <MasteryBadgeImg url={level.badgeUrl} earned={level.earned} w={240} />
+        </div>
+        <div className="flex flex-1 items-center justify-between gap-2">
+          <span className={`text-sm font-extrabold uppercase tracking-[0.14em] ${level.earned ? "text-accent" : "text-text"}`}>
+            {level.label}
+          </span>
           <span
-            className={`rounded-sm px-1.5 py-0.5 text-[0.5rem] font-bold uppercase tracking-[0.1em] ${
+            className={`rounded-sm px-2 py-0.5 text-[0.55rem] font-bold uppercase tracking-[0.1em] ${
               level.earned ? "bg-accent text-bg" : "bg-bg-overlay text-text-subtle"
             }`}
           >
             {level.earned ? "Earned" : "Locked"}
           </span>
         </div>
-        {level.requirements.length > 0 ? (
-          <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-            {level.requirements.map((r, i) => (
-              <ReqChip key={`${r.kind}-${r.label}-${i}`} req={r} />
-            ))}
-          </div>
-        ) : (
-          <p className="text-[0.65rem] italic text-text-subtle">No requirements configured.</p>
-        )}
       </div>
+      {level.requirements.length > 0 ? (
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+          {level.requirements.map((r, i) => (
+            <ReqTile key={`${r.kind}-${r.label}-${i}`} req={r} />
+          ))}
+        </div>
+      ) : (
+        <p className="text-[0.65rem] italic text-text-subtle">No requirements configured.</p>
+      )}
     </div>
   );
 }
@@ -141,7 +162,7 @@ export function MasteryLevelBlock({ level }: { level: MasteryLevel }) {
 /** All four levels for one gun, stacked. */
 export function MasteryLevels({ mastery }: { mastery: GunMastery }) {
   return (
-    <div className="flex flex-col gap-2.5">
+    <div className="flex flex-col gap-3">
       {mastery.levels.map((l) => (
         <MasteryLevelBlock key={l.key} level={l} />
       ))}

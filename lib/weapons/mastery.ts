@@ -33,6 +33,7 @@ const SPECIALIST_NAME = "Specialist";
 
 export type MasteryRequirement = {
   label: string;
+  description: string | null;
   kind: "streak" | "accolade";
   met: boolean;
   badgeUrl: string | null;
@@ -68,10 +69,11 @@ type MasteryRow = {
   gold_badge_url: string | null;
   platinum_badge_url: string | null;
 };
-type StreakDefRow = { streak_key: string; name: string; tier: number | null; badge_url: string | null };
-type AccDefRow = { id: string; name: string; xp: number | null; badge_url: string | null };
+type StreakDefRow = { streak_key: string; name: string; description: string | null; tier: number | null; badge_url: string | null };
+type AccDefRow = { id: string; name: string; description: string | null; xp: number | null; badge_url: string | null };
 type MpaRow = { match_id: string; gun_used: string | null; streaks: { key?: string; count?: number }[] | null };
 type AwardRow = { match_id: string; accolade_definition_id: string };
+type AccMeta = { badge: string | null; description: string | null };
 
 function badgeFor(row: MasteryRow, key: MasteryLevelKey): string | null {
   return key === "bronze" ? row.bronze_badge_url
@@ -99,30 +101,30 @@ export async function getWeaponMasteryByGun(
       .select("gun_name, enabled, sort_order, bronze_badge_url, silver_badge_url, gold_badge_url, platinum_badge_url")
       .eq("enabled", true)
       .order("sort_order", { ascending: true }),
-    supabase.from("streak_definitions").select("streak_key, name, tier, badge_url").eq("is_active", true),
-    supabase.from("accolade_definitions").select("id, name, xp, badge_url").eq("is_active", true),
+    supabase.from("streak_definitions").select("streak_key, name, description, tier, badge_url").eq("is_active", true),
+    supabase.from("accolade_definitions").select("id, name, description, xp, badge_url").eq("is_active", true),
   ]);
 
   const guns = (masteryRows ?? []) as MasteryRow[];
   if (guns.length === 0) return out;
 
-  // Tier -> list of streaks {key,name,badge}.
-  const streaksByTier = new Map<number, { key: string; name: string; badge: string | null }[]>();
+  // Tier -> list of streaks {key,name,description,badge}.
+  const streaksByTier = new Map<number, { key: string; name: string; description: string | null; badge: string | null }[]>();
   for (const s of (streakDefs ?? []) as StreakDefRow[]) {
     if (s.tier == null) continue;
     const arr = streaksByTier.get(s.tier) ?? [];
-    arr.push({ key: s.streak_key, name: s.name, badge: s.badge_url });
+    arr.push({ key: s.streak_key, name: s.name, description: s.description, badge: s.badge_url });
     streaksByTier.set(s.tier, arr);
   }
 
-  // Accolades: id -> name, and the tier-3 set (by name) + Specialist badge.
+  // Accolades: id -> name, and the tier-3 set (by name) + Specialist meta.
   const accNameById = new Map<string, string>();
-  const tier3Acc = new Map<string, string | null>(); // name -> badge
-  let specialistBadge: string | null = null;
+  const tier3Acc = new Map<string, AccMeta>(); // name -> {badge, description}
+  let specialist: AccMeta | null = null;
   for (const a of (accDefs ?? []) as AccDefRow[]) {
     accNameById.set(a.id, a.name);
-    if ((a.xp ?? 0) === TIER3_ACCOLADE_XP) tier3Acc.set(a.name, a.badge_url);
-    if (a.name === SPECIALIST_NAME && specialistBadge == null) specialistBadge = a.badge_url;
+    if ((a.xp ?? 0) === TIER3_ACCOLADE_XP) tier3Acc.set(a.name, { badge: a.badge_url, description: a.description });
+    if (a.name === SPECIALIST_NAME && specialist == null) specialist = { badge: a.badge_url, description: a.description };
   }
 
   // Resolve the player; without data every gun is still returned (all locked).
@@ -170,14 +172,21 @@ export async function getWeaponMasteryByGun(
     const levels: MasteryLevel[] = MASTERY_LEVELS.map((lvl) => {
       const reqs: MasteryRequirement[] = [];
       for (const s of streaksByTier.get(lvl.streakTier) ?? []) {
-        reqs.push({ label: s.name, kind: "streak", met: earnedStreaks.has(s.key), badgeUrl: s.badge });
+        reqs.push({ label: s.name, description: s.description, kind: "streak", met: earnedStreaks.has(s.key), badgeUrl: s.badge });
       }
       if (lvl.key === "gold") {
-        reqs.push({ label: SPECIALIST_NAME, kind: "accolade", met: earnedAcc.has(SPECIALIST_NAME), badgeUrl: specialistBadge });
+        reqs.push({
+          label: SPECIALIST_NAME,
+          description: specialist?.description ?? null,
+          kind: "accolade",
+          met: earnedAcc.has(SPECIALIST_NAME),
+          badgeUrl: specialist?.badge ?? null,
+        });
       }
       if (lvl.key === "platinum") {
         for (const name of tier3Names) {
-          reqs.push({ label: name, kind: "accolade", met: earnedAcc.has(name), badgeUrl: tier3Acc.get(name) ?? null });
+          const meta = tier3Acc.get(name);
+          reqs.push({ label: name, description: meta?.description ?? null, kind: "accolade", met: earnedAcc.has(name), badgeUrl: meta?.badge ?? null });
         }
       }
       const earned = reqs.length > 0 && reqs.every((r) => r.met);
