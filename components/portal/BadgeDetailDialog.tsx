@@ -81,16 +81,16 @@ export function BadgeDetailDialog({
         ref={dialogRef}
         className={cn(
           "rounded-sm portal-card text-text",
-          "p-0 max-w-md w-[90vw] m-auto overflow-hidden",
+          "p-0 max-w-lg w-[90vw] m-auto overflow-hidden",
           "backdrop:bg-bg/80 backdrop:backdrop-blur-sm",
         )}
       >
         <div className="relative flex">
           {/* Left: big badge, full vertical height of the popup. */}
-          <div className="flex w-28 shrink-0 items-center justify-center bg-bg-overlay p-3 sm:w-36 sm:p-4">
+          <div className="flex w-40 shrink-0 items-center justify-center bg-bg-overlay p-2 sm:w-52 sm:p-3">
             {badgeUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={cldImage(badgeUrl, { w: 400 })} alt="" className="block h-auto w-full object-contain" />
+              <img src={cldImage(badgeUrl, { w: 520 })} alt="" className="block h-auto w-full object-contain" />
             ) : (
               <span aria-hidden className="text-5xl text-text-subtle">&#9733;</span>
             )}
