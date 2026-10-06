@@ -185,6 +185,8 @@ export type TierGroup = {
   earned: AccoladeWithCount[];
   /** All definitions in this tier (for the always-visible definitions list). */
   allInTier: AccoladeDefinition[];
+  /** Every accolade in this tier with the player's count (0 = not earned). */
+  all: AccoladeWithCount[];
   /** Sum of counts in this tier – useful for at-a-glance per-tier totals. */
   earnedCount: number;
 };
@@ -220,7 +222,7 @@ export function projectAccolades(row: PlayerStatsRaw): AccoladesData {
     }));
     const earned = withCounts.filter((a) => a.count > 0);
     const earnedCount = earned.reduce((sum, a) => sum + a.count, 0);
-    return { tier, earned, allInTier, earnedCount };
+    return { tier, earned, allInTier, all: withCounts, earnedCount };
   });
 
   return { totalEarned, tierGroups };
@@ -262,7 +264,7 @@ export function buildAccoladesDataFromDefs(
     }));
     const earned = withCounts.filter((a) => a.count > 0);
     const earnedCount = earned.reduce((sum, a) => sum + a.count, 0);
-    return { tier, earned, allInTier, earnedCount };
+    return { tier, earned, allInTier, all: withCounts, earnedCount };
   });
   return { totalEarned, tierGroups };
 }

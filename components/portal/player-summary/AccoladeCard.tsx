@@ -25,8 +25,9 @@ type AccoladeCardProps = {
 
 export function AccoladeCard({ data }: AccoladeCardProps) {
   const { definition, count } = data;
+  const locked = count === 0;
   return (
-    <div className="flex flex-col items-center gap-2 portal-card p-3 sm:gap-3 sm:p-4">
+    <div className={`flex flex-col items-center gap-2 portal-card p-3 sm:gap-3 sm:p-4 ${locked ? "opacity-50" : ""}`}>
       {/* Badge artwork – brand yellow silhouette on transparent. The
           ribbon name baked into the artwork serves as the label.
           Sized by WIDTH (w-full) rather than height: the badges are
@@ -40,15 +41,17 @@ export function AccoladeCard({ data }: AccoladeCardProps) {
         alt={`${definition.name} accolade`}
         loading="lazy"
         decoding="async"
-        className="block h-auto w-full max-w-[10rem]"
+        className={`block h-auto w-full max-w-[10rem] ${locked ? "grayscale" : ""}`}
       />
 
       {/* Count pill – lighter elevated grey for contrast against the
           dark card surface. Reads as a small embedded plaque. */}
       <div className="mt-auto rounded-sm border border-border-strong bg-bg-overlay px-3 py-1 sm:px-4 sm:py-1.5">
-        <span className="font-mono text-sm font-bold tabular-nums text-text sm:text-base">
-          {count.toLocaleString("en-US")}
-        </span>
+        {locked ? (
+          <span className="text-[0.6rem] font-bold uppercase tracking-[0.1em] text-text-subtle sm:text-xs">Locked</span>
+        ) : (
+          <span className="font-mono text-sm font-bold tabular-nums text-text sm:text-base">{count.toLocaleString("en-US")}</span>
+        )}
       </div>
     </div>
   );

@@ -65,24 +65,11 @@ function TierBlock({ group }: { group: TierGroup }) {
     <section className="flex flex-col gap-3 sm:gap-4">
       <TierHeader tier={group.tier} earnedCount={group.earnedCount} />
 
-      {/* Earned cards (or empty state if none) */}
-      {group.earned.length > 0 ? (
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3 xl:grid-cols-5">
-          {group.earned.map((a) => (
-            <AccoladeCard key={a.definition.name} data={a} />
-          ))}
-        </div>
-      ) : (
-        <div className="border border-dashed border-border bg-bg-elevated/50 px-4 py-6 text-center">
-          <span className="text-xs font-semibold uppercase tracking-[0.14em] text-text-subtle">
-            None earned yet
-          </span>
-        </div>
-      )}
-
-      {/* Definitions – always visible, even if no cards earned, so the
-          section serves as a guide to what's available in each tier. */}
-      <TierDefinitions group={group} />
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3 xl:grid-cols-5">
+        {group.all.map((a) => (
+          <AccoladeCard key={a.definition.name} data={a} />
+        ))}
+      </div>
     </section>
   );
 }
@@ -118,29 +105,3 @@ function TierHeader({
   );
 }
 
-/* ---------- Definitions list ---------- */
-
-function TierDefinitions({ group }: { group: TierGroup }) {
-  return (
-    // flex-wrap with column-x gap fits definitions by their natural width
-    // and packs them tightly. Better scanability than a CSS Grid for short
-    // text items – the grid produced columns much wider than the content,
-    // making items read as isolated.
-    //
-    // On mobile we still want a single column (definitions one per line).
-    // sm+ switches to wrapping inline so items pack horizontally.
-    <ul className="flex flex-col gap-y-1 text-[0.7rem] leading-snug sm:flex-row sm:flex-wrap sm:gap-x-5 sm:gap-y-1.5 sm:text-xs">
-      {group.allInTier.map((def) => (
-        <li
-          key={def.name}
-          className="flex items-baseline gap-2 text-text-subtle"
-        >
-          {/* Accolade name in semibold to anchor the line. Description
-              in muted colour as supporting detail. */}
-          <span className="font-semibold text-text-muted">{def.name}</span>
-          <span className="text-text-subtle">– {def.description}</span>
-        </li>
-      ))}
-    </ul>
-  );
-}

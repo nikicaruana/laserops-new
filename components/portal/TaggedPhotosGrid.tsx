@@ -64,7 +64,7 @@ export function TaggedPhotosGrid({
 
   if (list.length === 0) {
     return (
-      <div className="flex min-h-[8rem] items-center justify-center border border-dashed border-border bg-bg-elevated px-4 py-8 text-center">
+      <div className="flex min-h-[8rem] items-center justify-center portal-card px-4 py-8 text-center">
         <p className="text-sm text-text-subtle">
           No tagged photos yet. When {opsTag} is tagged in match photos, they show up here.
         </p>

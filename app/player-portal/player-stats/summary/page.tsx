@@ -184,11 +184,11 @@ function SummaryBody({
           <SquadsSection opsTag={opsTag} squads={squads} />
         </CollapsibleSection>
       </div>
-      <CollapsibleSection title="Photos">
-        <TaggedPhotosGrid photos={photos} opsTag={opsTag} limit={6} />
-      </CollapsibleSection>
       <CollapsibleSection title="Stats">
         <StatsSection row={row} ratingUnlocked={ratingUnlocked} />
+      </CollapsibleSection>
+      <CollapsibleSection title="Photos">
+        <TaggedPhotosGrid photos={photos} opsTag={opsTag} limit={6} />
       </CollapsibleSection>
       <CollapsibleSection title="Accolades">
         <AccoladesSection data={accolades} />
