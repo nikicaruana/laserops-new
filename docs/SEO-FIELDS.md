@@ -23,8 +23,8 @@ These apply to every page unless the page overrides them.
 - **Robots (default):** `index: true, follow: true` (+ googleBot `max-image-preview: large`, `max-snippet: -1`).
 - **Keywords:** laser tag malta, outdoor laser tag malta, tactical laser tag, competitive laser tag, team building malta, things to do in malta, group activities malta.
 
-### Structured data (JSON-LD) — site-wide only
-One `application/ld+json` block in the root layout (no per-page schema yet):
+### Structured data (JSON-LD)
+Three schemas across the site: a site-wide block in the root layout, plus **FAQPage** on /faqs and an **Event** list on /events/open-games (noted per-page below). The site-wide block:
 
 - `@type`: **["SportsActivityLocation", "LocalBusiness"]**
 - `name`: LaserOps Malta
@@ -134,6 +134,7 @@ Every other page (`/blog`, `/blog/*`, `/accolades`, `/terms`, `/privacy`,
 - **OG image:** own card
 - **OG override:** og:title "Upcoming Open Games | LaserOps Malta" · og:description "Check the latest open game schedule at LaserOps Malta. Join a match, earn stats, and climb the leaderboard. Open to all players."
 - **H1:** Join an Upcoming Open Match
+- **JSON-LD:** **ItemList** of schema.org/Event (one per upcoming game)
 - **Index:** yes
 
 ### /events/corporate
@@ -163,7 +164,7 @@ Every other page (`/blog`, `/blog/*`, `/accolades`, `/terms`, `/privacy`,
 
 ### /booking
 - **Title:** Book a Laser Tag Session | LaserOps Malta
-- **Description:** Join an upcoming open game or book a private LaserOps Malta session. Outdoor laser tag with persistent stats, progression, and real terrain. Corporate events, birthday parties, and stag & hen groups welcome.  *(≈205 chars — will truncate in search; see observations)*
+- **Description:** Book an open game or a private LaserOps Malta session. Outdoor laser tag with persistent stats and real terrain, for corporate, birthday, and stag & hen groups.
 - **Canonical:** `/booking`
 - **OG image:** own card · **OG override:** none
 - **H1:** Jump into a game, or book one for your group.
@@ -179,7 +180,7 @@ Every other page (`/blog`, `/blog/*`, `/accolades`, `/terms`, `/privacy`,
 - **Canonical:** `/faqs`
 - **OG image:** own card · **OG override:** none
 - **H1:** Frequently Asked Questions
-- **JSON-LD:** none yet — a **FAQPage** schema here is a strong rich-snippet candidate (see observations)
+- **JSON-LD:** **FAQPage** (Q&As mapped from lib/faqs — already live)
 - **Index:** yes
 
 ### /contact
@@ -241,9 +242,9 @@ They use generic titles and are excluded from the sitemap; `player-stats` and
 *(none of these are blockers — flagging for your review)*
 
 1. **/play is `noindex`.** It largely duplicates the home funnel, so this may be deliberate (avoid two pages competing for the same intent). Confirm you want it kept out of Google — if not, flip `robots: { index: true }`.
-2. **/booking description is ~205 chars** and will get truncated (~160 shown). Worth trimming to one tight sentence.
+2. ~~/booking description was ~205 chars~~ — tightened to ~160 chars. ✅ done.
 3. **Home title/description inherit the site default.** That's fine, but you could set a home-specific `title`/`description` if you want different SERP copy from the global default.
 4. **OG title/description fallback:** only `/play`, `/outdoor-laser-tag-malta`, `/community`, `/events/corporate`, `/events/open-games` set a distinct og:title/og:description. The rest reuse the page `<title>` + meta description (acceptable).
 5. **Per-page OG images are still the text cards.** You just swapped the home one to a photo; the other 13 are still generated text cards. Say the word and I can swap any/all of them to photos the same way.
-6. **Structured data is site-wide only.** Good candidates to add post-launch: a **FAQPage** on /faqs, **BlogPosting** on blog posts, **BreadcrumbList** site-wide, and enriching the LocalBusiness block with `geo`, `openingHours`, `priceRange`, and an `image`.
+6. **Structured data already present:** site-wide LocalBusiness/SportsActivityLocation, **FAQPage** on /faqs, and an **Event ItemList** on /events/open-games. Good candidates to add post-launch: **BlogPosting** on blog posts, **BreadcrumbList** site-wide, and enriching the LocalBusiness block with `geo`, `openingHours`, `priceRange`, and an `image`.
 7. **Canonicals** are set on every page (good). Make sure `NEXT_PUBLIC_SITE_URL` in prod is exactly the www (or non-www) host you want to be canonical, and that DNS 301-redirects the other one to it.

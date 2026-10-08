@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   title: "Book a Laser Tag Session",
   alternates: { canonical: "/booking" },
   description:
-    "Join an upcoming open game or book a private LaserOps Malta session. Outdoor laser tag with persistent stats, progression, and real terrain. Corporate events, birthday parties, and stag & hen groups welcome.",
+    "Book an open game or a private LaserOps Malta session. Outdoor laser tag with persistent stats and real terrain, for corporate, birthday, and stag & hen groups.",
 };
 
 // Open games change often (spots fill, new games added) – keep the page fresh
