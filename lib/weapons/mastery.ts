@@ -7,7 +7,7 @@
  * admin-configurable streak_definitions.tier + accolade tiers):
  *   Bronze   - earn EACH tier-1 streak at least once WITH the gun
  *   Silver   - earn EACH tier-2 streak with the gun
- *   Gold     - earn EACH tier-3 streak with the gun + a Specialist accolade
+ *   Gold     - earn EACH tier-3 streak with the gun + Specialist + Eagle Eye accolades
  *   Platinum - earn EACH tier-4 streak with the gun + EACH tier-3 accolade
  *
  * Gun attribution is derivable because match_player_aggregate carries both
@@ -30,6 +30,7 @@ export const MASTERY_LEVELS: { key: MasteryLevelKey; label: string; streakTier: 
 /** Top accolade tier (by XP) required for Platinum; Specialist XP for Gold. */
 const TIER3_ACCOLADE_XP = 100;
 const SPECIALIST_NAME = "Specialist";
+const EAGLE_EYE_NAME = "Eagle Eye";
 
 export type MasteryRequirement = {
   label: string;
@@ -121,10 +122,12 @@ export async function getWeaponMasteryByGun(
   const accNameById = new Map<string, string>();
   const tier3Acc = new Map<string, AccMeta>(); // name -> {badge, description}
   let specialist: AccMeta | null = null;
+  let eagleEye: AccMeta | null = null;
   for (const a of (accDefs ?? []) as AccDefRow[]) {
     accNameById.set(a.id, a.name);
     if ((a.xp ?? 0) === TIER3_ACCOLADE_XP) tier3Acc.set(a.name, { badge: a.badge_url, description: a.description });
     if (a.name === SPECIALIST_NAME && specialist == null) specialist = { badge: a.badge_url, description: a.description };
+    if (a.name === EAGLE_EYE_NAME && eagleEye == null) eagleEye = { badge: a.badge_url, description: a.description };
   }
 
   // Resolve the player; without data every gun is still returned (all locked).
@@ -181,6 +184,13 @@ export async function getWeaponMasteryByGun(
           kind: "accolade",
           met: earnedAcc.has(SPECIALIST_NAME),
           badgeUrl: specialist?.badge ?? null,
+        });
+        reqs.push({
+          label: EAGLE_EYE_NAME,
+          description: eagleEye?.description ?? null,
+          kind: "accolade",
+          met: earnedAcc.has(EAGLE_EYE_NAME),
+          badgeUrl: eagleEye?.badge ?? null,
         });
       }
       if (lvl.key === "platinum") {

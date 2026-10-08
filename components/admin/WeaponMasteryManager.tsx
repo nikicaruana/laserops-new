@@ -87,7 +87,7 @@ export function WeaponMasteryManager({ items }: { items: MasteryItem[] }) {
       <p className="max-w-2xl text-sm text-text-muted">
         Toggle mastery per gun and set its badge art. The requirements come from the
         streak &amp; accolade tiers: Bronze needs every tier-1 streak with the gun, Silver
-        tier-2, Gold tier-3 plus a Specialist accolade, Platinum tier-4 plus every tier-3
+        tier-2, Gold tier-3 plus the Specialist &amp; Eagle Eye accolades, Platinum tier-4 plus every tier-3
         accolade. Guns left off show &ldquo;Mastery coming soon&rdquo;.
       </p>
 
