@@ -71,7 +71,7 @@ export default async function PlayerSummaryPage({
     streaks = ((streakDefs ?? []) as { streak_key: string; name: string; description: string | null; badge_url: string | null; tier: number }[]).map((d) => ({
       streakKey: d.streak_key, name: d.name, description: d.description, badgeUrl: d.badge_url, tier: d.tier, count: earnedMap.get(d.streak_key) ?? 0,
     }));
-    masteryGuns = Array.from((await getWeaponMasteryByGun(supabase, opsTag)).values());
+    masteryGuns = Array.from((await getWeaponMasteryByGun(supabase, opsTag, true)).values());
   }
 
   return (

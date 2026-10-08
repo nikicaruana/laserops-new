@@ -90,6 +90,7 @@ function badgeFor(row: MasteryRow, key: MasteryLevelKey): string | null {
 export async function getWeaponMasteryByGun(
   supabase: SupabaseClient,
   opsTag: string,
+  onlyUnlocked = false,
 ): Promise<Map<string, GunMastery>> {
   const out = new Map<string, GunMastery>();
   const needle = opsTag.trim();
@@ -133,6 +134,7 @@ export async function getWeaponMasteryByGun(
   // Resolve the player; without data every gun is still returned (all locked).
   const gunStreaks = new Map<string, Set<string>>(); // gun -> earned streak keys
   const gunAccNames = new Map<string, Set<string>>(); // gun -> earned accolade names
+  const unlockedGuns = new Set<string>(); // lowercased gun names the player has unlocked (onlyUnlocked)
   if (needle !== "") {
     const { data: life } = await supabase
       .from("player_stats_lifetime")
@@ -163,12 +165,21 @@ export async function getWeaponMasteryByGun(
         set.add(name);
         gunAccNames.set(gun, set);
       }
+      if (onlyUnlocked) {
+        const { data: armory } = await supabase
+          .from("player_armory")
+          .select("gun_name")
+          .eq("account_id", life.account_id)
+          .eq("gun_is_unlocked", true);
+        for (const r of (armory ?? []) as { gun_name: string }[]) unlockedGuns.add(r.gun_name.toLowerCase().trim());
+      }
     }
   }
 
   const tier3Names = Array.from(tier3Acc.keys());
 
   for (const row of guns) {
+    if (onlyUnlocked && !unlockedGuns.has(row.gun_name.toLowerCase().trim())) continue;
     const earnedStreaks = gunStreaks.get(row.gun_name) ?? new Set<string>();
     const earnedAcc = gunAccNames.get(row.gun_name) ?? new Set<string>();
 
