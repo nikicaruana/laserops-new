@@ -144,7 +144,7 @@ export function ArmoryCard({ entry, mastery }: Props) {
                       duration={2000}
                     />
                     {" / "}
-                    {entry.unlockReqPoints.toLocaleString("en-US")}
+                    {entry.unlockReqPoints.toLocaleString("en-US")} XP
                   </>
                 ) : (
                   entry.unlockProgressText
@@ -209,7 +209,7 @@ function ArmoryDetailBody({ entry, isLocked }: { entry: ArmoryEntry; isLocked: b
             <p className="mt-2 text-sm text-text-muted">
               {entry.pointsTowardUnlock.toLocaleString("en-US")}
               {" / "}
-              {entry.unlockReqPoints.toLocaleString("en-US")}
+              {entry.unlockReqPoints.toLocaleString("en-US")} XP
             </p>
           ) : (
             entry.unlockProgressText !== "" && <p className="mt-2 text-sm text-text-muted">{entry.unlockProgressText}</p>

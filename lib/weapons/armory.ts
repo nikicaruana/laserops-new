@@ -60,6 +60,9 @@ export function buildPlayerArmory(
   const BRANCH_PRIORITY: Record<string, number> = {
     AR: 0,
     AK: 1,
+    CQC: 2,
+    LMG: 3,
+    Ranged: 4,
   };
 
   branches.sort((a, b) => {
