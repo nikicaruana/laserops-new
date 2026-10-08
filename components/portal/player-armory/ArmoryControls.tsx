@@ -47,6 +47,8 @@ export function ArmoryControls({ branches, mastery }: Props) {
   );
   const [sortBy, setSortBy] = useState<SortKey>("tree");
   const [treeOpen, setTreeOpen] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
+  const [showOnlyUsed, setShowOnlyUsed] = useState(false);
 
   const allSelected = selectedBranches.size === branchNames.length;
 
@@ -78,12 +80,14 @@ export function ArmoryControls({ branches, mastery }: Props) {
         .filter((b) => selectedBranches.has(b.branch))
         .map((b) => ({
           ...b,
-          entries: showLocked
-            ? b.entries
-            : b.entries.filter((e) => e.gunIsUnlocked),
+          entries: b.entries.filter(
+            (e) =>
+              (showLocked || e.gunIsUnlocked) &&
+              (!showOnlyUsed || e.hasUsedGun),
+          ),
         }))
         .filter((b) => b.entries.length > 0),
-    [branches, selectedBranches, showLocked],
+    [branches, selectedBranches, showLocked, showOnlyUsed],
   );
 
   const allEntries = useMemo(
@@ -109,6 +113,7 @@ export function ArmoryControls({ branches, mastery }: Props) {
   const treeLabel = allSelected
     ? "All Trees"
     : branchNames.filter((b) => selectedBranches.has(b)).join(", ");
+  const sortLabel = SORT_OPTIONS.find((o) => o.value === sortBy)?.label ?? "Gun Tree";
 
   return (
     <div className="mt-6 flex flex-col gap-4 sm:gap-6">
@@ -141,6 +146,35 @@ export function ArmoryControls({ branches, mastery }: Props) {
           </span>
           <span className="text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-text-muted">
             Show Locked
+          </span>
+        </button>
+
+        {/* Used Only toggle */}
+        <button
+          type="button"
+          role="switch"
+          aria-checked={showOnlyUsed}
+          onClick={() => setShowOnlyUsed((v) => !v)}
+          className="flex items-center gap-2 focus:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+        >
+          <span
+            aria-hidden
+            className={cn(
+              "relative inline-flex h-5 w-9 shrink-0 rounded-full border transition-colors duration-200",
+              showOnlyUsed
+                ? "border-accent bg-accent"
+                : "border-border bg-bg-elevated",
+            )}
+          >
+            <span
+              className={cn(
+                "absolute top-0.5 h-4 w-4 rounded-full bg-bg transition-transform duration-200",
+                showOnlyUsed ? "translate-x-[1.125rem]" : "translate-x-[0.125rem]",
+              )}
+            />
+          </span>
+          <span className="text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-text-muted">
+            Used Only
           </span>
         </button>
 
@@ -218,22 +252,60 @@ export function ArmoryControls({ branches, mastery }: Props) {
           </div>
         )}
 
-        {/* Sort by */}
+        {/* Sort by – custom dropdown (native option lists render badly on Windows) */}
         <div className="flex items-center gap-2">
           <span className="text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-text-subtle">
             Sort
           </span>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as SortKey)}
-            className="rounded-sm portal-card px-2 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.12em] text-text-muted focus:border-accent focus:outline-none"
-          >
-            {SORT_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setSortOpen((v) => !v)}
+              className={cn(
+                "flex items-center gap-1.5 rounded-sm border px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.12em] transition-colors",
+                sortOpen
+                  ? "border-accent text-accent"
+                  : "border-border text-text-muted hover:border-border-strong hover:text-text",
+              )}
+            >
+              {sortLabel}
+              <svg
+                aria-hidden
+                viewBox="0 0 10 6"
+                className={cn("h-2.5 w-2.5 transition-transform duration-200", sortOpen && "rotate-180")}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="square"
+              >
+                <path d="M1 1l4 4 4-4" />
+              </svg>
+            </button>
+
+            {sortOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setSortOpen(false)} />
+                <div className="absolute right-0 top-full z-20 mt-1 min-w-[140px] rounded-sm portal-card py-1 shadow-lg">
+                  {SORT_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => {
+                        setSortBy(opt.value);
+                        setSortOpen(false);
+                      }}
+                      className={cn(
+                        "flex w-full items-center px-3 py-2 text-left text-[0.65rem] font-bold uppercase tracking-[0.12em] hover:bg-bg-overlay",
+                        opt.value === sortBy ? "text-accent" : "text-text-muted",
+                      )}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
