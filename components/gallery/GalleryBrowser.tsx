@@ -36,6 +36,7 @@ export function GalleryBrowser({ photos }: { photos: GalleryPhoto[] }) {
   const [ops, setOps] = useState("");
   const [tags, setTags] = useState<Record<string, string[]>>(() => Object.fromEntries(photos.map((p) => [p.id, p.taggedOps])));
   const [followees, setFollowees] = useState<{ accountId: string; ops: string; avatar: string | null }[]>([]);
+  const [tagQuery, setTagQuery] = useState("");
   const [lightbox, setLightbox] = useState<number | null>(null);
   const [composer, setComposer] = useState<Composer | null>(null);
   const [sharing, setSharing] = useState(false);
@@ -196,28 +197,45 @@ export function GalleryBrowser({ photos }: { photos: GalleryPhoto[] }) {
           )}
         </div>
         {ops && followees.length > 0 && (
-          <div className="flex w-full flex-col items-center gap-1.5">
-            <p className="text-[0.55rem] font-bold uppercase tracking-[0.14em] text-white/45">Tag players you follow</p>
-            <div className="flex max-w-md flex-wrap justify-center gap-1.5">
-              {followees.map((f) => {
-                const on = (tags[p.id] ?? []).some((o) => o.toLowerCase() === f.ops.toLowerCase());
-                return (
-                  <button
-                    key={f.accountId}
-                    type="button"
-                    onClick={() => toggleTag(p, f.ops, false)}
-                    className={`flex items-center gap-1.5 rounded-full border px-2 py-1 text-[0.65rem] font-semibold transition-colors ${on ? "border-accent bg-accent/15 text-accent" : "border-white/25 text-white/80 hover:border-accent hover:text-accent"}`}
-                  >
-                    {f.avatar && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={cldImage(f.avatar, { w: 48 })} alt="" className="h-4 w-4 rounded-full object-cover" />
-                    )}
-                    <span>{f.ops}</span>
-                    {on && <span aria-hidden>&#10003;</span>}
-                  </button>
-                );
-              })}
-            </div>
+          <div className="flex w-full max-w-xs flex-col gap-1">
+            <input
+              type="text"
+              value={tagQuery}
+              onChange={(e) => setTagQuery(e.target.value)}
+              placeholder="Tag someone you follow…"
+              aria-label="Tag someone you follow"
+              className="w-full rounded-sm border border-white/25 bg-black/50 px-2.5 py-1.5 text-xs text-white placeholder:text-white/40 focus:border-accent focus:outline-none"
+            />
+            {tagQuery.trim() !== "" && (() => {
+              const q = tagQuery.trim().toLowerCase();
+              const matches = followees.filter((f) => f.ops.toLowerCase().includes(q)).slice(0, 8);
+              return (
+                <div className="max-h-44 overflow-y-auto rounded-sm border border-white/15 bg-black/85">
+                  {matches.length === 0 ? (
+                    <p className="px-2.5 py-2 text-xs text-white/40">No one matches.</p>
+                  ) : (
+                    matches.map((f) => {
+                      const on = (tags[p.id] ?? []).some((o) => o.toLowerCase() === f.ops.toLowerCase());
+                      return (
+                        <button
+                          key={f.accountId}
+                          type="button"
+                          onClick={() => { toggleTag(p, f.ops, false); setTagQuery(""); }}
+                          className="flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-xs text-white/85 hover:bg-white/10"
+                        >
+                          {f.avatar && (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={cldImage(f.avatar, { w: 48 })} alt="" className="h-5 w-5 shrink-0 rounded-full object-cover" />
+                          )}
+                          <span className="flex-1 truncate">{f.ops}</span>
+                          {on && <span aria-hidden className="shrink-0 text-[0.6rem] font-bold uppercase tracking-[0.1em] text-accent">Tagged</span>}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              );
+            })()}
           </div>
         )}
       </div>
