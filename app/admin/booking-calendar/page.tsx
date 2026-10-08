@@ -13,12 +13,12 @@ import { BookingCalendarManager } from "@/components/admin/BookingCalendarManage
 export const metadata: Metadata = { title: "Booking calendar" };
 
 type Weekly = { season_id: string; weekday: number; is_open: boolean; open_time: string; close_time: string };
-type Season = { id: string; name: string; start_month: number; start_day: number };
+type Season = { id: string; name: string; start_month: number | null; start_day: number | null; end_month: number | null; end_day: number | null; is_default: boolean };
 
 export default async function BookingCalendarPage() {
   const supabase = await createClient();
   const [{ data: seasonRows }, { data: weeklyRows }] = await Promise.all([
-    supabase.from("booking_seasons").select("id, name, start_month, start_day").order("start_month").order("start_day"),
+    supabase.from("booking_seasons").select("id, name, start_month, start_day, end_month, end_day, is_default").order("is_default", { ascending: false }).order("start_month").order("start_day"),
     supabase.from("booking_weekly_hours").select("season_id, weekday, is_open, open_time, close_time").order("weekday"),
   ]);
   const seasons = (seasonRows ?? []) as Season[];

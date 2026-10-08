@@ -5,14 +5,16 @@
  * --------------------------------------------------------------------
  * The booking availability master calendar. Admins control when games can be
  * booked:
- *   - Seasons: named periods that recur each year (defined by a start month/day),
- *     each with its own weekly template - e.g. Summer opening later.
- *   - Weekly hours (per season): per weekday, open? + the daily window. The window
- *     is when games can RUN; a game must finish by the end time (a ~3h session),
- *     so the latest start is 3h before it.
- *   - Month grid: each day resolved from its override or the active season's weekly
- *     template; click a day to override (closed / custom hours) or reset it.
- *   - Blackout a whole range (e.g. away dates) in one action.
+ *   - Default times: the weekly template for any date NOT inside a season.
+ *   - Seasons: named periods that recur every year between a start and end date
+ *     (month/day; a range may wrap the new year), each overriding the default
+ *     with its own weekly template. Shown as accordion cards.
+ *   - Weekly hours: by default one window applied to every day of the week, with
+ *     an option to customize individual days. A game must finish by the end time
+ *     (a ~3h session), so the latest start is 3h before it.
+ *   - Month grid: each day resolved from its override or the active season / the
+ *     default template; click a day to override (closed / custom hours) or reset.
+ *   - Blackout a whole range (e.g. away dates) - this still beats seasons + default.
  * All writes go through the booking_* RPCs (admin-gated); times are Europe/Malta.
  */
 import { useCallback, useEffect, useState } from "react";
@@ -20,7 +22,15 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
 
-type Season = { id: string; name: string; start_month: number; start_day: number };
+type Season = {
+  id: string;
+  name: string;
+  start_month: number | null;
+  start_day: number | null;
+  end_month: number | null;
+  end_day: number | null;
+  is_default: boolean;
+};
 type Weekly = { season_id: string; weekday: number; is_open: boolean; open_time: string; close_time: string };
 type DayCell = { the_date: string; is_open: boolean; open_time: string | null; close_time: string | null; note: string | null; is_override: boolean };
 type Booking = { id: string; title: string | null; status: string | null; scheduled_at: string | null; is_private: boolean | null };
@@ -29,8 +39,8 @@ type Organizer = { match_id: string; full_name: string | null; ops_tag: string |
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const WEEKDAY_FULL = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0]; // Mon..Sun for display
 
-// Booking stages, in the order chips are shown per day + their colours.
 const STATUS_ORDER = ["live", "confirmed", "awaiting_confirm", "tentative", "completed", "cancelled"];
 const STATUS_META: Record<string, { chip: string; label: string }> = {
   live: { chip: "bg-purple-500 text-white", label: "Live" },
@@ -52,8 +62,25 @@ function iso(d: Date): string {
 function hhmm(t: string | null): string {
   return t ? t.slice(0, 5) : "";
 }
-function defaultWeek(seasonId: string): Weekly[] {
-  return [0, 1, 2, 3, 4, 5, 6].map((weekday) => ({ season_id: seasonId, weekday, is_open: true, open_time: "09:00", close_time: "22:00" }));
+function rangeLabel(s: Season): string {
+  if (s.start_month == null || s.end_month == null) return "No dates set";
+  return `${s.start_day} ${MONTHS[s.start_month - 1]} – ${s.end_day} ${MONTHS[s.end_month - 1]}`;
+}
+/** A one-line summary of a season's weekly hours. */
+function weekSummary(rows: Weekly[]): string {
+  const u = computeUniform(rows);
+  if (u.uniform) return u.isOpen ? `Every day ${u.open}–${u.close}` : "Closed every day";
+  const openCount = rows.filter((r) => r.is_open).length;
+  return `Custom · ${openCount}/7 days open`;
+}
+function computeUniform(rows: Weekly[]): { uniform: boolean; isOpen: boolean; open: string; close: string } {
+  const first = rows[0];
+  if (!first) return { uniform: true, isOpen: true, open: "09:00", close: "22:00" };
+  const sameOpenState = rows.every((r) => r.is_open === first.is_open);
+  if (!sameOpenState) return { uniform: false, isOpen: true, open: "09:00", close: "22:00" };
+  if (!first.is_open) return { uniform: true, isOpen: false, open: "09:00", close: "22:00" };
+  const sameTimes = rows.every((r) => hhmm(r.open_time) === hhmm(first.open_time) && hhmm(r.close_time) === hhmm(first.close_time));
+  return { uniform: sameTimes, isOpen: true, open: hhmm(first.open_time), close: hhmm(first.close_time) };
 }
 
 export function BookingCalendarManager({ initialSeasons, initialWeekly }: { initialSeasons: Season[]; initialWeekly: Weekly[] }) {
@@ -62,7 +89,11 @@ export function BookingCalendarManager({ initialSeasons, initialWeekly }: { init
 
   const [seasons, setSeasons] = useState<Season[]>(initialSeasons);
   const [weeklyAll, setWeeklyAll] = useState<Weekly[]>(initialWeekly);
-  const [selSeasonId, setSelSeasonId] = useState<string>(initialSeasons[0]?.id ?? "");
+  const defaultSeason = seasons.find((s) => s.is_default) ?? null;
+  const datedSeasons = seasons
+    .filter((s) => !s.is_default)
+    .sort((a, b) => (a.start_month ?? 99) - (b.start_month ?? 99) || (a.start_day ?? 99) - (b.start_day ?? 99));
+  const [openCards, setOpenCards] = useState<Set<string>>(() => new Set(defaultSeason ? [defaultSeason.id] : []));
 
   const [cursor, setCursor] = useState({ y: today.getFullYear(), m: today.getMonth() });
   const [days, setDays] = useState<Record<string, DayCell>>({});
@@ -81,11 +112,22 @@ export function BookingCalendarManager({ initialSeasons, initialWeekly }: { init
   const daysInMonth = new Date(cursor.y, cursor.m + 1, 0).getDate();
   const leading = (first.getDay() + 6) % 7;
 
-  // Weekly rows for the season currently being edited.
-  const selWeek: Weekly[] = [0, 1, 2, 3, 4, 5, 6].map(
-    (wd) => weeklyAll.find((w) => w.season_id === selSeasonId && w.weekday === wd) ?? { season_id: selSeasonId, weekday: wd, is_open: true, open_time: "09:00", close_time: "22:00" },
-  );
-  const selSeason = seasons.find((s) => s.id === selSeasonId) ?? null;
+  function weekFor(seasonId: string): Weekly[] {
+    return [0, 1, 2, 3, 4, 5, 6].map(
+      (wd) => weeklyAll.find((w) => w.season_id === seasonId && w.weekday === wd) ?? { season_id: seasonId, weekday: wd, is_open: true, open_time: "09:00", close_time: "22:00" },
+    );
+  }
+  function sig(seasonId: string): string {
+    return seasonId + ":" + weekFor(seasonId).map((w) => `${w.is_open ? 1 : 0}${hhmm(w.open_time)}${hhmm(w.close_time)}`).join(",");
+  }
+  function toggleCard(id: string) {
+    setOpenCards((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   const loadMonth = useCallback(async () => {
     const from = iso(new Date(cursor.y, cursor.m, 1));
@@ -124,14 +166,12 @@ export function BookingCalendarManager({ initialSeasons, initialWeekly }: { init
 
   const loadConfig = useCallback(async () => {
     const [{ data: s }, { data: w }] = await Promise.all([
-      supabase.from("booking_seasons").select("id, name, start_month, start_day").order("start_month").order("start_day"),
+      supabase.from("booking_seasons").select("id, name, start_month, start_day, end_month, end_day, is_default").order("is_default", { ascending: false }).order("start_month").order("start_day"),
       supabase.from("booking_weekly_hours").select("season_id, weekday, is_open, open_time, close_time"),
     ]);
-    const seasonList = (s ?? []) as Season[];
-    setSeasons(seasonList);
+    setSeasons((s ?? []) as Season[]);
     setWeeklyAll((w ?? []) as Weekly[]);
-    if (!seasonList.some((x) => x.id === selSeasonId)) setSelSeasonId(seasonList[0]?.id ?? "");
-  }, [supabase, selSeasonId]);
+  }, [supabase]);
 
   async function rpc(fn: string, args: Record<string, unknown>, okMsg: string, reloadCfg = false) {
     setBusy(true);
@@ -144,14 +184,14 @@ export function BookingCalendarManager({ initialSeasons, initialWeekly }: { init
     if (reloadCfg) await loadConfig();
   }
 
-  async function resolveReschedule(matchId: string, iso: string) {
+  async function resolveReschedule(matchId: string, isoWhen: string) {
     setBusy(true);
     setMsg(null);
     try {
       const res = await fetch(`/api/matches/${matchId}/reschedule`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ newScheduledAt: iso }),
+        body: JSON.stringify({ newScheduledAt: isoWhen }),
       });
       const data = (await res.json()) as { ok?: boolean; error?: string };
       if (!res.ok || !data.ok) throw new Error(data.error || "Couldn't reschedule.");
@@ -191,7 +231,6 @@ export function BookingCalendarManager({ initialSeasons, initialWeekly }: { init
       setBusy(false);
       return setMsg(error.message);
     }
-    // Which planned games now fall inside the blacked-out range?
     const fromTs = new Date(rangeFrom + "T00:00:00").toISOString();
     const toTs = new Date(rangeTo + "T23:59:59").toISOString();
     const { data: rows } = await supabase
@@ -216,7 +255,6 @@ export function BookingCalendarManager({ initialSeasons, initialWeekly }: { init
     await loadMonth();
   }
 
-  // Closing a single day: surface any planned games on it in the same panel.
   async function closeDay(open: string | null, close: string | null, note: string | null, isOpen: boolean) {
     await rpc("set_booking_override", { p_date: selDate, p_is_open: isOpen, p_open: open, p_close: close, p_note: note }, isOpen ? "Day updated." : "Day closed.");
     if (!isOpen && selDate) {
@@ -226,40 +264,17 @@ export function BookingCalendarManager({ initialSeasons, initialWeekly }: { init
     }
   }
 
-  function setWeekLocal(weekday: number, patch: Partial<Weekly>) {
-    setWeeklyAll((prev) => {
-      const idx = prev.findIndex((w) => w.season_id === selSeasonId && w.weekday === weekday);
-      if (idx === -1) return [...prev, { season_id: selSeasonId, weekday, is_open: true, open_time: "09:00", close_time: "22:00", ...patch }];
-      const copy = [...prev];
-      copy[idx] = { ...copy[idx], ...patch };
-      return copy;
-    });
-  }
-
-  async function saveWeekly() {
-    setBusy(true);
-    setMsg(null);
-    for (const w of selWeek) {
-      const { error } = await supabase.rpc("set_booking_weekly", { p_season_id: selSeasonId, p_weekday: w.weekday, p_is_open: w.is_open, p_open: w.open_time, p_close: w.close_time });
-      if (error) {
-        setBusy(false);
-        return setMsg(error.message);
-      }
-    }
-    setBusy(false);
-    setMsg("Weekly hours saved.");
-    await loadMonth();
-  }
-
   async function addSeason() {
     setBusy(true);
     setMsg(null);
-    const { data, error } = await supabase.rpc("upsert_booking_season", { p_id: null, p_name: "New season", p_start_month: today.getMonth() + 1, p_start_day: today.getDate() });
+    const m = today.getMonth() + 1;
+    const d = today.getDate();
+    const { data, error } = await supabase.rpc("upsert_booking_season", { p_id: null, p_name: "New season", p_start_month: m, p_start_day: d, p_end_month: m, p_end_day: d });
     setBusy(false);
     if (error) return setMsg(error.message);
     await loadConfig();
-    if (typeof data === "string") setSelSeasonId(data);
-    setMsg("Season added.");
+    if (typeof data === "string") setOpenCards((prev) => new Set(prev).add(data));
+    setMsg("Season added - set its dates and hours.");
   }
 
   const monthLabel = first.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
@@ -267,69 +282,50 @@ export function BookingCalendarManager({ initialSeasons, initialWeekly }: { init
 
   return (
     <div className="flex flex-col gap-8">
-      {/* Seasons */}
+      {/* Seasons & opening hours */}
       <section className="order-3 border border-border bg-bg-elevated p-5">
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="text-sm font-bold uppercase tracking-[0.12em] text-accent">Seasons</h2>
+          <h2 className="text-sm font-bold uppercase tracking-[0.12em] text-accent">Seasons &amp; opening hours</h2>
           <Button type="button" size="sm" variant="secondary" onClick={addSeason} disabled={busy}>Add season</Button>
         </div>
-        <p className="mb-4 text-xs text-text-muted">Each season recurs every year from its start date until the next season begins. Pick one to edit its weekly hours below.</p>
-        <div className="flex flex-wrap gap-2">
-          {seasons.map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => setSelSeasonId(s.id)}
-              className={`border px-3 py-1.5 text-xs font-bold uppercase tracking-[0.1em] ${s.id === selSeasonId ? "border-accent bg-accent/10 text-accent" : "border-border-strong text-text-muted hover:border-accent hover:text-accent"}`}
+        <p className="mb-4 text-xs text-text-muted">
+          Default times apply to any date not inside a season. Seasons recur every year between their start and end dates and override the default. A blackout or a single-day override (set on the calendar below) still beats both.
+        </p>
+        <div className="flex flex-col gap-2">
+          {defaultSeason && (
+            <AccordionCard
+              open={openCards.has(defaultSeason.id)}
+              onToggle={() => toggleCard(defaultSeason.id)}
+              title="Default times"
+              subtitle="All dates not covered by a season"
+              summary={weekSummary(weekFor(defaultSeason.id))}
             >
-              {s.name} · {s.start_day} {MONTHS[s.start_month - 1]}
-            </button>
+              <SeasonHours key={sig(defaultSeason.id)} seasonId={defaultSeason.id} weekly={weekFor(defaultSeason.id)} busy={busy} setBusy={setBusy} onSaved={loadConfig} supabase={supabase} />
+            </AccordionCard>
+          )}
+
+          {datedSeasons.map((s) => (
+            <AccordionCard
+              key={s.id}
+              open={openCards.has(s.id)}
+              onToggle={() => toggleCard(s.id)}
+              title={s.name}
+              subtitle={rangeLabel(s)}
+              summary={weekSummary(weekFor(s.id))}
+            >
+              <SeasonDates
+                season={s}
+                busy={busy}
+                onSave={(name, sm, sd, em, ed) => rpc("upsert_booking_season", { p_id: s.id, p_name: name, p_start_month: sm, p_start_day: sd, p_end_month: em, p_end_day: ed }, "Season saved.", true)}
+                onDelete={() => rpc("delete_booking_season", { p_id: s.id }, "Season deleted.", true)}
+              />
+              <SeasonHours key={sig(s.id)} seasonId={s.id} weekly={weekFor(s.id)} busy={busy} setBusy={setBusy} onSaved={loadConfig} supabase={supabase} />
+            </AccordionCard>
           ))}
-        </div>
 
-        {selSeason && (
-          <SeasonEditor
-            key={selSeason.id}
-            season={selSeason}
-            canDelete={seasons.length > 1}
-            busy={busy}
-            onSave={(name, month, day) => rpc("upsert_booking_season", { p_id: selSeason.id, p_name: name, p_start_month: month, p_start_day: day }, "Season saved.", true)}
-            onDelete={() => rpc("delete_booking_season", { p_id: selSeason.id }, "Season deleted.", true)}
-          />
-        )}
-      </section>
-
-      {/* Weekly template for the selected season */}
-      <section className="order-4 border border-border bg-bg-elevated p-5">
-        <h2 className="text-sm font-bold uppercase tracking-[0.12em] text-accent">Weekly hours{selSeason ? ` · ${selSeason.name}` : ""}</h2>
-        <p className="mt-1 mb-4 text-xs text-text-muted">Games must finish by the end time (a ~3h session), so the latest start is 3h before it. Specific dates can override these below.</p>
-        <div className="space-y-2">
-          {[1, 2, 3, 4, 5, 6, 0].map((wd) => {
-            const w = selWeek.find((x) => x.weekday === wd)!;
-            return (
-              <div key={wd} className="flex flex-wrap items-center gap-3 border-b border-border py-2 last:border-0">
-                <span className="w-24 text-sm font-semibold text-text">{WEEKDAY_FULL[wd]}</span>
-                <button
-                  type="button"
-                  onClick={() => setWeekLocal(wd, { is_open: !w.is_open })}
-                  className={`border px-3 py-1 text-[0.6rem] font-bold uppercase tracking-[0.1em] ${w.is_open ? "border-accent bg-accent/10 text-accent" : "border-border-strong text-text-subtle"}`}
-                >
-                  {w.is_open ? "Open" : "Closed"}
-                </button>
-                {w.is_open && (
-                  <span className="flex items-center gap-2 text-sm text-text-muted">
-                    <input type="time" value={hhmm(w.open_time)} onChange={(e) => setWeekLocal(wd, { open_time: e.target.value })} className="h-9 border border-border-strong bg-bg px-2 text-sm text-text" />
-                    <span>to</span>
-                    <input type="time" value={hhmm(w.close_time)} onChange={(e) => setWeekLocal(wd, { close_time: e.target.value })} className="h-9 border border-border-strong bg-bg px-2 text-sm text-text" />
-                    <span className="text-[0.65rem] text-text-subtle">(finish by)</span>
-                  </span>
-                )}
-              </div>
-            );
-          })}
-        </div>
-        <div className="mt-4">
-          <Button type="button" size="sm" onClick={saveWeekly} disabled={busy}>Save weekly hours</Button>
+          {datedSeasons.length === 0 && (
+            <p className="px-1 text-xs text-text-subtle">No seasons yet - the default times apply all year. Add a season for periods with different hours (e.g. longer summer evenings).</p>
+          )}
         </div>
       </section>
 
@@ -411,16 +407,16 @@ export function BookingCalendarManager({ initialSeasons, initialWeekly }: { init
           busy={busy}
           onClose={() => setSelDate(null)}
           onSet={(is_open, open_time, close_time, note) => closeDay(open_time, close_time, note, is_open)}
-          onReset={() => rpc("clear_booking_override", { p_date: selDate }, "Reset to weekly hours.")}
+          onReset={() => rpc("clear_booking_override", { p_date: selDate }, "Reset to the season / default hours.")}
           onReschedule={resolveReschedule}
           onCancel={resolveCancel}
         />
       )}
 
       {/* Blackout range */}
-      <section className="order-5 border border-border bg-bg-elevated p-5">
+      <section className="order-4 border border-border bg-bg-elevated p-5">
         <h2 className="text-sm font-bold uppercase tracking-[0.12em] text-accent">Blackout a range</h2>
-        <p className="mt-1 mb-4 text-xs text-text-muted">Close every day in a range at once (e.g. while you&apos;re away).</p>
+        <p className="mt-1 mb-4 text-xs text-text-muted">Close every day in a range at once (e.g. while you&apos;re away). This overrides the season and default times.</p>
         <div className="flex flex-wrap items-end gap-3">
           <label className="text-xs text-text-muted">From<br /><input type="date" value={rangeFrom} onChange={(e) => setRangeFrom(e.target.value)} className="mt-1 h-9 border border-border-strong bg-bg px-2 text-sm text-text" /></label>
           <label className="text-xs text-text-muted">To<br /><input type="date" value={rangeTo} onChange={(e) => setRangeTo(e.target.value)} className="mt-1 h-9 border border-border-strong bg-bg px-2 text-sm text-text" /></label>
@@ -431,7 +427,6 @@ export function BookingCalendarManager({ initialSeasons, initialWeekly }: { init
         </div>
       </section>
 
-      {/* Conflicts: planned games caught in a blackout - move or cancel each. */}
       {conflicts.length > 0 && (
         <section className="order-2 border border-amber-600/50 bg-amber-950/20 p-5">
           <div className="mb-3 flex items-center justify-between gap-3">
@@ -452,32 +447,184 @@ export function BookingCalendarManager({ initialSeasons, initialWeekly }: { init
   );
 }
 
-function SeasonEditor({ season, canDelete, busy, onSave, onDelete }: { season: Season; canDelete: boolean; busy: boolean; onSave: (name: string, month: number, day: number) => void; onDelete: () => void }) {
-  const [name, setName] = useState(season.name);
-  const [month, setMonth] = useState(season.start_month);
-  const [day, setDay] = useState(season.start_day);
-
+/* ============================================================
+   Accordion card
+   ============================================================ */
+function AccordionCard({ open, onToggle, title, subtitle, summary, children }: { open: boolean; onToggle: () => void; title: string; subtitle: string; summary: string; children: React.ReactNode }) {
   return (
-    <div className="mt-4 flex flex-wrap items-end gap-3 border-t border-border pt-4">
-      <label className="text-xs text-text-muted">Name<br /><input type="text" value={name} onChange={(e) => setName(e.target.value)} className="mt-1 h-9 w-40 border border-border-strong bg-bg px-2 text-sm text-text" /></label>
-      <label className="text-xs text-text-muted">Starts<br />
-        <span className="mt-1 flex items-center gap-2">
-          <select value={month} onChange={(e) => setMonth(Number(e.target.value))} className="h-9 border border-border-strong bg-bg px-2 text-sm text-text">
-            {MONTHS.map((mn, i) => <option key={mn} value={i + 1}>{mn}</option>)}
-          </select>
-          <input type="number" min={1} max={31} value={day} onChange={(e) => setDay(Math.min(31, Math.max(1, Number(e.target.value) || 1)))} className="h-9 w-16 border border-border-strong bg-bg px-2 text-sm text-text" />
+    <div className="border border-border-strong bg-bg">
+      <button type="button" onClick={onToggle} className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left">
+        <span className="min-w-0">
+          <span className="block truncate text-sm font-bold text-text">{title}</span>
+          <span className="block truncate text-[0.65rem] text-text-muted">{subtitle} · {summary}</span>
         </span>
-      </label>
-      <Button type="button" size="sm" disabled={busy} onClick={() => onSave(name, month, day)}>Save season</Button>
-      {canDelete && (
-        <button type="button" disabled={busy} onClick={() => { if (window.confirm(`Delete the "${season.name}" season?`)) onDelete(); }} className="px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] text-text-subtle hover:text-red-400 disabled:opacity-50">
-          Delete
-        </button>
-      )}
+        <svg aria-hidden viewBox="0 0 12 12" className={`h-3 w-3 shrink-0 text-accent transition-transform ${open ? "rotate-90" : ""}`} fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M4 2l4 4-4 4" strokeLinecap="square" />
+        </svg>
+      </button>
+      {open && <div className="border-t border-border px-4 py-4">{children}</div>}
     </div>
   );
 }
 
+/* ============================================================
+   Season dates editor (name + recurring start/end)
+   ============================================================ */
+function SeasonDates({ season, busy, onSave, onDelete }: { season: Season; busy: boolean; onSave: (name: string, sm: number, sd: number, em: number, ed: number) => void; onDelete: () => void }) {
+  const [name, setName] = useState(season.name);
+  const [sm, setSm] = useState(season.start_month ?? 1);
+  const [sd, setSd] = useState(season.start_day ?? 1);
+  const [em, setEm] = useState(season.end_month ?? 12);
+  const [ed, setEd] = useState(season.end_day ?? 31);
+  const dayInput = "h-9 w-16 border border-border-strong bg-bg px-2 text-sm text-text";
+  const monthSel = "h-9 border border-border-strong bg-bg px-2 text-sm text-text";
+
+  return (
+    <div className="mb-4 flex flex-wrap items-end gap-3 border-b border-border pb-4">
+      <label className="text-xs text-text-muted">Name<br /><input type="text" value={name} onChange={(e) => setName(e.target.value)} className="mt-1 h-9 w-40 border border-border-strong bg-bg px-2 text-sm text-text" /></label>
+      <label className="text-xs text-text-muted">Starts<br />
+        <span className="mt-1 flex items-center gap-2">
+          <select value={sm} onChange={(e) => setSm(Number(e.target.value))} className={monthSel}>{MONTHS.map((mn, i) => <option key={mn} value={i + 1}>{mn}</option>)}</select>
+          <input type="number" min={1} max={31} value={sd} onChange={(e) => setSd(Math.min(31, Math.max(1, Number(e.target.value) || 1)))} className={dayInput} />
+        </span>
+      </label>
+      <label className="text-xs text-text-muted">Ends<br />
+        <span className="mt-1 flex items-center gap-2">
+          <select value={em} onChange={(e) => setEm(Number(e.target.value))} className={monthSel}>{MONTHS.map((mn, i) => <option key={mn} value={i + 1}>{mn}</option>)}</select>
+          <input type="number" min={1} max={31} value={ed} onChange={(e) => setEd(Math.min(31, Math.max(1, Number(e.target.value) || 1)))} className={dayInput} />
+        </span>
+      </label>
+      <Button type="button" size="sm" disabled={busy} onClick={() => onSave(name, sm, sd, em, ed)}>Save dates</Button>
+      <button type="button" disabled={busy} onClick={() => { if (window.confirm(`Delete the "${season.name}" season?`)) onDelete(); }} className="px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] text-text-subtle hover:text-red-400 disabled:opacity-50">
+        Delete
+      </button>
+    </div>
+  );
+}
+
+/* ============================================================
+   Season hours editor (uniform by default; expand to per-day)
+   ============================================================ */
+function SeasonHours({
+  seasonId,
+  weekly,
+  busy,
+  setBusy,
+  onSaved,
+  supabase,
+}: {
+  seasonId: string;
+  weekly: Weekly[];
+  busy: boolean;
+  setBusy: (b: boolean) => void;
+  onSaved: () => Promise<void>;
+  supabase: ReturnType<typeof createClient>;
+}) {
+  const u = computeUniform(weekly);
+  const [mode, setMode] = useState<"uniform" | "custom">(u.uniform ? "uniform" : "custom");
+  const [uIsOpen, setUIsOpen] = useState(u.isOpen);
+  const [uOpen, setUOpen] = useState(u.open);
+  const [uClose, setUClose] = useState(u.close);
+  const [days, setDays] = useState<Weekly[]>(weekly);
+  const [localMsg, setLocalMsg] = useState<string | null>(null);
+
+  function setDay(weekday: number, patch: Partial<Weekly>) {
+    setDays((prev) => prev.map((w) => (w.weekday === weekday ? { ...w, ...patch } : w)));
+    setLocalMsg(null);
+  }
+
+  async function save() {
+    setBusy(true);
+    setLocalMsg(null);
+    if (mode === "uniform") {
+      const { error } = await supabase.rpc("set_booking_weekly_all", { p_season_id: seasonId, p_is_open: uIsOpen, p_open: uOpen, p_close: uClose });
+      if (error) { setBusy(false); return setLocalMsg(error.message); }
+    } else {
+      for (const w of days) {
+        const { error } = await supabase.rpc("set_booking_weekly", { p_season_id: seasonId, p_weekday: w.weekday, p_is_open: w.is_open, p_open: w.open_time, p_close: w.close_time });
+        if (error) { setBusy(false); return setLocalMsg(error.message); }
+      }
+    }
+    setBusy(false);
+    setLocalMsg("Hours saved.");
+    await onSaved();
+  }
+
+  const timeInput = "h-9 border border-border-strong bg-bg px-2 text-sm text-text";
+
+  return (
+    <div>
+      <div className="mb-3 flex flex-wrap gap-2">
+        {(["uniform", "custom"] as const).map((m) => (
+          <button
+            key={m}
+            type="button"
+            onClick={() => setMode(m)}
+            className={`border px-3 py-1.5 text-[0.6rem] font-bold uppercase tracking-[0.1em] ${mode === m ? "border-accent bg-accent/10 text-accent" : "border-border-strong text-text-muted hover:border-accent hover:text-accent"}`}
+          >
+            {m === "uniform" ? "Same hours every day" : "Customize days"}
+          </button>
+        ))}
+      </div>
+
+      {mode === "uniform" ? (
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setUIsOpen((v) => !v)}
+            className={`border px-3 py-1 text-[0.6rem] font-bold uppercase tracking-[0.1em] ${uIsOpen ? "border-accent bg-accent/10 text-accent" : "border-border-strong text-text-subtle"}`}
+          >
+            {uIsOpen ? "Open" : "Closed"}
+          </button>
+          {uIsOpen && (
+            <span className="flex items-center gap-2 text-sm text-text-muted">
+              <input type="time" value={uOpen} onChange={(e) => setUOpen(e.target.value)} className={timeInput} />
+              <span>to</span>
+              <input type="time" value={uClose} onChange={(e) => setUClose(e.target.value)} className={timeInput} />
+              <span className="text-[0.65rem] text-text-subtle">(finish by)</span>
+            </span>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {WEEK_ORDER.map((wd) => {
+            const w = days.find((x) => x.weekday === wd)!;
+            return (
+              <div key={wd} className="flex flex-wrap items-center gap-3 border-b border-border py-2 last:border-0">
+                <span className="w-24 text-sm font-semibold text-text">{WEEKDAY_FULL[wd]}</span>
+                <button
+                  type="button"
+                  onClick={() => setDay(wd, { is_open: !w.is_open })}
+                  className={`border px-3 py-1 text-[0.6rem] font-bold uppercase tracking-[0.1em] ${w.is_open ? "border-accent bg-accent/10 text-accent" : "border-border-strong text-text-subtle"}`}
+                >
+                  {w.is_open ? "Open" : "Closed"}
+                </button>
+                {w.is_open && (
+                  <span className="flex items-center gap-2 text-sm text-text-muted">
+                    <input type="time" value={hhmm(w.open_time)} onChange={(e) => setDay(wd, { open_time: e.target.value })} className={timeInput} />
+                    <span>to</span>
+                    <input type="time" value={hhmm(w.close_time)} onChange={(e) => setDay(wd, { close_time: e.target.value })} className={timeInput} />
+                    <span className="text-[0.65rem] text-text-subtle">(finish by)</span>
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <p className="mt-3 text-[0.65rem] text-text-subtle">Games must finish by the end time (a ~3h session), so the latest start is 3h before it.</p>
+      <div className="mt-3 flex items-center gap-3">
+        <Button type="button" size="sm" onClick={save} disabled={busy}>Save hours</Button>
+        {localMsg && <span className="text-xs text-accent">{localMsg}</span>}
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   Games-affected row (move / cancel)
+   ============================================================ */
 function GameResolveRow({ booking, organizer, busy, onReschedule, onCancel }: { booking: Booking; organizer: Organizer | undefined; busy: boolean; onReschedule: (id: string, iso: string) => void; onCancel: (id: string) => void }) {
   const [moving, setMoving] = useState(false);
   const [when, setWhen] = useState("");
@@ -516,6 +663,9 @@ function GameResolveRow({ booking, organizer, busy, onReschedule, onCancel }: { 
   );
 }
 
+/* ============================================================
+   Day editor (single-date override)
+   ============================================================ */
 function DayEditor({ date, cell, bookings, organizers, busy, onClose, onSet, onReset, onReschedule, onCancel }: { date: string; cell: DayCell | null; bookings: Booking[]; organizers: Record<string, Organizer>; busy: boolean; onClose: () => void; onSet: (isOpen: boolean, open: string | null, close: string | null, note: string | null) => void; onReset: () => void; onReschedule: (id: string, iso: string) => void; onCancel: (id: string) => void }) {
   const [mode, setMode] = useState<"open" | "custom" | "closed">(cell && !cell.is_open ? "closed" : cell?.is_override && cell.open_time ? "custom" : "open");
   const [open, setOpen] = useState(hhmm(cell?.open_time ?? null) || "09:00");
@@ -544,7 +694,7 @@ function DayEditor({ date, cell, bookings, organizers, busy, onClose, onSet, onR
         <div className="flex flex-col gap-2">
           {(["open", "custom", "closed"] as const).map((m) => (
             <button key={m} type="button" onClick={() => setMode(m)} className={`border px-3 py-2 text-left text-xs font-bold uppercase tracking-[0.1em] ${mode === m ? "border-accent bg-accent/10 text-accent" : "border-border-strong text-text-muted"}`}>
-              {m === "open" ? "Open (season hours)" : m === "custom" ? "Open (custom hours)" : "Closed"}
+              {m === "open" ? "Open (season / default hours)" : m === "custom" ? "Open (custom hours)" : "Closed"}
             </button>
           ))}
         </div>
@@ -565,7 +715,7 @@ function DayEditor({ date, cell, bookings, organizers, busy, onClose, onSet, onR
             Save
           </Button>
           {cell?.is_override && (
-            <Button type="button" variant="secondary" size="sm" disabled={busy} onClick={() => { onReset(); onClose(); }}>Reset to season</Button>
+            <Button type="button" variant="secondary" size="sm" disabled={busy} onClick={() => { onReset(); onClose(); }}>Reset to season / default</Button>
           )}
           <button type="button" onClick={onClose} className="px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] text-text-subtle hover:text-accent">Cancel</button>
         </div>
