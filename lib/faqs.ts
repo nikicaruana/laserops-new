@@ -113,7 +113,7 @@ export const FAQS: Faq[] = [
   {
     question: "What are squads, ladders and accolades?",
     answer:
-      "Squads let you team up with friends under one banner; ladders are competitive seasonal rankings; and accolades and streaks are badges you earn for standout performances, like topping the kills or stringing together a streak. You'll find them all in your player portal.",
+      "Squads let you team up with friends under one banner; ladders are competitive seasonal rankings; and accolades and streaks are badges you earn for standout performances, like topping the kills or stringing together a streak. You'll find them all in your player portal. You can be in up to two squads, with one set as your primary (the squad you compete for); your priority locks for the duration of a competitive season.",
   },
   {
     question: "Can I see my match report and photos?",

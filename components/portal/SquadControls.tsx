@@ -18,6 +18,11 @@ const input =
   "h-11 w-full rounded-none border border-border-strong bg-bg px-3 text-sm text-text placeholder:text-text-subtle focus:border-accent focus:outline-none";
 const lbl = "mb-1.5 block text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-text-muted";
 
+function fmtDate(iso: string): string {
+  const d = new Date(iso + "T00:00:00");
+  return isNaN(d.getTime()) ? iso : d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
+
 export function SquadControls({
   squadId,
   inviteCode,
@@ -42,6 +47,7 @@ export function SquadControls({
   const [error, setError] = useState<string | null>(null);
   const [inviteUrl, setInviteUrl] = useState("");
   const [copied, setCopied] = useState(false);
+  const [lock, setLock] = useState<{ locked: boolean; season_name: string | null; unlock_on: string | null } | null>(null);
 
   const [name, setName] = useState(initialName);
   const [description, setDescription] = useState(initialDescription);
@@ -54,6 +60,13 @@ export function SquadControls({
   useEffect(() => {
     if (inviteCode) setInviteUrl(`${window.location.origin}/player-portal/squads/join/${inviteCode}`);
   }, [inviteCode]);
+
+  useEffect(() => {
+    createClient().rpc("squad_priority_lock").then(({ data }) => {
+      const row = Array.isArray(data) ? data[0] : data;
+      if (row) setLock(row as { locked: boolean; season_name: string | null; unlock_on: string | null });
+    });
+  }, []);
 
   async function rpc(fn: string, args: Record<string, unknown>, confirmMsg?: string) {
     if (confirmMsg && !window.confirm(confirmMsg)) return false;
@@ -118,7 +131,11 @@ export function SquadControls({
 
       {/* My membership */}
       <section className="flex flex-wrap items-center gap-3">
-        {!myIsPrimary && (
+        {myIsPrimary ? (
+          <span className="text-xs font-semibold uppercase tracking-[0.1em] text-text-muted">Your primary squad</span>
+        ) : lock?.locked ? (
+          <span className="text-xs font-semibold uppercase tracking-[0.1em] text-text-subtle">Priority locked</span>
+        ) : (
           <button
             type="button"
             disabled={busy}
@@ -128,7 +145,13 @@ export function SquadControls({
             Set as primary squad
           </button>
         )}
-        {myIsPrimary && <span className="text-xs font-semibold uppercase tracking-[0.1em] text-text-muted">Your primary squad</span>}
+        {lock?.locked && (
+          <span className="text-[0.65rem] text-text-subtle">
+            Squad priority is locked for {lock.season_name ?? "the season"}
+            {lock.unlock_on ? ` until ${fmtDate(lock.unlock_on)}` : ""}.{" "}
+            <a href="/player-portal/squads/help" className="text-accent hover:text-accent-soft">Why?</a>
+          </span>
+        )}
         {!isCaptain && (
           <button
             type="button"

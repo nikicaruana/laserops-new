@@ -67,6 +67,9 @@ export default async function SquadsPage({ searchParams }: { searchParams: Promi
           <p className="mt-2 max-w-2xl text-sm text-text-muted">
             Team up, climb the ladder. Create a squad or join one via an invite link.
           </p>
+          <Link href="/player-portal/squads/help" className="mt-2 inline-block text-xs font-bold uppercase tracking-[0.12em] text-accent hover:text-accent-soft">
+            How squads work &rarr;
+          </Link>
         </div>
         {myMemberships.length < 2 && (
           <Link
