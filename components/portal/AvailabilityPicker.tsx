@@ -5,8 +5,8 @@
  * --------------------------------------------------------------------
  * Calendar date + time picker driven by the admin booking availability
  * (booking_calendar RPC). Closed days and past days are disabled; picking an
- * open day reveals the start-time slots for that day - only slots where the full
- * session (sessionHours) finishes by that day's closing time, and (for today)
+ * open day reveals the start-time slots for that day - from the open time up to
+ * the day's latest-start (close) time, and (for today)
  * that haven't already passed. Used on the booking screens so players can only
  * pick times we actually take bookings for.
  */
@@ -75,7 +75,7 @@ export function AvailabilityPicker({
     if (day && !day.is_open) return [];
     const openMin = toMin(day?.open_time ?? "09:00");
     const closeMin = toMin(day?.close_time ?? "22:00");
-    const latest = closeMin - sessionHours * 60;
+    const latest = closeMin; // close time is the latest allowed START
     let out: string[] = [];
     for (let m = openMin; m <= latest; m += slotMinutes) out.push(fmtMin(m));
     if (value.date === todayIso) {

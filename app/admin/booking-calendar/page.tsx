@@ -30,8 +30,8 @@ export default async function BookingCalendarPage() {
         <h1 className="text-2xl font-extrabold uppercase tracking-tight text-text sm:text-3xl">Booking calendar</h1>
         <p className="mt-2 max-w-2xl text-sm text-text-muted">
           Control when games can be booked. Set weekly hours per season, override individual dates, or black out a range
-          while you&apos;re away. Hours are when games can run: a game must finish by the end time (a ~3h session), so the
-          latest start is 3 hours before it. Players can only book inside these windows.
+          while you&apos;re away. The start time is the earliest a game can begin and the end time is the latest it can start.
+          Players can only book inside these windows.
         </p>
       </header>
 

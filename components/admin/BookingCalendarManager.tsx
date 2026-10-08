@@ -10,8 +10,8 @@
  *     (month/day; a range may wrap the new year), each overriding the default
  *     with its own weekly template. Shown as accordion cards.
  *   - Weekly hours: by default one window applied to every day of the week, with
- *     an option to customize individual days. A game must finish by the end time
- *     (a ~3h session), so the latest start is 3h before it.
+ *     an option to customize individual days. The start time is the earliest a
+ *     game can begin; the end time is the latest it can start.
  *   - Month grid: each day resolved from its override or the active season / the
  *     default template; click a day to override (closed / custom hours) or reset.
  *   - Blackout a whole range (e.g. away dates) - this still beats seasons + default.
@@ -581,7 +581,7 @@ function SeasonHours({
               <input type="time" value={uOpen} onChange={(e) => setUOpen(e.target.value)} className={timeInput} />
               <span>to</span>
               <input type="time" value={uClose} onChange={(e) => setUClose(e.target.value)} className={timeInput} />
-              <span className="text-[0.65rem] text-text-subtle">(finish by)</span>
+              <span className="text-[0.65rem] text-text-subtle">(start by)</span>
             </span>
           )}
         </div>
@@ -604,7 +604,7 @@ function SeasonHours({
                     <input type="time" value={hhmm(w.open_time)} onChange={(e) => setDay(wd, { open_time: e.target.value })} className={timeInput} />
                     <span>to</span>
                     <input type="time" value={hhmm(w.close_time)} onChange={(e) => setDay(wd, { close_time: e.target.value })} className={timeInput} />
-                    <span className="text-[0.65rem] text-text-subtle">(finish by)</span>
+                    <span className="text-[0.65rem] text-text-subtle">(start by)</span>
                   </span>
                 )}
               </div>
@@ -613,7 +613,7 @@ function SeasonHours({
         </div>
       )}
 
-      <p className="mt-3 text-[0.65rem] text-text-subtle">Games must finish by the end time (a ~3h session), so the latest start is 3h before it.</p>
+      <p className="mt-3 text-[0.65rem] text-text-subtle">The start time is the earliest a game can begin; the end time is the latest it can start.</p>
       <div className="mt-3 flex items-center gap-3">
         <Button type="button" size="sm" onClick={save} disabled={busy}>Save hours</Button>
         {localMsg && <span className="text-xs text-accent">{localMsg}</span>}
@@ -704,7 +704,7 @@ function DayEditor({ date, cell, bookings, organizers, busy, onClose, onSet, onR
             <input type="time" value={open} onChange={(e) => setOpen(e.target.value)} className="h-9 border border-border-strong bg-bg px-2 text-sm text-text" />
             <span>to</span>
             <input type="time" value={close} onChange={(e) => setClose(e.target.value)} className="h-9 border border-border-strong bg-bg px-2 text-sm text-text" />
-            <span className="text-[0.65rem] text-text-subtle">(finish by)</span>
+            <span className="text-[0.65rem] text-text-subtle">(start by)</span>
           </div>
         )}
 
