@@ -10,7 +10,7 @@
  * without file sharing. There is no web API to auto-post to a personal story,
  * so the share sheet is the intended one-tap path.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { STORY_TEMPLATES, type StoryTemplate } from "@/lib/story/meta";
 import { canShareFile, downloadFile, fetchStoryFile, shareFile, storyFileName } from "@/lib/story/share";
@@ -49,12 +49,15 @@ function ShareStoryModal({ matchId, ops, onClose }: { matchId: string; ops: stri
   const [template, setTemplate] = useState<StoryTemplate>("personal");
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string>("");
+  const [imgLoading, setImgLoading] = useState(true);
 
   const src = useMemo(
     () => `/api/story/${encodeURIComponent(matchId)}/${encodeURIComponent(ops)}?t=${template}`,
     [matchId, ops, template],
   );
   const fileName = storyFileName(ops, template);
+  // The story image is server-rendered on request; reset the spinner each swap.
+  useEffect(() => setImgLoading(true), [src]);
 
   async function handleShare() {
     setBusy(true);
@@ -113,15 +116,24 @@ function ShareStoryModal({ matchId, ops, onClose }: { matchId: string; ops: stri
         ))}
       </div>
 
-      {/* Preview (9:16). key forces a reload spinner-free swap when template changes. */}
+      {/* Preview (9:16). Server-rendered image can take a moment - show a spinner. */}
       <div className="mt-4 flex justify-center">
-        <img
-          key={src}
-          src={src}
-          alt="Story preview"
-          className="max-h-[52vh] w-auto rounded-sm portal-card"
-          style={{ aspectRatio: "9 / 16" }}
-        />
+        <div className="relative overflow-hidden rounded-sm portal-card" style={{ aspectRatio: "9 / 16", height: "52vh", maxWidth: "100%" }}>
+          {imgLoading && (
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3">
+              <span className="h-8 w-8 animate-spin rounded-full border-2 border-border-strong border-t-accent" />
+              <span className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-text-muted">Generating preview…</span>
+            </div>
+          )}
+          <img
+            key={src}
+            src={src}
+            alt="Story preview"
+            onLoad={() => setImgLoading(false)}
+            onError={() => setImgLoading(false)}
+            className="h-full w-full object-contain"
+          />
+        </div>
       </div>
 
       {/* Actions */}

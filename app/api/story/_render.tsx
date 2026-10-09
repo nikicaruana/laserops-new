@@ -287,6 +287,10 @@ function TeamStory(report: MatchReport, p: MatchPlayer, logo: string): ReactElem
   );
 }
 
+// Nemesis name font that keeps even long names on one line so the two player
+// columns stay the same height (otherwise a wrapped name misaligns the layout).
+const nemName = (s: string) => (s.length <= 8 ? 50 : s.length <= 11 ? 42 : s.length <= 15 ? 36 : 30);
+
 function NemesisStory(report: MatchReport, p: MatchPlayer, logo: string): ReactElement {
   const n = p.nemesis;
   if (!n) {
@@ -306,13 +310,13 @@ function NemesisStory(report: MatchReport, p: MatchPlayer, logo: string): ReactE
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 30, marginTop: 48 }}>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 380 }}>
             <Im url={p.profilePicUrl} size={320} radius={16} cover border={`6px solid ${C.accent}`} />
-            <div style={{ display: "flex", fontSize: 50, fontWeight: 800, color: C.text, marginTop: 18 }}>{p.nickname}</div>
+            <div style={{ display: "flex", fontSize: nemName(p.nickname), fontWeight: 800, color: C.text, marginTop: 18, whiteSpace: "nowrap", maxWidth: 370, overflow: "hidden" }}>{p.nickname}</div>
             <div style={{ display: "flex", fontSize: 28, fontWeight: 700, color: C.muted }}>Lvl. {p.level}</div>
           </div>
           <div style={{ display: "flex", fontSize: 84, fontWeight: 800, color: C.subtle }}>VS</div>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 380 }}>
             <Im url={n.profilePicUrl} size={320} radius={16} cover border={`6px solid ${C.loss}`} />
-            <div style={{ display: "flex", fontSize: 50, fontWeight: 800, color: C.text, marginTop: 18 }}>{n.nickname}</div>
+            <div style={{ display: "flex", fontSize: nemName(n.nickname), fontWeight: 800, color: C.text, marginTop: 18, whiteSpace: "nowrap", maxWidth: 370, overflow: "hidden" }}>{n.nickname}</div>
             <div style={{ display: "flex", fontSize: 28, fontWeight: 700, color: C.muted }}>Lvl. {n.level}</div>
           </div>
         </div>
@@ -325,20 +329,6 @@ function NemesisStory(report: MatchReport, p: MatchPlayer, logo: string): ReactE
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", backgroundColor: C.elevated, border: `1px solid ${C.border}`, borderRadius: 16, padding: "34px 66px" }}>
               <div style={{ display: "flex", fontSize: 128, fontWeight: 800, color: C.loss }}>{n.killsAgainst}</div>
               <div style={{ display: "flex", fontSize: 26, fontWeight: 700, letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>Killed you</div>
-            </div>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 44 }}>
-            <div style={{ display: "flex", fontSize: 30, fontWeight: 800, letterSpacing: 3, textTransform: "uppercase", color: C.accent }}>Damage</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 46, marginTop: 14 }}>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <div style={{ display: "flex", fontSize: 78, fontWeight: 800, color: C.accent }}>{n.damageFor.toLocaleString("en-US")}</div>
-                <div style={{ display: "flex", fontSize: 26, fontWeight: 700, letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>You dealt</div>
-              </div>
-              <div style={{ display: "flex", fontSize: 50, fontWeight: 800, color: C.subtle }}>vs</div>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <div style={{ display: "flex", fontSize: 78, fontWeight: 800, color: C.loss }}>{n.damageAgainst.toLocaleString("en-US")}</div>
-                <div style={{ display: "flex", fontSize: 26, fontWeight: 700, letterSpacing: 2, color: C.muted, textTransform: "uppercase" }}>They dealt</div>
-              </div>
             </div>
           </div>
         </div>
