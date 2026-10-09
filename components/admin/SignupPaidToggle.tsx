@@ -6,7 +6,7 @@
  * Admin payment controls for one signup:
  *   - Mark paid / Mark unpaid: a bookkeeping correction (no money moves) via
  *     admin_set_signup_paid.
- *   - Refund: actually returns the money via Stripe (/api/admin/refund) and
+ *   - Refund: actually returns the money via the capturing provider (Viva,
  *     clears the paid flag. Use this to approve a 24-48h cancellation request
  *     (shown as "Refund requested") or any goodwill refund.
  * Refund state is surfaced so requests aren't missed.
@@ -19,12 +19,14 @@ export function SignupPaidToggle({
   matchId,
   accountId,
   initialPaid,
+  paidAmountEur,
   intent,
   refundStatus,
 }: {
   matchId: string;
   accountId: string;
   initialPaid: boolean;
+  paidAmountEur: number | null;
   intent: string | null;
   refundStatus: string | null;
 }) {
@@ -46,7 +48,7 @@ export function SignupPaidToggle({
   }
 
   async function refundNow() {
-    if (!window.confirm("Refund this player? This returns their payment (via Stripe if paid online).")) return;
+    if (!window.confirm("Refund this player? If they paid online this returns their payment to their original payment method.")) return;
     setBusy(true);
     setError(null);
     const res = await fetch("/api/admin/refund", {
@@ -68,7 +70,7 @@ export function SignupPaidToggle({
     <div className="flex flex-col gap-1">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         {paid ? (
-          <span className="text-accent">Paid</span>
+          <span className="text-accent">{(paidAmountEur ?? 0) > 0 ? "Paid" : "Paid · free"}</span>
         ) : intent === "on_day" ? (
           <span className="text-amber-300">Due on day</span>
         ) : intent === "online" ? (
@@ -78,7 +80,9 @@ export function SignupPaidToggle({
         )}
         {paid ? (
           <>
-            <button type="button" onClick={refundNow} disabled={busy} className={`${btn} text-text-subtle hover:text-red-400`}>Refund</button>
+            {(paidAmountEur ?? 0) > 0 && (
+              <button type="button" onClick={refundNow} disabled={busy} className={`${btn} text-text-subtle hover:text-red-400`}>Refund</button>
+            )}
             <button type="button" onClick={toggle} disabled={busy} className={`${btn} text-text-subtle hover:text-accent`}>Mark unpaid</button>
           </>
         ) : (

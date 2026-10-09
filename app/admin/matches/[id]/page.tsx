@@ -65,6 +65,8 @@ type Signup = {
   payment_intent: string | null;
   status: string | null;
   paid_at: string | null;
+  paid_amount_eur: number | null;
+  booked_gun: string | null;
   refund_status: string | null;
   created_at: string | null;
   account: { ops_tag: string | null; full_name: string | null; phone_e164: string | null } | null;
@@ -107,7 +109,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
       .maybeSingle(),
     supabase
       .from("match_signups")
-      .select("id, account_id, payment_intent, status, paid_at, refund_status, created_at, account:accounts(ops_tag, full_name, phone_e164)")
+      .select("id, account_id, payment_intent, status, paid_at, paid_amount_eur, booked_gun, refund_status, created_at, account:accounts(ops_tag, full_name, phone_e164)")
       .eq("match_id", id)
       .order("created_at"),
     supabase
@@ -526,12 +528,13 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
             </p>
           ) : (
             <div className="overflow-x-auto border border-border">
-              <table className="w-full min-w-[560px] text-left text-sm">
+              <table className="w-full min-w-[640px] text-left text-sm">
                 <thead>
                   <tr className="border-b border-border bg-bg-elevated text-[0.6rem] uppercase tracking-[0.14em] text-text-muted">
                     <th className="px-4 py-3 font-semibold">Player</th>
                     <th className="px-4 py-3 font-semibold">Phone</th>
                     <th className="px-4 py-3 font-semibold">Paying</th>
+                    <th className="px-4 py-3 font-semibold">Gun</th>
                     <th className="px-4 py-3 font-semibold">Payment</th>
                     <th className="px-4 py-3 font-semibold">Signed up</th>
                   </tr>
@@ -549,9 +552,12 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
                       <td className="px-4 py-3 text-text-muted">
                         {s.payment_intent === "on_day" ? "On the day" : s.payment_intent === "online" ? "Online" : "Not chosen"}
                       </td>
+                      <td className="px-4 py-3 text-text-muted">
+                        {s.booked_gun ? s.booked_gun : <span className="text-text-subtle">–</span>}
+                      </td>
                       <td className="px-4 py-3">
                         {s.account_id ? (
-                          <SignupPaidToggle matchId={match.id} accountId={s.account_id} initialPaid={Boolean(s.paid_at)} intent={s.payment_intent} refundStatus={s.refund_status ?? null} />
+                          <SignupPaidToggle matchId={match.id} accountId={s.account_id} initialPaid={Boolean(s.paid_at)} paidAmountEur={s.paid_amount_eur ?? null} intent={s.payment_intent} refundStatus={s.refund_status ?? null} />
                         ) : (
                           <span className="text-text-subtle">–</span>
                         )}
