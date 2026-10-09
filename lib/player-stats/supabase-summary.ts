@@ -43,6 +43,7 @@ type LifetimeRow = {
   wins: number | null;
   win_rate: number | null;
   total_kills: number | null;
+  total_deaths: number | null;
   total_damage: number | null;
   total_score: number | null;
   avg_accuracy: number | null;
@@ -76,7 +77,7 @@ type RatingRow = Record<
 type RankRow = { level: number; rank_name: string | null; badge_url: string | null; score_threshold: number | null };
 
 const LIFETIME_COLS =
-  "account_id, nickname, profile_pic_url, games, rounds, wins, win_rate, total_kills, total_damage, total_score, avg_accuracy, avg_kd, avg_match_rating, current_level, total_xp, rounds_won, rounds_lost, online_games, online_rounds, total_captures, total_hold_seconds";
+  "account_id, nickname, profile_pic_url, games, rounds, wins, win_rate, total_kills, total_deaths, total_damage, total_score, avg_accuracy, avg_kd, avg_match_rating, current_level, total_xp, rounds_won, rounds_lost, online_games, online_rounds, total_captures, total_hold_seconds";
 const RATING_COLS =
   "s_match_win, s_rounds_wl, s_kills, s_damage, s_accuracy, s_kd, s_match_rating, s_obj1, s_obj2, rating_overall";
 /** Which rating slot a game mode routes each objective stat into (default mode). */
@@ -185,7 +186,10 @@ function buildRow(args: {
     Accuracy: num(life.avg_accuracy),
     Accuracy_Rating_Image: starImage(r?.s_accuracy ?? null),
 
-    KD_Ratio: num(life.avg_kd),
+    // Sum-based K/D (total kills / total deaths), matching the kills leaderboard.
+    // avg_kd (the mean of per-game ratios) over-weights small games and read
+    // higher than the leaderboard; keep avg_kd only as the internal rating input.
+    KD_Ratio: num((life.total_kills ?? 0) / Math.max(life.total_deaths ?? 0, 1)),
     KD_Rating_Image: starImage(r?.s_kd ?? null),
 
     Accolades_Total: String(accoladesTotal),
