@@ -57,16 +57,16 @@ export function MasteryPreview({ mastery }: { mastery: GunMastery | undefined })
   const earned = mastery.levels.filter((l) => l.earned && l.badgeUrl);
   if (earned.length === 0) return null;
   return (
-    <span className="flex items-center gap-1">
+    <span className="inline-flex items-center gap-1.5 rounded-md border border-border bg-bg-elevated/50 px-2 py-1">
       {earned.map((l) => (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           key={l.key}
-          src={cldImage(l.badgeUrl, { w: 96 })}
+          src={cldImage(l.badgeUrl, { w: 128 })}
           alt={`${l.label} mastery`}
           title={`${l.label} mastery`}
           loading="lazy"
-          className="block h-8 w-8 object-contain sm:h-9 sm:w-9"
+          className="block h-12 w-12 object-contain sm:h-14 sm:w-14"
         />
       ))}
     </span>
