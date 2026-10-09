@@ -17,7 +17,7 @@ import { computeMatchXp, parseXpConfig } from "@/lib/scoring/xp";
 
 type Rank = { level: number; threshold: number };
 type Agg = {
-  id: string; match_id: string; account_id: string | null;
+  id: string; match_id: string; account_id: string | null; headset_label: string | null;
   team_colour: string | null; score: number | null; xp_total: number | null;
   rounds_won: number | null; rounds_lost: number | null; rounds_played: number | null; rounds_won_present: number | null;
   was_winner: boolean | null; xp_from_accolades: number | null; xp_multiplier: number | null;
@@ -33,17 +33,30 @@ const levelForXp = (ranks: Rank[], xp: number) => {
 const thresholdOf = (ranks: Rank[], level: number) => ranks.find((r) => r.level === level)?.threshold ?? null;
 
 export async function recomputeProgression(client: SupabaseClient, fromMatchId?: string): Promise<{ matches: number; rows: number }> {
-  const [{ data: cfgRows }, { data: xpCfgRows }, { data: rankRows }, { data: matchRows }, { data: aggRows }] = await Promise.all([
+  const [{ data: cfgRows }, { data: xpCfgRows }, { data: rankRows }, { data: matchRows }, { data: aggRows }, { data: awardRows }] = await Promise.all([
     client.from("elo_config").select("key, value"),
     client.from("xp_config").select("key, value"),
     client.from("rank_levels").select("level, score_threshold").order("level"),
     client.from("matches").select("id, played_on, scheduled_at, created_at, sequence_no, is_double_xp, round_count"),
-    client.from("match_player_aggregate").select("id, match_id, account_id, team_colour, score, xp_total, rounds_won, rounds_lost, rounds_played, rounds_won_present, was_winner, xp_from_accolades, xp_multiplier, xp_total_after_match, elo_after"),
+    client.from("match_player_aggregate").select("id, match_id, account_id, headset_label, team_colour, score, xp_total, rounds_won, rounds_lost, rounds_played, rounds_won_present, was_winner, xp_from_accolades, xp_multiplier, xp_total_after_match, elo_after"),
+    client.from("match_awards").select("match_id, account_id, headset_label, xp_granted"),
   ]);
 
   const params = parseEloConfig((cfgRows ?? []) as { key: string; value: string | null }[]);
   const xpCfg = parseXpConfig((xpCfgRows ?? []) as { key: string; value: number | null }[]);
   const ranks: Rank[] = ((rankRows ?? []) as { level: number; score_threshold: number | null }[]).map((r) => ({ level: r.level, threshold: r.score_threshold ?? 0 }));
+
+  // Un-multiplied base accolade XP per (match, player) from the awards ledger.
+  // This is the stable source; the aggregate's xp_from_accolades is the already-
+  // multiplied display value and re-reading it as input compounds double-XP /
+  // boost-token accolade XP on every recompute.
+  const acctKey = (matchId: string, accountId: string | null, headset: string | null) =>
+    accountId ? `${matchId}|${accountId}` : `${matchId}|h:${headset ?? ""}`;
+  const awardBase = new Map<string, number>();
+  for (const w of (awardRows ?? []) as { match_id: string; account_id: string | null; headset_label: string | null; xp_granted: number | null }[]) {
+    const k = acctKey(w.match_id, w.account_id, w.headset_label);
+    awardBase.set(k, (awardBase.get(k) ?? 0) + (w.xp_granted ?? 0));
+  }
 
   const byMatch = new Map<string, Agg[]>();
   for (const a of (aggRows ?? []) as Agg[]) (byMatch.get(a.match_id) ?? byMatch.set(a.match_id, []).get(a.match_id)!).push(a);
@@ -98,7 +111,8 @@ export async function recomputeProgression(client: SupabaseClient, fromMatchId?:
       const xpBefore = key ? (runningXp.get(key) ?? 0) : 0;
       const rating = matchAvg > 0 ? (a.score ?? 0) / matchAvg : 0;
       const ratingScoreA = ratingBasis(a);
-      const xpb = computeMatchXp({ rating, roundsWon: a.rounds_won_present ?? a.rounds_won ?? 0, isWinner: !!a.was_winner, accoladeXp: a.xp_from_accolades ?? 0, multiplier: Math.max(a.xp_multiplier ?? 1, m.is_double_xp ? 2 : 1) }, xpCfg);
+      const accoladeBase = awardBase.get(acctKey(m.id, a.account_id, a.headset_label)) ?? 0;
+      const xpb = computeMatchXp({ rating, roundsWon: a.rounds_won_present ?? a.rounds_won ?? 0, isWinner: !!a.was_winner, accoladeXp: accoladeBase, multiplier: Math.max(a.xp_multiplier ?? 1, m.is_double_xp ? 2 : 1) }, xpCfg);
       const xpAfter = xpBefore + xpb.xpTotal;
       if (key) runningXp.set(key, xpAfter);
       const levelBefore = levelForXp(ranks, xpBefore);
