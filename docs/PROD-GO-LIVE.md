@@ -4,7 +4,49 @@ A running list of everything that must be done to take `v2-rebuild` live on the
 main site. Living document — add items as they come up, tick them as they land.
 Legend: `[ ]` todo · `[~]` in progress / partial · `[x]` done · `[!]` blocked / waiting.
 
-Last updated: 2026-10-02
+Last updated: 2026-10-09
+
+---
+
+## 0. Cutover-day quick list (updated 2026-10-09)
+
+The authoritative current checklist. The older numbered sections keep the detail;
+this consolidates what is actually left, plus everything added since 2026-10-02.
+
+### Critical blockers (launch breaks without these)
+- [ ] **Supabase Auth URL config.** Site URL = `https://www.laseropsmalta.com`; Redirect URLs include `https://laseropsmalta.com/**` + `https://www.laseropsmalta.com/**`. CONFIRMED 2026-10-09: this is the cause of the signup verify-email link pointing to `localhost:3000` (Supabase falls back to the Site URL when the signup origin is not allowlisted). The same setting is also what makes Google login work in prod.
+- [ ] **Final DB recompute + test-data cleanup.** `npx supabase db push`, ingest any staging-window games (33+), run `recompute-all`, re-run `backfill-offline-accolades.ts` + `backfill-specialist.ts` + `refresh_player_armory()`, then delete the test-generated rows (test accounts, signups, payments, token ledger, test matches).
+- [ ] **Vercel prod env vars** present with prod values (full set below).
+- [ ] **DNS** - point `laseropsmalta.com` + `www` at the v2 Vercel app.
+- [ ] **Viva -> production. KEYS LOST (user, 2026-10-09)** - must re-request the prod Viva credentials (Merchant ID, API key, client id + secret, webhook secret) from Viva before anything else. Then `VIVA_ENV=production`, prod webhook, Source success/failure -> `https://laseropsmalta.com/checkout/complete`, and one real low-value payment + refund. Merchant account verification still pending.
+- [ ] **Resend:** domain `laseropsmalta.com` verified + `RESEND_API_KEY` in prod + **Supabase custom SMTP -> Resend** (so signup confirm / password-reset emails are not throttled by Supabase's built-in limit).
+
+### Config to flip at cutover (env + dashboards)
+- [ ] `NEXT_PUBLIC_SITE_URL = https://www.laseropsmalta.com` - drives every email link, canonical URL and .ics invite; must match the live domain + Supabase allowlist.
+- [ ] `NEXT_PUBLIC_GTM_ID` set - analytics / GTM only render when it is set (off in previews).
+- [ ] **Unset `STAGING_GATE`** (and `STAGING_ALLOWED_EMAILS`) on prod. This one toggle both drops the closed-beta gate AND flips `robots.ts` from disallow-all to allow-indexing. If left at `1`, the live site stays gated and deindexed.
+- [ ] Delete legacy `STRIPE_*` vars (Stripe was dropped).
+- [ ] `NEXT_PUBLIC_RESEND_SENDING_DOMAINS` - only if a domain other than `laseropsmalta.com` is verified in Resend (defaults to it).
+- [ ] Confirm the 5 crons fire on the Production deployment (not previews): notifications-dispatch, match-reminders, go-live, waitlist-notify, ladder-idle-drop.
+- Full prod env set: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `CLOUDINARY_CLOUD_NAME`/`_API_KEY`/`_API_SECRET`, `RESEND_API_KEY`, `ANTHROPIC_API_KEY`, `REVALIDATE_SECRET`, `CRON_SECRET`, `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_GTM_ID`, `NEXT_PUBLIC_WHATSAPP_URL`, `VIVA_*` (the re-issued keys), `PAYMENT_PROVIDER`.
+
+### Important (degraded launch without)
+- [ ] **Resend Pro for the launch month** - Free is 100 emails/day then sending STOPS; a launch blast would blow past it. Decided 2026-10-09; downgrade after the launch month.
+- [ ] Google OAuth prod URLs (Google Cloud -> Authorized JavaScript origins).
+- [ ] Objective-stats fix migration `20260819000000` confirmed on prod.
+- [ ] Gallery Cloudinary folder changeover + backfill past matches.
+- [ ] Split local dev off the prod DB (own Supabase project) so dev cannot mutate live data.
+
+### Landed since 2026-10-02 (verify after cutover)
+- [x] **Cash-on-the-day on open games** (GameSignupControl; sets `payment_intent=on_day`, shows "On the day" in the Match Manager).
+- [x] **From-domain email guard** (`lib/email-domains`): blocks / falls back a From that is not on the verified domain across the per-type editor, email settings, the broadcast composer, and `resolveSender()`.
+- [x] **Cloudinary named transforms** (`cldImage` -> `t_lo_*`, `npm run cld:sync`) + **gallery pagination** (24/page + Load more, featured first). Strict Transformations deliberately NOT enabled (low attack odds; parked).
+- [x] **Gun-unlock XP rework** (tree XP + level; CQC/Ranged merges) + **per-account armory seeding** (`ensure_player_armory` + ops_tag trigger). This covers the old "retrospective unlocks on claim" TODO; run `refresh_player_armory()` on prod after the final recompute.
+- [x] **Squad priority season lock** + representation rule; **weapon mastery** enabled for all 18 guns + the player summary shows only unlocked guns.
+
+### Post-launch audits (not blockers)
+- [ ] Site performance (Lighthouse / Core Web Vitals, JS bundle + image sizes, DB query hotspots).
+- [ ] Full SEO audit of the V2 pages (per-page OG images, deeper structured data, heading review).
 
 ---
 
@@ -47,7 +89,7 @@ Last updated: 2026-10-02
   - [x] **STEP C DONE (2026-10-02):** all games 01-32 ingested on the locked config. Offline (sheet) 01-26 incl. 23 (re-classified offline - the DB's '23' held 27's leftover test data; 23 was never online). Online 27/29/30/31; hybrid 28/32 (scripts/ingest-online-games.ts, validated vs beta reports). NEXT: step D full recompute.
   - [x] **BUILD PROGRESS (2026-10-01):** (A) hybrid scoring + report DONE. (B) offline batch importer DONE - scripts/import-offline-games.ts ran --live: 25 offline games (01-21,22,24,25,26) re-scored on the new formula + written. Season 1 challenge standings FROZEN (refresh skips completed seasons) to preserve original XP/results. NEXT: (C) ingest online/hybrid 23/27-32 from JSON/LWA; (D) full recompute; then retro unlocks.
   - [x] **Carryover match list LOCKED (2026-10-01).** ALL real venue games carry over (LO-2026-01..32) and must appear in the Match Manager (for attaching photos in the gallery rebuild). Re-ingest fresh from the Google Sheet + JSON/LWA so everything is scored on the new formula. Per-game scoring: OFFLINE (sheet/LWA, kill-only) = 01-21, 22, 24, 25, 26; ONLINE (all-round JSON) = 23, 27, 29, 30, 31 (29: all 5 rounds have validated JSON, one offline headband in R1 excluded); HYBRID (JSON rounds + offline rounds) = 28 (R1-2 online, R3-5 offline), 32. Test/incomplete matches (LO-TEST-*, no-code) dropped. Note: in the dev DB only 22/23/24/25 have raw data; 01-21+26 are old-scored aggregates needing re-ingest; 27-32 aren't in the dev DB yet (JSON/LWA files held by user + v2-beta report scripts).
-- [ ] **Retrospective unlocks on account create/claim.** When a player creates or claims their account, grant the level-based unlocks their recomputed XP/level earns, so they immediately see the right guns/perks unlocked.
+- [x] **Retrospective unlocks on account create/claim.** DONE 2026-10-09: the gun-unlock system was redesigned to XP-based and `ensure_player_armory(account)` + an ops_tag trigger now seed each account`s unlock state on create/claim. Run `refresh_player_armory()` on prod after the final recompute.
 - [~] **Launch match-backlog ingestion** — backlog 01-32 ingested + recomputed on staging (see above). Top-up as new games are played: GAME 33 (online, ~2026-10-03) to ingest from JSONs via scripts/ingest-online-games.ts, seed any new players from a fresh registration export, then recompute. Repeat at final prod cutover for anything played during the staging window.
 - [~] **Player accounts / historical data** — RECONCILED 2026-10-02. The staging DB (= future prod DB) only carried the 32-game backlog roster; 39 registered players were missing accounts (orphaned stats, non-claimable). Migrated them from the registration export (Player_Base CSV): 37 new migrated_unclaimed accounts (email-claimable) + 2 unclaimed renames to current in-game handle (Lux->LuXyz, Tom->PT); backfilled 46 aggregate + 16 award rows by nickname; recompute ran. Accounts 284->321; 29 orphans remain = unresolved "Head NN" online opponents (correctly accountless). Grant added: service_role insert/update on accounts (commit 0a7ef09). ONGOING: each new game brings players who may need the same migration from a fresh export before recompute.
 
@@ -151,6 +193,8 @@ a fresh project. Confirms the §3 approach.
   `05ac7fd`); verify after deploy.
 
 ## 12. Viva — go live (still in SANDBOX as of 2026-10-02)
+
+**KEYS LOST (user, 2026-10-09): the prod Viva credentials must be re-requested from Viva before any of the below.**
 
 Currently `VIVA_ENV` = demo/sandbox. To go live:
 - [ ] Switch to the **production Viva account**: `VIVA_ENV=production` + prod Merchant/API
