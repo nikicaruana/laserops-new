@@ -95,7 +95,7 @@ export const vivaProvider: PaymentProvider = {
       amount: input.amountCents,
       customerTrns: input.label,
       customer: input.customerEmail ? { email: input.customerEmail } : undefined,
-      paymentTimeout: 1800,
+      paymentTimeout: 3600, // 60 min window (was 30) - a little slack for links opened a bit late
       preauth: false,
       allowRecurring: false,
       merchantTrns: `${input.purpose ?? "match"}:${input.matchId}:${input.accountId}`,
