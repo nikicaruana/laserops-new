@@ -92,21 +92,36 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ mat
   const baseLabel = match.title || match.match_code || "LaserOps game";
   const label = applied > 0 ? `${baseLabel} (part-paid with ${applied} token)` : baseLabel;
 
-  try {
-    const { url } = await provider.createCheckout({
-      amountCents,
-      currency: "eur",
-      label,
-      successUrl: `${origin}/player-portal/games/${matchId}?paid=1`,
-      cancelUrl: `${origin}/player-portal/games/${matchId}`,
-      customerEmail: account.email,
-      matchId: match.id,
-      accountId: account.id,
-      policyText: (await getRefundConfig()).policyText,
-    });
-    return Response.json({ ok: true, url });
-  } catch (err) {
-    console.error("[checkout] payment error:", err);
-    return Response.json({ ok: false, error: "Couldn't start checkout. Please try again." }, { status: 502 });
+  const policyText = (await getRefundConfig()).policyText;
+
+  // Retry once: Viva checkout creation can fail transiently (an OAuth / order
+  // timeout or a momentary provider blip) - exactly the "please try again" case.
+  // Absorb it rather than bouncing the player on the first hiccup. The real
+  // provider error is logged server-side AND returned as `detail` so an admin
+  // can see the exact reason without digging through logs.
+  let lastErr: unknown = null;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const { url } = await provider.createCheckout({
+        amountCents,
+        currency: "eur",
+        label,
+        successUrl: `${origin}/player-portal/games/${matchId}?paid=1`,
+        cancelUrl: `${origin}/player-portal/games/${matchId}`,
+        customerEmail: account.email,
+        matchId: match.id,
+        accountId: account.id,
+        policyText,
+      });
+      return Response.json({ ok: true, url });
+    } catch (err) {
+      lastErr = err;
+      console.error(`[checkout] payment error (attempt ${attempt}/2, match ${match.id}, account ${account.id}):`, err);
+      if (attempt < 2) await new Promise((r) => setTimeout(r, 500));
+    }
   }
+  return Response.json(
+    { ok: false, error: "Couldn't start checkout. Please try again in a moment.", detail: lastErr instanceof Error ? lastErr.message : String(lastErr) },
+    { status: 502 },
+  );
 }
