@@ -29,7 +29,7 @@ function env() {
   const demo = (process.env.VIVA_ENV || "demo") !== "production";
   return {
     demo,
-    accounts: demo ? "https://demo-accounts.vivapayments.com" : "https://accounts.viva.com",
+    accounts: demo ? "https://demo-accounts.vivapayments.com" : "https://accounts.vivapayments.com",
     api: demo ? "https://demo-api.vivapayments.com" : "https://api.vivapayments.com",
     // Legacy native API (Basic auth): refunds + webhook verification key live on
     // the SELFCARE host, NOT the -api host used for OAuth /checkout/v2.
