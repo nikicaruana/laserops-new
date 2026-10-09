@@ -215,7 +215,7 @@ function SummaryBody({
       <CollapsibleSection title="Streaks">
         <StreaksSection streaks={streaks} />
       </CollapsibleSection>
-      <CollapsibleSection title="Mastery">
+      <CollapsibleSection title="Weapon Mastery">
         <MasterySection guns={masteryGuns} />
       </CollapsibleSection>
     </>
