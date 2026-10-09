@@ -595,13 +595,41 @@ export function parseRound(
     if (damage_dealt[d.actor_id] != null) damage_dealt[d.actor_id] += d.damage;
   }
   // Capture/hold time: attribute each ownership period's seconds to the player
-  // who captured it (matched by base + capture timestamp).
-  for (const period of base_ownership) {
-    const cap = captures.find(
-      (c) => c.base_id === period.base_id && c.time === period.from_time && c.capturing_player_id != null,
-    );
-    if (cap?.capturing_player_id != null && hold_seconds[cap.capturing_player_id] != null) {
-      hold_seconds[cap.capturing_player_id] += period.held_seconds;
+  // who captured it (matched by base + capture timestamp), CAPPED at the burn.
+  // A base locks the instant ONE team's cumulative hold reaches burnThreshold
+  // (same rule as the burn loop above); the crossing period is truncated at the
+  // burn and every later period on that base contributes nothing to anyone. This
+  // prevents a base captured once and held uncontested to round-end from crediting
+  // its full open period (far past the 600s burn) to the capturer.
+  {
+    const ownByBase = new Map<number, BaseOwnershipPeriod[]>();
+    for (const period of base_ownership) {
+      if (!ownByBase.has(period.base_id)) ownByBase.set(period.base_id, []);
+      ownByBase.get(period.base_id)!.push(period);
+    }
+    for (const [bid, periods] of ownByBase) {
+      const ordered = periods
+        .slice()
+        .sort((a, b) => toEpoch(a.from_time) - toEpoch(b.from_time));
+      const cumByTeam: Record<string, number> = {};
+      let locked = false;
+      for (const period of ordered) {
+        if (locked) break;
+        const before = cumByTeam[period.team] ?? 0;
+        let secs = period.held_seconds;
+        if (before + secs >= burnThreshold) {
+          secs = burnThreshold - before; // truncate at the burn
+          locked = true; // base locks for everyone after this
+        }
+        cumByTeam[period.team] = before + secs;
+        if (secs <= 0) continue;
+        const cap = captures.find(
+          (c) => c.base_id === bid && c.time === period.from_time && c.capturing_player_id != null,
+        );
+        if (cap?.capturing_player_id != null && hold_seconds[cap.capturing_player_id] != null) {
+          hold_seconds[cap.capturing_player_id] += secs;
+        }
+      }
     }
   }
 

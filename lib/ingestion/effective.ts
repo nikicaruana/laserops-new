@@ -67,14 +67,22 @@ export function effectiveCaptures(
   for (const cap of round.events.captures) {
     if (cap.capturing_player_id == null || cap.base_id < 0) continue;
     const per = periodOf(cap.base_id, cap.time);
-    const held = per ? per.held_seconds : 0;
+    const rawHeld = per ? per.held_seconds : 0;
     const ct = toEpoch(cap.time);
-    const toT = per && per.to_time ? toEpoch(per.to_time) : ct + held;
+    const toT = per && per.to_time ? toEpoch(per.to_time) : ct + rawHeld;
     const burnInPossession = burnEpoch[cap.base_id] != null && burnEpoch[cap.base_id] >= ct - 1 && burnEpoch[cap.base_id] <= toT + 1;
-    if (minHold > 0 && held < minHold && !burnInPossession) {
+    // Min-hold exclusion is judged on the RAW possession length (a brief trade is
+    // a trade even if it would later be burn-capped).
+    if (minHold > 0 && rawHeld < minHold && !burnInPossession) {
       excludedCaptures[cap.capturing_player_id] = (excludedCaptures[cap.capturing_player_id] ?? 0) + 1;
       continue; // EXCLUDED: any capture held < min_hold_seconds (non-burn) does not count
     }
+    // A base LOCKS the instant it burns, so no possession accrues hold past the
+    // burn moment. Without this, a base captured once and held uncontested to
+    // round-end credits its whole open period (far beyond the burn threshold) to
+    // the capturer, massively inflating capture time on long rounds.
+    const be = burnEpoch[cap.base_id];
+    const held = be != null ? Math.max(0, Math.min(rawHeld, be - ct)) : rawHeld;
     counting.push({ pid: cap.capturing_player_id, base: cap.base_id, t: ct, held });
   }
   counting.sort((a, b) => a.t - b.t);
