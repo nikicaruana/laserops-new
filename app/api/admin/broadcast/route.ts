@@ -12,6 +12,7 @@
 import type { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { isAllowedSender } from "@/lib/email-domains";
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -60,6 +61,9 @@ export async function POST(req: NextRequest) {
 
   const emailStamp = body.sendEmail ? null : new Date().toISOString();
   const fromEmail = body.sendEmail ? body.fromEmail?.trim() || null : null;
+  if (fromEmail && !isAllowedSender(fromEmail)) {
+    return Response.json({ ok: false, error: "From address must be on a verified sending domain." }, { status: 400 });
+  }
   const senderName = body.sendEmail ? body.senderName?.trim() || null : null;
   const rows = accountIds.map((id) => ({
     account_id: id,

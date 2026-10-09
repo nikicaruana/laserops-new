@@ -13,6 +13,7 @@
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { renderEmailTemplate, sampleEmailTokens, type EmailConfig } from "@/lib/email-tokens";
+import { senderDomainError } from "@/lib/email-domains";
 
 const input = "h-11 w-full rounded-none border border-border-strong bg-bg px-3 text-sm text-text focus:border-accent focus:outline-none";
 const lbl = "mb-1.5 block text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-text-muted";
@@ -54,6 +55,7 @@ export function BroadcastComposer({
   const [error, setError] = useState<string | null>(null);
 
   const emailWillSend = mode === "email" || sendEmail;
+  const fromErr = emailWillSend ? senderDomainError(fromEmail) : null;
   const launchTemplate = mode === "email" && templateKey === "launch_announcement";
 
   // The mailboxes the admin can send from (all on the verified domain).
@@ -232,6 +234,7 @@ export function BroadcastComposer({
               <datalist id="lo-mailboxes">
                 {mailboxes.map((m) => <option key={m} value={m} />)}
               </datalist>
+              {fromErr && <p className="mt-1 text-[0.6rem] text-red-400">{fromErr}</p>}
             </div>
             <div>
               <label className={lbl}>Display name</label>
@@ -279,7 +282,7 @@ export function BroadcastComposer({
         </section>
       )}
 
-      <Button type="button" size="md" onClick={send} disabled={busy}>
+      <Button type="button" size="md" onClick={send} disabled={busy || Boolean(fromErr)}>
         {busy ? "Sending…" : mode === "email" ? "Send email blast" : "Send notification"}
       </Button>
     </div>

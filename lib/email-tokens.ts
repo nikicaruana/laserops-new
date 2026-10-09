@@ -13,6 +13,7 @@
  * {{matchReportUrl}} (from {{matchId}}). Unknown tokens render as "".
  */
 import { brand } from "@/lib/brand";
+import { isAllowedSender, defaultSenderEmail } from "./email-domains";
 
 export type EmailConfig = Record<string, string>;
 
@@ -63,7 +64,11 @@ export function resolveSender(
   config: EmailConfig,
   override?: { from?: string | null; senderName?: string | null; replyTo?: string | null } | null,
 ): { from: string; replyTo: string | undefined } {
-  const fromEmail = (override?.from || config.fromEmail || "bookings@laseropsmalta.com").trim();
+  let fromEmail = (override?.from || config.fromEmail || "bookings@laseropsmalta.com").trim();
+  if (!isAllowedSender(fromEmail)) {
+    console.warn(`[email] From "${fromEmail}" is not on a verified sending domain; using ${defaultSenderEmail()}.`);
+    fromEmail = defaultSenderEmail();
+  }
   const senderName = (override?.senderName || config.senderName || "LaserOps").trim();
   const replyTo = (override?.replyTo || config.replyToEmail || "").trim();
   return { from: `${senderName} <${fromEmail}>`, replyTo: replyTo || undefined };

@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/Button";
 import { TotpGate } from "@/components/admin/TotpGate";
 import { createClient } from "@/lib/supabase/client";
 import { renderEmailTemplate, sampleEmailTokens, TOKEN_REFERENCE, type EmailConfig } from "@/lib/email-tokens";
+import { senderDomainError } from "@/lib/email-domains";
 
 const input = "h-11 w-full rounded-none border border-border-strong bg-bg px-3 text-sm text-text focus:border-accent focus:outline-none";
 const lbl = "mb-1.5 block text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-text-muted";
@@ -67,8 +68,10 @@ export function NotificationTypeEditor({ initial, config }: { initial: Notificat
   };
   const bellTitlePreview = renderEmailTemplate(f.bell_title ?? "", bellSample);
   const bellBodyPreview = renderEmailTemplate(f.bell_body ?? "", bellSample);
+  const fromErr = f.sends_email ? senderDomainError(f.email_from) : null;
 
   async function doSave() {
+    if (fromErr) { setError(fromErr); return; }
     setBusy(true);
     setError(null);
     const supabase = createClient();
@@ -152,7 +155,7 @@ export function NotificationTypeEditor({ initial, config }: { initial: Notificat
           <div className="mt-4 grid gap-4">
             <div><label className={lbl}>Email subject</label><input className={input} value={f.email_subject ?? ""} onChange={(e) => set("email_subject", e.target.value)} /></div>
             <div className="grid gap-4 sm:grid-cols-3">
-              <div><label className={lbl}>From email</label><input className={input} value={f.email_from ?? ""} onChange={(e) => set("email_from", e.target.value)} placeholder={config.fromEmail || "scores@laseropsmalta.com"} /></div>
+              <div><label className={lbl}>From email</label><input className={`${input} ${fromErr ? "border-red-500" : ""}`} value={f.email_from ?? ""} onChange={(e) => set("email_from", e.target.value)} placeholder={config.fromEmail || "scores@laseropsmalta.com"} />{fromErr && <p className="mt-1 text-[0.6rem] text-red-400">{fromErr}</p>}</div>
               <div><label className={lbl}>Sender name</label><input className={input} value={f.email_sender_name ?? ""} onChange={(e) => set("email_sender_name", e.target.value)} placeholder={config.senderName || "LaserOps"} /></div>
               <div><label className={lbl}>Reply-to email</label><input className={input} value={f.email_reply_to ?? ""} onChange={(e) => set("email_reply_to", e.target.value)} placeholder={config.replyToEmail || "scores@laseropsmalta.com"} /></div>
             </div>

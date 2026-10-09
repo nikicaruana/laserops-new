@@ -13,6 +13,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
+import { senderDomainError } from "@/lib/email-domains";
 
 const input = "h-11 w-full rounded-none border border-border-strong bg-bg px-3 text-sm text-text focus:border-accent focus:outline-none";
 
@@ -59,6 +60,8 @@ export function EmailConfigEditor({ initial }: { initial: { key: string; value: 
   async function save() {
     setBusy(true);
     setError(null);
+    const fromErr = senderDomainError(rows.find((r) => r.key === "fromEmail")?.value);
+    if (fromErr) { setBusy(false); setError(fromErr); return; }
     const supabase = createClient();
     const toDelete = removed.filter((k) => !rows.some((r) => r.key === k));
     if (toDelete.length) {
