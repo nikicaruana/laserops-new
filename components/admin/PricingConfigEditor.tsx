@@ -30,16 +30,19 @@ export function PricingConfigEditor({
   price,
   sessionMinutes,
   bufferMinutes,
+  defaultMaxPlayers,
 }: {
   price: number;
   sessionMinutes: number;
   bufferMinutes: number;
+  defaultMaxPlayers: number;
 }) {
   const router = useRouter();
   const supabase = createClient();
   const [p, setP] = useState(String(price));
   const [sm, setSm] = useState(String(sessionMinutes));
   const [bm, setBm] = useState(String(bufferMinutes));
+  const [mp, setMp] = useState(String(defaultMaxPlayers));
   const [busy, setBusy] = useState(false);
   const [gate, setGate] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -48,9 +51,11 @@ export function PricingConfigEditor({
     const priceN = Number(p);
     const smN = Math.round(Number(sm));
     const bmN = Math.round(Number(bm));
+    const mpN = Math.round(Number(mp));
     if (!Number.isFinite(priceN) || priceN < 0) return setMsg({ ok: false, text: "Enter a valid price." });
     if (!Number.isFinite(smN) || smN <= 0) return setMsg({ ok: false, text: "Session length must be positive." });
     if (!Number.isFinite(bmN) || bmN < 0) return setMsg({ ok: false, text: "Break must be 0 or more." });
+    if (!Number.isFinite(mpN) || mpN <= 0) return setMsg({ ok: false, text: "Default max players must be positive." });
     setMsg(null);
     setGate(true);
   }
@@ -63,6 +68,7 @@ export function PricingConfigEditor({
       p_price: Number(p),
       p_session_minutes: Math.round(Number(sm)),
       p_buffer_minutes: Math.round(Number(bm)),
+      p_max_players: Math.round(Number(mp)),
     });
     setBusy(false);
     if (error) {
@@ -91,6 +97,11 @@ export function PricingConfigEditor({
           <label className={labelCls}>Break between bookings (minutes)</label>
           <input className={input} type="number" min={0} value={bm} onChange={(e) => setBm(e.target.value)} />
           <p className="mt-1 text-[0.65rem] text-text-subtle">{hoursHint(bm)}</p>
+        </div>
+        <div>
+          <label className={labelCls}>Default max players (open games)</label>
+          <input className={input} type="number" min={1} value={mp} onChange={(e) => setMp(e.target.value)} />
+          <p className="mt-1 text-[0.65rem] text-text-subtle">Used when a game has no cap set</p>
         </div>
         <div>
           <label className={labelCls} aria-hidden>

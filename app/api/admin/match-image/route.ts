@@ -9,6 +9,7 @@
  */
 import crypto from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
 
 const MAX_BYTES = 12 * 1024 * 1024; // 12 MB (match photos are larger than badges)
 
@@ -117,6 +118,9 @@ export async function POST(request: Request) {
     );
   }
 
+  // New photo: refresh the public gallery + homepage featured strip now.
+  revalidatePath("/gallery");
+  revalidatePath("/");
   // Return a normalized shape matching the client (url, not secure_url).
   return Response.json({
     ok: true,
@@ -160,5 +164,7 @@ export async function DELETE(request: Request) {
 
   const { error } = await supabase.from("match_photos").delete().eq("match_id", matchId);
   if (error) { console.error("[admin/match-image DELETE all] DB delete failed:", error); return Response.json({ ok: false, error: "Could not delete the photos." }, { status: 500 }); }
+  revalidatePath("/gallery");
+  revalidatePath("/");
   return Response.json({ ok: true, deleted: rows.length });
 }
