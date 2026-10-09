@@ -225,7 +225,7 @@ export default async function GamesPage({
         <PlayerBar reg={reg} min={min} max={g.max_players} status={g.status} />
 
         {/* Actions */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           {/* Once live, the "View live game" button is the action - no separate manage link. */}
           {g.status !== "live" && (
             <Link

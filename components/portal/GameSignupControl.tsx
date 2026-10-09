@@ -382,7 +382,7 @@ export function GameSignupControl({
                 Pay to confirm your place
               </span>
               {payFlow}
-              <button type="button" onClick={() => setIntent("on_day")} disabled={pending} className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-text-muted hover:text-accent disabled:opacity-50">
+              <button type="button" onClick={() => setIntent("on_day")} disabled={pending} className="border border-border-strong bg-bg-overlay px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-text transition-colors hover:border-accent hover:text-accent disabled:opacity-50">
                 Pay {formatEur(priceEur as number)} cash on the day
               </button>
             </div>
