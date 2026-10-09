@@ -1,159 +1,133 @@
 /**
  * lib/cms/open-games.ts
  * --------------------------------------------------------------------
- * Fetches the Open_Games tab from the CMS spreadsheet.
+ * The public /events/open-games schedule, sourced from SUPABASE (the game
+ * portal's open games) - not the old Google Sheets CMS. Lists upcoming public
+ * open games (nearest first) followed by recent completed public games (each
+ * linking to its match report). Private bookings are never listed.
  *
- * Editors populate this sheet to manage the public match schedule that
- * appears on /events/open-games. Each row is one open game.
- *
- * Cache: 300s (5 min) – shorter than the default 1800s because the
- * match schedule changes frequently: status flips (Open → Full → Completed),
- * sign-up links go live, match reports get posted. Editors need changes
- * to surface quickly.
- *
- * Sort order: upcoming games (not Completed / Cancelled) first, sorted
- * by date ascending (nearest game on top). Then completed/cancelled games,
- * sorted by date descending (most recent completed game just below the fold).
- *
- * Rows with an empty Date cell are silently dropped.
- * --------------------------------------------------------------------
+ * Read with the cookieless public (anon) client so the page stays static/ISR;
+ * matches are anon-readable for non-private games via RLS.
  */
+import { createPublicClient } from "@/lib/supabase/public";
 
-import { fetchSheetAsObjects } from "@/lib/sheets";
-import { CMS_URLS } from "./client";
-
-/** Raw row shape – columns exactly as they appear in the sheet headers. */
-type RawOpenGame = {
-  Date: string;
-  Time: string;
-  Type: string;
-  Signup_Link: string;
-  Status: string;
-  Match_Report: string;
-  More_Info_Image: string;
-  More_Info_Text: string;
-};
-
-/** Typed, consumer-friendly shape after parsing. */
+/** Typed shape consumed by the page + OpenGamesTable (kept stable from the old CMS). */
 export type OpenGame = {
-  /** YYYY-MM-DD */
+  /** YYYY-MM-DD (Malta) */
   date: string;
-  /** HH:MM (24-hour) */
+  /** HH:MM (24-hour, Malta), or "" */
   time: string;
-  /** Raw type string from sheet, e.g. "Standard", "Double XP", "Special" */
+  /** "Open Match" or "Double XP" */
   type: string;
-  /** True when the type contains "double xp" (case-insensitive). Controls red row highlight. */
+  /** True for a Double XP game (controls the row highlight). */
   isDoubleXP: boolean;
-  /** Sign-up URL, or "" if not yet published. */
+  /** In-app game page to sign up, or "" for completed games. */
   signupLink: string;
-  /** "Open" | "Full" | "Completed" | "Cancelled" or any custom value the editor sets. */
+  /** "Open" | "Completed". */
   status: string;
-  /** Match report URL once the match is done, or "" until then. */
+  /** Public match report URL once played, or "". */
   matchReportLink: string;
-  /** Direct image URL for the More Info poster, or "". Image takes priority over text. */
+  /** Unused now (kept for the OpenGamesTable prop shape). */
   moreInfoImage: string;
-  /** Plain text for the More Info popup when no image is set, or "". */
+  /** Unused now (kept for the OpenGamesTable prop shape). */
   moreInfoText: string;
 };
 
-const OPEN_GAMES_REVALIDATE_SECONDS = 300;
+type MatchRow = {
+  id: string;
+  match_code: string | null;
+  status: string | null;
+  scheduled_at: string | null;
+  played_on: string | null;
+  is_double_xp: boolean | null;
+};
 
-/** Status values that mean the game is no longer upcoming. */
-const PAST_STATUSES = new Set(["completed", "cancelled"]);
+const MALTA = "Europe/Malta";
 
-function isPast(status: string): boolean {
-  return PAST_STATUSES.has(status.toLowerCase());
+/** Malta-local YYYY-MM-DD + HH:MM from a timestamptz (empty strings if unparseable). */
+function parts(iso: string | null): { date: string; time: string } {
+  if (!iso) return { date: "", time: "" };
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return { date: "", time: "" };
+  return {
+    date: d.toLocaleDateString("en-CA", { timeZone: MALTA }),
+    time: d.toLocaleTimeString("en-GB", { timeZone: MALTA, hour: "2-digit", minute: "2-digit", hour12: false }),
+  };
 }
 
-/**
- * Normalise any date format the editor might use into YYYY-MM-DD so
- * comparisons and sorts work correctly regardless of how the sheet
- * was formatted.
- *
- * Handles:
- *   YYYY-MM-DD       → returned as-is (ISO standard)
- *   D/M/YY           → "6/6/26"    → "2026-06-06"
- *   DD/MM/YY         → "27/06/26"  → "2026-06-27"
- *   D/M/YYYY         → "6/6/2026"  → "2026-06-06"
- *   DD/MM/YYYY       → "27/06/2026" → "2026-06-27"
- *
- * Falls back to the raw string if none of the above match (sort by
- * raw string as a last resort – defensive).
- */
-function toISO(dateStr: string): string {
-  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
-  const m = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
-  if (m) {
-    const [, d, mo, y] = m;
-    const year = y.length === 2 ? `20${y}` : y;
-    return `${year}-${mo.padStart(2, "0")}-${d.padStart(2, "0")}`;
-  }
-  return dateStr;
-}
+const SELECT = "id, match_code, status, scheduled_at, played_on, is_double_xp";
 
 /**
- * Fetch and parse the Open_Games sheet.
- * Returns an empty array on any error – the page renders a graceful
- * empty state rather than throwing.
+ * Fetch the public open-games schedule from Supabase. Returns an empty array on
+ * any error so the page shows a graceful empty state rather than throwing.
  */
 export async function fetchOpenGames(): Promise<OpenGame[]> {
-  const result = await fetchSheetAsObjects<RawOpenGame>(
-    CMS_URLS.openGames,
-    OPEN_GAMES_REVALIDATE_SECONDS,
-  );
+  const supabase = createPublicClient();
+  const nowIso = new Date().toISOString();
 
-  if (!result.ok) {
-    // Log server-side but don't surface to the client – empty state is shown.
-    console.warn("[open-games] sheet fetch failed:", result.error);
-    return [];
-  }
+  const [upRes, doneRes] = await Promise.all([
+    supabase
+      .from("matches")
+      .select(SELECT)
+      .eq("is_private", false)
+      .in("status", ["tentative", "awaiting_confirm", "confirmed", "live"])
+      .gte("scheduled_at", nowIso)
+      .order("scheduled_at", { ascending: true }),
+    supabase
+      .from("matches")
+      .select(SELECT)
+      .eq("is_private", false)
+      .eq("status", "completed")
+      .order("played_on", { ascending: false, nullsFirst: false })
+      .order("scheduled_at", { ascending: false, nullsFirst: false })
+      .limit(12),
+  ]);
 
-  const games: OpenGame[] = result.rows
-    .filter((r) => r.Date?.trim() !== "")
-    .map((r) => ({
-      date: r.Date.trim(),
-      time: r.Time.trim(),
-      type: r.Type.trim(),
-      isDoubleXP: r.Type.trim().toLowerCase().includes("double xp"),
-      signupLink: r.Signup_Link.trim(),
-      status: r.Status.trim(),
-      matchReportLink: r.Match_Report.trim(),
-      moreInfoImage: (r.More_Info_Image ?? "").trim(),
-      moreInfoText: (r.More_Info_Text ?? "").trim(),
-    }));
+  if (upRes.error) console.warn("[open-games] upcoming fetch failed:", upRes.error.message);
+  if (doneRes.error) console.warn("[open-games] completed fetch failed:", doneRes.error.message);
 
-  // ── Sort into three display groups ──────────────────────────────────
-  //
-  // 1. Upcoming (Open / Full / any non-past status) – nearest first
-  // 2. Past WITH a match report – most recent first (the interesting ones)
-  // 3. Past WITHOUT a match report – most recent first (at the bottom)
-  //
-  // Dates are normalised to ISO before comparing so D/M/YY sheet values
-  // sort correctly (e.g. "6/6/26" before "27/6/26").
+  const upcoming: OpenGame[] = ((upRes.data ?? []) as MatchRow[])
+    .map((m): OpenGame => {
+      const { date, time } = parts(m.scheduled_at);
+      return {
+        date,
+        time,
+        type: m.is_double_xp ? "Double XP" : "Open Match",
+        isDoubleXP: Boolean(m.is_double_xp),
+        signupLink: `/player-portal/games/${m.id}`,
+        status: "Open",
+        matchReportLink: "",
+        moreInfoImage: "",
+        moreInfoText: "",
+      };
+    })
+    .filter((g) => g.date !== "");
 
-  const upcoming    = games.filter((g) => !isPast(g.status));
-  const withReport  = games.filter((g) => isPast(g.status) && g.matchReportLink !== "");
-  const withoutReport = games.filter((g) => isPast(g.status) && g.matchReportLink === "");
+  const completed: OpenGame[] = ((doneRes.data ?? []) as MatchRow[])
+    .map((m): OpenGame => {
+      let p = parts(m.scheduled_at);
+      if (!p.date && m.played_on) p = { date: parts(`${m.played_on}T12:00:00Z`).date, time: "" };
+      return {
+        date: p.date,
+        time: p.time,
+        type: m.is_double_xp ? "Double XP" : "Open Match",
+        isDoubleXP: Boolean(m.is_double_xp),
+        signupLink: "",
+        status: "Completed",
+        matchReportLink: m.match_code ? `/match-report?match=${encodeURIComponent(m.match_code)}` : "",
+        moreInfoImage: "",
+        moreInfoText: "",
+      };
+    })
+    .filter((g) => g.date !== "");
 
-  upcoming.sort((a, b) => toISO(a.date).localeCompare(toISO(b.date)));
-  withReport.sort((a, b) => toISO(b.date).localeCompare(toISO(a.date)));
-  withoutReport.sort((a, b) => toISO(b.date).localeCompare(toISO(a.date)));
-
-  return [...upcoming, ...withReport, ...withoutReport];
+  return [...upcoming, ...completed];
 }
 
-/**
- * Format a date string (YYYY-MM-DD) for display, e.g. "15 Jun 2026".
- * Returns the raw string if it can't parse (defensive).
- */
+/** Format a YYYY-MM-DD date for display, e.g. "15 Jun 2026" (defensive passthrough). */
 export function formatGameDate(yyyyMmDd: string): string {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(yyyyMmDd)) return yyyyMmDd;
   const d = new Date(yyyyMmDd + "T00:00:00Z");
   if (Number.isNaN(d.getTime())) return yyyyMmDd;
-  return d.toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    timeZone: "UTC",
-  });
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 }

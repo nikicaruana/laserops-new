@@ -7,6 +7,9 @@ import { brand } from "@/lib/brand";
 
 /* ─── SEO ──────────────────────────────────────────────────────────── */
 
+// Revalidate so newly scheduled / updated open games surface within ~2 min.
+export const revalidate = 120;
+
 export const metadata: Metadata = {
   title: "Upcoming Outdoor Laser Tag Matches",
   alternates: { canonical: "/events/open-games" },
