@@ -345,7 +345,7 @@ export function GameSignupControl({
       <div className={`flex flex-col gap-2 ${col}`}>
         <span className="inline-flex items-center gap-2 border border-accent bg-accent/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.12em] text-accent">
           ✓ You&apos;re in
-          {paymentOpen ? (isPaid ? " · paid" : onDay ? " · paying offline" : "") : ""}
+          {paymentOpen ? (isPaid ? " · paid" : onDay ? (isPrivate ? " · paying offline" : " · paying cash on the day") : "") : ""}
         </span>
 
         {familyFriends && priceEur != null && priceEur > 0 && !mySignup?.paid_at && paymentOpen && (
@@ -361,10 +361,12 @@ export function GameSignupControl({
           // Paid: advance gun booking is now unlocked.
           gunBooking
         ) : onDay ? (
-          // Private booking, paying offline on request.
+          // Paying offline: private = arrange with team; open game = cash on the day.
           <div className={`flex flex-col gap-1.5 ${col}`}>
             <span className="block max-w-full border-l-2 border-amber-500/70 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-amber-300">
-              Paying offline – arrange with the LaserOps team
+              {isPrivate
+                ? "Paying offline – arrange with the LaserOps team"
+                : `Paying ${hasPrice ? formatEur(priceEur as number) + " " : ""}cash on the day`}
             </span>
             {hasPrice && (
               <button type="button" onClick={() => setIntent("online")} disabled={pending} className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-text-muted hover:text-accent disabled:opacity-50">
@@ -373,13 +375,16 @@ export function GameSignupControl({
             )}
           </div>
         ) : !isPrivate ? (
-          // OPEN game: pay online to confirm the place. No pay-on-the-day.
+          // OPEN game: pay online/tokens now, or opt to pay cash on the day.
           hasPrice ? (
             <div className={`flex flex-col gap-2 ${col}`}>
               <span className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-text-muted">
                 Pay to confirm your place
               </span>
               {payFlow}
+              <button type="button" onClick={() => setIntent("on_day")} disabled={pending} className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-text-muted hover:text-accent disabled:opacity-50">
+                Pay {formatEur(priceEur as number)} cash on the day
+              </button>
             </div>
           ) : (
             <span className="block max-w-full border-l-2 border-accent/70 bg-accent/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-accent">
