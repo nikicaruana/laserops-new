@@ -78,7 +78,7 @@ const GAMES: Record<string, GameCfg> = {
   },
   "30": {
     date: "2026-09-19",
-    opsByHead: { 1: "Uros", 4: "Agius89", 5: "Kuba", 6: "Kyle", 7: "Buwdha", 9: "OrteGaTD", 21: "Hasapardi", 23: "Jens", 26: "Sina", 27: "Glenn", 32: "ChrisKyle", 37: "_Stivala_", 39: "Kyle", 40: "Tompa", 41: "POL", 42: "Tenmil Sokhet", 43: "Waldemar", 44: "M1hoTD", 53: "Migz", 58: "TheHolySpirit" },
+    opsByHead: { 1: "Uros", 4: "Agius89", 5: "Kuba", 6: "Kkkyle", 7: "Buwdha", 9: "OrteGaTD", 21: "Hasapardi", 23: "Jens", 26: "Sina", 27: "Glenn", 32: "ChrisKyle", 37: "_Stivala_", 39: "Kkkyle", 40: "Tompa", 41: "POL", 42: "Tenmil Sokhet", 43: "Waldemar", 44: "M1hoTD", 53: "Migz", 58: "TheHolySpirit" },
     roundMeta: [ { win: "Yellow", counts: true }, { win: "Blue", counts: true }, { win: "Yellow", counts: true }, { win: "Blue", counts: true }, { win: "Yellow", counts: true } ],
   },
   "31": {
@@ -198,6 +198,11 @@ async function main() {
 
     const top = [...result.aggregates].sort((a, b) => b.score - a.score).slice(0, 5).map((a) => `${a.nickname} ${a.score}`).join(", ");
     console.log(`${matchCode}  ${cfg.date}  players=${result.aggregates.length}  rounds=${result.roundCount}  winner=${result.winnerColour ?? "-"}  top: ${top}`);
+    // Guardrail: a non-walk-in player who did not resolve to an account is almost
+    // always a RENAME the hardcoded opsByHead missed (the ops-tag string went
+    // stale). Flag it loudly so the re-ingest never silently drops their XP/Elo.
+    const unlinked = result.aggregates.filter((a) => !a.account_id && !/^Head\s*\d+$/i.test(String(a.nickname)));
+    if (unlinked.length) console.warn(`  !! UNLINKED non-walk-in players (likely a rename - fix linkage before trusting stats): ${unlinked.map((a) => a.nickname).join(", ")}`);
 
     if (LIVE) {
       const { data: existing } = await svc.from("matches").select("id").eq("match_code", matchCode).maybeSingle();
