@@ -72,24 +72,24 @@ const GAMES: Record<string, GameCfg> = {
   },
   "29": {
     date: "2026-09-12",
-    opsByHead: { 1: "Sina", 2: "Mustafa", 6: "Maltese Predator", 9: "Hasapardi", 26: "Wugy", 39: "ChrisKyle", 40: "Jens", 41: "Snaaaaaaake", 47: "BlueJay", 53: "PourHoneyOnMyBun" },
+    opsByHead: { 1: "Sina", 2: "Mustafa", 6: "Tenmil Sokhet", 9: "Hasapardi", 26: "Wugy", 39: "ChrisKyle", 40: "Jens", 41: "Snaaaaaaake", 47: "BlueJay", 53: "PourHoneyOnMyBun" },
     roundMeta: [ { win: "Blue", counts: true }, { win: "Yellow", counts: true }, { win: "Yellow", counts: true }, { win: "Blue", counts: true }, { win: "Blue", counts: true } ],
     excludeHeadbands: [45], // HB45 was an offline no-show in R1 (all zeros) - excluded, per the beta report
   },
   "30": {
     date: "2026-09-19",
-    opsByHead: { 1: "Uros", 4: "Agius89", 5: "Kuba", 6: "Kyle", 7: "Buwdha", 9: "OrteGaTD", 21: "Hasapardi", 23: "Jens", 26: "Sina", 27: "Glenn", 32: "ChrisKyle", 37: "_Stivala_", 39: "Kyle", 40: "Tompa", 41: "POL", 42: "Maltese Predator", 43: "Waldemar", 44: "M1hoTD", 53: "Migz", 58: "TheHolySpirit" },
+    opsByHead: { 1: "Uros", 4: "Agius89", 5: "Kuba", 6: "Kyle", 7: "Buwdha", 9: "OrteGaTD", 21: "Hasapardi", 23: "Jens", 26: "Sina", 27: "Glenn", 32: "ChrisKyle", 37: "_Stivala_", 39: "Kyle", 40: "Tompa", 41: "POL", 42: "Tenmil Sokhet", 43: "Waldemar", 44: "M1hoTD", 53: "Migz", 58: "TheHolySpirit" },
     roundMeta: [ { win: "Yellow", counts: true }, { win: "Blue", counts: true }, { win: "Yellow", counts: true }, { win: "Blue", counts: true }, { win: "Yellow", counts: true } ],
   },
   "31": {
     date: "2026-09-21",
-    opsByHead: { 4: "Tompa", 21: "Hasapardi", 25: "Farru", 26: "Kini", 27: "Maltese Predator", 51: "ChrisKyle", 7: "Mustafa", 32: "Glenn", 38: "Snaaaaaaake", 39: "PourHoneyOnMyBun", 42: "TheHolySpirit", 43: "Buwdha", 47: "Dre" },
+    opsByHead: { 4: "Tompa", 21: "Hasapardi", 25: "Farru", 26: "Kini", 27: "Tenmil Sokhet", 51: "ChrisKyle", 7: "Mustafa", 32: "Glenn", 38: "Snaaaaaaake", 39: "PourHoneyOnMyBun", 42: "TheHolySpirit", 43: "Buwdha", 47: "Dre" },
     roundMeta: [ { win: "Yellow", counts: true }, { win: null, counts: false }, { win: "Blue", counts: true }, { win: "Blue", counts: true }, { win: "Yellow", counts: true }, { win: "Yellow", counts: true } ],
     gunOverride: { Glenn: "MG21 Berserk" },
   },
   "32": {
     date: "2026-09-26",
-    opsByHead: { 1: "Seb PT", 4: "Chuck Joey", 5: "JRilez", 7: "Buwdha", 9: "Lupita", 12: "Boulton", 13: "Alejkilmister", 15: "Spooble", 20: "Snaaaaaaake", 21: "Umut", 25: "Alejkilmister", 26: "aximus", 27: "Stev-o", 32: "Glenn", 37: "PT", 38: "Tompa", 39: "Maltese Predator", 40: "Piet", 41: "Dogukan", 42: "ChrisKyle", 43: "Huntress", 44: "LuXyz", 45: "Mustafa", 46: "Uros", 47: "Jens", 48: "M1hoTD", 49: "Hasapardi", 50: "Anna", 51: "Umut", 52: "TFG", 53: "Didi", 54: "Glenn", 55: "Dina", 56: "Dobi", 57: "Cinti", 59: "TheHolySpirit", 60: "Amy", 61: "LuXyz", 62: "OrteGaTD" },
+    opsByHead: { 1: "Seb PT", 4: "Chuck Joey", 5: "JRilez", 7: "Buwdha", 9: "Lupita", 12: "Boulton", 13: "Alejkilmister", 15: "Spooble", 20: "Snaaaaaaake", 21: "Umut", 25: "Alejkilmister", 26: "aximus", 27: "Stev-o", 32: "Glenn", 37: "PT", 38: "Tompa", 39: "Tenmil Sokhet", 40: "Piet", 41: "Dogukan", 42: "ChrisKyle", 43: "Huntress", 44: "LuXyz", 45: "Mustafa", 46: "Uros", 47: "Jens", 48: "M1hoTD", 49: "Hasapardi", 50: "Anna", 51: "Umut", 52: "TFG", 53: "Didi", 54: "Glenn", 55: "Dina", 56: "Dobi", 57: "Cinti", 59: "TheHolySpirit", 60: "Amy", 61: "LuXyz", 62: "OrteGaTD" },
     onlineFiles: [
       { file: "RealtimeStatistics_20260926_080541.json", win: "Blue" },
       { file: "RealtimeStatistics_20260926_083159.json", win: "Yellow" },
