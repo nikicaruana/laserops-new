@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "format": "prettier --write .",
-    "generate:og": "node scripts/generate-og.mjs"
+    "generate:og": "node scripts/generate-og.mjs",
+    "cld:sync": "node scripts/sync-cld-transformations.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.122.0",

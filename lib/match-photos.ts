@@ -166,6 +166,7 @@ export type GalleryPhoto = {
   playedOn: string | null;
   year: number | null;
   month: number | null;
+  featured: boolean;
   taggedOps: string[];
 };
 
@@ -175,6 +176,7 @@ type GalleryRow = {
   width: number | null;
   height: number | null;
   caption: string | null;
+  featured_home: boolean | null;
   match:
     | { match_code: string | null; title: string | null; played_on: string | null }
     | { match_code: string | null; title: string | null; played_on: string | null }[]
@@ -197,12 +199,13 @@ function mapGalleryRow(r: GalleryRow): GalleryPhoto {
     playedOn: played,
     year: valid ? d!.getUTCFullYear() : null,
     month: valid ? d!.getUTCMonth() + 1 : null,
+    featured: r.featured_home ?? false,
     taggedOps: [],
   };
 }
 
 const GALLERY_SELECT =
-  "id, secure_url, width, height, caption, created_at, match:matches(match_code, title, played_on)";
+  "id, secure_url, width, height, caption, featured_home, created_at, match:matches(match_code, title, played_on)";
 
 async function mergePhotoTags(supabase: SupabaseClient, photos: GalleryPhoto[]): Promise<void> {
   const ids = photos.map((p) => p.id);
@@ -232,7 +235,10 @@ export async function fetchGalleryPhotos(supabase: SupabaseClient): Promise<Gall
   }
   const photos = ((data ?? []) as unknown as GalleryRow[]).map(mapGalleryRow);
   await mergePhotoTags(supabase, photos);
-  photos.sort((a, b) => (b.playedOn ?? "").localeCompare(a.playedOn ?? ""));
+  photos.sort((a, b) => {
+    if (a.featured !== b.featured) return a.featured ? -1 : 1;
+    return (b.playedOn ?? "").localeCompare(a.playedOn ?? "");
+  });
   return photos;
 }
 

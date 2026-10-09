@@ -27,6 +27,11 @@ const MONTHS = ["", "January", "February", "March", "April", "May", "June", "Jul
 
 type Composer = { photoUrl: string; matchCode: string; ops: string; overlayData?: OverlayData };
 
+// Thumbnails rendered per page. A "Load more" click reveals the next page, so a
+// single visit (or bot) only pulls a page of images from Cloudinary, not all of
+// them. Featured photos sort first, so page one is the curated set.
+const PAGE_SIZE = 24;
+
 export function GalleryBrowser({ photos }: { photos: GalleryPhoto[] }) {
   const [matchCode, setMatchCode] = useState("all");
   const [year, setYear] = useState("all");
@@ -38,6 +43,7 @@ export function GalleryBrowser({ photos }: { photos: GalleryPhoto[] }) {
   const [followees, setFollowees] = useState<{ accountId: string; ops: string; avatar: string | null }[]>([]);
   const [tagQuery, setTagQuery] = useState("");
   const [lightbox, setLightbox] = useState<number | null>(null);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [composer, setComposer] = useState<Composer | null>(null);
   const [sharing, setSharing] = useState(false);
 
@@ -111,6 +117,11 @@ export function GalleryBrowser({ photos }: { photos: GalleryPhoto[] }) {
       }),
     [photos, matchCode, year, month, mineOnly, myCodes],
   );
+
+  // Reset to the first page whenever the filters change.
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [matchCode, year, month, mineOnly]);
 
   const lightboxImages: LightboxImage[] = filtered.map((p) => ({
     secureUrl: p.url,
@@ -293,7 +304,7 @@ export function GalleryBrowser({ photos }: { photos: GalleryPhoto[] }) {
         </div>
       ) : (
         <div className="columns-2 gap-3 sm:columns-3 sm:gap-4 lg:columns-4">
-          {filtered.map((p, i) => (
+          {filtered.slice(0, visibleCount).map((p, i) => (
             <div key={p.id} className="group relative mb-3 break-inside-avoid overflow-hidden rounded-sm sm:mb-4">
               <button type="button" onClick={() => setLightbox(i)} className="block w-full" aria-label={p.caption || "View photo"}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -322,6 +333,18 @@ export function GalleryBrowser({ photos }: { photos: GalleryPhoto[] }) {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {filtered.length > visibleCount && (
+        <div className="mt-8 flex justify-center sm:mt-10">
+          <button
+            type="button"
+            onClick={() => setVisibleCount((n) => n + PAGE_SIZE)}
+            className="border border-border-strong px-6 py-3 text-xs font-bold uppercase tracking-[0.14em] text-text-muted transition-colors hover:border-accent hover:text-accent"
+          >
+            Load more ({filtered.length - visibleCount} left)
+          </button>
         </div>
       )}
 
