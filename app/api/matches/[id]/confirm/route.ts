@@ -43,7 +43,8 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     .from("match_signups")
     .select("account_id")
     .eq("match_id", id)
-    .eq("status", "registered");
+    .eq("status", "registered")
+    .is("paid_at", null); // comped 0-rate players are already paid - do not nag them to pay
   const label = match.title || "Your LaserOps game";
   // Open games: pay online to confirm the place. Private bookings can pay offline
   // on request, so the copy differs.
