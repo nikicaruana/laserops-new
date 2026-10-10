@@ -61,27 +61,33 @@ export async function sendMatchInvites(matchId: string, method: "REQUEST" | "CAN
   const mapsHtml = [locationName, loc?.playingUrl ? `<a href="${loc.playingUrl}" style="color:#111;">Directions</a>` : "", loc?.parkingUrl ? `<a href="${loc.parkingUrl}" style="color:#111;">Parking</a>` : ""].filter(Boolean).join(" &middot; ");
   const start = new Date(m.scheduled_at);
   const end = new Date(start.getTime() + SESSION_MINUTES * 60_000);
-  const attendees: IcsAttendee[] = [...players, { email: BUSINESS_EMAIL, name: BUSINESS_NAME }];
+  const businessAttendee: IcsAttendee = { email: BUSINESS_EMAIL, name: BUSINESS_NAME };
 
-  const ics = buildIcs({
-    uid: `match-${m.id}@laseropsmalta.com`,
-    sequence: m.calendar_sequence ?? 0,
-    method,
-    summary: method === "CANCEL" ? `Cancelled: ${label}` : label,
-    description: `Your LaserOps match.\\nDetails and payment: ${gameUrl}`,
-    location: loc?.playingUrl || locationName,
-    url: gameUrl,
-    start,
-    end,
-    stamp: new Date(),
-    organizerName: BUSINESS_NAME,
-    organizerEmail: BUSINESS_EMAIL,
-    attendees,
-  });
+  // Build the .ics for one recipient's attendee list. A PLAYER's invite lists
+  // only that player (GDPR data minimisation) - never the other players' email
+  // addresses - with the business as the organiser. The business's own copy
+  // carries the full roster, since it runs the game.
+  const icsContentFor = (attendees: IcsAttendee[]): string => {
+    const ics = buildIcs({
+      uid: `match-${m.id}@laseropsmalta.com`,
+      sequence: m.calendar_sequence ?? 0,
+      method,
+      summary: method === "CANCEL" ? `Cancelled: ${label}` : label,
+      description: `Your LaserOps match.\\nDetails and payment: ${gameUrl}`,
+      location: loc?.playingUrl || locationName,
+      url: gameUrl,
+      start,
+      end,
+      stamp: new Date(),
+      organizerName: BUSINESS_NAME,
+      organizerEmail: BUSINESS_EMAIL,
+      attendees,
+    });
+    return Buffer.from(ics).toString("base64");
+  };
 
   const resend = new Resend(resendKey);
   const contentType = `text/calendar; charset=utf-8; method=${method}`;
-  const content = Buffer.from(ics).toString("base64");
   const cancelled = method === "CANCEL";
   const when = start.toLocaleString("en-GB", { timeZone: "Europe/Malta", weekday: "short", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
   const subject = cancelled ? `Cancelled: ${label}` : `Calendar invite: ${label}`;
@@ -94,22 +100,27 @@ export async function sendMatchInvites(matchId: string, method: "REQUEST" | "CAN
   ${cancelled ? "" : `<p style="margin:0;"><a href="${gameUrl}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:10px 18px;font-size:13px;font-weight:700;">Open the game</a></p>`}
 </body></html>`;
 
-  // One send per recipient (players + business), so each gets their own invite.
-  const recipients = [...players.map((p) => p.email), BUSINESS_EMAIL];
+  // One send per recipient, each with its OWN invite attachment. A player's
+  // invite lists only that player (plus the business as organiser), so no player
+  // ever sees another player's email address; the business's copy lists everyone.
   let sent = 0;
-  for (const to of recipients) {
+  const sendInvite = async (to: string, attendees: IcsAttendee[]): Promise<void> => {
     try {
       await resend.emails.send({
         from: FROM,
         to: [to],
         subject,
         html: bodyHtml,
-        attachments: [{ filename: "invite.ics", content, contentType }],
+        attachments: [{ filename: "invite.ics", content: icsContentFor(attendees), contentType }],
       });
       sent++;
     } catch {
       // Keep going; one failed invite shouldn't stop the rest.
     }
+  };
+  for (const p of players) {
+    await sendInvite(p.email, [p]);
   }
+  await sendInvite(BUSINESS_EMAIL, [...players, businessAttendee]);
   return { ok: true, sent };
 }
