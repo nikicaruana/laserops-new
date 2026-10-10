@@ -298,12 +298,14 @@ export default async function GamesPage({
           >
             Book a private game
           </Link>
-          <Link
-            href="/player-portal/games/new"
-            className="flex h-11 items-center gap-2 border border-accent bg-accent px-5 text-xs font-bold uppercase tracking-[0.12em] text-bg transition-transform active:scale-[0.98]"
-          >
-            Create an Open Game
-          </Link>
+          {account.is_admin && (
+            <Link
+              href="/player-portal/games/new"
+              className="flex h-11 items-center gap-2 border border-accent bg-accent px-5 text-xs font-bold uppercase tracking-[0.12em] text-bg transition-transform active:scale-[0.98]"
+            >
+              Create an Open Game
+            </Link>
+          )}
         </div>
       </header>
 
