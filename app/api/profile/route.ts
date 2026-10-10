@@ -53,9 +53,15 @@ export async function PATCH(request: Request) {
     updates.ops_tag = result.value;
   }
 
+  // Full name is mandatory. Whenever the client submits it (onboarding and the
+  // profile editor both always do), it must be non-empty - so a new player can't
+  // finish signup without it, and an existing one can't blank it out later.
   if ("full_name" in body) {
     const fn = typeof body.full_name === "string" ? body.full_name.trim() : "";
-    updates.full_name = fn === "" ? null : fn.slice(0, 80);
+    if (fn === "") {
+      return Response.json({ ok: false, field: "full_name", error: "Please enter your full name." }, { status: 400 });
+    }
+    updates.full_name = fn.slice(0, 80);
   }
 
   if ("phone" in body) {

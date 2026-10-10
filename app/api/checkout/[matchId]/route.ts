@@ -29,7 +29,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ mat
   } = await supabase.auth.getUser();
   if (!user) return Response.json({ ok: false, error: "Not signed in." }, { status: 401 });
 
-  const { data: account } = await supabase.from("accounts").select("id, email, discount_price_eur").eq("auth_user_id", user.id).maybeSingle();
+  const { data: account } = await supabase.from("accounts").select("id, email, full_name, ops_tag, discount_price_eur").eq("auth_user_id", user.id).maybeSingle();
   if (!account) return Response.json({ ok: false, error: "No account found." }, { status: 400 });
 
   const { data: match } = await supabase
@@ -109,6 +109,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ mat
         successUrl: `${origin}/player-portal/games/${matchId}?paid=1`,
         cancelUrl: `${origin}/player-portal/games/${matchId}`,
         customerEmail: account.email,
+        customerName: account.full_name || account.ops_tag || null,
         matchId: match.id,
         accountId: account.id,
         policyText,

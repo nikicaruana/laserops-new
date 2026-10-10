@@ -70,6 +70,10 @@ export function OnboardingForm({
       setError("Choose an ops tag (at least 3 characters).");
       return;
     }
+    if (fullName.trim().length < 2) {
+      setError("Please enter your full name.");
+      return;
+    }
     if (!acceptWaiver) {
       setError("Please read and accept the waiver to continue.");
       return;
@@ -168,7 +172,7 @@ export function OnboardingForm({
 
         <div>
           <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">
-            Full name <span className="text-text-subtle">(optional)</span>
+            Full name <span className="text-accent">*</span>
           </label>
           <input
             value={fullName}

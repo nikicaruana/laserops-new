@@ -93,8 +93,11 @@ export const vivaProvider: PaymentProvider = {
     // merchantTrns carries our ids back on the webhook.
     const body: Record<string, unknown> = {
       amount: input.amountCents,
-      customerTrns: input.label,
-      customer: input.customerEmail ? { email: input.customerEmail } : undefined,
+      customerTrns: input.customerName ? `${input.customerName} - ${input.label}` : input.label,
+      customer:
+        input.customerEmail || input.customerName
+          ? { email: input.customerEmail || undefined, fullName: input.customerName || undefined }
+          : undefined,
       paymentTimeout: 3600, // 60 min window (was 30) - a little slack for links opened a bit late
       preauth: false,
       allowRecurring: false,

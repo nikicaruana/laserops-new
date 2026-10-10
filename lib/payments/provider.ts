@@ -22,6 +22,8 @@ export type CheckoutInput = {
   successUrl: string;
   cancelUrl: string;
   customerEmail?: string | null;
+  /** Payer's name, attached to the provider order so it shows in the provider dashboard. */
+  customerName?: string | null;
   /** Carried through the provider back to the webhook. For "match" it's the match id; for "token_bundle" it's the token_purchases id. */
   matchId: string;
   accountId: string;

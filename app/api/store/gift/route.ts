@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   } = await supabase.auth.getUser();
   if (!user) return Response.json({ ok: false, error: "Not signed in." }, { status: 401 });
 
-  const { data: account } = await supabase.from("accounts").select("id, email").eq("auth_user_id", user.id).maybeSingle();
+  const { data: account } = await supabase.from("accounts").select("id, email, full_name, ops_tag").eq("auth_user_id", user.id).maybeSingle();
   if (!account) return Response.json({ ok: false, error: "No account found." }, { status: 400 });
 
   let body: { bundleId?: string; single?: boolean; opsTag?: string; email?: string; message?: string };
@@ -73,6 +73,7 @@ export async function POST(req: NextRequest) {
       successUrl: `${origin}/player-portal/store?gifted=1`,
       cancelUrl: `${origin}/player-portal/store`,
       customerEmail: account.email,
+      customerName: account.full_name || account.ops_tag || null,
       purpose: "token_bundle",
       matchId: String(intentId),
       accountId: account.id,
