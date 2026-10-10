@@ -141,10 +141,18 @@ export function MatchAdminActions({
     gate?.kind === "complete"
       ? "complete this game"
       : gate?.kind === "cancel"
-        ? "cancel this game and refund everyone in full"
+        ? "cancel this game"
         : gate
           ? `end this game early and refund everyone ${gate.percent}%`
           : "this change";
+
+  // Refund advisory shown in the confirmation popup for the money-moving actions.
+  const gateNotice =
+    gate?.kind === "cancel"
+      ? "Every player who paid will be automatically refunded in full - their card payment reversed and any game tokens returned. Players on a free or zero-price place aren't affected."
+      : gate?.kind === "endEarly"
+        ? `Every player who paid will be automatically refunded ${gate.percent}% of what they paid (cash and any game tokens).`
+        : undefined;
 
   const s = status ?? "tentative";
 
@@ -260,6 +268,7 @@ export function MatchAdminActions({
       <TotpGate
         open={gate !== null}
         action={gateAction}
+        notice={gateNotice}
         onCancel={() => setGate(null)}
         onVerified={runGated}
       />

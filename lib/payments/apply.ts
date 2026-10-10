@@ -41,6 +41,11 @@ export async function markSignupPaid(providerId: string, ev: Extract<PaymentEven
     return false;
   }
   if (data && data.length > 0) {
+    // A zero-value settle (a comped / family-&-friends €0 place) is NOT a money
+    // event: skip the ledger row and the "payment confirmed" notification so it
+    // never clutters the finances or nags the player. The signup is still marked
+    // settled above, so their place holds and they're never chased to pay.
+    if (!amount || amount <= 0) return true;
     // Money in -> record it in the financial ledger (single source of truth).
     // Do not let a ledger hiccup swallow the confirmation silently - log it so a
     // missing entry is visible (the payment itself is already marked paid above).

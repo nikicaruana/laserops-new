@@ -20,11 +20,14 @@ import { createClient } from "@/lib/supabase/client";
 export function TotpGate({
   open,
   action = "this change",
+  notice,
   onCancel,
   onVerified,
 }: {
   open: boolean;
   action?: string;
+  /** Optional advisory shown prominently above the code input (e.g. refund warning). */
+  notice?: string;
   onCancel: () => void;
   onVerified: () => void | Promise<void>;
 }) {
@@ -113,6 +116,11 @@ export function TotpGate({
             <p className="mt-2 text-xs text-text-muted">
               Enter the 6-digit code from your authenticator app to apply {action}.
             </p>
+            {notice && (
+              <p className="mt-3 border-l-2 border-amber-500/70 bg-amber-500/10 px-3 py-2 text-xs leading-relaxed text-amber-200">
+                {notice}
+              </p>
+            )}
             <input
               autoFocus
               inputMode="numeric"
