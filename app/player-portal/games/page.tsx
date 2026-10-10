@@ -357,6 +357,11 @@ export default async function GamesPage({
               registered: g.registered_count ?? 0,
               min: g.min_players ?? 10,
               max: g.max_players,
+              priceEur: g.price_eur,
+              pricingMode: g.pricing_mode,
+              isDoubleXP: Boolean(g.is_double_xp),
+              isBeginner: Boolean(g.is_beginner),
+              beginnerMaxLevel: g.beginner_max_level,
             }))}
         >
           {openGamesShown.length === 0 ? (

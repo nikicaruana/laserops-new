@@ -11,6 +11,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { PlayerBar } from "@/components/portal/PlayerBar";
+import { MatchStatusBadge } from "@/components/admin/MatchStatusBadge";
 
 export type CalendarGame = {
   id: string;
@@ -20,6 +22,11 @@ export type CalendarGame = {
   registered: number;
   min: number;
   max: number | null;
+  priceEur: number | null;
+  pricingMode: string | null;
+  isDoubleXP: boolean;
+  isBeginner: boolean;
+  beginnerMaxLevel: number | null;
 };
 
 type DayAvail = { the_date: string; is_open: boolean; open_time: string | null; close_time: string | null; note: string | null };
@@ -166,14 +173,32 @@ export function GamesCalendar({ games }: { games: CalendarGame[] }) {
             <ul className="mt-3 space-y-2">
               {selectedGames.map((g) => {
                 const time = g.scheduledAt ? new Date(g.scheduledAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "";
+                const showPrice = g.priceEur != null && g.pricingMode === "per_player";
                 return (
                   <li key={g.id}>
-                    <Link href={`/player-portal/games/${g.id}`} className="flex items-center justify-between gap-3 border border-border bg-bg px-4 py-3 transition-colors hover:border-accent">
-                      <span className="min-w-0">
-                        <span className="block truncate text-sm font-bold text-text">{g.title}</span>
-                        <span className="text-xs text-text-muted">{time} · {g.registered}/{g.min} players{g.max ? ` (max ${g.max})` : ""}</span>
-                      </span>
-                      <span className="shrink-0 text-[0.7rem] font-bold uppercase tracking-[0.12em] text-accent">View →</span>
+                    <Link href={`/player-portal/games/${g.id}`} className="flex flex-col gap-3 border border-border bg-bg p-4 transition-colors hover:border-accent">
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="min-w-0">
+                          <span className="block truncate text-sm font-bold text-text">{g.title}</span>
+                          <span className="mt-0.5 block text-xs text-text-muted">
+                            {time}
+                            {showPrice ? ` · €${Number(g.priceEur).toFixed(2)}/player` : ""}
+                          </span>
+                        </span>
+                        <span className="flex shrink-0 flex-col items-end gap-1">
+                          <MatchStatusBadge status={g.status} />
+                          {g.isDoubleXP && (
+                            <span className="border border-amber-700 bg-amber-950/40 px-1.5 py-0.5 text-[0.5rem] font-bold uppercase tracking-[0.12em] text-amber-300">2XP</span>
+                          )}
+                          {g.isBeginner && (
+                            <span className="border border-emerald-700 bg-emerald-950/40 px-1.5 py-0.5 text-[0.5rem] font-bold uppercase tracking-[0.12em] text-emerald-300">
+                              Beginners{g.beginnerMaxLevel != null ? ` · max Lvl ${g.beginnerMaxLevel}` : ""}
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                      <PlayerBar reg={g.registered} min={g.min} max={g.max} status={g.status} />
+                      <span className="self-end text-[0.7rem] font-bold uppercase tracking-[0.12em] text-accent">View →</span>
                     </Link>
                   </li>
                 );
