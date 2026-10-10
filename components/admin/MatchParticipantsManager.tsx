@@ -125,6 +125,9 @@ export function MatchParticipantsManager({
     setBusy(false);
     setLinkFor(null);
     if (err) return setError(err.message);
+    setRows((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, account_id: account.id, account: { ops_tag: account.ops_tag, full_name: account.full_name } } : r)),
+    );
     router.refresh();
   }
 
@@ -148,15 +151,19 @@ export function MatchParticipantsManager({
     setBusy(true);
     setError(null);
     const supabase = createClient();
-    const { error: err } = await supabase.from("match_participants").insert({
-      operator_id: OPERATOR_ID,
-      match_id: matchId,
-      headset_label: newRow.headset_label.trim() || null,
-      gun_used: newRow.gun_used.trim() || null,
-      display_name: newRow.display_name.trim() || null,
-      source: "admin",
-      payment_intent: "on_day", // hand-added players are assumed paying on the day
-    });
+    const { data: inserted, error: err } = await supabase
+      .from("match_participants")
+      .insert({
+        operator_id: OPERATOR_ID,
+        match_id: matchId,
+        headset_label: newRow.headset_label.trim() || null,
+        gun_used: newRow.gun_used.trim() || null,
+        display_name: newRow.display_name.trim() || null,
+        source: "admin",
+        payment_intent: "on_day", // hand-added players are assumed paying on the day
+      })
+      .select("id, account_id, headset_label, extra_headbands, gun_used, display_name, source, payment_intent, paid_at")
+      .single();
     setBusy(false);
     if (err) {
       return setError(
@@ -165,24 +172,32 @@ export function MatchParticipantsManager({
           : err.message,
       );
     }
+    if (inserted) {
+      const p = inserted as Participant;
+      setRows((prev) => [...prev, { ...p, account: null, extra: [...(p.extra_headbands ?? [])] }]);
+    }
     setNewRow({ display_name: "", headset_label: "", gun_used: guns[0] ?? "" });
     router.refresh();
   }
 
   /** Add an unassigned file headband to the roster, optionally linked to an account. */
-  async function addHeadband(headband: number, accountId: string | null) {
+  async function addHeadband(headband: number, account: PickedAccount | null) {
     setBusy(true);
     setError(null);
     const supabase = createClient();
-    const { error: err } = await supabase.from("match_participants").insert({
-      operator_id: OPERATOR_ID,
-      match_id: matchId,
-      headset_label: String(headband),
-      gun_used: uaGun[headband] || null,
-      account_id: accountId,
-      source: "admin",
-      payment_intent: accountId ? null : "on_day",
-    });
+    const { data: inserted, error: err } = await supabase
+      .from("match_participants")
+      .insert({
+        operator_id: OPERATOR_ID,
+        match_id: matchId,
+        headset_label: String(headband),
+        gun_used: uaGun[headband] || null,
+        account_id: account?.id ?? null,
+        source: "admin",
+        payment_intent: account ? null : "on_day",
+      })
+      .select("id, account_id, headset_label, extra_headbands, gun_used, display_name, source, payment_intent, paid_at")
+      .single();
     setBusy(false);
     setUaLinkFor(null);
     if (err) {
@@ -191,6 +206,13 @@ export function MatchParticipantsManager({
           ? `Headband ${headband} is already on this match.`
           : err.message,
       );
+    }
+    if (inserted) {
+      const p = inserted as Participant;
+      setRows((prev) => [
+        ...prev,
+        { ...p, account: account ? { ops_tag: account.ops_tag, full_name: account.full_name } : null, extra: [...(p.extra_headbands ?? [])] },
+      ]);
     }
     router.refresh();
   }
@@ -462,7 +484,7 @@ export function MatchParticipantsManager({
       )}
       {uaLinkFor != null && (
         <Modal title={`Link headband ${uaLinkFor} to a profile`} onClose={() => setUaLinkFor(null)} maxWidth="max-w-sm">
-          <AccountPicker autoFocus onPick={(a) => addHeadband(uaLinkFor, a.id)} onCancel={() => setUaLinkFor(null)} />
+          <AccountPicker autoFocus onPick={(a) => addHeadband(uaLinkFor, a)} onCancel={() => setUaLinkFor(null)} />
         </Modal>
       )}
     </div>
