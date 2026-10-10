@@ -17,8 +17,31 @@ import { createClient } from "@/lib/supabase/server";
 import { GameSignupControl } from "@/components/portal/GameSignupControl";
 import { getRefundConfig } from "@/lib/payments/refund-config";
 import { getUnlockedGuns, type UnlockedGun } from "@/lib/matches/guns";
+import { brand } from "@/lib/brand";
 
-export const metadata: Metadata = { title: "Game invite", robots: { index: false, follow: false } };
+// Per-invite social preview: show the actual game name (and date) so a shared
+// link reads e.g. "Luke's LaserOps Game | LaserOps Malta" instead of a generic
+// title. og:title / og:description follow title / description automatically, and
+// the OG image stays the file-based default. Invite pages are noindex.
+export async function generateMetadata({ params }: { params: Promise<{ code: string }> }): Promise<Metadata> {
+  const { code } = await params;
+  const supabase = await createClient();
+  const { data: match } = await supabase
+    .from("matches")
+    .select("title, scheduled_at")
+    .eq("invite_code", code)
+    .maybeSingle();
+  const name = typeof match?.title === "string" ? match.title.trim() : "";
+  const robots = { index: false, follow: false };
+  if (!name) {
+    return { title: "Game invite", description: brand.description, robots };
+  }
+  const when = match?.scheduled_at ? fmtDateTime(match.scheduled_at) : null;
+  const description = when
+    ? `You're invited to ${name}. ${when}. Outdoor tactical laser tag in Malta.`
+    : `You're invited to ${name}. Outdoor tactical laser tag in Malta.`;
+  return { title: name, description, robots };
+}
 
 type Game = {
   id: string;
