@@ -17,6 +17,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
 import { AccountPicker, type PickedAccount } from "@/components/admin/AccountPicker";
+import { Modal } from "@/components/ui/Modal";
 
 const OPERATOR_ID = "00000000-0000-0000-0000-000000000001";
 
@@ -274,11 +275,6 @@ export function MatchParticipantsManager({
                         >
                           {linkFor === r.id ? "Cancel" : "Link profile"}
                         </button>
-                        {linkFor === r.id && (
-                          <div className="absolute left-3 top-full z-20 mt-1">
-                            <AccountPicker onPick={(a) => linkRow(r.id, a)} onCancel={() => setLinkFor(null)} />
-                          </div>
-                        )}
                       </div>
                     )}
                   </td>
@@ -414,11 +410,6 @@ export function MatchParticipantsManager({
                     >
                       {uaLinkFor === n ? "Cancel" : "Link profile"}
                     </button>
-                    {uaLinkFor === n && (
-                      <div className="absolute right-3 top-full z-20 mt-1">
-                        <AccountPicker onPick={(a) => addHeadband(n, a.id)} onCancel={() => setUaLinkFor(null)} />
-                      </div>
-                    )}
                   </td>
                 </tr>
               ))}
@@ -461,6 +452,19 @@ export function MatchParticipantsManager({
           Extra headbands (for a mid-game swap) can be added on the player&apos;s row after adding.
         </p>
       </div>
+
+      {/* Profile-link pickers live in a modal (portaled to body) so the search
+          results are never clipped by the roster table's horizontal scroll. */}
+      {linkFor && (
+        <Modal title="Link to a profile" onClose={() => setLinkFor(null)} maxWidth="max-w-sm">
+          <AccountPicker autoFocus onPick={(a) => linkRow(linkFor, a)} onCancel={() => setLinkFor(null)} />
+        </Modal>
+      )}
+      {uaLinkFor != null && (
+        <Modal title={`Link headband ${uaLinkFor} to a profile`} onClose={() => setUaLinkFor(null)} maxWidth="max-w-sm">
+          <AccountPicker autoFocus onPick={(a) => addHeadband(uaLinkFor, a.id)} onCancel={() => setUaLinkFor(null)} />
+        </Modal>
+      )}
     </div>
   );
 }
