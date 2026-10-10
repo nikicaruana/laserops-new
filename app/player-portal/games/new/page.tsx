@@ -25,8 +25,7 @@ export default async function NewGamePage() {
     supabase.rpc("is_admin"),
     supabase.rpc("has_played_game"),
   ]);
-  // Open games are LaserOps-organised only - non-admins cannot create them.
-  if (!isAdmin) redirect("/player-portal/games");
+  // Opening your own game requires having played at least one first.
   const canOpen = Boolean(isAdmin) || Boolean(hasPlayed);
 
   return (
