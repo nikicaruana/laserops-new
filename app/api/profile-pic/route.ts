@@ -15,6 +15,7 @@
  * Follows lib/cloudinary.ts's no-SDK, direct-REST pattern.
  */
 import crypto from "node:crypto";
+import { revalidateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { PROFILE_PICS_FOLDER } from "@/lib/cloudinary";
 
@@ -153,6 +154,12 @@ export async function POST(request: Request) {
     );
   }
 
+  // The accounts update fires a trigger that syncs the new avatar onto the
+  // denormalized stats / leaderboard tables immediately; drop the board caches so
+  // the summary and leaderboards reflect it now instead of on the next recompute.
+  revalidateTag("leaderboards");
+  revalidateTag("sheets");
+
   return Response.json({ ok: true, url: secureUrl });
 }
 
@@ -178,5 +185,7 @@ export async function DELETE() {
     console.error("[profile-pic] reset failed:", error);
     return Response.json({ ok: false, error: "Couldn't reset your photo." }, { status: 500 });
   }
+  revalidateTag("leaderboards");
+  revalidateTag("sheets");
   return Response.json({ ok: true });
 }
