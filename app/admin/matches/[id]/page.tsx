@@ -25,6 +25,7 @@ import { OfflineRoundResults } from "@/components/admin/OfflineRoundResults";
 import { lwaMatchPlayers, isLwa } from "@/lib/ingestion/lwa";
 import { MatchModeToggle } from "@/components/admin/MatchModeToggle";
 import { MatchResultsBox } from "@/components/admin/MatchResultsBox";
+import { orderMatchGuns } from "@/lib/guns/match-order";
 import { LiveIngestWatcher } from "@/components/admin/LiveIngestWatcher";
 import { LiveFeedToggle } from "@/components/admin/LiveFeedToggle";
 import { NativeWatcherSetup } from "@/components/admin/NativeWatcherSetup";
@@ -288,7 +289,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   }
   const entries = (entryRows ?? []) as Entry[];
   const participants = (participantRows ?? []) as unknown as Participant[];
-  const guns = ((gunRows ?? []) as { name: string }[]).map((g) => g.name).filter(Boolean);
+  const guns = orderMatchGuns(((gunRows ?? []) as { name: string }[]).map((g) => g.name).filter(Boolean));
   const isPlayed = match.status === "completed" || entries.length > 0;
   const showRoster = ["confirmed", "live", "completed"].includes(match.status ?? "") || match.is_private || participants.length > 0;
 
