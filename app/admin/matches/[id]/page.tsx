@@ -509,15 +509,9 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         <MatchLocationEditor matchId={match.id} currentLocationId={(match as { location_id: string | null }).location_id} />
       )}
 
-      {/* Players & headbands – roster + file headbands + assignment (pre/post publish) */}
+      {/* Players: payments + headbands (component renders both collapsible sub-sections) */}
       {(showRoster || Object.keys(ingestByHeadband).length > 0) && (
-        <CollapsibleSection
-          title="Players & headbands"
-          count={participants.length}
-          subtitle="Everyone in the match with their headband, gun and profile. Assign the headbands the game file saw, add walk-ins by hand, or let signed-up players join live. Editing after publishing marks results stale &ndash; re-publish to apply."
-        >
-          <MatchParticipantsManager matchId={match.id} initial={participants} guns={guns} payments={payments} ingest={ingestByHeadband} published={!!match.xp_distributed_at} perPlayer={match.pricing_mode === "per_player"} />
-        </CollapsibleSection>
+        <MatchParticipantsManager matchId={match.id} initial={participants} guns={guns} payments={payments} ingest={ingestByHeadband} published={!!match.xp_distributed_at} perPlayer={match.pricing_mode === "per_player"} />
       )}
 
       {/* Signups (booking side) – not for private bookings */}

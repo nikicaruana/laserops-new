@@ -3,13 +3,16 @@
 /**
  * components/admin/MatchParticipantsManager.tsx
  * --------------------------------------------------------------------
- * The single "Players & headbands" panel for a match. It merges what used to be
- * three separate sections (roster, identity resolution, edit players) into one:
- *   - The roster: every player in the match with their headband(s), gun and
- *     profile link. Rows come from live joins or are added by hand.
- *   - Headbands seen in the ingested file that aren't on the roster yet, shown
- *     with their in-game stats so an admin can add/link them in one click.
- *   - Works before AND after publishing (post-publish edits mark the results
+ * The player-management panel for a match. It renders two collapsible
+ * sub-sections that share one roster state (so edits in one are reflected
+ * live in the other without a full reload):
+ *   - "Players & payments" (top): per-player post-game settlement - mark a
+ *     player paid (Cash / Revolut), see what they declared on the pay page
+ *     (token used + drinks), and undo a confirmation. Flat-rate bookings show
+ *     an organiser-settles note instead.
+ *   - "Players & headbands": the roster - every player with their headband(s),
+ *     gun and profile; file headbands not assigned yet; add walk-ins by hand.
+ *     Works before AND after publishing (post-publish edits mark the results
  *     stale; re-publish to apply). Writes match_participants (admin_all RLS).
  */
 import { useState } from "react";
@@ -18,6 +21,7 @@ import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
 import { AccountPicker, type PickedAccount } from "@/components/admin/AccountPicker";
 import { Modal } from "@/components/ui/Modal";
+import { CollapsibleSection } from "@/components/admin/CollapsibleSection";
 import { formatEur } from "@/lib/money";
 
 const OPERATOR_ID = "00000000-0000-0000-0000-000000000001";
@@ -104,7 +108,7 @@ export function MatchParticipantsManager({
     const { error: err } = await supabase.rpc("admin_confirm_settlement", { p_match_id: matchId, p_account_id: r.account_id, p_method: method });
     setBusy(false);
     if (err) return setError(err.message);
-    setRows((prev) => prev.map((x) => (x.id === r.id ? { ...x, paid_at: new Date().toISOString(), payment_intent: method, settlement_method: method } : x)));
+    setRows((prev) => prev.map((x) => (x.id === r.id ? { ...x, paid_at: new Date().toISOString(), payment_intent: "on_day", settlement_method: method } : x)));
     router.refresh();
   }
   async function undoPaid(r: EditRow) {
@@ -282,261 +286,338 @@ export function MatchParticipantsManager({
     return Number.isNaN(n) ? null : ingest[n]?.stat ?? null;
   };
 
+  // Payment-status cell for a single player (shared shape with the pay page).
+  const paymentStatus = (r: EditRow) =>
+    r.paid_at ? (
+      <span className="font-semibold text-accent">
+        Paid{r.paid_amount_eur != null ? ` ${formatEur(Number(r.paid_amount_eur))}` : ""}
+        {r.settlement_method ? ` · ${r.settlement_method}` : ""}
+      </span>
+    ) : r.settled_declared_at ? (
+      <span className={`text-xs leading-tight ${r.player_marked_paid_at ? "text-emerald-300" : "text-amber-300"}`}>
+        {Number(r.settlement_token_intent) > 0 ? `Token ${fmtTok(Number(r.settlement_token_intent))} · ` : ""}
+        {Number(r.drinks_total_eur) > 0 ? `Drinks ${formatEur(Number(r.drinks_total_eur))} · ` : ""}
+        {r.player_marked_paid_at ? "player says paid" : "awaiting"}{r.settlement_method ? ` (${r.settlement_method})` : ""}
+      </span>
+    ) : (
+      <span className="text-xs text-text-subtle">Unpaid</span>
+    );
+
+  const payable = rows.filter((r) => r.account_id);
+  const owing = payable.filter((r) => !r.paid_at).length;
+
   return (
-    <div className="space-y-4">
-      {published && (
-        <p className="border border-amber-500/40 bg-amber-500/5 px-4 py-2.5 text-xs text-amber-200">
-          This match is published. Changing a headband, profile or gun here marks the results stale &mdash; re-publish to apply it to the scores.
-        </p>
-      )}
+    <>
       {error && (
-        <p className="border border-red-800 bg-red-950/40 px-4 py-3 text-sm text-red-400">{error}</p>
+        <p className="mb-4 border border-red-800 bg-red-950/40 px-4 py-3 text-sm text-red-400">{error}</p>
       )}
 
-      <div className="overflow-x-auto border border-border">
-        <table className="w-full min-w-[900px] text-left text-sm">
-          <thead>
-            <tr className="border-b border-border bg-bg-elevated text-[0.6rem] uppercase tracking-[0.14em] text-text-muted">
-              <th className="px-3 py-3 font-semibold">Player</th>
-              <th className="px-3 py-3 font-semibold">Ops tag</th>
-              <th className="px-3 py-3 font-semibold">Headband(s)</th>
-              <th className="px-3 py-3 font-semibold">Gun</th>
-              <th className="px-3 py-3 font-semibold">Stats</th>
-              <th className="px-3 py-3 font-semibold">Payment</th>
-              <th className="px-3 py-3 text-center font-semibold">Source</th>
-              <th className="px-3 py-3" />
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => {
-              const linked = Boolean(r.account_id);
-              const name = r.account?.full_name || r.account?.ops_tag;
-              const stat = statOf(r.headset_label);
-              return (
-                <tr key={r.id} className="border-b border-border align-middle last:border-0">
-                  <td className="relative px-3 py-2">
-                    {linked ? (
-                      <span className="font-semibold text-text">{name ?? "Player"}</span>
-                    ) : (
-                      <div className="space-y-1">
-                        <input
-                          className={cell}
-                          value={r.display_name ?? ""}
-                          onChange={(e) => setField(r.id, "display_name", e.target.value)}
-                          placeholder="Name"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setLinkFor(linkFor === r.id ? null : r.id)}
-                          className="text-[0.6rem] font-bold uppercase tracking-[0.1em] text-text-subtle hover:text-accent"
-                        >
-                          {linkFor === r.id ? "Cancel" : "Link profile"}
-                        </button>
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-3 py-2 font-mono text-xs text-text-muted">{r.account?.ops_tag ?? <span className="text-text-subtle">–</span>}</td>
-                  <td className="px-3 py-2">
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <input
-                          className={hbInput}
-                          value={r.headset_label ?? ""}
-                          onChange={(e) => setField(r.id, "headset_label", e.target.value)}
-                          placeholder="–"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => addExtra(r.id)}
-                          title="Add another headband (mid-game swap)"
-                          className="flex h-8 w-8 shrink-0 items-center justify-center border border-border-strong text-text-muted hover:border-accent hover:text-accent"
-                          aria-label="Add another headband"
-                        >
-                          +
-                        </button>
-                      </div>
-                      {r.extra.length > 0 && (
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          {r.extra.map((x, idx) => (
-                            <span key={idx} className="inline-flex items-center gap-1 border border-border-strong bg-bg pl-2">
-                              <input
-                                className="h-8 w-14 bg-transparent font-mono text-xs text-text focus:outline-none"
-                                value={x}
-                                onChange={(e) => setExtra(r.id, idx, e.target.value)}
-                                placeholder="##"
-                                autoFocus={x === ""}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => removeExtra(r.id, idx)}
-                                className="px-1.5 text-text-subtle hover:text-red-400"
-                                aria-label="Remove headband"
-                              >
-                                ×
-                              </button>
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-3 py-2">{gunSelect(r.gun_used ?? "", (v) => setField(r.id, "gun_used", v))}</td>
-                  <td className="px-3 py-2 font-mono text-[0.7rem] text-text-muted">{stat ?? <span className="text-text-subtle">–</span>}</td>
-                  <td className="px-3 py-2 text-xs">
-                    {!perPlayer ? (
-                      <span className="text-text-subtle">Organiser pays</span>
-                    ) : !r.account_id ? (
-                      <span className="text-text-subtle">Link profile first</span>
-                    ) : r.paid_at ? (
-                      <div className="flex flex-col items-start gap-0.5">
-                        <span className="font-semibold text-accent">
-                          Paid{r.paid_amount_eur != null ? ` ${formatEur(Number(r.paid_amount_eur))}` : ""}
-                          {r.settlement_method ? ` · ${r.settlement_method}` : ""}
-                        </span>
-                        <button type="button" onClick={() => undoPaid(r)} disabled={busy} className="text-[0.6rem] uppercase tracking-[0.1em] text-text-subtle hover:text-red-400 disabled:opacity-50">Undo</button>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col gap-1">
-                        {r.settled_declared_at ? (
-                          <span className={`text-[0.7rem] leading-tight ${r.player_marked_paid_at ? "text-emerald-300" : "text-amber-300"}`}>
-                            {Number(r.settlement_token_intent) > 0 ? `Token ${fmtTok(Number(r.settlement_token_intent))} · ` : ""}
-                            {Number(r.drinks_total_eur) > 0 ? `Drinks ${formatEur(Number(r.drinks_total_eur))} · ` : ""}
-                            {r.player_marked_paid_at ? "✓ says paid" : "awaiting"}{r.settlement_method ? ` ${r.settlement_method}` : ""}
-                          </span>
-                        ) : (
-                          <span className="text-[0.7rem] text-text-subtle">Unpaid</span>
-                        )}
-                        <div className="flex items-center gap-1">
-                          <select
-                            className="h-7 rounded-none border border-border-strong bg-bg px-1 text-[0.7rem] text-text focus:border-accent focus:outline-none"
-                            value={paySel[r.id] ?? r.settlement_method ?? "cash"}
-                            onChange={(e) => setPaySel((s) => ({ ...s, [r.id]: e.target.value }))}
+      {/* ----- Players & payments ----------------------------------------- */}
+      <CollapsibleSection
+        title="Players & payments"
+        count={perPlayer ? owing : undefined}
+        subtitle={
+          perPlayer
+            ? "Settle each player after the game. The token they used on the pay page is already applied; mark the cash/Revolut part paid here. Count shows how many still owe."
+            : "This is a flat-rate booking - the organiser settles the whole total. No per-player payments are tracked here."
+        }
+      >
+        {!perPlayer ? (
+          <p className="border border-dashed border-border px-4 py-8 text-center text-sm text-text-muted">
+            Organiser pays. Record the booking total manually in the financial tracker.
+          </p>
+        ) : (
+          <div className="overflow-x-auto border border-border">
+            <table className="w-full min-w-[640px] text-left text-sm">
+              <thead>
+                <tr className="border-b border-border bg-bg-elevated text-[0.6rem] uppercase tracking-[0.14em] text-text-muted">
+                  <th className="px-3 py-3 font-semibold">Player</th>
+                  <th className="px-3 py-3 font-semibold">Ops tag</th>
+                  <th className="px-3 py-3 font-semibold">Status</th>
+                  <th className="px-3 py-3 text-right font-semibold">Settle</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r) => {
+                  const name = r.account?.full_name || r.account?.ops_tag || r.display_name;
+                  return (
+                    <tr key={r.id} className="border-b border-border align-middle last:border-0">
+                      <td className="px-3 py-2.5 font-semibold text-text">{name ?? "Player"}</td>
+                      <td className="px-3 py-2.5 font-mono text-xs text-text-muted">
+                        {r.account?.ops_tag ?? <span className="text-text-subtle">–</span>}
+                      </td>
+                      <td className="px-3 py-2.5">
+                        {r.account_id ? paymentStatus(r) : <span className="text-xs text-text-subtle">Not a member</span>}
+                      </td>
+                      <td className="px-3 py-2.5 text-right">
+                        {!r.account_id ? (
+                          <span className="text-[0.65rem] text-text-subtle">Link a profile in the roster below to settle</span>
+                        ) : r.paid_at ? (
+                          <button
+                            type="button"
+                            onClick={() => undoPaid(r)}
+                            disabled={busy}
+                            className="text-[0.6rem] font-bold uppercase tracking-[0.1em] text-text-subtle hover:text-red-400 disabled:opacity-50"
                           >
-                            <option value="cash">Cash</option>
-                            <option value="revolut">Revolut</option>
-                          </select>
-                          <button type="button" onClick={() => markPaid(r, paySel[r.id] ?? r.settlement_method ?? "cash")} disabled={busy} className="border border-accent bg-accent/10 px-2 py-1 text-[0.6rem] font-bold uppercase tracking-[0.1em] text-accent hover:bg-accent/20 disabled:opacity-50">Mark paid</button>
+                            Undo
+                          </button>
+                        ) : (
+                          <div className="flex items-center justify-end gap-1.5">
+                            <select
+                              className="h-8 rounded-none border border-border-strong bg-bg px-1.5 text-xs text-text focus:border-accent focus:outline-none"
+                              value={paySel[r.id] ?? r.settlement_method ?? "cash"}
+                              onChange={(e) => setPaySel((s) => ({ ...s, [r.id]: e.target.value }))}
+                            >
+                              <option value="cash">Cash</option>
+                              <option value="revolut">Revolut</option>
+                            </select>
+                            <button
+                              type="button"
+                              onClick={() => markPaid(r, paySel[r.id] ?? r.settlement_method ?? "cash")}
+                              disabled={busy}
+                              className="border border-accent bg-accent/10 px-2.5 py-1.5 text-[0.6rem] font-bold uppercase tracking-[0.1em] text-accent hover:bg-accent/20 disabled:opacity-50"
+                            >
+                              Mark paid
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+                {rows.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="px-3 py-8 text-center text-sm text-text-muted">
+                      No players on this match yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </CollapsibleSection>
+
+      {/* ----- Players & headbands ---------------------------------------- */}
+      <CollapsibleSection
+        title="Players & headbands"
+        count={rows.length}
+        subtitle="Everyone in the match with their headband, gun and profile. Assign the headbands the game file saw, add walk-ins by hand, or let signed-up players join live. Editing after publishing marks results stale &ndash; re-publish to apply."
+      >
+        <div className="space-y-4">
+          {published && (
+            <p className="border border-amber-500/40 bg-amber-500/5 px-4 py-2.5 text-xs text-amber-200">
+              This match is published. Changing a headband, profile or gun here marks the results stale &mdash; re-publish to apply it to the scores.
+            </p>
+          )}
+
+          <div className="overflow-x-auto border border-border">
+            <table className="w-full min-w-[820px] text-left text-sm">
+              <thead>
+                <tr className="border-b border-border bg-bg-elevated text-[0.6rem] uppercase tracking-[0.14em] text-text-muted">
+                  <th className="px-3 py-3 font-semibold">Player</th>
+                  <th className="px-3 py-3 font-semibold">Ops tag</th>
+                  <th className="px-3 py-3 font-semibold">Headband(s)</th>
+                  <th className="px-3 py-3 font-semibold">Gun</th>
+                  <th className="px-3 py-3 font-semibold">Stats</th>
+                  <th className="px-3 py-3 text-center font-semibold">Source</th>
+                  <th className="px-3 py-3" />
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r) => {
+                  const linked = Boolean(r.account_id);
+                  const name = r.account?.full_name || r.account?.ops_tag;
+                  const stat = statOf(r.headset_label);
+                  return (
+                    <tr key={r.id} className="border-b border-border align-middle last:border-0">
+                      <td className="relative px-3 py-2">
+                        {linked ? (
+                          <span className="font-semibold text-text">{name ?? "Player"}</span>
+                        ) : (
+                          <div className="space-y-1">
+                            <input
+                              className={cell}
+                              value={r.display_name ?? ""}
+                              onChange={(e) => setField(r.id, "display_name", e.target.value)}
+                              placeholder="Name"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setLinkFor(linkFor === r.id ? null : r.id)}
+                              className="text-[0.6rem] font-bold uppercase tracking-[0.1em] text-text-subtle hover:text-accent"
+                            >
+                              {linkFor === r.id ? "Cancel" : "Link profile"}
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-3 py-2 font-mono text-xs text-text-muted">{r.account?.ops_tag ?? <span className="text-text-subtle">–</span>}</td>
+                      <td className="px-3 py-2">
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              className={hbInput}
+                              value={r.headset_label ?? ""}
+                              onChange={(e) => setField(r.id, "headset_label", e.target.value)}
+                              placeholder="–"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => addExtra(r.id)}
+                              title="Add another headband (mid-game swap)"
+                              className="flex h-8 w-8 shrink-0 items-center justify-center border border-border-strong text-text-muted hover:border-accent hover:text-accent"
+                              aria-label="Add another headband"
+                            >
+                              +
+                            </button>
+                          </div>
+                          {r.extra.length > 0 && (
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              {r.extra.map((x, idx) => (
+                                <span key={idx} className="inline-flex items-center gap-1 border border-border-strong bg-bg pl-2">
+                                  <input
+                                    className="h-8 w-14 bg-transparent font-mono text-xs text-text focus:outline-none"
+                                    value={x}
+                                    onChange={(e) => setExtra(r.id, idx, e.target.value)}
+                                    placeholder="##"
+                                    autoFocus={x === ""}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => removeExtra(r.id, idx)}
+                                    className="px-1.5 text-text-subtle hover:text-red-400"
+                                    aria-label="Remove headband"
+                                  >
+                                    ×
+                                  </button>
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-3 py-2 text-center text-[0.6rem] uppercase tracking-[0.1em] text-text-subtle">
-                    {r.source === "admin" ? "Added" : "Joined"}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-2 text-right">
-                    <button
-                      type="button"
-                      onClick={() => saveRow(r)}
-                      disabled={busy}
-                      className="mr-3 text-[0.6rem] font-bold uppercase tracking-[0.1em] text-accent hover:text-accent-soft disabled:opacity-50"
-                    >
-                      Save
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => removeRow(r.id)}
-                      disabled={busy}
-                      className="text-[0.6rem] font-bold uppercase tracking-[0.1em] text-text-subtle hover:text-red-400 disabled:opacity-50"
-                    >
-                      Remove
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-            {rows.length === 0 && (
-              <tr>
-                <td colSpan={8} className="px-3 py-8 text-center text-sm text-text-muted">
-                  No players on this match yet. Assign headbands from the file below, add walk-ins by hand, or let signed-up players join live.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+                      </td>
+                      <td className="px-3 py-2">{gunSelect(r.gun_used ?? "", (v) => setField(r.id, "gun_used", v))}</td>
+                      <td className="px-3 py-2 font-mono text-[0.7rem] text-text-muted">{stat ?? <span className="text-text-subtle">–</span>}</td>
+                      <td className="px-3 py-2 text-center text-[0.6rem] uppercase tracking-[0.1em] text-text-subtle">
+                        {r.source === "admin" ? "Added" : "Joined"}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2 text-right">
+                        <button
+                          type="button"
+                          onClick={() => saveRow(r)}
+                          disabled={busy}
+                          className="mr-3 text-[0.6rem] font-bold uppercase tracking-[0.1em] text-accent hover:text-accent-soft disabled:opacity-50"
+                        >
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeRow(r.id)}
+                          disabled={busy}
+                          className="text-[0.6rem] font-bold uppercase tracking-[0.1em] text-text-subtle hover:text-red-400 disabled:opacity-50"
+                        >
+                          Remove
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {rows.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="px-3 py-8 text-center text-sm text-text-muted">
+                      No players on this match yet. Assign headbands from the file below, add walk-ins by hand, or let signed-up players join live.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
 
-      {/* Headbands in the ingested file that aren't on the roster yet */}
-      {unassigned.length > 0 && (
-        <div className="overflow-x-auto border border-amber-500/40">
-          <div className="border-b border-amber-500/40 bg-bg-elevated px-3 py-2.5 text-[0.6rem] font-bold uppercase tracking-[0.14em] text-amber-300">
-            Headbands in the file, not assigned yet ({unassigned.length})
-          </div>
-          <table className="w-full min-w-[640px] text-left text-sm">
-            <thead>
-              <tr className="border-b border-border text-[0.6rem] uppercase tracking-[0.14em] text-text-muted">
-                <th className="px-3 py-2.5 font-semibold">Headband</th>
-                <th className="px-3 py-2.5 font-semibold">Team</th>
-                <th className="px-3 py-2.5 font-semibold">Stats</th>
-                <th className="px-3 py-2.5 font-semibold">Gun</th>
-                <th className="px-3 py-2.5 text-right font-semibold">Assign</th>
-              </tr>
-            </thead>
-            <tbody>
-              {unassigned.map((n) => (
-                <tr key={n} className="border-b border-border last:border-0 align-middle">
-                  <td className="px-3 py-2 font-mono font-semibold text-accent">{n}</td>
-                  <td className="px-3 py-2 text-xs text-text-muted">{ingest[n]?.team ?? <span className="text-text-subtle">–</span>}</td>
-                  <td className="px-3 py-2 font-mono text-[0.7rem] text-text-muted">{ingest[n]?.stat ?? <span className="text-text-subtle">–</span>}</td>
-                  <td className="px-3 py-2 w-40">{gunSelect(uaGun[n] ?? "", (v) => setUaGun((p) => ({ ...p, [n]: v })))}</td>
-                  <td className="relative px-3 py-2 text-right">
-                    <button
-                      type="button"
-                      onClick={() => addHeadband(n, null)}
-                      disabled={busy}
-                      className="mr-3 text-[0.6rem] font-bold uppercase tracking-[0.1em] text-text-muted hover:text-accent disabled:opacity-50"
-                    >
-                      Add walk-in
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setUaLinkFor(uaLinkFor === n ? null : n)}
-                      disabled={busy}
-                      className="text-[0.6rem] font-bold uppercase tracking-[0.1em] text-accent hover:text-accent-soft disabled:opacity-50"
-                    >
-                      {uaLinkFor === n ? "Cancel" : "Link profile"}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+          {/* Headbands in the ingested file that aren't on the roster yet */}
+          {unassigned.length > 0 && (
+            <div className="overflow-x-auto border border-amber-500/40">
+              <div className="border-b border-amber-500/40 bg-bg-elevated px-3 py-2.5 text-[0.6rem] font-bold uppercase tracking-[0.14em] text-amber-300">
+                Headbands in the file, not assigned yet ({unassigned.length})
+              </div>
+              <table className="w-full min-w-[640px] text-left text-sm">
+                <thead>
+                  <tr className="border-b border-border text-[0.6rem] uppercase tracking-[0.14em] text-text-muted">
+                    <th className="px-3 py-2.5 font-semibold">Headband</th>
+                    <th className="px-3 py-2.5 font-semibold">Team</th>
+                    <th className="px-3 py-2.5 font-semibold">Stats</th>
+                    <th className="px-3 py-2.5 font-semibold">Gun</th>
+                    <th className="px-3 py-2.5 text-right font-semibold">Assign</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {unassigned.map((n) => (
+                    <tr key={n} className="border-b border-border last:border-0 align-middle">
+                      <td className="px-3 py-2 font-mono font-semibold text-accent">{n}</td>
+                      <td className="px-3 py-2 text-xs text-text-muted">{ingest[n]?.team ?? <span className="text-text-subtle">–</span>}</td>
+                      <td className="px-3 py-2 font-mono text-[0.7rem] text-text-muted">{ingest[n]?.stat ?? <span className="text-text-subtle">–</span>}</td>
+                      <td className="px-3 py-2 w-40">{gunSelect(uaGun[n] ?? "", (v) => setUaGun((p) => ({ ...p, [n]: v })))}</td>
+                      <td className="relative px-3 py-2 text-right">
+                        <button
+                          type="button"
+                          onClick={() => addHeadband(n, null)}
+                          disabled={busy}
+                          className="mr-3 text-[0.6rem] font-bold uppercase tracking-[0.1em] text-text-muted hover:text-accent disabled:opacity-50"
+                        >
+                          Add walk-in
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setUaLinkFor(uaLinkFor === n ? null : n)}
+                          disabled={busy}
+                          className="text-[0.6rem] font-bold uppercase tracking-[0.1em] text-accent hover:text-accent-soft disabled:opacity-50"
+                        >
+                          {uaLinkFor === n ? "Cancel" : "Link profile"}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
-      {/* Add a player by hand (not in the file) */}
-      <div className="border border-border bg-bg-elevated px-4 py-4">
-        <p className="mb-3 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-accent">Add a player</p>
-        <div className="grid gap-3 sm:grid-cols-[1fr_8rem_1fr_auto] sm:items-end">
-          <div>
-            <label className="mb-1 block text-[0.6rem] uppercase tracking-[0.12em] text-text-muted">Name</label>
-            <input
-              className={cell}
-              value={newRow.display_name}
-              onChange={(e) => setNewRow({ ...newRow, display_name: e.target.value })}
-              placeholder="e.g. Birthday guest"
-            />
+          {/* Add a player by hand (not in the file) */}
+          <div className="border border-border bg-bg-elevated px-4 py-4">
+            <p className="mb-3 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-accent">Add a player</p>
+            <div className="grid gap-3 sm:grid-cols-[1fr_8rem_1fr_auto] sm:items-end">
+              <div>
+                <label className="mb-1 block text-[0.6rem] uppercase tracking-[0.12em] text-text-muted">Name</label>
+                <input
+                  className={cell}
+                  value={newRow.display_name}
+                  onChange={(e) => setNewRow({ ...newRow, display_name: e.target.value })}
+                  placeholder="e.g. Birthday guest"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-[0.6rem] uppercase tracking-[0.12em] text-text-muted">Headband</label>
+                <input
+                  className={`${cell} font-mono`}
+                  value={newRow.headset_label}
+                  onChange={(e) => setNewRow({ ...newRow, headset_label: e.target.value })}
+                  placeholder="07"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-[0.6rem] uppercase tracking-[0.12em] text-text-muted">Gun</label>
+                {gunSelect(newRow.gun_used, (v) => setNewRow({ ...newRow, gun_used: v }))}
+              </div>
+              <Button type="button" size="md" onClick={addRow} disabled={busy}>
+                Add
+              </Button>
+            </div>
+            <p className="mt-2 text-[0.65rem] text-text-subtle">
+              Extra headbands (for a mid-game swap) can be added on the player&apos;s row after adding.
+            </p>
           </div>
-          <div>
-            <label className="mb-1 block text-[0.6rem] uppercase tracking-[0.12em] text-text-muted">Headband</label>
-            <input
-              className={`${cell} font-mono`}
-              value={newRow.headset_label}
-              onChange={(e) => setNewRow({ ...newRow, headset_label: e.target.value })}
-              placeholder="07"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-[0.6rem] uppercase tracking-[0.12em] text-text-muted">Gun</label>
-            {gunSelect(newRow.gun_used, (v) => setNewRow({ ...newRow, gun_used: v }))}
-          </div>
-          <Button type="button" size="md" onClick={addRow} disabled={busy}>
-            Add
-          </Button>
         </div>
-        <p className="mt-2 text-[0.65rem] text-text-subtle">
-          Extra headbands (for a mid-game swap) can be added on the player&apos;s row after adding.
-        </p>
-      </div>
+      </CollapsibleSection>
 
       {/* Profile-link pickers live in a modal (portaled to body) so the search
           results are never clipped by the roster table's horizontal scroll. */}
@@ -550,6 +631,6 @@ export function MatchParticipantsManager({
           <AccountPicker autoFocus onPick={(a) => addHeadband(uaLinkFor, a)} onCancel={() => setUaLinkFor(null)} />
         </Modal>
       )}
-    </div>
+    </>
   );
 }
