@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
 import { formatEur } from "@/lib/money";
+import { cldImage } from "@/lib/cld";
 
 type Drink = { id: string; name: string; price: number };
 type SettleResult = { remaining: number; fullyCovered: boolean; shortNote: string; tokenApplied: number; drinksTotal: number };
@@ -22,7 +23,7 @@ const r2 = (n: number) => Math.round(n * 100) / 100;
 
 export function PaySettlement({
   matchId, matchCode, label, opsTag, gameFee, tokenBalance, tokenApplied,
-  drinks, initialQuantities, revolutLink, alreadyPaid,
+  drinks, initialQuantities, revolutLink, alreadyPaid, tokenImageUrl,
 }: {
   matchId: string;
   matchCode: string;
@@ -35,6 +36,7 @@ export function PaySettlement({
   initialQuantities: Record<string, number>;
   revolutLink: string;
   alreadyPaid: boolean;
+  tokenImageUrl: string;
 }) {
   const router = useRouter();
   const maxToken = r2(Math.min(tokenBalance, 1));
@@ -110,7 +112,13 @@ export function PaySettlement({
       {maxToken > 0 && (
         <section className="portal-card p-5">
           <div className="mb-1 flex items-center justify-between">
-            <h2 className="text-xs font-bold uppercase tracking-[0.14em] text-accent">Use a game token</h2>
+            <h2 className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-accent">
+              {tokenImageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={cldImage(tokenImageUrl, { w: 64 })} alt="" className="h-5 w-5 object-contain" />
+              ) : null}
+              Use a game token
+            </h2>
             <span className="text-xs text-text-subtle">You have {fmtTok(tokenBalance)} token{tokenBalance === 1 ? "" : "s"}</span>
           </div>
           <p className="mb-3 text-xs text-text-subtle">1 token = 1 free game. Apply a full token or a part of one toward this game&apos;s fee.</p>
@@ -207,8 +215,10 @@ export function PaySettlement({
                 </div>
                 {revolutLink ? (
                   <a href={revolutLink} target="_blank" rel="noopener noreferrer"
-                    className="mt-4 flex w-full items-center justify-center border border-accent bg-accent px-5 py-3 text-sm font-bold uppercase tracking-[0.12em] text-bg transition-transform active:scale-[0.98]">
-                    Open Revolut →
+                    className="mt-4 flex w-full items-center justify-center gap-2.5 border border-[#15181b] bg-[#15181b] px-5 py-3 text-sm font-bold uppercase tracking-[0.12em] text-white transition-transform active:scale-[0.98]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/images/revolut-logo.svg" alt="Revolut" className="h-4 w-auto" />
+                    <span>Pay →</span>
                   </a>
                 ) : (
                   <p className="mt-4 text-xs text-amber-300">The Revolut link isn&apos;t set yet — please pay the LaserOps team directly.</p>

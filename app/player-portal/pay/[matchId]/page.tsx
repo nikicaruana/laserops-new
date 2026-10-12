@@ -42,7 +42,7 @@ export default async function PayPage({ params }: { params: Promise<{ matchId: s
     .maybeSingle();
   if (!match) notFound();
 
-  const [{ data: part }, { data: balRaw }, { data: drinks }, { data: orders }, { data: cfg }] = await Promise.all([
+  const [{ data: part }, { data: balRaw }, { data: drinks }, { data: orders }, { data: cfg }, { data: tokenImg }] = await Promise.all([
     supabase
       .from("match_participants")
       .select("id, paid_at, settlement_token_intent")
@@ -53,6 +53,7 @@ export default async function PayPage({ params }: { params: Promise<{ matchId: s
     supabase.from("drink_menu").select("id, name, price_eur").eq("is_active", true).order("sort_order", { ascending: true }),
     supabase.from("match_drink_orders").select("drink_id, qty").eq("match_id", matchId).eq("account_id", account.id),
     supabase.from("pricing_config").select("revolut_pay_link").eq("id", 1).maybeSingle(),
+    supabase.from("reward_images").select("image_url").eq("key", "game_token").maybeSingle(),
   ]);
 
   const label = match.title || match.match_code || "your game";
@@ -91,6 +92,7 @@ export default async function PayPage({ params }: { params: Promise<{ matchId: s
         drinks={(drinks ?? []).map((d) => ({ id: d.id as string, name: d.name as string, price: Number(d.price_eur) }))}
         initialQuantities={Object.fromEntries((orders ?? []).map((o) => [o.drink_id as string, Number(o.qty)]))}
         revolutLink={(cfg?.revolut_pay_link as string) ?? ""}
+        tokenImageUrl={((tokenImg?.image_url as string | null) ?? "").trim()}
         alreadyPaid={Boolean(part?.paid_at)}
       />
     </Container>
