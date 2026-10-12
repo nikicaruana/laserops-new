@@ -8,6 +8,7 @@
  */
 import Link from "next/link";
 import { Container } from "@/components/ui/Container";
+import { SectionAmbient } from "@/components/layout/SectionAmbient";
 import type { OpenGameTeaser } from "@/lib/booking/open-games";
 
 /** "Sat 12 Oct · 18:00" in Malta time. */
@@ -24,8 +25,9 @@ export function BeginnerGameShowcase({ game }: { game: OpenGameTeaser | null }) 
   if (!game) return null;
   const spotsLeft = game.maxPlayers != null ? Math.max(0, game.maxPlayers - game.registeredCount) : null;
   return (
-    <section className="border-b border-border bg-bg">
-      <Container size="wide" className="py-12 sm:py-16">
+    <section className="relative overflow-hidden border-b border-border bg-bg">
+      <SectionAmbient tone="dark" />
+      <Container size="wide" className="relative py-12 sm:py-16">
         <Link
           href={`/player-portal/games/${game.id}`}
           className="group block border-2 border-emerald-500/60 bg-emerald-500/[0.06] p-6 transition-colors hover:border-emerald-400 sm:p-10"
@@ -40,7 +42,7 @@ export function BeginnerGameShowcase({ game }: { game: OpenGameTeaser | null }) 
               <p className="mt-3 max-w-xl text-sm leading-relaxed text-text-muted">
                 New to laser tag? This one&apos;s for you
                 {game.beginnerMaxLevel != null
-                  ? ` — capped at level ${game.beginnerMaxLevel}, so you're matched with other newcomers rather than seasoned veterans`
+                  ? `, capped at level ${game.beginnerMaxLevel} so you're matched with other newcomers rather than seasoned veterans`
                   : ""}
                 .
               </p>
