@@ -103,7 +103,7 @@ export function ManualEntryForm({ games = [] }: { games?: GameOption[] }) {
               <label className={labelCls}>Method</label>
               <select className={input} value={method} onChange={(e) => setMethod(e.target.value)}>
                 <option value="cash">Cash</option>
-                <option value="card">Card</option>
+                <option value="revolut">Revolut</option>
                 <option value="bank">Bank transfer</option>
                 <option value="other">Other</option>
               </select>
