@@ -3,7 +3,8 @@ import Link from "next/link";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
 import { BookingForm } from "@/components/booking/BookingForm";
-import { getUpcomingOpenGames, type OpenGameTeaser } from "@/lib/booking/open-games";
+import { getUpcomingOpenGames, getNextBeginnerOpenGame, type OpenGameTeaser } from "@/lib/booking/open-games";
+import { BeginnerGameShowcase } from "@/components/booking/BeginnerGameShowcase";
 import { createPublicClient } from "@/lib/supabase/public";
 
 export const metadata: Metadata = {
@@ -82,8 +83,9 @@ function hoursLabel(minutes: number): string {
 
 export default async function BookingPage() {
   const sb = createPublicClient();
-  const [openGames, { data: cfg }] = await Promise.all([
+  const [openGames, beginnerGame, { data: cfg }] = await Promise.all([
     getUpcomingOpenGames(6),
+    getNextBeginnerOpenGame(),
     sb.from("pricing_config").select("default_price_eur, session_minutes").eq("id", 1).maybeSingle(),
   ]);
   const price = Number(cfg?.default_price_eur ?? 35);
@@ -153,6 +155,8 @@ export default async function BookingPage() {
           </p>
         </Container>
       </section>
+
+      <BeginnerGameShowcase game={beginnerGame} />
 
       {/* ── Path B: private / group bookings ─────────────────── */}
       <section className="border-b border-border portal-surface">
