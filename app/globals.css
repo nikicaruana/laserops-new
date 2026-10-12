@@ -611,3 +611,11 @@
     background: transparent;
   }
 }
+
+/* Attention flash for the active step in the post-game pay flow. */
+@keyframes lo-flash {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 222, 0, 0); }
+  50% { box-shadow: 0 0 0 3px rgba(255, 222, 0, 0.45); }
+}
+.lo-flash { animation: lo-flash 1.15s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .lo-flash { animation: none; } }

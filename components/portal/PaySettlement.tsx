@@ -6,8 +6,8 @@
  * Post-game "settle up" calculator. Apply a game token (a whole token toward
  * this game - no fractions), add drinks, see the amount to pay by Revolut (or
  * cash), then confirm. Confirm spends the token immediately and records drinks +
- * a note for the Match Manager. After paying, "I've paid" signals the admin
- * (who confirms the money landed).
+ * a note. The Revolut flow is a 2-step, flash-guided sequence: copy+send, then
+ * "I've paid". The admin confirms the money landed.
  */
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -21,6 +21,9 @@ type SettleResult = { remaining: number; fullyCovered: boolean; shortNote: strin
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 const fmtTok = (n: number) => (Number.isInteger(n) ? String(n) : String(parseFloat(n.toFixed(2))));
+
+const greenBox = "flex items-center gap-2 border-l-2 border-emerald-500/70 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-300";
+const stepBadge = "flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-extrabold text-bg";
 
 export function PaySettlement({
   matchId, matchCode, label, opsTag, gameFee, tokenBalance, tokenApplied,
@@ -50,13 +53,14 @@ export function PaySettlement({
   const [result, setResult] = useState<SettleResult | null>(null);
   const [copied, setCopied] = useState(false);
   const [marked, setMarked] = useState<boolean>(playerMarkedPaid);
+  const [payClicked, setPayClicked] = useState(false);
 
   const drinksTotal = useMemo(
     () => r2(drinks.reduce((s, d) => s + (qty[d.id] || 0) * d.price, 0)),
     [drinks, qty],
   );
   const effToken = useToken ? applicable : tokenApplied;
-  const tokenDelta = r2(effToken - tokenApplied); // newly applied now (projected spend)
+  const tokenDelta = r2(effToken - tokenApplied);
   const balanceAfter = r2(tokenBalance - tokenDelta);
   const remaining = r2(gameFee * (1 - effToken) + drinksTotal);
   const shortNote = `${matchCode || "Game"} - ${opsTag || "player"}`;
@@ -78,6 +82,7 @@ export function PaySettlement({
     const d = data as SettleResult;
     setResult(d);
     setUseToken(d.tokenApplied > 0);
+    setPayClicked(false);
     router.refresh();
   }
 
@@ -112,7 +117,6 @@ export function PaySettlement({
   }
 
   const row = "flex items-center justify-between gap-3 py-1.5 text-sm";
-  const greenBox = "flex items-center gap-2 border-l-2 border-emerald-500/70 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-300";
 
   return (
     <div className="space-y-5">
@@ -208,6 +212,9 @@ export function PaySettlement({
             {busy ? "Working…" : result ? "Update" : "Confirm"}
           </Button>
           {error && <p className="mt-3 text-xs text-red-400">{error}</p>}
+          {result && result.tokenApplied > 0 && (
+            <div className={`mt-3 ${greenBox}`}>Token successfully used — {formatEur(r2(gameFee * result.tokenApplied))} off your game fee.</div>
+          )}
         </section>
       ) : (
         <section className="portal-card p-5 text-center">
@@ -218,51 +225,65 @@ export function PaySettlement({
       )}
 
       {/* Result */}
-      {result && (
-        result.fullyCovered ? (
-          <section className="portal-card border-l-2 border-emerald-500/70 p-5 text-center">
-            <p className="text-sm font-semibold text-emerald-300">Covered by your token — nothing to pay. See you next time!</p>
-          </section>
-        ) : (
-          <section className="portal-card space-y-4 p-5">
-            <div>
-              <h2 className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-accent">{method === "cash" ? "Paying cash" : "Pay by Revolut"}</h2>
-              {method === "revolut" ? (
-                <>
-                  <p className="text-sm text-text-muted">Send <span className="font-mono font-bold text-text">{formatEur(result.remaining)}</span> and paste this reference into the Revolut note:</p>
-                  <div className="mt-2 flex items-center gap-2 border border-border bg-bg-overlay px-3 py-2">
-                    <span className="min-w-0 flex-1 truncate font-mono text-sm text-text">{result.shortNote}</span>
-                    <button type="button" onClick={copyNote} className="shrink-0 text-xs font-bold uppercase tracking-[0.1em] text-accent hover:text-white">{copied ? "Copied" : "Copy"}</button>
-                  </div>
-                  {revolutLink ? (
-                    <a href={revolutLink} target="_blank" rel="noopener noreferrer"
-                      className="mt-4 flex w-full items-center justify-center gap-2.5 border border-[#15181b] bg-[#15181b] px-5 py-3 text-sm font-bold uppercase tracking-[0.12em] text-white transition-transform active:scale-[0.98]">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/images/revolut-logo.svg" alt="Revolut" className="h-4 w-auto" />
-                      <span>Pay →</span>
-                    </a>
-                  ) : (
-                    <p className="mt-4 text-xs text-amber-300">The Revolut link isn&apos;t set yet — please pay the LaserOps team directly.</p>
-                  )}
-                </>
+      {result && result.fullyCovered && (
+        <section className="portal-card border-l-2 border-emerald-500/70 p-5 text-center">
+          <p className="text-sm font-semibold text-emerald-300">Covered by your token — nothing to pay. See you next time!</p>
+        </section>
+      )}
+
+      {result && !result.fullyCovered && (
+        <section className="portal-card space-y-3 p-5">
+          <h2 className="text-xs font-bold uppercase tracking-[0.14em] text-accent">{method === "cash" ? "Pay cash" : "Pay by Revolut"}</h2>
+
+          {method === "revolut" ? (
+            <>
+              {/* Step 1: copy + send */}
+              <div className={`border p-4 ${!payClicked ? "lo-flash border-accent" : "border-border"}`}>
+                <div className="mb-3 flex items-center gap-2">
+                  <span className={stepBadge}>1</span>
+                  <span className="text-sm font-semibold text-text">Copy the reference and send {formatEur(result.remaining)}</span>
+                </div>
+                <div className="flex items-center gap-2 border border-border bg-bg-overlay px-3 py-2">
+                  <span className="min-w-0 flex-1 truncate font-mono text-sm text-text">{result.shortNote}</span>
+                  <button type="button" onClick={copyNote} className="shrink-0 text-xs font-bold uppercase tracking-[0.1em] text-accent hover:text-white">{copied ? "Copied" : "Copy"}</button>
+                </div>
+                {revolutLink ? (
+                  <a href={revolutLink} target="_blank" rel="noopener noreferrer" onClick={() => setPayClicked(true)}
+                    className="mt-3 flex w-full items-center justify-center gap-2.5 border border-[#15181b] bg-[#15181b] px-5 py-3 text-sm font-bold uppercase tracking-[0.12em] text-white transition-transform active:scale-[0.98]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/images/revolut-logo.svg" alt="Revolut" className="h-4 w-auto" />
+                    <span>Pay →</span>
+                  </a>
+                ) : (
+                  <p className="mt-3 text-xs text-amber-300">The Revolut link isn&apos;t set yet — please pay the LaserOps team directly.</p>
+                )}
+              </div>
+
+              {/* Step 2: confirm you've paid */}
+              <div className={`border p-4 ${payClicked && !marked ? "lo-flash border-accent" : "border-border"}`}>
+                <div className="mb-3 flex items-center gap-2">
+                  <span className={stepBadge}>2</span>
+                  <span className="text-sm font-semibold text-text">Once you&apos;ve paid, click below</span>
+                </div>
+                {marked ? (
+                  <div className={greenBox}>Thanks — we&apos;ll confirm your payment shortly.</div>
+                ) : (
+                  <Button size="lg" className="w-full" onClick={iHavePaid} disabled={busy}>{busy ? "Working…" : "I've paid"}</Button>
+                )}
+              </div>
+            </>
+          ) : (
+            // Cash
+            <div className={`border p-4 ${!marked ? "lo-flash border-accent" : "border-border"}`}>
+              <p className="text-sm text-text">Pay <span className="font-mono font-bold text-accent">{formatEur(result.remaining)}</span> in cash to the LaserOps team.</p>
+              {marked ? (
+                <div className={`mt-3 ${greenBox}`}>Thanks — we&apos;ll confirm it when you settle up.</div>
               ) : (
-                <p className="text-sm text-text">Pay <span className="font-mono font-bold text-accent">{formatEur(result.remaining)}</span> in cash to the LaserOps team.</p>
+                <Button size="lg" className="mt-3 w-full" onClick={iHavePaid} disabled={busy}>{busy ? "Working…" : "I'll pay cash"}</Button>
               )}
             </div>
-
-            {result.tokenApplied > 0 && (
-              <div className={greenBox}>Token successfully used — {formatEur(r2(gameFee * result.tokenApplied))} off your game fee.</div>
-            )}
-
-            {marked ? (
-              <div className={greenBox}>Thanks — we&apos;ll confirm your payment shortly.</div>
-            ) : (
-              <Button size="lg" className="w-full" onClick={iHavePaid} disabled={busy}>
-                {busy ? "Working…" : method === "cash" ? "I'll pay cash" : "I've paid"}
-              </Button>
-            )}
-          </section>
-        )
+          )}
+        </section>
       )}
     </div>
   );
