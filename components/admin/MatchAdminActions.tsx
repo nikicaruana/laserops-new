@@ -22,7 +22,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { TotpGate } from "@/components/admin/TotpGate";
 
-type Gate = { kind: "complete" } | { kind: "cancel" } | { kind: "endEarly"; percent: number };
+type Gate = { kind: "complete" } | { kind: "cancel" } | { kind: "endEarly" };
 
 export function MatchAdminActions({
   matchId,
@@ -36,7 +36,6 @@ export function MatchAdminActions({
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showEndEarly, setShowEndEarly] = useState(false);
   const [gate, setGate] = useState<Gate | null>(null);
 
   async function patch(fields: Record<string, unknown>, confirmMsg?: string) {
@@ -119,7 +118,6 @@ export function MatchAdminActions({
     else if (gate.kind === "cancel") url = `/api/matches/${matchId}/cancel`;
     else {
       url = `/api/matches/${matchId}/end-early`;
-      body = JSON.stringify({ percent: gate.percent });
     }
     const res = await fetch(url, {
       method: "POST",
@@ -133,7 +131,6 @@ export function MatchAdminActions({
       setError(data.error || "Something went wrong.");
       return;
     }
-    setShowEndEarly(false);
     router.refresh();
   }
 
@@ -143,15 +140,15 @@ export function MatchAdminActions({
       : gate?.kind === "cancel"
         ? "cancel this game"
         : gate
-          ? `end this game early and refund everyone ${gate.percent}%`
+          ? "end this game early"
           : "this change";
 
   // Refund advisory shown in the confirmation popup for the money-moving actions.
   const gateNotice =
     gate?.kind === "cancel"
-      ? "Every player who paid will be automatically refunded in full - their card payment reversed and any game tokens returned. Players on a free or zero-price place aren't affected."
+      ? "Nothing is charged until after a game, so a cancelled game has nothing to refund. Everyone signed up is notified that the game is off."
       : gate?.kind === "endEarly"
-        ? `Every player who paid will be automatically refunded ${gate.percent}% of what they paid (cash and any game tokens).`
+        ? "The game is marked completed so it can be scored and settled. Players settle up afterwards as usual - knock money off a shortened session when you mark each player paid."
         : undefined;
 
   const s = status ?? "tentative";
@@ -191,39 +188,14 @@ export function MatchAdminActions({
             Complete match
           </button>
 
-          {!showEndEarly ? (
-            <button
-              type="button"
-              onClick={() => setShowEndEarly(true)}
-              disabled={busy}
-              className="border border-amber-700 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-amber-400 hover:bg-amber-950/30 disabled:opacity-50"
-            >
-              End early (weather)
-            </button>
-          ) : (
-            <span className="flex items-center gap-2 border border-amber-800/60 bg-amber-950/20 px-3 py-1.5">
-              <span className="text-[0.65rem] font-bold uppercase tracking-[0.12em] text-amber-300">Refund each player</span>
-              {[25, 50, 75].map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => setGate({ kind: "endEarly", percent: p })}
-                  disabled={busy}
-                  className="border border-amber-600 px-2.5 py-1 text-xs font-bold text-amber-200 hover:bg-amber-600 hover:text-bg disabled:opacity-50"
-                >
-                  {p}%
-                </button>
-              ))}
-              <button
-                type="button"
-                onClick={() => setShowEndEarly(false)}
-                disabled={busy}
-                className="px-2 py-1 text-xs font-bold uppercase tracking-[0.1em] text-text-muted hover:text-text disabled:opacity-50"
-              >
-                Cancel
-              </button>
-            </span>
-          )}
+          <button
+            type="button"
+            onClick={() => setGate({ kind: "endEarly" })}
+            disabled={busy}
+            className="border border-amber-700 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-amber-400 hover:bg-amber-950/30 disabled:opacity-50"
+          >
+            End early (weather)
+          </button>
 
           <button
             type="button"

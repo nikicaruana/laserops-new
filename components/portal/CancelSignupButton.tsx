@@ -36,17 +36,9 @@ export function CancelSignupButton({
     setError(null);
     try {
       const res = await fetch(`/api/signups/${matchId}/cancel`, { method: "POST" });
-      const data = (await res.json()) as { ok?: boolean; refund?: string; error?: string };
+      const data = (await res.json()) as { ok?: boolean; error?: string };
       if (!res.ok || !data.ok) throw new Error(data.error || "Couldn't cancel.");
-      const msg =
-        data.refund === "refunded"
-          ? "Cancelled. Your payment has been refunded in full."
-          : data.refund === "pending"
-            ? "Cancelled. Your refund request has been sent to LaserOps for approval."
-            : data.refund === "denied"
-              ? "Cancelled. This is within 24 hours of the game, so the payment is non-refundable."
-              : null;
-      if (msg) window.alert(msg);
+      // Pay-after-game: nothing is charged at sign-up, so there is nothing to refund.
       router.refresh();
     } catch (err) {
       setBusy(false);
