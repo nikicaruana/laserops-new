@@ -210,15 +210,16 @@ const FAQ_ITEMS: FaqItem[] = [
     id: "tokens",
     question: "What are LaserOps game tokens?",
     searchText:
-      "game tokens prepaid credits 1 token 1 game bundle store part pay online cheaper buy",
+      "game tokens prepaid credits 1 token 1 game bundle store request pay after game cheaper revolut cash",
     answer: (
       <p>
-        Prepaid game credits, where 1 token = 1 game. Buy them in bundles from the{" "}
+        Prepaid game credits, where 1 token = 1 game. Request a bundle from the{" "}
         <Link href="/player-portal/store" className="text-accent hover:underline">
           store
         </Link>{" "}
-        (cheaper per game than paying each time), then use them to pay for any game. You can even
-        part-pay, putting a fraction of a token towards a game and paying the rest online.
+        (cheaper per game than paying each time) and we&apos;ll sort out payment with you, then use a
+        token to settle any game after you play. You can even part-pay: put a token towards a game and
+        pay the rest by Revolut or cash.
       </p>
     ),
   },
@@ -226,10 +227,10 @@ const FAQ_ITEMS: FaqItem[] = [
     id: "token-expiry",
     question: "Do game tokens expire?",
     searchText:
-      "tokens expire 6 months validity wallet soonest first lose expiry breakdown earned gifted bought",
+      "tokens expire 6 months validity wallet soonest first lose expiry breakdown earned granted bought",
     answer: (
       <p>
-        Yes, tokens are valid for 6 months from when you get them, whether bought, gifted or earned.
+        Yes, tokens are valid for 6 months from when you get them, whether bought, earned or granted.
         Your wallet shows exactly how many expire and when, and when you spend tokens the ones
         expiring soonest are always used first, so you never lose them unnecessarily. The details are
         in our{" "}
@@ -241,29 +242,18 @@ const FAQ_ITEMS: FaqItem[] = [
     ),
   },
   {
-    id: "token-gift",
-    question: "Can I gift game tokens?",
-    searchText:
-      "gift tokens present someone email claim no account 6 months validity",
-    answer: (
-      <p>
-        Yes. You can buy tokens as a gift, even for someone who doesn&apos;t have an account yet, and
-        they claim them when they sign in. Gifted tokens carry the same 6-month validity.
-      </p>
-    ),
-  },
-  {
     id: "open-games",
     question: "What are open games and how do I join one?",
     searchText:
-      "open games public join solo friends reserve spot pay token online booking portal community teams filled",
+      "open games public join solo friends reserve spot pay after game token revolut cash booking portal community teams filled",
     answer: (
       <p>
         Open games are public games anyone can join. Browse upcoming games on the{" "}
         <Link href="/booking" className="text-accent hover:underline">
           booking page
         </Link>{" "}
-        or in your player portal, reserve your spot, and pay with a token or online. Perfect if
+        or in your player portal, reserve your spot. No payment up front: you settle after the game
+        with a token, Revolut or cash. Perfect if
         you&apos;re coming solo or with a few friends, teams get filled out from the community.
       </p>
     ),
@@ -285,12 +275,12 @@ const FAQ_ITEMS: FaqItem[] = [
     id: "cancellation",
     question: "What is the cancellation and refund policy?",
     searchText:
-      "cancel cancellation refund policy 48 hours full automatic 24 hours request non refundable pass spot",
+      "cancel cancellation refund policy pay after game free nothing to refund pass spot portal",
     answer: (
       <p>
-        Cancel more than 48 hours before a game for an automatic full refund. Between 48 and 24 hours
-        before, refunds are by request. Within 24 hours the game is non-refundable, but you can
-        always pass your spot to another player. Full details are in our{" "}
+        You only pay after you play, so cancelling is free and there is nothing to refund. If you
+        cannot make it, cancel from your portal so your spot frees up, or pass it to another player.
+        Full details are in our{" "}
         <Link href="/terms" className="text-accent hover:underline">
           terms
         </Link>
