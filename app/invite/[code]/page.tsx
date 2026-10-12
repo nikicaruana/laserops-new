@@ -245,11 +245,16 @@ export default async function GameInvitePage({ params }: { params: Promise<{ cod
           )}
         </div>
 
-        <p className="mt-5 text-xs text-white/45">
-          <Link href="/player-portal/games" className="hover:text-accent">
+        <div className="mt-5 flex flex-col items-center gap-2.5 text-xs">
+          {(mySignup?.status === "registered" || mySignup?.status === "waitlisted") && (
+            <Link href={`/player-portal/games/${g.id}`} className="font-bold uppercase tracking-[0.12em] text-accent hover:text-white">
+              Go to this game →
+            </Link>
+          )}
+          <Link href="/player-portal/games" className="text-white/45 hover:text-accent">
             See all upcoming games →
           </Link>
-        </p>
+        </div>
       </div>
     </section>
   );
