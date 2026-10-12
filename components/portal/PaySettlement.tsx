@@ -3,9 +3,10 @@
 /**
  * components/portal/PaySettlement.tsx
  * --------------------------------------------------------------------
- * Post-game "settle up" calculator. The player applies a game token (full or a
- * fraction), adds drinks (with quantity), and sees the amount to pay by Revolut
- * (or chooses cash). On confirm it calls settle_match_bill, which spends the
+ * Post-game "settle up" calculator. The player can apply a game token (a whole
+ * token toward this game - no fractions chosen; we apply as much as they have up
+ * to one full game), add drinks (with quantity), and see the amount to pay by
+ * Revolut (or cash). On confirm it calls settle_match_bill, which spends the
  * token immediately and records drinks + a note for the Match Manager; the
  * Revolut/cash remainder is then confirmed by an admin.
  */
@@ -20,6 +21,7 @@ type Drink = { id: string; name: string; price: number };
 type SettleResult = { remaining: number; fullyCovered: boolean; shortNote: string; tokenApplied: number; drinksTotal: number };
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
+const fmtTok = (n: number) => (Number.isInteger(n) ? String(n) : String(parseFloat(n.toFixed(2))));
 
 export function PaySettlement({
   matchId, matchCode, label, opsTag, gameFee, tokenBalance, tokenApplied,
@@ -39,8 +41,10 @@ export function PaySettlement({
   tokenImageUrl: string;
 }) {
   const router = useRouter();
-  const maxToken = r2(Math.min(tokenBalance, 1));
-  const [tokenUse, setTokenUse] = useState<number>(r2(Math.max(tokenApplied, 0)));
+  // The most token we could put on this game: whatever's already applied plus
+  // what's in the wallet, capped at one full game. No fractional choice.
+  const applicable = r2(Math.min(1, tokenApplied + tokenBalance));
+  const [useToken, setUseToken] = useState<boolean>(tokenApplied > 0);
   const [qty, setQty] = useState<Record<string, number>>(() => ({ ...initialQuantities }));
   const [method, setMethod] = useState<"revolut" | "cash">("revolut");
   const [busy, setBusy] = useState(false);
@@ -52,13 +56,10 @@ export function PaySettlement({
     () => r2(drinks.reduce((s, d) => s + (qty[d.id] || 0) * d.price, 0)),
     [drinks, qty],
   );
-  const effToken = Math.max(tokenApplied, tokenUse);
+  const effToken = useToken ? applicable : tokenApplied;
   const remaining = r2(gameFee * (1 - effToken) + drinksTotal);
   const shortNote = `${matchCode || "Game"} - ${opsTag || "player"}`;
 
-  function stepToken(delta: number) {
-    setTokenUse((t) => r2(Math.min(maxToken, Math.max(tokenApplied, t + delta))));
-  }
   function stepQty(id: string, delta: number) {
     setQty((q) => ({ ...q, [id]: Math.max(0, (q[id] || 0) + delta) }));
   }
@@ -75,7 +76,7 @@ export function PaySettlement({
     if (err) return setError(err.message);
     const d = data as SettleResult;
     setResult(d);
-    setTokenUse(r2(d.tokenApplied));
+    setUseToken(d.tokenApplied > 0);
     router.refresh();
   }
 
@@ -98,7 +99,6 @@ export function PaySettlement({
     );
   }
 
-  const fmtTok = (n: number) => (Number.isInteger(n) ? String(n) : String(parseFloat(n.toFixed(2))));
   const row = "flex items-center justify-between gap-3 py-1.5 text-sm";
 
   return (
@@ -109,32 +109,31 @@ export function PaySettlement({
       </header>
 
       {/* Token */}
-      {maxToken > 0 && (
+      {(tokenBalance > 0 || tokenApplied > 0) && (
         <section className="portal-card p-5">
-          <div className="mb-1 flex items-center justify-between">
-            <h2 className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-accent">
-              {tokenImageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={cldImage(tokenImageUrl, { w: 64 })} alt="" className="h-5 w-5 object-contain" />
-              ) : null}
-              Use a game token
-            </h2>
-            <span className="text-xs text-text-subtle">You have {fmtTok(tokenBalance)} token{tokenBalance === 1 ? "" : "s"}</span>
-          </div>
-          <p className="mb-3 text-xs text-text-subtle">1 token = 1 free game. Apply a full token or a part of one toward this game&apos;s fee.</p>
-          <div className="flex items-center gap-3">
-            <button type="button" onClick={() => stepToken(-0.25)} disabled={effToken <= tokenApplied}
-              className="h-10 w-10 border border-border-strong text-lg text-text hover:border-accent disabled:opacity-40">−</button>
-            <div className="min-w-[5rem] text-center">
-              <div className="font-mono text-lg font-bold text-accent">{fmtTok(effToken)}</div>
-              <div className="text-[0.6rem] uppercase tracking-[0.12em] text-text-subtle">token applied</div>
+          <div className="flex items-center gap-4">
+            {tokenImageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={cldImage(tokenImageUrl, { w: 192 })} alt="" className="h-16 w-16 shrink-0 object-contain" />
+            ) : null}
+            <div className="min-w-0">
+              <div className="text-xl font-extrabold leading-none text-text">
+                {fmtTok(tokenBalance)} <span className="text-base font-semibold text-text-muted">token{tokenBalance === 1 ? "" : "s"}</span>
+              </div>
+              <div className="mt-1 text-xs text-text-subtle">1 token = 1 free game.</div>
             </div>
-            <button type="button" onClick={() => stepToken(0.25)} disabled={effToken >= maxToken}
-              className="h-10 w-10 border border-border-strong text-lg text-text hover:border-accent disabled:opacity-40">+</button>
-            <button type="button" onClick={() => setTokenUse(maxToken)} disabled={effToken >= maxToken}
-              className="ml-auto text-xs font-semibold uppercase tracking-[0.1em] text-text-muted hover:text-accent disabled:opacity-40">Use max</button>
           </div>
-          {tokenApplied > 0 && <p className="mt-2 text-[0.7rem] text-text-subtle">{fmtTok(tokenApplied)} already applied and spent (can&apos;t be reduced here).</p>}
+          <button
+            type="button"
+            onClick={() => setUseToken((v) => !v)}
+            disabled={tokenApplied > 0}
+            className={`mt-4 flex w-full items-center justify-center gap-2 border px-4 py-3 text-sm font-bold uppercase tracking-[0.1em] transition-colors disabled:opacity-60 ${
+              useToken ? "border-accent bg-accent text-bg" : "border-accent/60 text-accent hover:bg-accent/10"
+            }`}
+          >
+            {useToken ? "Token applied" : "Use a token"} · −{formatEur(r2(gameFee * applicable))}
+          </button>
+          {tokenApplied > 0 && <p className="mt-2 text-[0.7rem] text-text-subtle">Already applied and spent.</p>}
         </section>
       )}
 
@@ -166,7 +165,7 @@ export function PaySettlement({
       <section className="portal-card p-5">
         <h2 className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-accent">Your total</h2>
         <div className={row}><span className="text-text-muted">Game fee</span><span className="font-mono text-text">{formatEur(gameFee)}</span></div>
-        {effToken > 0 && <div className={row}><span className="text-text-muted">Token ({fmtTok(effToken)})</span><span className="font-mono text-emerald-400">− {formatEur(r2(gameFee * effToken))}</span></div>}
+        {effToken > 0 && <div className={row}><span className="text-text-muted">Token</span><span className="font-mono text-emerald-400">− {formatEur(r2(gameFee * effToken))}</span></div>}
         {drinksTotal > 0 && <div className={row}><span className="text-text-muted">Drinks</span><span className="font-mono text-text">+ {formatEur(drinksTotal)}</span></div>}
         <div className="mt-2 flex items-center justify-between border-t border-border pt-3">
           <span className="text-sm font-bold uppercase tracking-[0.1em] text-text">To pay</span>
@@ -205,7 +204,7 @@ export function PaySettlement({
           </section>
         ) : (
           <section className="portal-card p-5">
-            <h2 className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-accent">{result && result.remaining === remaining && method === "revolut" ? "Pay by Revolut" : method === "cash" ? "Paying cash" : "Pay by Revolut"}</h2>
+            <h2 className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-accent">{method === "cash" ? "Paying cash" : "Pay by Revolut"}</h2>
             {method === "revolut" ? (
               <>
                 <p className="text-sm text-text-muted">Send <span className="font-mono font-bold text-text">{formatEur(result.remaining)}</span> and paste this reference into the Revolut note:</p>
