@@ -37,6 +37,7 @@ export type Participant = {
   drinks_total_eur: number | null;
   settlement_method: string | null;
   settled_declared_at: string | null;
+  player_marked_paid_at: string | null;
   account: { ops_tag: string | null; full_name: string | null } | null;
 };
 
@@ -397,10 +398,10 @@ export function MatchParticipantsManager({
                     ) : (
                       <div className="flex flex-col gap-1">
                         {r.settled_declared_at ? (
-                          <span className="text-[0.7rem] leading-tight text-amber-300">
+                          <span className={`text-[0.7rem] leading-tight ${r.player_marked_paid_at ? "text-emerald-300" : "text-amber-300"}`}>
                             {Number(r.settlement_token_intent) > 0 ? `Token ${fmtTok(Number(r.settlement_token_intent))} · ` : ""}
                             {Number(r.drinks_total_eur) > 0 ? `Drinks ${formatEur(Number(r.drinks_total_eur))} · ` : ""}
-                            awaiting{r.settlement_method ? ` ${r.settlement_method}` : ""}
+                            {r.player_marked_paid_at ? "✓ says paid" : "awaiting"}{r.settlement_method ? ` ${r.settlement_method}` : ""}
                           </span>
                         ) : (
                           <span className="text-[0.7rem] text-text-subtle">Unpaid</span>

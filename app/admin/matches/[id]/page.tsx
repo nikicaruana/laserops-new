@@ -127,7 +127,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   const [{ data: participantRows }, { data: gunRows }, { data: ingestRows }, { data: formulaRows }, { data: spawnRows }, { data: streakRows }] = await Promise.all([
     supabase
       .from("match_participants")
-      .select("id, account_id, headset_label, extra_headbands, gun_used, display_name, source, payment_intent, paid_at, paid_amount_eur, settlement_token_intent, drinks_total_eur, settlement_method, settled_declared_at, account:accounts(ops_tag, full_name)")
+      .select("id, account_id, headset_label, extra_headbands, gun_used, display_name, source, payment_intent, paid_at, paid_amount_eur, settlement_token_intent, drinks_total_eur, settlement_method, settled_declared_at, player_marked_paid_at, account:accounts(ops_tag, full_name)")
       .eq("match_id", id)
       .order("joined_at"),
     supabase.from("guns").select("name").order("name"),

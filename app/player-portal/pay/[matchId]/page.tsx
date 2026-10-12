@@ -45,7 +45,7 @@ export default async function PayPage({ params }: { params: Promise<{ matchId: s
   const [{ data: part }, { data: balRaw }, { data: drinks }, { data: orders }, { data: cfg }, { data: tokenImg }] = await Promise.all([
     supabase
       .from("match_participants")
-      .select("id, paid_at, settlement_token_intent")
+      .select("id, paid_at, settlement_token_intent, player_marked_paid_at")
       .eq("match_id", matchId)
       .eq("account_id", account.id)
       .maybeSingle(),
@@ -94,6 +94,7 @@ export default async function PayPage({ params }: { params: Promise<{ matchId: s
         revolutLink={(cfg?.revolut_pay_link as string) ?? ""}
         tokenImageUrl={((tokenImg?.image_url as string | null) ?? "").trim()}
         alreadyPaid={Boolean(part?.paid_at)}
+        playerMarkedPaid={Boolean(part?.player_marked_paid_at)}
       />
     </Container>
   );

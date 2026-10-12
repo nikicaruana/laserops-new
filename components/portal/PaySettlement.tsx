@@ -3,12 +3,11 @@
 /**
  * components/portal/PaySettlement.tsx
  * --------------------------------------------------------------------
- * Post-game "settle up" calculator. The player can apply a game token (a whole
- * token toward this game - no fractions chosen; we apply as much as they have up
- * to one full game), add drinks (with quantity), and see the amount to pay by
- * Revolut (or cash). On confirm it calls settle_match_bill, which spends the
- * token immediately and records drinks + a note for the Match Manager; the
- * Revolut/cash remainder is then confirmed by an admin.
+ * Post-game "settle up" calculator. Apply a game token (a whole token toward
+ * this game - no fractions), add drinks, see the amount to pay by Revolut (or
+ * cash), then confirm. Confirm spends the token immediately and records drinks +
+ * a note for the Match Manager. After paying, "I've paid" signals the admin
+ * (who confirms the money landed).
  */
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -25,7 +24,7 @@ const fmtTok = (n: number) => (Number.isInteger(n) ? String(n) : String(parseFlo
 
 export function PaySettlement({
   matchId, matchCode, label, opsTag, gameFee, tokenBalance, tokenApplied,
-  drinks, initialQuantities, revolutLink, alreadyPaid, tokenImageUrl,
+  drinks, initialQuantities, revolutLink, alreadyPaid, tokenImageUrl, playerMarkedPaid,
 }: {
   matchId: string;
   matchCode: string;
@@ -39,10 +38,9 @@ export function PaySettlement({
   revolutLink: string;
   alreadyPaid: boolean;
   tokenImageUrl: string;
+  playerMarkedPaid: boolean;
 }) {
   const router = useRouter();
-  // The most token we could put on this game: whatever's already applied plus
-  // what's in the wallet, capped at one full game. No fractional choice.
   const applicable = r2(Math.min(1, tokenApplied + tokenBalance));
   const [useToken, setUseToken] = useState<boolean>(tokenApplied > 0);
   const [qty, setQty] = useState<Record<string, number>>(() => ({ ...initialQuantities }));
@@ -51,12 +49,15 @@ export function PaySettlement({
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<SettleResult | null>(null);
   const [copied, setCopied] = useState(false);
+  const [marked, setMarked] = useState<boolean>(playerMarkedPaid);
 
   const drinksTotal = useMemo(
     () => r2(drinks.reduce((s, d) => s + (qty[d.id] || 0) * d.price, 0)),
     [drinks, qty],
   );
   const effToken = useToken ? applicable : tokenApplied;
+  const tokenDelta = r2(effToken - tokenApplied); // newly applied now (projected spend)
+  const balanceAfter = r2(tokenBalance - tokenDelta);
   const remaining = r2(gameFee * (1 - effToken) + drinksTotal);
   const shortNote = `${matchCode || "Game"} - ${opsTag || "player"}`;
 
@@ -80,6 +81,17 @@ export function PaySettlement({
     router.refresh();
   }
 
+  async function iHavePaid() {
+    setBusy(true);
+    setError(null);
+    const supabase = createClient();
+    const { error: err } = await supabase.rpc("player_mark_settled", { p_match_id: matchId });
+    setBusy(false);
+    if (err) return setError(err.message);
+    setMarked(true);
+    router.refresh();
+  }
+
   async function copyNote() {
     try {
       await navigator.clipboard.writeText(result?.shortNote || shortNote);
@@ -100,6 +112,7 @@ export function PaySettlement({
   }
 
   const row = "flex items-center justify-between gap-3 py-1.5 text-sm";
+  const greenBox = "flex items-center gap-2 border-l-2 border-emerald-500/70 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-300";
 
   return (
     <div className="space-y-5">
@@ -118,7 +131,15 @@ export function PaySettlement({
             ) : null}
             <div className="min-w-0">
               <div className="text-xl font-extrabold leading-none text-text">
-                {fmtTok(tokenBalance)} <span className="text-base font-semibold text-text-muted">token{tokenBalance === 1 ? "" : "s"}</span>
+                {useToken && tokenDelta > 0 ? (
+                  <>
+                    <span className="text-text-subtle line-through">{fmtTok(tokenBalance)}</span>{" "}
+                    <span className="text-accent">→ {fmtTok(balanceAfter)}</span>
+                  </>
+                ) : (
+                  fmtTok(tokenBalance)
+                )}{" "}
+                <span className="text-base font-semibold text-text-muted">token{(useToken ? balanceAfter : tokenBalance) === 1 ? "" : "s"}</span>
               </div>
               <div className="mt-1 text-xs text-text-subtle">1 token = 1 free game.</div>
             </div>
@@ -203,32 +224,42 @@ export function PaySettlement({
             <p className="text-sm font-semibold text-emerald-300">Covered by your token — nothing to pay. See you next time!</p>
           </section>
         ) : (
-          <section className="portal-card p-5">
-            <h2 className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-accent">{method === "cash" ? "Paying cash" : "Pay by Revolut"}</h2>
-            {method === "revolut" ? (
-              <>
-                <p className="text-sm text-text-muted">Send <span className="font-mono font-bold text-text">{formatEur(result.remaining)}</span> and paste this reference into the Revolut note:</p>
-                <div className="mt-2 flex items-center gap-2 border border-border bg-bg-overlay px-3 py-2">
-                  <span className="min-w-0 flex-1 truncate font-mono text-sm text-text">{result.shortNote}</span>
-                  <button type="button" onClick={copyNote} className="shrink-0 text-xs font-bold uppercase tracking-[0.1em] text-accent hover:text-white">{copied ? "Copied" : "Copy"}</button>
-                </div>
-                {revolutLink ? (
-                  <a href={revolutLink} target="_blank" rel="noopener noreferrer"
-                    className="mt-4 flex w-full items-center justify-center gap-2.5 border border-[#15181b] bg-[#15181b] px-5 py-3 text-sm font-bold uppercase tracking-[0.12em] text-white transition-transform active:scale-[0.98]">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/images/revolut-logo.svg" alt="Revolut" className="h-4 w-auto" />
-                    <span>Pay →</span>
-                  </a>
-                ) : (
-                  <p className="mt-4 text-xs text-amber-300">The Revolut link isn&apos;t set yet — please pay the LaserOps team directly.</p>
-                )}
-                <p className="mt-3 text-[0.7rem] text-text-subtle">We&apos;ll confirm your payment once it lands. Any token you used has already been applied.</p>
-              </>
-            ) : (
-              <>
+          <section className="portal-card space-y-4 p-5">
+            <div>
+              <h2 className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-accent">{method === "cash" ? "Paying cash" : "Pay by Revolut"}</h2>
+              {method === "revolut" ? (
+                <>
+                  <p className="text-sm text-text-muted">Send <span className="font-mono font-bold text-text">{formatEur(result.remaining)}</span> and paste this reference into the Revolut note:</p>
+                  <div className="mt-2 flex items-center gap-2 border border-border bg-bg-overlay px-3 py-2">
+                    <span className="min-w-0 flex-1 truncate font-mono text-sm text-text">{result.shortNote}</span>
+                    <button type="button" onClick={copyNote} className="shrink-0 text-xs font-bold uppercase tracking-[0.1em] text-accent hover:text-white">{copied ? "Copied" : "Copy"}</button>
+                  </div>
+                  {revolutLink ? (
+                    <a href={revolutLink} target="_blank" rel="noopener noreferrer"
+                      className="mt-4 flex w-full items-center justify-center gap-2.5 border border-[#15181b] bg-[#15181b] px-5 py-3 text-sm font-bold uppercase tracking-[0.12em] text-white transition-transform active:scale-[0.98]">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src="/images/revolut-logo.svg" alt="Revolut" className="h-4 w-auto" />
+                      <span>Pay →</span>
+                    </a>
+                  ) : (
+                    <p className="mt-4 text-xs text-amber-300">The Revolut link isn&apos;t set yet — please pay the LaserOps team directly.</p>
+                  )}
+                </>
+              ) : (
                 <p className="text-sm text-text">Pay <span className="font-mono font-bold text-accent">{formatEur(result.remaining)}</span> in cash to the LaserOps team.</p>
-                <p className="mt-3 text-[0.7rem] text-text-subtle">We&apos;ll mark it paid when you settle up. Any token you used has already been applied.</p>
-              </>
+              )}
+            </div>
+
+            {result.tokenApplied > 0 && (
+              <div className={greenBox}>Token successfully used — {formatEur(r2(gameFee * result.tokenApplied))} off your game fee.</div>
+            )}
+
+            {marked ? (
+              <div className={greenBox}>Thanks — we&apos;ll confirm your payment shortly.</div>
+            ) : (
+              <Button size="lg" className="w-full" onClick={iHavePaid} disabled={busy}>
+                {busy ? "Working…" : method === "cash" ? "I'll pay cash" : "I've paid"}
+              </Button>
             )}
           </section>
         )
