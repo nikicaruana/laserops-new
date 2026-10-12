@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
 import { AccountPicker, type PickedAccount } from "@/components/admin/AccountPicker";
 import { Modal } from "@/components/ui/Modal";
+import { formatEur } from "@/lib/money";
 
 const OPERATOR_ID = "00000000-0000-0000-0000-000000000001";
 
@@ -31,6 +32,11 @@ export type Participant = {
   source: string | null;
   payment_intent: string | null;
   paid_at: string | null;
+  paid_amount_eur: number | null;
+  settlement_token_intent: number | null;
+  drinks_total_eur: number | null;
+  settlement_method: string | null;
+  settled_declared_at: string | null;
   account: { ops_tag: string | null; full_name: string | null } | null;
 };
 
@@ -57,6 +63,8 @@ const hbNumber = (s: string | null | undefined): number => {
   return m ? parseInt(m[0], 10) : NaN;
 };
 
+const fmtTok = (n: number) => (Number.isInteger(n) ? String(n) : String(parseFloat(n.toFixed(2))));
+
 export function MatchParticipantsManager({
   matchId,
   initial,
@@ -64,6 +72,7 @@ export function MatchParticipantsManager({
   payments = {},
   ingest = {},
   published = false,
+  perPlayer = true,
 }: {
   matchId: string;
   initial: Participant[];
@@ -72,6 +81,7 @@ export function MatchParticipantsManager({
   /** Headbands seen in the ingested file, keyed by number, with their stats. */
   ingest?: Record<number, IngestInfo>;
   published?: boolean;
+  perPlayer?: boolean;
 }) {
   const router = useRouter();
   const [rows, setRows] = useState<EditRow[]>(
@@ -83,6 +93,30 @@ export function MatchParticipantsManager({
   const [linkFor, setLinkFor] = useState<string | null>(null);
   const [uaGun, setUaGun] = useState<Record<number, string>>({});
   const [uaLinkFor, setUaLinkFor] = useState<number | null>(null);
+  const [paySel, setPaySel] = useState<Record<string, string>>({});
+
+  async function markPaid(r: EditRow, method: string) {
+    if (!r.account_id) { setError("Link this player to a profile first."); return; }
+    setBusy(true);
+    setError(null);
+    const supabase = createClient();
+    const { error: err } = await supabase.rpc("admin_confirm_settlement", { p_match_id: matchId, p_account_id: r.account_id, p_method: method });
+    setBusy(false);
+    if (err) return setError(err.message);
+    setRows((prev) => prev.map((x) => (x.id === r.id ? { ...x, paid_at: new Date().toISOString(), payment_intent: method, settlement_method: method } : x)));
+    router.refresh();
+  }
+  async function undoPaid(r: EditRow) {
+    if (!r.account_id) return;
+    setBusy(true);
+    setError(null);
+    const supabase = createClient();
+    const { error: err } = await supabase.rpc("admin_unconfirm_settlement", { p_match_id: matchId, p_account_id: r.account_id });
+    setBusy(false);
+    if (err) return setError(err.message);
+    setRows((prev) => prev.map((x) => (x.id === r.id ? { ...x, paid_at: null, paid_amount_eur: null } : x)));
+    router.refresh();
+  }
 
   function setField(id: string, key: keyof EditRow, value: string) {
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, [key]: value } : r)));
@@ -348,14 +382,42 @@ export function MatchParticipantsManager({
                   <td className="px-3 py-2">{gunSelect(r.gun_used ?? "", (v) => setField(r.id, "gun_used", v))}</td>
                   <td className="px-3 py-2 font-mono text-[0.7rem] text-text-muted">{stat ?? <span className="text-text-subtle">–</span>}</td>
                   <td className="px-3 py-2 text-xs">
-                    {(() => {
-                      const own: ParticipantPayment | undefined =
-                        r.payment_intent != null ? { intent: r.payment_intent, paid: Boolean(r.paid_at) } : undefined;
-                      const pay = own ?? (r.account_id ? payments[r.account_id] : undefined);
-                      if (!pay) return <span className="text-text-subtle">–</span>;
-                      const l = payLabel(pay);
-                      return <span className={l.className}>{l.text}</span>;
-                    })()}
+                    {!perPlayer ? (
+                      <span className="text-text-subtle">Organiser pays</span>
+                    ) : !r.account_id ? (
+                      <span className="text-text-subtle">Link profile first</span>
+                    ) : r.paid_at ? (
+                      <div className="flex flex-col items-start gap-0.5">
+                        <span className="font-semibold text-accent">
+                          Paid{r.paid_amount_eur != null ? ` ${formatEur(Number(r.paid_amount_eur))}` : ""}
+                          {r.settlement_method ? ` · ${r.settlement_method}` : ""}
+                        </span>
+                        <button type="button" onClick={() => undoPaid(r)} disabled={busy} className="text-[0.6rem] uppercase tracking-[0.1em] text-text-subtle hover:text-red-400 disabled:opacity-50">Undo</button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-1">
+                        {r.settled_declared_at ? (
+                          <span className="text-[0.7rem] leading-tight text-amber-300">
+                            {Number(r.settlement_token_intent) > 0 ? `Token ${fmtTok(Number(r.settlement_token_intent))} · ` : ""}
+                            {Number(r.drinks_total_eur) > 0 ? `Drinks ${formatEur(Number(r.drinks_total_eur))} · ` : ""}
+                            awaiting{r.settlement_method ? ` ${r.settlement_method}` : ""}
+                          </span>
+                        ) : (
+                          <span className="text-[0.7rem] text-text-subtle">Unpaid</span>
+                        )}
+                        <div className="flex items-center gap-1">
+                          <select
+                            className="h-7 rounded-none border border-border-strong bg-bg px-1 text-[0.7rem] text-text focus:border-accent focus:outline-none"
+                            value={paySel[r.id] ?? r.settlement_method ?? "cash"}
+                            onChange={(e) => setPaySel((s) => ({ ...s, [r.id]: e.target.value }))}
+                          >
+                            <option value="cash">Cash</option>
+                            <option value="revolut">Revolut</option>
+                          </select>
+                          <button type="button" onClick={() => markPaid(r, paySel[r.id] ?? r.settlement_method ?? "cash")} disabled={busy} className="border border-accent bg-accent/10 px-2 py-1 text-[0.6rem] font-bold uppercase tracking-[0.1em] text-accent hover:bg-accent/20 disabled:opacity-50">Mark paid</button>
+                        </div>
+                      </div>
+                    )}
                   </td>
                   <td className="px-3 py-2 text-center text-[0.6rem] uppercase tracking-[0.1em] text-text-subtle">
                     {r.source === "admin" ? "Added" : "Joined"}

@@ -127,7 +127,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   const [{ data: participantRows }, { data: gunRows }, { data: ingestRows }, { data: formulaRows }, { data: spawnRows }, { data: streakRows }] = await Promise.all([
     supabase
       .from("match_participants")
-      .select("id, account_id, headset_label, extra_headbands, gun_used, display_name, source, payment_intent, paid_at, account:accounts(ops_tag, full_name)")
+      .select("id, account_id, headset_label, extra_headbands, gun_used, display_name, source, payment_intent, paid_at, paid_amount_eur, settlement_token_intent, drinks_total_eur, settlement_method, settled_declared_at, account:accounts(ops_tag, full_name)")
       .eq("match_id", id)
       .order("joined_at"),
     supabase.from("guns").select("name").order("name"),
@@ -516,7 +516,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
           count={participants.length}
           subtitle="Everyone in the match with their headband, gun and profile. Assign the headbands the game file saw, add walk-ins by hand, or let signed-up players join live. Editing after publishing marks results stale &ndash; re-publish to apply."
         >
-          <MatchParticipantsManager matchId={match.id} initial={participants} guns={guns} payments={payments} ingest={ingestByHeadband} published={!!match.xp_distributed_at} />
+          <MatchParticipantsManager matchId={match.id} initial={participants} guns={guns} payments={payments} ingest={ingestByHeadband} published={!!match.xp_distributed_at} perPlayer={match.pricing_mode === "per_player"} />
         </CollapsibleSection>
       )}
 
