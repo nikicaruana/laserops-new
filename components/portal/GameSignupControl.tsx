@@ -391,17 +391,19 @@ export function GameSignupControl({
               You&apos;re confirmed – see you on the day
             </span>
           )
+        ) : !hasPrice ? (
+          // PRIVATE flat-rate booking: the organiser settles for everyone, so an
+          // individual player has nothing to pay and gets no payment options.
+          <span className="block max-w-full border-l-2 border-accent/70 bg-accent/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-accent">
+            You&apos;re confirmed – see you on the day
+          </span>
         ) : (
-          // PRIVATE booking, not yet paid: online now, or request to pay offline.
+          // PRIVATE per-player booking, not yet paid: online now, or request to pay offline.
           <div className={`flex flex-col gap-2 ${col}`}>
             <span className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-text-muted">
               How will you pay?
             </span>
-            {hasPrice && (
-              <>
-                {payFlow}
-              </>
-            )}
+            {payFlow}
             <button type="button" onClick={() => setIntent("on_day")} disabled={pending} className="text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-text-muted hover:text-accent disabled:opacity-50">
               Request to pay offline
             </button>
