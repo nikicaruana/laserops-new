@@ -23,7 +23,7 @@ export default async function AdminTokensPage() {
       .order("sort_order", { ascending: true, nullsFirst: false }),
     supabase
       .from("token_pack_requests")
-      .select("id, bundle_name, tokens, price_eur, created_at, account:accounts(ops_tag, full_name, email, phone_e164)")
+      .select("id, bundle_name, tokens, price_eur, created_at, account:accounts!account_id(ops_tag, full_name, email, phone_e164)")
       .eq("status", "pending")
       .order("created_at", { ascending: true }),
   ]);
