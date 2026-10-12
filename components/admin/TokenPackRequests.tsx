@@ -68,8 +68,6 @@ export function TokenPackRequests({ initial }: { initial: Req[] }) {
     router.refresh();
   }
 
-  if (rows.length === 0) return null;
-
   return (
     <section className="mb-8">
       <h2 className="mb-1 text-sm font-bold uppercase tracking-[0.12em] text-accent">
@@ -82,6 +80,9 @@ export function TokenPackRequests({ initial }: { initial: Req[] }) {
 
       {error && <p className="mb-3 border border-red-800 bg-red-950/40 px-4 py-2.5 text-sm text-red-400">{error}</p>}
 
+      {rows.length === 0 ? (
+        <p className="border border-dashed border-border px-4 py-8 text-center text-sm text-text-muted">No pending token pack requests right now.</p>
+      ) : (
       <div className="overflow-x-auto border border-amber-500/40">
         <table className="w-full min-w-[720px] text-left text-sm">
           <thead>
@@ -150,6 +151,7 @@ export function TokenPackRequests({ initial }: { initial: Req[] }) {
           </tbody>
         </table>
       </div>
+      )}
 
       <TotpGate
         open={!!gateFor}
