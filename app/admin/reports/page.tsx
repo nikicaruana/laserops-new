@@ -12,6 +12,7 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { ReportControls } from "@/components/admin/ReportControls";
 import { ManualEntryForm } from "@/components/admin/ManualEntryForm";
+import { FinancialEntriesEditor, type FinEntry } from "@/components/admin/FinancialEntriesEditor";
 import { formatEur } from "@/lib/money";
 
 export const metadata: Metadata = { title: "Financial reports" };
@@ -60,6 +61,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   let body: (string | number)[][] = [];
   let total = 0;
   let truncated = false;
+  let financialEntries: FinEntry[] = [];
 
   // Recent games, so a manual in-person entry can be tied to a game id.
   const { data: recentGames } =
@@ -106,7 +108,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
     // financial ledger
     let q = supabase
       .from("financial_entries")
-      .select("occurred_at, direction, category, amount_eur, method, account_id, match_id, note")
+      .select("id, occurred_at, direction, category, amount_eur, method, account_id, match_id, note")
       .order("occurred_at", { ascending: false })
       .limit(FETCH_LIMIT);
     if (from) q = q.gte("occurred_at", from);
@@ -139,6 +141,17 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
       const { data: ms } = await supabase.from("matches").select("id, match_code, title").in("id", matchIds);
       for (const m of ms ?? []) codes.set(m.id, m.match_code || m.title || m.id.slice(0, 8));
     }
+    financialEntries = shown.map((r) => ({
+      id: r.id as string,
+      date: String(r.occurred_at ?? "").slice(0, 10),
+      direction: r.direction as string,
+      category: r.category as string,
+      amountEur: Number(r.amount_eur),
+      method: (r.method as string | null) ?? null,
+      playerTag: tags.get(r.account_id) ?? "",
+      matchCode: r.match_id ? codes.get(r.match_id) ?? "" : "",
+      note: (r.note as string | null) ?? "",
+    }));
     head = ["Date", "Direction", "Category", "Game", "Amount", "Method", "Player", "Note"];
     body = shown.map((r) => [
       fmtDate(r.occurred_at),
@@ -191,7 +204,9 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         </div>
       )}
 
-      {body.length === 0 ? (
+      {type === "financial" ? (
+        <FinancialEntriesEditor initial={financialEntries} />
+      ) : body.length === 0 ? (
         <p className="text-sm text-text-muted">No records in this range.</p>
       ) : (
         <div className="overflow-x-auto border border-border">

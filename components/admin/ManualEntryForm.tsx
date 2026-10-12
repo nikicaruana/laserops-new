@@ -109,8 +109,8 @@ export function ManualEntryForm({ games = [] }: { games?: GameOption[] }) {
               </select>
             </div>
             <div>
-              <label className={labelCls}>Date &amp; time</label>
-              <input className={input} type="datetime-local" value={occurredAt} onChange={(e) => setOccurredAt(e.target.value)} />
+              <label className={labelCls}>Date</label>
+              <input className={input} type="date" value={occurredAt} onChange={(e) => setOccurredAt(e.target.value)} />
             </div>
             <div>
               <label className={labelCls}>Player ops tag (optional)</label>
