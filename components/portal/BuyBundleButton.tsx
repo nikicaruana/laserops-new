@@ -3,44 +3,50 @@
 /**
  * components/portal/BuyBundleButton.tsx
  * --------------------------------------------------------------------
- * Starts a hosted checkout for a token bundle: POSTs the bundle id to
- * /api/store/checkout and redirects to the returned payment URL. The server
- * re-reads the price and the webhook grants the tokens, so nothing here can set
- * a balance. Disabled with a message when online payment isn't configured yet.
+ * Requests a token bundle (no online payment). Calls request_token_pack, which
+ * snapshots the bundle and alerts admins; the LaserOps team then settles the
+ * payment (cash / Revolut) and grants the tokens by hand. On success the button
+ * is replaced by a "we'll be in touch" confirmation.
  */
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { createClient } from "@/lib/supabase/client";
 
-export function BuyBundleButton({ bundleId, label = "Buy" }: { bundleId: string; label?: string }) {
+export function BuyBundleButton({ bundleId, label = "Request this pack" }: { bundleId: string; label?: string }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
 
-  async function buy() {
+  async function request() {
     setLoading(true);
     setError(null);
-    try {
-      const res = await fetch("/api/store/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bundleId }),
-      });
-      const data = (await res.json()) as { ok: boolean; url?: string; error?: string };
-      if (!data.ok || !data.url) {
-        setError(data.error || "Couldn't start checkout.");
-        setLoading(false);
+    const supabase = createClient();
+    const { error: err } = await supabase.rpc("request_token_pack", { p_bundle_id: bundleId });
+    setLoading(false);
+    if (err) {
+      if ((err.message || "").includes("PHONE_REQUIRED")) {
+        setError("Add a phone number to your profile first - taking you there…");
+        setTimeout(() => { window.location.href = "/player-portal/profile?needphone=1"; }, 1300);
         return;
       }
-      window.location.href = data.url;
-    } catch {
-      setError("Something went wrong. Please try again.");
-      setLoading(false);
+      setError(err.message || "Couldn't send the request.");
+      return;
     }
+    setDone(true);
+  }
+
+  if (done) {
+    return (
+      <div className="w-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-center text-xs leading-relaxed text-emerald-300">
+        Request sent. The LaserOps team will be in touch to arrange payment and add your tokens.
+      </div>
+    );
   }
 
   return (
     <div className="w-full">
-      <Button variant="primary" size="md" className="w-full" onClick={buy} disabled={loading}>
-        {loading ? "Starting…" : label}
+      <Button variant="primary" size="md" className="w-full" onClick={request} disabled={loading}>
+        {loading ? "Sending…" : label}
       </Button>
       {error && <p className="mt-2 text-center text-xs text-red-400">{error}</p>}
     </div>

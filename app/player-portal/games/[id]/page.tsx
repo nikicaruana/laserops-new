@@ -130,11 +130,6 @@ export default async function GameDetailPage({
   return (
     <Container size="narrow" className="py-10 sm:py-14">
       <GamesLiveRefresh matchIds={[match.id]} watchSignupsFor={match.id} />
-      {justPaid && (
-        <div className="mb-6 border border-accent bg-accent/10 px-4 py-3 text-sm text-accent">
-          Payment received – thanks! It&apos;ll show as paid here in a moment once it&apos;s confirmed.
-        </div>
-      )}
       <div className="mb-6 text-xs">
         <Link href="/player-portal/games" className="font-semibold uppercase tracking-[0.12em] text-text-muted hover:text-accent">
           ← Games
@@ -272,15 +267,6 @@ export default async function GameDetailPage({
                       <span className="text-[0.65rem] font-semibold uppercase tracking-[0.1em] text-text-muted">Lvl. {s.level}</span>
                     </span>
                   ) : null}
-                  {priced && paymentOpen && s.status === "registered" && (
-                    s.paid_at ? (
-                      <span className="text-[0.55rem] font-bold uppercase tracking-[0.1em] text-emerald-300">Paid{s.payment_intent === "token" ? " · token" : ""}</span>
-                    ) : s.payment_intent === "on_day" ? (
-                      <span className="text-[0.55rem] font-bold uppercase tracking-[0.1em] text-amber-300">Paying offline</span>
-                    ) : (
-                      <span className="text-[0.55rem] font-bold uppercase tracking-[0.1em] text-text-subtle">Unpaid</span>
-                    )
-                  )}
                 </>
               );
               const cls = `flex flex-col items-center gap-2.5 portal-card px-3 py-4 ${

@@ -96,7 +96,7 @@ export async function sendMatchInvites(matchId: string, method: "REQUEST" | "CAN
   <h2 style="margin:0 0 4px;font-size:20px;">${cancelled ? "This game was cancelled" : label}</h2>
   <p style="margin:0 0 4px;font-size:13px;color:#666;">${when}</p>
   <p style="margin:0 0 16px;font-size:13px;color:#666;">${mapsHtml}</p>
-  <p style="margin:0 0 16px;font-size:14px;">${cancelled ? "The calendar event has been removed." : "Add this to your calendar - the invite is attached. Confirm your place and pay online:"}</p>
+  <p style="margin:0 0 16px;font-size:14px;">${cancelled ? "The calendar event has been removed." : "Add this to your calendar - the invite is attached. Your place is confirmed:"}</p>
   ${cancelled ? "" : `<p style="margin:0;"><a href="${gameUrl}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:10px 18px;font-size:13px;font-weight:700;">Open the game</a></p>`}
 </body></html>`;
 

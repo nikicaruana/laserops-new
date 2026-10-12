@@ -9,17 +9,23 @@
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { TokenAdminManager } from "@/components/admin/TokenAdminManager";
+import { TokenPackRequests } from "@/components/admin/TokenPackRequests";
 
 export const metadata: Metadata = { title: "LaserOps Game Tokens" };
 
 export default async function AdminTokensPage() {
   const supabase = await createClient();
-  const [{ data: config }, { data: bundles }] = await Promise.all([
+  const [{ data: config }, { data: bundles }, { data: requests }] = await Promise.all([
     supabase.from("token_config").select("default_validity_months").eq("id", 1).maybeSingle(),
     supabase
       .from("token_bundles")
       .select("id, name, tokens, price_eur, validity_months, is_active, sort_order")
       .order("sort_order", { ascending: true, nullsFirst: false }),
+    supabase
+      .from("token_pack_requests")
+      .select("id, bundle_name, tokens, price_eur, created_at, account:accounts!account_id(ops_tag, full_name, email, phone_e164)")
+      .eq("status", "pending")
+      .order("created_at", { ascending: true }),
   ]);
 
   return (
@@ -32,6 +38,20 @@ export default async function AdminTokensPage() {
           reports.
         </p>
       </header>
+
+      <TokenPackRequests
+        initial={(requests ?? []).map((r) => {
+          const acc = Array.isArray(r.account) ? r.account[0] : r.account;
+          return {
+            id: r.id as string,
+            bundle_name: r.bundle_name as string,
+            tokens: Number(r.tokens),
+            price_eur: Number(r.price_eur),
+            created_at: r.created_at as string,
+            account: acc ? { ops_tag: acc.ops_tag ?? null, full_name: acc.full_name ?? null, email: acc.email ?? null, phone: acc.phone_e164 ?? null } : null,
+          };
+        })}
+      />
 
       <TokenAdminManager
         defaultValidityMonths={config?.default_validity_months ?? 6}

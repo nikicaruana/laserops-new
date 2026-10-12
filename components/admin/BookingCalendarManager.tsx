@@ -206,7 +206,7 @@ export function BookingCalendarManager({ initialSeasons, initialWeekly }: { init
   }
 
   async function resolveCancel(matchId: string) {
-    if (!window.confirm("Cancel this game? Any paid players are refunded automatically.")) return;
+    if (!window.confirm("Cancel this game? Everyone signed up is notified. Nothing's charged until after a game, so there's nothing to refund.")) return;
     setBusy(true);
     setMsg(null);
     try {
@@ -433,7 +433,7 @@ export function BookingCalendarManager({ initialSeasons, initialWeekly }: { init
             <h2 className="text-sm font-bold uppercase tracking-[0.12em] text-amber-300">Games affected by the blackout ({conflicts.length})</h2>
             <button type="button" onClick={() => setConflicts([])} className="text-[0.6rem] font-bold uppercase tracking-[0.12em] text-text-subtle hover:text-accent">Dismiss</button>
           </div>
-          <p className="mb-4 text-xs text-text-muted">These games fall inside the closed dates. Contact the organiser to move each one, or cancel it (paid players are refunded automatically).</p>
+          <p className="mb-4 text-xs text-text-muted">These games fall inside the closed dates. Contact the organiser to move each one, or cancel it (everyone signed up is notified; nothing to refund).</p>
           <ul className="space-y-2">
             {conflicts.map((b) => (
               <GameResolveRow key={b.id} booking={b} organizer={organizers[b.id]} busy={busy} onReschedule={resolveReschedule} onCancel={resolveCancel} />

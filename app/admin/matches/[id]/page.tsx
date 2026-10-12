@@ -127,7 +127,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   const [{ data: participantRows }, { data: gunRows }, { data: ingestRows }, { data: formulaRows }, { data: spawnRows }, { data: streakRows }] = await Promise.all([
     supabase
       .from("match_participants")
-      .select("id, account_id, headset_label, extra_headbands, gun_used, display_name, source, payment_intent, paid_at, account:accounts(ops_tag, full_name)")
+      .select("id, account_id, headset_label, extra_headbands, gun_used, display_name, source, payment_intent, paid_at, paid_amount_eur, settlement_token_intent, drinks_total_eur, settlement_method, settled_declared_at, player_marked_paid_at, account:accounts(ops_tag, full_name)")
       .eq("match_id", id)
       .order("joined_at"),
     supabase.from("guns").select("name").order("name"),
@@ -288,6 +288,8 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
     if (s.account_id) payments[s.account_id] = { intent: s.payment_intent, paid: Boolean(s.paid_at) };
   }
   const entries = (entryRows ?? []) as Entry[];
+  const { data: drinkRows } = await supabase.from("drink_menu").select("id, name, price_eur").eq("is_active", true).order("sort_order");
+  const drinks = (drinkRows ?? []) as { id: string; name: string; price_eur: number }[];
   const participants = (participantRows ?? []) as unknown as Participant[];
   const guns = orderMatchGuns(((gunRows ?? []) as { name: string }[]).map((g) => g.name).filter(Boolean));
   const isPlayed = match.status === "completed" || entries.length > 0;
@@ -509,15 +511,9 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         <MatchLocationEditor matchId={match.id} currentLocationId={(match as { location_id: string | null }).location_id} />
       )}
 
-      {/* Players & headbands – roster + file headbands + assignment (pre/post publish) */}
+      {/* Players: payments + headbands (component renders both collapsible sub-sections) */}
       {(showRoster || Object.keys(ingestByHeadband).length > 0) && (
-        <CollapsibleSection
-          title="Players & headbands"
-          count={participants.length}
-          subtitle="Everyone in the match with their headband, gun and profile. Assign the headbands the game file saw, add walk-ins by hand, or let signed-up players join live. Editing after publishing marks results stale &ndash; re-publish to apply."
-        >
-          <MatchParticipantsManager matchId={match.id} initial={participants} guns={guns} payments={payments} ingest={ingestByHeadband} published={!!match.xp_distributed_at} />
-        </CollapsibleSection>
+        <MatchParticipantsManager matchId={match.id} initial={participants} guns={guns} drinks={drinks} payments={payments} ingest={ingestByHeadband} published={!!match.xp_distributed_at} perPlayer={match.pricing_mode === "per_player"} />
       )}
 
       {/* Signups (booking side) – not for private bookings */}

@@ -83,22 +83,17 @@ export const FAQS: Faq[] = [
   {
     question: "What are LaserOps game tokens?",
     answer:
-      "Prepaid game credits, where 1 token = 1 game. Buy them in bundles from the store (cheaper per game than paying each time), then use them to pay for any game. You can even part-pay, putting a fraction of a token towards a game and paying the rest online.",
+      "Prepaid game credits, where 1 token = 1 game. Request a bundle from the store (cheaper per game than paying each time) and we will sort out payment with you, then use a token to settle any game after you play. You can even part-pay: put a token towards a game and pay the rest by Revolut or cash.",
   },
   {
     question: "Do game tokens expire?",
     answer:
-      "Yes, tokens are valid for 6 months from when you get them, whether bought, gifted or earned. Your wallet shows exactly how many expire and when, and when you spend tokens the ones expiring soonest are always used first, so you never lose them unnecessarily.",
-  },
-  {
-    question: "Can I gift game tokens?",
-    answer:
-      "Yes. You can buy tokens as a gift, even for someone who doesn't have an account yet, and they claim them when they sign in. Gifted tokens carry the same 6-month validity.",
+      "Yes, tokens are valid for 6 months from when you get them, whether bought, earned or granted. Your wallet shows exactly how many expire and when, and when you spend tokens the ones expiring soonest are always used first, so you never lose them unnecessarily.",
   },
   {
     question: "What are open games and how do I join one?",
     answer:
-      "Open games are public games anyone can join. Browse upcoming games on the booking page or in your player portal, reserve your spot, and pay with a token or online. Perfect if you're coming solo or with a few friends, teams get filled out from the community.",
+      "Open games are public games anyone can join. Browse upcoming games on the booking page or in your player portal and reserve your spot. No payment up front: you settle after the game with a token, Revolut or cash. Perfect if you're coming solo or with a few friends, teams get filled out from the community.",
   },
   {
     question: "What are beginner games?",
@@ -108,7 +103,7 @@ export const FAQS: Faq[] = [
   {
     question: "What is the cancellation and refund policy?",
     answer:
-      "Cancel more than 48 hours before a game for an automatic full refund. Between 48 and 24 hours before, refunds are by request. Within 24 hours the game is non-refundable, but you can always pass your spot to another player.",
+      "You only pay after you play, so there is nothing charged up front and nothing to refund. If you cannot make it, cancel from your portal so your spot frees up, or pass it to another player. We just ask that you cancel as early as you can.",
   },
   {
     question: "What are squads, ladders and accolades?",

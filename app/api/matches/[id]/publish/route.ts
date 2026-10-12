@@ -62,7 +62,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   const scoringRuntime = await getScoringConfig(supabase);
 
   // Match flags + date (date drives date-scoped gun damage for offline).
-  const { data: mFlags } = await supabase.from("matches").select("played_on, scheduled_at, is_double_xp, offline_round_results, scoring_mode, title, match_code, duration_minutes").eq("id", id).maybeSingle();
+  const { data: mFlags } = await supabase.from("matches").select("played_on, scheduled_at, is_double_xp, offline_round_results, scoring_mode, title, match_code, duration_minutes, pricing_mode").eq("id", id).maybeSingle();
   const now = new Date().toISOString();
   const playedOn = (mFlags?.played_on as string | null) || ((mFlags?.scheduled_at as string | null)?.slice(0, 10)) || now.slice(0, 10);
   const isDoubleXp = mFlags?.is_double_xp === true;
@@ -199,24 +199,60 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
       const schedAt = (mFlags?.scheduled_at as string | null) || null;
       const matchDate = schedAt ? matchDateLabel(schedAt) : "";
       const matchTimeRange = schedAt ? matchTimeRangeLabel(schedAt, (mFlags?.duration_minutes as number | null) ?? null) : "";
+      const rlPerPlayer = (mFlags?.pricing_mode as string | null) === "per_player";
+      const rlSiteBase = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.laseropsmalta.com").replace(/\/$/, "");
+      const rlPayUrl = `${rlSiteBase}/player-portal/pay/${id}`;
+      const reportType = rlPerPlayer ? "match_report_settle" : "match_report_live";
       const { data: rlParts } = await svc.from("match_player_aggregate").select("account_id").eq("match_id", id).not("account_id", "is", null);
       const rlIds = [...new Set(((rlParts ?? []) as { account_id: string }[]).map((p) => p.account_id))];
       if (rlIds.length) {
-        const { data: rlAlready } = await svc.from("notifications").select("account_id").eq("type_key", "match_report_live").eq("href", rlHref).in("account_id", rlIds);
+        const { data: rlAlready } = await svc.from("notifications").select("account_id").eq("type_key", reportType).eq("href", rlHref).in("account_id", rlIds);
         const rlSent = new Set(((rlAlready ?? []) as { account_id: string }[]).map((n) => n.account_id));
         for (const accId of rlIds) {
           if (rlSent.has(accId)) continue;
-          await emitNotification(svc, accId, "match_report_live", {
+          await emitNotification(svc, accId, reportType, {
             title: "Your match report is live",
             body: `The report for ${matchLabel} is up. See your kills, captures, accolades and where you ranked.`,
             href: rlHref,
-            data: { matchLabel, matchDate, matchTimeRange },
+            data: { matchLabel, matchDate, matchTimeRange, payUrl: rlPayUrl },
           });
         }
       }
     }
   } catch (e) {
     console.error("[publish] match-report-live emit failed:", e);
+  }
+
+  // Settle up: per-player games get a post-game nudge to pay (token / Revolut /
+  // cash) on the login-gated pay page, to players who have not paid yet. Recency-
+  // guarded + deduped per match so re-publishing or backlog ingestion does not nag.
+  try {
+    const perPlayer = (mFlags?.pricing_mode as string | null) === "per_player";
+    const settleRecent = Date.now() - new Date(playedOn).getTime() < 14 * 86400000;
+    if (perPlayer && settleRecent) {
+      const suHref = `/player-portal/pay/${id}`;
+      const suCode = (mFlags?.match_code as string | null) ?? null;
+      const suLabel = (mFlags?.title as string | null) || suCode || "your recent game";
+      const suSched = (mFlags?.scheduled_at as string | null) || null;
+      const suDate = suSched ? ` on ${matchDateLabel(suSched)}` : "";
+      const { data: suParts } = await svc.from("match_participants").select("account_id, paid_at").eq("match_id", id).not("account_id", "is", null);
+      const suIds = [...new Set(((suParts ?? []) as { account_id: string; paid_at: string | null }[]).filter((x) => !x.paid_at).map((x) => x.account_id))];
+      if (suIds.length) {
+        const { data: suAlready } = await svc.from("notifications").select("account_id").eq("type_key", "game_settle_up").eq("href", suHref).in("account_id", suIds);
+        const suSent = new Set(((suAlready ?? []) as { account_id: string }[]).map((n) => n.account_id));
+        for (const accId of suIds) {
+          if (suSent.has(accId)) continue;
+          await emitNotification(svc, accId, "game_settle_up", {
+            title: "Time to settle up",
+            body: `Settle up for ${suLabel} - use a game token, Revolut or cash.`,
+            href: suHref,
+            data: { matchLabel: suLabel, matchDate: suDate },
+          });
+        }
+      }
+    }
+  } catch (e) {
+    console.error("[publish] game-settle-up emit failed:", e);
   }
 
   // First-game welcome: congratulate genuine first-timers (claimed accounts with

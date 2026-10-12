@@ -15,7 +15,7 @@ import { MatchStatusBadge } from "@/components/admin/MatchStatusBadge";
 const STATES: { key: string; desc: string }[] = [
   { key: "tentative", desc: "Still gathering players. Not enough have signed up yet, so nothing's locked in." },
   { key: "awaiting_confirm", desc: "Enough players are in; we're confirming the booking on our end." },
-  { key: "confirmed", desc: "The game is on. Payment is open, so pay online now to confirm your place." },
+  { key: "confirmed", desc: "The game is on. Pick your gun now, and settle up after you play (token, Revolut or cash)." },
   { key: "live", desc: "The game is running now. Tap in with the entry code the marshal calls out." },
   { key: "completed", desc: "The game has finished. Your stats and match report show up here." },
   { key: "cancelled", desc: "This game was called off." },

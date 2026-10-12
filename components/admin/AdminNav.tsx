@@ -31,6 +31,7 @@ const SECTIONS: { heading: string; items: Item[] }[] = [
     heading: "Matches",
     items: [
       { label: "Match Manager", href: "/admin/matches" },
+      { label: "Payments due", href: "/admin/payments" },
       { label: "Booking calendar", href: "/admin/booking-calendar" },
       { label: "Locations", href: "/admin/locations" },
     ],
@@ -42,6 +43,7 @@ const SECTIONS: { heading: string; items: Item[] }[] = [
       { label: "Financial reports", href: "/admin/reports" },
       { label: "Reward images", href: "/admin/reward-images" },
       { label: "Pricing", href: "/admin/pricing" },
+      { label: "Drinks menu", href: "/admin/drinks" },
       { label: "Refunds", href: "/admin/refunds" },
     ],
   },

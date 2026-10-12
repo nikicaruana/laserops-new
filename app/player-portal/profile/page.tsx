@@ -17,8 +17,9 @@ export const metadata: Metadata = {
   title: "Your Profile",
 };
 
-export default async function ProfilePage() {
+export default async function ProfilePage({ searchParams }: { searchParams: Promise<{ needphone?: string }> }) {
   const supabase = await createClient();
+  const needPhone = ((await searchParams)?.needphone ?? "") === "1";
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -75,6 +76,11 @@ export default async function ProfilePage() {
         <h1 className="mb-8 text-center text-2xl font-bold uppercase tracking-[0.12em] text-text sm:text-3xl">
           Your Profile
         </h1>
+        {needPhone && (
+          <div className="mb-6 border border-accent/60 bg-accent/10 px-4 py-3 text-sm text-text">
+            Add a phone number below so we can reach you about your token pack request, then save and request the pack again.
+          </div>
+        )}
         <ProfileManager
           opsTag={account.ops_tag}
           fullName={account.full_name}

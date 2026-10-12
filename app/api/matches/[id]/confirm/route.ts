@@ -46,11 +46,11 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     .eq("status", "registered")
     .is("paid_at", null); // comped 0-rate players are already paid - do not nag them to pay
   const label = match.title || "Your LaserOps game";
-  // Open games: pay online to confirm the place. Private bookings can pay offline
-  // on request, so the copy differs.
+  // Pay-after-game: nothing is paid at sign-up. Spot is confirmed; pick your gun
+  // now and settle up after the game (token / Revolut / cash).
   const body = match.is_private
-    ? "The booking is confirmed. Pay online now (or arrange to pay offline), and book your gun if you pay online."
-    : "The game is confirmed. Pay online now to confirm your place and book your gun.";
+    ? "You are in. Your booking is confirmed - pick your gun now, and we will settle up after the game."
+    : "You are in. Your spot is confirmed - pick your gun now, and settle up after the game (game token, Revolut or cash).";
   const svc = createServiceClient();
   let notified = 0;
   if (svc) {
