@@ -20,7 +20,7 @@ type Req = {
   tokens: number;
   price_eur: number;
   created_at: string;
-  account: { ops_tag: string | null; full_name: string | null } | null;
+  account: { ops_tag: string | null; full_name: string | null; email: string | null } | null;
 };
 
 const fmtTokens = (n: number) => (Number.isInteger(n) ? String(n) : String(parseFloat(n.toFixed(2))));
@@ -88,8 +88,15 @@ export function TokenPackRequests({ initial }: { initial: Req[] }) {
             {rows.map((r) => (
               <tr key={r.id} className="border-b border-border last:border-0 align-middle">
                 <td className="px-3 py-2.5">
-                  <span className="font-semibold text-text">{r.account?.full_name || r.account?.ops_tag || "Player"}</span>
-                  {r.account?.ops_tag && <span className="ml-2 font-mono text-[0.7rem] text-text-subtle">{r.account.ops_tag}</span>}
+                  <div className="flex flex-col gap-0.5">
+                    <span>
+                      <span className="font-semibold text-text">{r.account?.full_name || r.account?.ops_tag || "Player"}</span>
+                      {r.account?.ops_tag && <span className="ml-2 font-mono text-[0.7rem] text-text-subtle">{r.account.ops_tag}</span>}
+                    </span>
+                    {r.account?.email && (
+                      <a href={`mailto:${r.account.email}`} className="text-[0.7rem] text-text-subtle underline hover:text-accent">{r.account.email}</a>
+                    )}
+                  </div>
                 </td>
                 <td className="px-3 py-2.5 text-text-muted">{r.bundle_name}</td>
                 <td className="px-3 py-2.5 font-mono text-accent">{fmtTokens(Number(r.tokens))}</td>
