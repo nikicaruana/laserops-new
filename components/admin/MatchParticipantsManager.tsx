@@ -7,9 +7,9 @@
  * sub-sections that share one roster state (so edits in one are reflected
  * live in the other without a full reload):
  *   - "Players & payments" (top): per-player post-game settlement - mark a
- *     player paid (Cash / Revolut), see what they declared on the pay page
- *     (token used + drinks), and undo a confirmation. Flat-rate bookings show
- *     an organiser-settles note instead.
+ *     player paid (Cash / Revolut), add drinks for a walk-in who didn't
+ *     self-report, see what they declared on the pay page (token + drinks),
+ *     and undo a confirmation. Flat-rate bookings show an organiser note.
  *   - "Players & headbands": the roster - every player with their headband(s),
  *     gun and profile; file headbands not assigned yet; add walk-ins by hand.
  *     Works before AND after publishing (post-publish edits mark the results
@@ -47,6 +47,7 @@ export type Participant = {
 
 type EditRow = Participant & { extra: string[] };
 type IngestInfo = { stat: string | null; team: string | null };
+type DrinkMenuItem = { id: string; name: string; price_eur: number };
 
 const cell =
   "h-10 w-full rounded-none border border-border-strong bg-bg px-2 text-sm text-text focus:border-accent focus:outline-none";
@@ -74,6 +75,7 @@ export function MatchParticipantsManager({
   matchId,
   initial,
   guns,
+  drinks = [],
   payments = {},
   ingest = {},
   published = false,
@@ -82,6 +84,7 @@ export function MatchParticipantsManager({
   matchId: string;
   initial: Participant[];
   guns: string[];
+  drinks?: DrinkMenuItem[];
   payments?: Record<string, ParticipantPayment>;
   /** Headbands seen in the ingested file, keyed by number, with their stats. */
   ingest?: Record<number, IngestInfo>;
@@ -99,6 +102,8 @@ export function MatchParticipantsManager({
   const [uaGun, setUaGun] = useState<Record<number, string>>({});
   const [uaLinkFor, setUaLinkFor] = useState<number | null>(null);
   const [paySel, setPaySel] = useState<Record<string, string>>({});
+  const [drinkFor, setDrinkFor] = useState<EditRow | null>(null);
+  const [drinkQty, setDrinkQty] = useState<Record<string, number>>({});
 
   async function markPaid(r: EditRow, method: string) {
     if (!r.account_id) { setError("Link this player to a profile first."); return; }
@@ -120,6 +125,37 @@ export function MatchParticipantsManager({
     setBusy(false);
     if (err) return setError(err.message);
     setRows((prev) => prev.map((x) => (x.id === r.id ? { ...x, paid_at: null, paid_amount_eur: null } : x)));
+    router.refresh();
+  }
+
+  // Open the drinks editor for a player, prefilled with their current orders.
+  async function openDrinks(r: EditRow) {
+    if (!r.account_id) { setError("Link this player to a profile first."); return; }
+    setError(null);
+    const supabase = createClient();
+    const { data } = await supabase
+      .from("match_drink_orders")
+      .select("drink_id, qty")
+      .eq("match_id", matchId)
+      .eq("account_id", r.account_id);
+    const seed: Record<string, number> = {};
+    for (const d of data ?? []) if (d.drink_id) seed[d.drink_id as string] = Number(d.qty);
+    setDrinkQty(seed);
+    setDrinkFor(r);
+  }
+  async function saveDrinks() {
+    const r = drinkFor;
+    if (!r || !r.account_id) return;
+    setBusy(true);
+    setError(null);
+    const supabase = createClient();
+    const payload = drinks.map((d) => ({ drink_id: d.id, qty: drinkQty[d.id] ?? 0 })).filter((x) => x.qty > 0);
+    const { data, error: err } = await supabase.rpc("admin_set_participant_drinks", { p_match_id: matchId, p_account_id: r.account_id, p_drinks: payload });
+    setBusy(false);
+    if (err) return setError(err.message);
+    const total = Number((data as { drinksTotal?: number } | null)?.drinksTotal ?? 0);
+    setRows((prev) => prev.map((x) => (x.id === r.id ? { ...x, drinks_total_eur: total, settled_declared_at: x.settled_declared_at ?? new Date().toISOString() } : x)));
+    setDrinkFor(null);
     router.refresh();
   }
 
@@ -305,6 +341,7 @@ export function MatchParticipantsManager({
 
   const payable = rows.filter((r) => r.account_id);
   const owing = payable.filter((r) => !r.paid_at).length;
+  const drinksTotalPreview = drinks.reduce((s, d) => s + Number(d.price_eur) * (drinkQty[d.id] ?? 0), 0);
 
   return (
     <>
@@ -318,7 +355,7 @@ export function MatchParticipantsManager({
         count={perPlayer ? owing : undefined}
         subtitle={
           perPlayer
-            ? "Settle each player after the game. The token they used on the pay page is already applied; mark the cash/Revolut part paid here. Count shows how many still owe."
+            ? "Settle each player after the game. A token they used on the pay page is already applied; add any drinks they had, then mark the cash/Revolut part paid. Count shows how many still owe."
             : "This is a flat-rate booking - the organiser settles the whole total. No per-player payments are tracked here."
         }
       >
@@ -362,22 +399,32 @@ export function MatchParticipantsManager({
                             Undo
                           </button>
                         ) : (
-                          <div className="flex items-center justify-end gap-1.5">
-                            <select
-                              className="h-8 rounded-none border border-border-strong bg-bg px-1.5 text-xs text-text focus:border-accent focus:outline-none"
-                              value={paySel[r.id] ?? r.settlement_method ?? "cash"}
-                              onChange={(e) => setPaySel((s) => ({ ...s, [r.id]: e.target.value }))}
-                            >
-                              <option value="cash">Cash</option>
-                              <option value="revolut">Revolut</option>
-                            </select>
+                          <div className="flex flex-col items-end gap-1">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <select
+                                className="h-8 rounded-none border border-border-strong bg-bg px-1.5 text-xs text-text focus:border-accent focus:outline-none"
+                                value={paySel[r.id] ?? r.settlement_method ?? "cash"}
+                                onChange={(e) => setPaySel((s) => ({ ...s, [r.id]: e.target.value }))}
+                              >
+                                <option value="cash">Cash</option>
+                                <option value="revolut">Revolut</option>
+                              </select>
+                              <button
+                                type="button"
+                                onClick={() => markPaid(r, paySel[r.id] ?? r.settlement_method ?? "cash")}
+                                disabled={busy}
+                                className="border border-accent bg-accent/10 px-2.5 py-1.5 text-[0.6rem] font-bold uppercase tracking-[0.1em] text-accent hover:bg-accent/20 disabled:opacity-50"
+                              >
+                                Mark paid
+                              </button>
+                            </div>
                             <button
                               type="button"
-                              onClick={() => markPaid(r, paySel[r.id] ?? r.settlement_method ?? "cash")}
+                              onClick={() => openDrinks(r)}
                               disabled={busy}
-                              className="border border-accent bg-accent/10 px-2.5 py-1.5 text-[0.6rem] font-bold uppercase tracking-[0.1em] text-accent hover:bg-accent/20 disabled:opacity-50"
+                              className="text-[0.6rem] uppercase tracking-[0.1em] text-text-subtle hover:text-accent disabled:opacity-50"
                             >
-                              Mark paid
+                              {Number(r.drinks_total_eur) > 0 ? `Edit drinks (${formatEur(Number(r.drinks_total_eur))})` : "Add drinks"}
                             </button>
                           </div>
                         )}
@@ -629,6 +676,73 @@ export function MatchParticipantsManager({
       {uaLinkFor != null && (
         <Modal title={`Link headband ${uaLinkFor} to a profile`} onClose={() => setUaLinkFor(null)} maxWidth="max-w-sm">
           <AccountPicker autoFocus onPick={(a) => addHeadband(uaLinkFor, a)} onCancel={() => setUaLinkFor(null)} />
+        </Modal>
+      )}
+
+      {/* Admin drinks editor for a player (walk-ins who didn't self-report). */}
+      {drinkFor && (
+        <Modal
+          title={`Drinks for ${drinkFor.account?.full_name || drinkFor.account?.ops_tag || "player"}`}
+          onClose={() => setDrinkFor(null)}
+          maxWidth="max-w-sm"
+        >
+          {drinks.length === 0 ? (
+            <p className="text-sm text-text-muted">No drinks on the menu yet. Add some under &ldquo;Drinks menu&rdquo; first.</p>
+          ) : (
+            <div className="space-y-2">
+              {drinks.map((d) => {
+                const q = drinkQty[d.id] ?? 0;
+                return (
+                  <div key={d.id} className="flex items-center justify-between gap-3 border border-border bg-bg px-3 py-2">
+                    <div>
+                      <p className="text-sm font-semibold text-text">{d.name}</p>
+                      <p className="text-xs text-text-subtle">{formatEur(Number(d.price_eur))}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        aria-label="One fewer"
+                        onClick={() => setDrinkQty((s) => ({ ...s, [d.id]: Math.max(0, (s[d.id] ?? 0) - 1) }))}
+                        className="flex h-7 w-7 items-center justify-center border border-border-strong text-text-muted hover:border-accent hover:text-accent"
+                      >
+                        –
+                      </button>
+                      <span className="w-6 text-center font-mono text-sm text-text">{q}</span>
+                      <button
+                        type="button"
+                        aria-label="One more"
+                        onClick={() => setDrinkQty((s) => ({ ...s, [d.id]: (s[d.id] ?? 0) + 1 }))}
+                        className="flex h-7 w-7 items-center justify-center border border-border-strong text-text-muted hover:border-accent hover:text-accent"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+              <div className="flex items-center justify-between pt-1">
+                <span className="text-sm text-text-muted">Drinks total</span>
+                <span className="font-semibold text-text">{formatEur(drinksTotalPreview)}</span>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setDrinkFor(null)}
+                  className="px-3 py-2 text-xs uppercase tracking-[0.1em] text-text-subtle hover:text-text"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={saveDrinks}
+                  disabled={busy}
+                  className="border border-accent bg-accent/10 px-3 py-2 text-xs font-bold uppercase tracking-[0.1em] text-accent hover:bg-accent/20 disabled:opacity-50"
+                >
+                  Save drinks
+                </button>
+              </div>
+            </div>
+          )}
         </Modal>
       )}
     </>

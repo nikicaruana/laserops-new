@@ -31,6 +31,7 @@ const SECTIONS: { heading: string; items: Item[] }[] = [
     heading: "Matches",
     items: [
       { label: "Match Manager", href: "/admin/matches" },
+      { label: "Payments due", href: "/admin/payments" },
       { label: "Booking calendar", href: "/admin/booking-calendar" },
       { label: "Locations", href: "/admin/locations" },
     ],

@@ -288,6 +288,8 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
     if (s.account_id) payments[s.account_id] = { intent: s.payment_intent, paid: Boolean(s.paid_at) };
   }
   const entries = (entryRows ?? []) as Entry[];
+  const { data: drinkRows } = await supabase.from("drink_menu").select("id, name, price_eur").eq("is_active", true).order("sort_order");
+  const drinks = (drinkRows ?? []) as { id: string; name: string; price_eur: number }[];
   const participants = (participantRows ?? []) as unknown as Participant[];
   const guns = orderMatchGuns(((gunRows ?? []) as { name: string }[]).map((g) => g.name).filter(Boolean));
   const isPlayed = match.status === "completed" || entries.length > 0;
@@ -511,7 +513,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
 
       {/* Players: payments + headbands (component renders both collapsible sub-sections) */}
       {(showRoster || Object.keys(ingestByHeadband).length > 0) && (
-        <MatchParticipantsManager matchId={match.id} initial={participants} guns={guns} payments={payments} ingest={ingestByHeadband} published={!!match.xp_distributed_at} perPlayer={match.pricing_mode === "per_player"} />
+        <MatchParticipantsManager matchId={match.id} initial={participants} guns={guns} drinks={drinks} payments={payments} ingest={ingestByHeadband} published={!!match.xp_distributed_at} perPlayer={match.pricing_mode === "per_player"} />
       )}
 
       {/* Signups (booking side) – not for private bookings */}
