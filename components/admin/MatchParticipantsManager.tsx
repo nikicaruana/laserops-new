@@ -70,6 +70,7 @@ const hbNumber = (s: string | null | undefined): number => {
 };
 
 const fmtTok = (n: number) => (Number.isInteger(n) ? String(n) : String(parseFloat(n.toFixed(2))));
+const tokenLabel = (n: number) => (n <= 0 ? "" : `${fmtTok(n)} ${n === 1 ? "token" : "tokens"}`);
 
 export function MatchParticipantsManager({
   matchId,
@@ -331,7 +332,6 @@ export function MatchParticipantsManager({
       </span>
     ) : r.settled_declared_at ? (
       <span className={`text-xs leading-tight ${r.player_marked_paid_at ? "text-emerald-300" : "text-amber-300"}`}>
-        {Number(r.settlement_token_intent) > 0 ? `Token ${fmtTok(Number(r.settlement_token_intent))} · ` : ""}
         {Number(r.drinks_total_eur) > 0 ? `Drinks ${formatEur(Number(r.drinks_total_eur))} · ` : ""}
         {r.player_marked_paid_at ? "player says paid" : "awaiting"}{r.settlement_method ? ` (${r.settlement_method})` : ""}
       </span>
@@ -370,6 +370,7 @@ export function MatchParticipantsManager({
                 <tr className="border-b border-border bg-bg-elevated text-[0.6rem] uppercase tracking-[0.14em] text-text-muted">
                   <th className="px-3 py-3 font-semibold">Player</th>
                   <th className="px-3 py-3 font-semibold">Ops tag</th>
+                  <th className="px-3 py-3 font-semibold">Tokens used</th>
                   <th className="px-3 py-3 font-semibold">Status</th>
                   <th className="px-3 py-3 text-right font-semibold">Settle</th>
                 </tr>
@@ -382,6 +383,9 @@ export function MatchParticipantsManager({
                       <td className="px-3 py-2.5 font-semibold text-text">{name ?? "Player"}</td>
                       <td className="px-3 py-2.5 font-mono text-xs text-text-muted">
                         {r.account?.ops_tag ?? <span className="text-text-subtle">–</span>}
+                      </td>
+                      <td className="px-3 py-2.5 text-xs">
+                        {Number(r.settlement_token_intent) > 0 ? <span className="font-semibold text-accent">{tokenLabel(Number(r.settlement_token_intent))}</span> : <span className="text-text-subtle">–</span>}
                       </td>
                       <td className="px-3 py-2.5">
                         {r.account_id ? paymentStatus(r) : <span className="text-xs text-text-subtle">Not a member</span>}
@@ -434,7 +438,7 @@ export function MatchParticipantsManager({
                 })}
                 {rows.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="px-3 py-8 text-center text-sm text-text-muted">
+                    <td colSpan={5} className="px-3 py-8 text-center text-sm text-text-muted">
                       No players on this match yet.
                     </td>
                   </tr>

@@ -34,6 +34,7 @@ export type DueRow = {
 };
 
 const fmtTok = (n: number) => (Number.isInteger(n) ? String(n) : String(parseFloat(n.toFixed(2))));
+const tokenLabel = (n: number) => (n <= 0 ? "" : `${fmtTok(n)} ${n === 1 ? "token" : "tokens"}`);
 const fmtDate = (iso: string | null) =>
   iso ? new Date(iso).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "";
 
@@ -135,6 +136,7 @@ export function PaymentsDueManager({ initial }: { initial: DueRow[] }) {
                   <tr className="border-b border-border text-[0.6rem] uppercase tracking-[0.14em] text-text-muted">
                     <th className="px-4 py-2.5 font-semibold">Player</th>
                     <th className="px-4 py-2.5 font-semibold">Declared</th>
+                    <th className="px-4 py-2.5 font-semibold">Tokens used</th>
                     <th className="px-4 py-2.5 text-right font-semibold">Owed</th>
                     <th className="px-4 py-2.5 text-right font-semibold">Settle</th>
                   </tr>
@@ -162,7 +164,6 @@ export function PaymentsDueManager({ initial }: { initial: DueRow[] }) {
                         <td className="px-4 py-2.5 text-xs">
                           {r.settled_declared_at ? (
                             <span className={r.player_marked_paid_at ? "text-emerald-300" : "text-amber-300"}>
-                              {tok > 0 ? `Token ${fmtTok(tok)} · ` : ""}
                               {drinks > 0 ? `Drinks ${formatEur(drinks)} · ` : ""}
                               {r.player_marked_paid_at ? "player says paid" : "awaiting"}
                               {r.settlement_method ? ` (${r.settlement_method})` : ""}
@@ -170,6 +171,9 @@ export function PaymentsDueManager({ initial }: { initial: DueRow[] }) {
                           ) : (
                             <span className="text-text-subtle">Not declared</span>
                           )}
+                        </td>
+                        <td className="px-4 py-2.5 text-xs">
+                          {tok > 0 ? <span className="font-semibold text-accent">{tokenLabel(tok)}</span> : <span className="text-text-subtle">&ndash;</span>}
                         </td>
                         <td className="px-4 py-2.5 text-right font-semibold text-text">{formatEur(Number(r.owed ?? 0))}</td>
                         <td className="px-4 py-2.5">
