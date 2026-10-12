@@ -15,7 +15,7 @@ import { createClient } from "@/lib/supabase/client";
 
 type Follow = { account_id: string; ops_tag: string | null; profile_pic_url: string | null };
 
-export function MatchInviteMenu({ matchId, inviteCode }: { matchId: string; inviteCode: string | null }) {
+export function MatchInviteMenu({ matchId, inviteCode, canInvite = true }: { matchId: string; inviteCode: string | null; canInvite?: boolean }) {
   const [open, setOpen] = useState(false);
   const [follows, setFollows] = useState<Follow[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -42,14 +42,14 @@ export function MatchInviteMenu({ matchId, inviteCode }: { matchId: string; invi
   async function loadFollows() {
     if (loaded) return;
     const supabase = createClient();
-    const { data } = await supabase.rpc("my_following");
+    const { data } = await supabase.rpc("my_following_for_match", { p_match_id: matchId });
     setFollows((data ?? []) as Follow[]);
     setLoaded(true);
   }
 
   function toggle() {
     setOpen((o) => {
-      if (!o) void loadFollows();
+      if (!o && canInvite) void loadFollows();
       return !o;
     });
   }
@@ -105,6 +105,10 @@ export function MatchInviteMenu({ matchId, inviteCode }: { matchId: string; invi
               </button>
             </div>
           )}
+          {!canInvite ? (
+            <p className="px-4 py-3 text-xs text-text-subtle">Sign up to the game to invite players you follow.</p>
+          ) : (
+          <>
           <p className="px-4 pt-3 pb-1 text-[0.6rem] font-bold uppercase tracking-[0.14em] text-text-muted">Invite people you follow</p>
           {!loaded ? (
             <p className="px-4 py-4 text-xs text-text-subtle">Loading…</p>
@@ -138,6 +142,8 @@ export function MatchInviteMenu({ matchId, inviteCode }: { matchId: string; invi
                 );
               })}
             </ul>
+          )}
+          </>
           )}
         </div>
       )}

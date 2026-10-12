@@ -307,17 +307,11 @@ function ArmoryDialogBody({
               </StatGroup>
               <StatGroup>
                 <DialogStat label="Damage" value={fmtNum(entry.damageTotal)} />
-                <DialogStat
-                  label="Avg Damage"
-                  value={fmtFloat(entry.avgDamage)}
-                />
+                <DialogStat label="Damage / Round" value={fmtRoundedInt(entry.damagePerRound)} />
               </StatGroup>
               <StatGroup>
-                <DialogStat label="Score" value={fmtNum(entry.scoreTotal)} />
-                <DialogStat
-                  label="Avg Score"
-                  value={fmtFloat(entry.avgScore)}
-                />
+                <DialogStat label="Caps / Round" value={fmtFloat(entry.capturesPerRound)} />
+                <DialogStat label="Hold / Round" value={fmtHold(entry.holdPerRound)} />
               </StatGroup>
             </div>
             <div className="mx-auto mt-3 grid max-w-md grid-cols-2 gap-2 sm:grid-cols-4">
@@ -377,6 +371,16 @@ function DialogStat({ label, value }: { label: string; value: string }) {
 function fmtNum(value: number): string {
   if (!Number.isFinite(value) || value === 0) return "–";
   return formatNumberShort(value);
+}
+
+/** Total objective hold time, shown as m:ss (or "Xs" under a minute). */
+function fmtHold(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds <= 0) return "–";
+  const s = Math.round(seconds);
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  const rem = s % 60;
+  return `${m}:${rem.toString().padStart(2, "0")}`;
 }
 
 /**

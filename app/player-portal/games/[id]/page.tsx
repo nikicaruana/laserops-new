@@ -233,9 +233,9 @@ export default async function GameDetailPage({
 
       {/* Invite – only while the game is still filling (not once live/over). Last
           minute joiners come in on-site via the live entry code, not invites. */}
-      {canViewSignups && ["tentative", "awaiting_confirm", "confirmed"].includes(match.status ?? "") && (
+      {(!match.is_private || canViewSignups) && ["tentative", "awaiting_confirm", "confirmed"].includes(match.status ?? "") && (
         <section className="mt-8">
-          <MatchInviteMenu matchId={id} inviteCode={match.invite_code} />
+          <MatchInviteMenu matchId={id} inviteCode={match.invite_code} canInvite={canViewSignups} />
         </section>
       )}
 

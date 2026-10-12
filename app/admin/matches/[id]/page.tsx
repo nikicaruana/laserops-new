@@ -516,8 +516,8 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         <MatchParticipantsManager matchId={match.id} initial={participants} guns={guns} drinks={drinks} payments={payments} ingest={ingestByHeadband} published={!!match.xp_distributed_at} perPlayer={match.pricing_mode === "per_player"} />
       )}
 
-      {/* Signups (booking side) – not for private bookings */}
-      {!isPlayed && !match.is_private && (
+      {/* Signups (booking side) – shown for open games and private bookings */}
+      {!isPlayed && (
         <CollapsibleSection title="Signups" count={signups.length}>
           {signups.length === 0 ? (
             <p className="border border-dashed border-border px-4 py-10 text-center text-sm text-text-muted">
