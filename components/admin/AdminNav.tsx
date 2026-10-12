@@ -42,6 +42,7 @@ const SECTIONS: { heading: string; items: Item[] }[] = [
       { label: "Financial reports", href: "/admin/reports" },
       { label: "Reward images", href: "/admin/reward-images" },
       { label: "Pricing", href: "/admin/pricing" },
+      { label: "Drinks menu", href: "/admin/drinks" },
       { label: "Refunds", href: "/admin/refunds" },
     ],
   },
