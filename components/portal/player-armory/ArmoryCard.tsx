@@ -155,7 +155,7 @@ export function ArmoryCard({ entry, mastery }: Props) {
             <div className="mt-1 grid grid-cols-4 gap-2">
               <MiniStat label="K/D" value={fmtFloat(entry.kdRatio)} />
               <MiniStat label="Acc." value={fmtPct(entry.avgAccuracy)} />
-              <MiniStat label="Rating" value={fmtFloat(entry.avgMatchRating)} />
+              <MiniStat label="Avg Rating" value={fmtFloat(entry.avgMatchRating)} />
               <MiniStat label="Matches" value={fmtNum(entry.matchesUsed)} />
             </div>
           ) : (
