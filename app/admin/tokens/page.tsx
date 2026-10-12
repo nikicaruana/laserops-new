@@ -23,7 +23,7 @@ export default async function AdminTokensPage() {
       .order("sort_order", { ascending: true, nullsFirst: false }),
     supabase
       .from("token_pack_requests")
-      .select("id, bundle_name, tokens, price_eur, created_at, account:accounts(ops_tag, full_name, email)")
+      .select("id, bundle_name, tokens, price_eur, created_at, account:accounts(ops_tag, full_name, email, phone_e164)")
       .eq("status", "pending")
       .order("created_at", { ascending: true }),
   ]);
@@ -48,7 +48,7 @@ export default async function AdminTokensPage() {
             tokens: Number(r.tokens),
             price_eur: Number(r.price_eur),
             created_at: r.created_at as string,
-            account: acc ? { ops_tag: acc.ops_tag ?? null, full_name: acc.full_name ?? null, email: acc.email ?? null } : null,
+            account: acc ? { ops_tag: acc.ops_tag ?? null, full_name: acc.full_name ?? null, email: acc.email ?? null, phone: acc.phone_e164 ?? null } : null,
           };
         })}
       />

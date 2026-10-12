@@ -24,6 +24,11 @@ export function BuyBundleButton({ bundleId, label = "Request this pack" }: { bun
     const { error: err } = await supabase.rpc("request_token_pack", { p_bundle_id: bundleId });
     setLoading(false);
     if (err) {
+      if ((err.message || "").includes("PHONE_REQUIRED")) {
+        setError("Add a phone number to your profile first - taking you there…");
+        setTimeout(() => { window.location.href = "/player-portal/profile?needphone=1"; }, 1300);
+        return;
+      }
       setError(err.message || "Couldn't send the request.");
       return;
     }
