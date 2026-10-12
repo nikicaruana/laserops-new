@@ -64,7 +64,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   // Recent games, so a manual in-person entry can be tied to a game id.
   const { data: recentGames } =
     type === "financial"
-      ? await supabase.from("matches").select("id, match_code, title, scheduled_at").order("scheduled_at", { ascending: false }).limit(60)
+      ? await supabase.from("matches").select("id, match_code, title, scheduled_at").eq("status", "completed").order("scheduled_at", { ascending: false }).limit(20)
       : { data: [] as { id: string; match_code: string | null; title: string | null; scheduled_at: string | null }[] };
   const gameOptions = (recentGames ?? []).map((g) => ({
     id: g.id,

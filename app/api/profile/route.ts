@@ -31,7 +31,7 @@ export async function PATCH(request: Request) {
 
   const { data: account } = await supabase
     .from("accounts")
-    .select("id")
+    .select("id, ops_tag")
     .eq("auth_user_id", user.id)
     .maybeSingle();
   if (!account) return Response.json({ ok: false, error: "No account linked." }, { status: 404 });
@@ -51,6 +51,13 @@ export async function PATCH(request: Request) {
       return Response.json({ ok: false, field: "ops_tag", error: result.error }, { status: 400 });
     }
     updates.ops_tag = result.value;
+  }
+
+  // Ops tag is mandatory. An account without one yet must set a valid one before
+  // it can finish onboarding (defends against non-UI submissions that skip the
+  // onboarding form client check).
+  if (!account.ops_tag && typeof updates.ops_tag !== "string") {
+    return Response.json({ ok: false, field: "ops_tag", error: "Please choose an ops tag to finish setting up your account." }, { status: 400 });
   }
 
   // Full name is mandatory. Whenever the client submits it (onboarding and the
