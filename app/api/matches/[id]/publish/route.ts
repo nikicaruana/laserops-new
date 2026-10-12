@@ -202,29 +202,19 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
       const rlPerPlayer = (mFlags?.pricing_mode as string | null) === "per_player";
       const rlSiteBase = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.laseropsmalta.com").replace(/\/$/, "");
       const rlPayUrl = `${rlSiteBase}/player-portal/pay/${id}`;
-      const settleButton = `<table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin:0 0 14px 0;"><tr><td align="center"><a href="${rlPayUrl}" style="display:block; background:#ffde00; color:#111111; text-decoration:none; font-size:16px; font-weight:800; padding:15px 22px; border-radius:10px; border:2px solid #ffde00; text-transform:uppercase; letter-spacing:0.4px;">Settle up &ndash; token, Revolut or cash</a></td></tr></table>`;
-      const rlPaid = new Set<string>();
-      const rlOnRoster = new Set<string>();
-      if (rlPerPlayer) {
-        const { data: rlPartRows } = await svc.from("match_participants").select("account_id, paid_at").eq("match_id", id).not("account_id", "is", null);
-        for (const pr of (rlPartRows ?? []) as { account_id: string; paid_at: string | null }[]) {
-          rlOnRoster.add(pr.account_id);
-          if (pr.paid_at) rlPaid.add(pr.account_id);
-        }
-      }
+      const reportType = rlPerPlayer ? "match_report_settle" : "match_report_live";
       const { data: rlParts } = await svc.from("match_player_aggregate").select("account_id").eq("match_id", id).not("account_id", "is", null);
       const rlIds = [...new Set(((rlParts ?? []) as { account_id: string }[]).map((p) => p.account_id))];
       if (rlIds.length) {
-        const { data: rlAlready } = await svc.from("notifications").select("account_id").eq("type_key", "match_report_live").eq("href", rlHref).in("account_id", rlIds);
+        const { data: rlAlready } = await svc.from("notifications").select("account_id").eq("type_key", reportType).eq("href", rlHref).in("account_id", rlIds);
         const rlSent = new Set(((rlAlready ?? []) as { account_id: string }[]).map((n) => n.account_id));
         for (const accId of rlIds) {
           if (rlSent.has(accId)) continue;
-          const settleBlock = rlPerPlayer && rlOnRoster.has(accId) && !rlPaid.has(accId) ? settleButton : "";
-          await emitNotification(svc, accId, "match_report_live", {
+          await emitNotification(svc, accId, reportType, {
             title: "Your match report is live",
             body: `The report for ${matchLabel} is up. See your kills, captures, accolades and where you ranked.`,
             href: rlHref,
-            data: { matchLabel, matchDate, matchTimeRange, settleBlock },
+            data: { matchLabel, matchDate, matchTimeRange, payUrl: rlPayUrl },
           });
         }
       }
