@@ -155,7 +155,7 @@ export function ArmoryCard({ entry, mastery }: Props) {
             <div className="mt-1 grid grid-cols-4 gap-2">
               <MiniStat label="K/D" value={fmtFloat(entry.kdRatio)} />
               <MiniStat label="Acc." value={fmtPct(entry.avgAccuracy)} />
-              <MiniStat label="Kills" value={fmtNum(entry.killsTotal)} />
+              <MiniStat label="Rating" value={fmtFloat(entry.avgMatchRating)} />
               <MiniStat label="Matches" value={fmtNum(entry.matchesUsed)} />
             </div>
           ) : (
@@ -268,11 +268,11 @@ function ArmoryDetailBody({ entry, isLocked }: { entry: ArmoryEntry; isLocked: b
             </StatGroup>
             <StatGroup>
               <DetailStat label="Damage" value={fmtNum(entry.damageTotal)} />
-              <DetailStat label="Avg Damage" value={fmtFloat(entry.avgDamage)} />
+              <DetailStat label="Damage / Round" value={fmtRoundedInt(entry.damagePerRound)} />
             </StatGroup>
             <StatGroup>
-              <DetailStat label="Score" value={fmtNum(entry.scoreTotal)} />
-              <DetailStat label="Avg Score" value={fmtFloat(entry.avgScore)} />
+              <DetailStat label="Caps / Round" value={fmtFloat(entry.capturesPerRound)} />
+              <DetailStat label="Hold / Round" value={fmtHold(entry.holdPerRound)} />
             </StatGroup>
           </div>
           <div className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
@@ -311,6 +311,20 @@ function DetailStat({ label, value }: { label: string; value: string }) {
       <p className="mt-0.5 font-mono text-sm font-extrabold tabular-nums text-accent sm:text-base">{value}</p>
     </div>
   );
+}
+
+function fmtRoundedInt(value: number): string {
+  if (!Number.isFinite(value) || value === 0) return "–";
+  return Math.round(value).toLocaleString("en-US");
+}
+
+function fmtHold(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds <= 0) return "–";
+  const s = Math.round(seconds);
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  const rem = s % 60;
+  return `${m}:${rem.toString().padStart(2, "0")}`;
 }
 
 function fmtNum(value: number): string {

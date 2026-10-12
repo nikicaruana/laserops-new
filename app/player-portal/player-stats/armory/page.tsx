@@ -73,18 +73,21 @@ async function ArmoryContent({ ops }: { ops: string }) {
     getWeaponsFromSupabase(),
     getExcludedNicknamesFromSupabase(),
     supabase.from("accounts").select("is_admin").ilike("ops_tag", ops).maybeSingle(),
-    supabase.from("player_gun_stats").select("gun_name, kills_per_round").ilike("nickname", ops),
+    supabase.from("player_gun_stats").select("gun_name, kills_per_round, damage_per_round, captures_per_round, hold_per_round").ilike("nickname", ops),
     getWeaponMasteryByGun(supabase, ops),
   ]);
   const mastery = Object.fromEntries(masteryMap);
 
   // Per-gun kills/round (online rounds) from the gun-stats read-model, merged
   // onto the armory rows so the meta chart + detail dialog can show per-round.
-  const kprByGun = new Map<string, number>();
-  for (const g of (gunStatRows ?? []) as { gun_name: string | null; kills_per_round: number | null }[]) {
-    if (g.gun_name) kprByGun.set(g.gun_name, g.kills_per_round ?? 0);
+  const gsByGun = new Map<string, { kpr: number; dpr: number; cpr: number; hpr: number }>();
+  for (const g of (gunStatRows ?? []) as { gun_name: string | null; kills_per_round: number | null; damage_per_round: number | null; captures_per_round: number | null; hold_per_round: number | null }[]) {
+    if (g.gun_name) gsByGun.set(g.gun_name, { kpr: g.kills_per_round ?? 0, dpr: g.damage_per_round ?? 0, cpr: g.captures_per_round ?? 0, hpr: g.hold_per_round ?? 0 });
   }
-  const armoryRows = armoryRowsRaw.map((r) => ({ ...r, killsPerRound: kprByGun.get(r.gunName) ?? 0 }));
+  const armoryRows = armoryRowsRaw.map((r) => {
+    const gs = gsByGun.get(r.gunName);
+    return { ...r, killsPerRound: gs?.kpr ?? 0, damagePerRound: gs?.dpr ?? 0, capturesPerRound: gs?.cpr ?? 0, holdPerRound: gs?.hpr ?? 0 };
+  });
 
   let filtered = armoryRows;
 

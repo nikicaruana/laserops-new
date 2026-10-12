@@ -65,7 +65,10 @@ export async function getPlayerArmoryRows(
     matchesUsed: n(r.matches_used as number),
     killsTotal: n(r.kills_total as number),
     avgKills: n(r.avg_kills as number),
-    killsPerRound: 0, // merged from player_gun_stats at the armory page
+    killsPerRound: 0,
+    damagePerRound: 0,
+    capturesPerRound: 0,
+    holdPerRound: 0, // all merged from player_gun_stats at the armory page
 
     deathsTotal: n(r.deaths_total as number),
     hitsTotal: n(r.hits_total as number),

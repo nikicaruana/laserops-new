@@ -112,8 +112,11 @@ export type PlayerArmoryRow = {
   matchesUsed: number;
   killsTotal: number;
   avgKills: number;
-  /** Kills per online round with this gun (from player_gun_stats; 0 if none). */
+  /** Per online round with this gun (from player_gun_stats; 0 if none). */
   killsPerRound: number;
+  damagePerRound: number;
+  capturesPerRound: number;
+  holdPerRound: number;
   deathsTotal: number;
   hitsTotal: number;
   shotsTotal: number;
@@ -207,6 +210,9 @@ export async function fetchPlayerArmory(): Promise<PlayerArmoryRow[]> {
       killsTotal: parseNumericOr(row.Kills_Total, 0),
       avgKills: parseNumericOr(row.Avg_Kills, 0),
       killsPerRound: 0, // legacy Sheets path has no per-round; merged from gun stats
+      damagePerRound: 0,
+      capturesPerRound: 0,
+      holdPerRound: 0,
       deathsTotal: parseNumericOr(row.Deaths_Total, 0),
       hitsTotal: parseNumericOr(row.Hits_Total, 0),
       shotsTotal: parseNumericOr(row.Shots_Total, 0),

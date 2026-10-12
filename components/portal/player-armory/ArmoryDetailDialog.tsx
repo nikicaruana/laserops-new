@@ -307,21 +307,11 @@ function ArmoryDialogBody({
               </StatGroup>
               <StatGroup>
                 <DialogStat label="Damage" value={fmtNum(entry.damageTotal)} />
-                <DialogStat
-                  label="Avg Damage"
-                  value={fmtFloat(entry.avgDamage)}
-                />
+                <DialogStat label="Damage / Round" value={fmtRoundedInt(entry.damagePerRound)} />
               </StatGroup>
               <StatGroup>
-                <DialogStat label="Score" value={fmtNum(entry.scoreTotal)} />
-                <DialogStat
-                  label="Avg Score"
-                  value={fmtFloat(entry.avgScore)}
-                />
-              </StatGroup>
-              <StatGroup>
-                <DialogStat label="Captures" value={fmtNum(entry.capturesTotal)} />
-                <DialogStat label="Hold Time" value={fmtHold(entry.holdSecondsTotal)} />
+                <DialogStat label="Caps / Round" value={fmtFloat(entry.capturesPerRound)} />
+                <DialogStat label="Hold / Round" value={fmtHold(entry.holdPerRound)} />
               </StatGroup>
             </div>
             <div className="mx-auto mt-3 grid max-w-md grid-cols-2 gap-2 sm:grid-cols-4">
