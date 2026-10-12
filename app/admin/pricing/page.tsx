@@ -10,13 +10,14 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { PricingConfigEditor } from "@/components/admin/PricingConfigEditor";
 import { DiscountManager } from "@/components/admin/DiscountManager";
+import { PayLinkEditor } from "@/components/admin/PayLinkEditor";
 
 export const metadata: Metadata = { title: "Pricing" };
 
 export default async function PricingPage() {
   const supabase = await createClient();
   const [{ data: cfg }, { data: discounted }] = await Promise.all([
-    supabase.from("pricing_config").select("default_price_eur, session_minutes, booking_buffer_minutes, default_max_players").eq("id", 1).maybeSingle(),
+    supabase.from("pricing_config").select("default_price_eur, session_minutes, booking_buffer_minutes, default_max_players, revolut_pay_link").eq("id", 1).maybeSingle(),
     supabase.from("accounts").select("id, ops_tag, discount_price_eur").not("discount_price_eur", "is", null).order("discount_price_eur", { ascending: true }),
   ]);
 
@@ -42,6 +43,10 @@ export default async function PricingPage() {
         bufferMinutes={Number(cfg?.booking_buffer_minutes ?? 60)}
         defaultMaxPlayers={Number(cfg?.default_max_players ?? 30)}
       />
+
+      <div className="mt-10">
+        <PayLinkEditor initial={(cfg?.revolut_pay_link as string) ?? ""} />
+      </div>
 
       <h2 className="mb-4 mt-10 text-sm font-bold uppercase tracking-[0.14em] text-text-subtle">Family &amp; friends discounts</h2>
       <DiscountManager initial={initial} />
