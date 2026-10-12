@@ -89,7 +89,7 @@ export default async function GameDetailPage({
   ]);
   const viewerLevel = (levelRow as { current_level: number | null } | null)?.current_level ?? 1;
   const beginnerLock =
-    match.is_beginner && match.beginner_max_level != null && !account.is_admin && viewerLevel > match.beginner_max_level
+    match.is_beginner && match.beginner_max_level != null && viewerLevel > match.beginner_max_level
       ? { yourLevel: viewerLevel, maxLevel: match.beginner_max_level }
       : null;
 

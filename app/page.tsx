@@ -10,6 +10,8 @@ import { brand } from "@/lib/brand";
 import { getHomeHeroConfig } from "@/lib/cms/home-config";
 import { getHomeSocialPosts, getHomeReviews } from "@/lib/cms/home-social";
 import { SectionAmbient } from "@/components/layout/SectionAmbient";
+import { BeginnerGameShowcase } from "@/components/booking/BeginnerGameShowcase";
+import { getNextBeginnerOpenGame } from "@/lib/booking/open-games";
 
 /**
  * Homepage.
@@ -28,10 +30,11 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const [homeHero, socialPosts, reviews] = await Promise.all([
+  const [homeHero, socialPosts, reviews, beginnerGame] = await Promise.all([
     getHomeHeroConfig(),
     getHomeSocialPosts(),
     getHomeReviews(),
+    getNextBeginnerOpenGame(),
   ]);
 
   // The review cards all link to the same Google destination – reuse the hero's
@@ -57,6 +60,7 @@ export default async function HomePage() {
   return (
     <>
       <HomeHero config={homeHero} />
+      <BeginnerGameShowcase game={beginnerGame} />
       <WeaponsSection />
       {/* Consecutive dark sections share ONE ambient so the bokeh is continuous
           across the section break. Both sit transparent over this group's dark
