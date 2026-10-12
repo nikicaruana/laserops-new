@@ -319,6 +319,10 @@ function ArmoryDialogBody({
                   value={fmtFloat(entry.avgScore)}
                 />
               </StatGroup>
+              <StatGroup>
+                <DialogStat label="Captures" value={fmtNum(entry.capturesTotal)} />
+                <DialogStat label="Hold Time" value={fmtHold(entry.holdSecondsTotal)} />
+              </StatGroup>
             </div>
             <div className="mx-auto mt-3 grid max-w-md grid-cols-2 gap-2 sm:grid-cols-4">
               <DialogStat label="K/D" value={fmtFloat(entry.kdRatio)} />
@@ -377,6 +381,16 @@ function DialogStat({ label, value }: { label: string; value: string }) {
 function fmtNum(value: number): string {
   if (!Number.isFinite(value) || value === 0) return "–";
   return formatNumberShort(value);
+}
+
+/** Total objective hold time, shown as m:ss (or "Xs" under a minute). */
+function fmtHold(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds <= 0) return "–";
+  const s = Math.round(seconds);
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  const rem = s % 60;
+  return `${m}:${rem.toString().padStart(2, "0")}`;
 }
 
 /**

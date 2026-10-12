@@ -126,6 +126,10 @@ export type PlayerArmoryRow = {
   winsUsingGun: number;
   roundsWonUsingGun: number;
   avgMatchRating: number;
+  capturesTotal: number;
+  holdSecondsTotal: number;
+  avgCaptures: number;
+  avgHoldSeconds: number;
 
   // Display extras already on this sheet (so cards/modals render even
   // when the Gun_Damage join misses).
@@ -215,6 +219,10 @@ export async function fetchPlayerArmory(): Promise<PlayerArmoryRow[]> {
       winsUsingGun: parseNumericOr(row.Wins_Using_Gun, 0),
       roundsWonUsingGun: parseNumericOr(row.Rounds_Won_Using_Gun, 0),
       avgMatchRating: parseNumericOr(row.Avg_Match_Rating, 0),
+      capturesTotal: parseNumericOr(row.Captures_Total, 0),
+      holdSecondsTotal: parseNumericOr(row.Hold_Seconds_Total, 0),
+      avgCaptures: parseNumericOr(row.Avg_Captures, 0),
+      avgHoldSeconds: parseNumericOr(row.Avg_Hold_Seconds, 0),
 
       gunMagSize: parseNumericOr(row.Gun_Mag_Size, 0),
       gunDamage: parseNumericOr(row.Gun_Damage, 0),
