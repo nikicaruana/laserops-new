@@ -194,7 +194,7 @@ export function GameSignupControl({
     return (
       <div className={`flex flex-col gap-2 ${col}`}>
         <span className="inline-flex items-center gap-2 border border-accent bg-accent/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.12em] text-accent">
-          ✓ You&apos;re in{confirmedOpen ? (isPaid ? " · paid" : " · confirmed") : ""}
+          ✓ You&apos;re in{confirmedOpen ? " · confirmed" : ""}
         </span>
 
         {familyFriends && hasPrice && confirmedOpen && !isPaid && (
