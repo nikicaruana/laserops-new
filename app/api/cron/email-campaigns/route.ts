@@ -19,6 +19,16 @@ export const dynamic = "force-dynamic";
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.laseropsmalta.com";
 const BATCH = 100; // Resend batch.send caps at 100 emails per request.
 
+/** Addresses Resend rejects outright (reserved/test domains, or malformed). */
+function isSendableEmail(value: string | null | undefined): boolean {
+  const v = (value ?? "").trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return false;
+  const domain = v.split("@")[1]?.toLowerCase() ?? "";
+  if (["example.com", "example.org", "example.net"].includes(domain)) return false;
+  if (/\.(test|example|invalid|localhost|local)$/.test(domain)) return false;
+  return true;
+}
+
 type Campaign = {
   id: string;
   type_key: string;
@@ -77,7 +87,21 @@ export async function GET(req: NextRequest) {
   const sender = resolveSender(config, { from: campaign.email_from, senderName: campaign.email_sender_name, replyTo: null });
   const link = campaign.href ? (campaign.href.startsWith("http") ? campaign.href : `${BASE_URL}${campaign.href}`) : BASE_URL;
 
-  const payload = recipients.map((r) => {
+  const nowIso = new Date().toISOString();
+
+  // Isolate addresses Resend rejects (reserved/test domains, malformed) up
+  // front, so one bad address can not fail the whole batch. Mark them handled
+  // with a note so they leave the queue instead of retrying forever.
+  const sendable = recipients.filter((r) => isSendableEmail(r.email));
+  const unsendable = recipients.filter((r) => !isSendableEmail(r.email));
+  if (unsendable.length) {
+    await supabase
+      .from("email_campaign_recipients")
+      .update({ sent_at: nowIso, error: "skipped: invalid or unsupported email address" })
+      .in("id", unsendable.map((r) => r.id));
+  }
+
+  const payload = sendable.map((r) => {
     const tokens = buildEmailTokens(config, { opsTag: r.ops_tag, title: campaign.title, body: campaign.body, link, data: null });
     return {
       from: sender.from,
@@ -88,20 +112,37 @@ export async function GET(req: NextRequest) {
     };
   });
 
-  const nowIso = new Date().toISOString();
-  const ids = recipients.map((r) => r.id);
-  try {
-    const { error } = await resend.batch.send(payload);
-    if (error) throw new Error(error.message || "batch send failed");
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error("[email-campaigns] batch failed:", message);
-    // Record the error; leave sent_at null so the next run retries this slice.
-    await supabase.from("email_campaign_recipients").update({ error: message }).in("id", ids);
-    return Response.json({ ok: false, campaignId: campaign.id, error: message, retrying: ids.length }, { status: 502 });
+  const sentIds: string[] = [];
+  const failures: { id: string; message: string }[] = [];
+  if (sendable.length) {
+    try {
+      const { error } = await resend.batch.send(payload);
+      if (error) throw new Error(error.message || "batch send failed");
+      for (const r of sendable) sentIds.push(r.id);
+    } catch (batchErr) {
+      // One bad address fails the whole batch, so fall back to per-recipient
+      // sends: the good ones still go, and only the offenders are isolated.
+      console.error("[email-campaigns] batch failed, retrying individually:", batchErr instanceof Error ? batchErr.message : String(batchErr));
+      for (let i = 0; i < sendable.length; i++) {
+        try {
+          const { error } = await resend.emails.send(payload[i]);
+          if (error) throw new Error(error.message || "send failed");
+          sentIds.push(sendable[i].id);
+        } catch (sendErr) {
+          failures.push({ id: sendable[i].id, message: (sendErr instanceof Error ? sendErr.message : String(sendErr)).slice(0, 300) });
+        }
+      }
+    }
   }
 
-  await supabase.from("email_campaign_recipients").update({ sent_at: nowIso, error: null }).in("id", ids);
+  if (sentIds.length) {
+    await supabase.from("email_campaign_recipients").update({ sent_at: nowIso, error: null }).in("id", sentIds);
+  }
+  // Isolate individual failures too (mark handled) so a single bad address can
+  // never stall the campaign; its error is recorded for the admin to see.
+  for (const f of failures) {
+    await supabase.from("email_campaign_recipients").update({ sent_at: nowIso, error: f.message }).eq("id", f.id);
+  }
 
   // Advance campaign counters and finish if this was the last slice.
   const { count: remaining } = await supabase
@@ -113,11 +154,12 @@ export async function GET(req: NextRequest) {
     .from("email_campaign_recipients")
     .select("id", { count: "exact", head: true })
     .eq("campaign_id", campaign.id)
-    .not("sent_at", "is", null);
+    .not("sent_at", "is", null)
+    .is("error", null);
   await supabase
     .from("email_campaigns")
     .update({ sent: sentCount ?? 0, status: (remaining ?? 0) === 0 ? "done" : "sending" })
     .eq("id", campaign.id);
 
-  return Response.json({ ok: true, campaignId: campaign.id, sent: ids.length, remaining: remaining ?? 0 });
+  return Response.json({ ok: true, campaignId: campaign.id, sent: sentIds.length, skipped: unsendable.length + failures.length, remaining: remaining ?? 0 });
 }
