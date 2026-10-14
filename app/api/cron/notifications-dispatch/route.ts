@@ -47,9 +47,14 @@ export async function GET(req: NextRequest) {
   if (gameTokenImg) config.tokenImageUrl = gameTokenImg;
   const { data, error } = await supabase
     .from("notifications")
-    .select("id, title, body, href, data, email_from, email_sender_name, account:accounts(email, ops_tag), type:notification_types(sends_email, email_subject, email_html, email_from, email_sender_name, email_reply_to)")
+    // Inner-join the type and require sends_email so bell-only notifications
+    // (which never get email_sent_at stamped) can not pile up and crowd the
+    // 50-row window, starving genuine emails. Oldest-due first.
+    .select("id, title, body, href, data, email_from, email_sender_name, account:accounts(email, ops_tag), type:notification_types!inner(sends_email, email_subject, email_html, email_from, email_sender_name, email_reply_to)")
+    .eq("type.sends_email", true)
     .is("email_sent_at", null)
     .lte("deliver_at", new Date().toISOString())
+    .order("deliver_at", { ascending: true })
     .limit(50);
   if (error) return Response.json({ ok: false, error: error.message }, { status: 500 });
 
