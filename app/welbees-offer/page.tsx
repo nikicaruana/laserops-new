@@ -166,13 +166,12 @@ export default async function WelbeesOfferPage() {
     <div className="pb-10">
       {/* co-brand banner */}
       <header className="relative overflow-hidden bg-accent py-4">
-        <div className="dimple-texture-dark pointer-events-none absolute inset-0 opacity-45" aria-hidden="true" />
-        <Container size="narrow" className="relative flex flex-wrap items-center justify-center gap-5">
+        <Container size="narrow" className="relative flex flex-nowrap items-center justify-center gap-2.5 sm:gap-5">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={cldImage(LOGO_URL, { w: 200, trim: true })} alt="LaserOps Malta" className="h-[34px] w-auto brightness-0" />
-          <span className="text-2xl font-extrabold text-bg opacity-50">✕</span>
+          <img src={cldImage(LOGO_URL, { w: 200, trim: true })} alt="LaserOps Malta" className="h-7 w-auto min-w-0 max-w-[44%] shrink object-contain brightness-0 sm:h-[34px]" />
+          <span className="shrink-0 text-xl font-extrabold text-bg opacity-50 sm:text-2xl">✕</span>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/welbees-supermarket.png" alt="Welbee's Supermarket" className="h-[54px] w-auto mix-blend-multiply" />
+          <img src="/welbees-supermarket.png" alt="Welbee's Supermarket" className="h-9 w-auto min-w-0 max-w-[42%] shrink object-contain mix-blend-multiply sm:h-[54px]" />
         </Container>
       </header>
 
