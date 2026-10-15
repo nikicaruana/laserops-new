@@ -18,7 +18,7 @@ import { cldImage } from "@/lib/cld";
 import { FeaturedPhotoRotator } from "@/components/welbees/FeaturedPhotoRotator";
 
 export const metadata: Metadata = {
-  title: "Welbee's Offer | LaserOps Malta",
+  title: "Welbee's Offer",
   alternates: { canonical: "/welbees-offer" },
   description:
     "Outdoor laser tag in Malta: pay for your first LaserOps game and get your second free. A Welbee's exclusive for first-timers.",
