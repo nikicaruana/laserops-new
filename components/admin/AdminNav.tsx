@@ -70,6 +70,7 @@ const SECTIONS: { heading: string; items: Item[] }[] = [
       { label: "Progression calibrator", href: "/admin/progression" },
       { label: "ELO", href: "/admin/elo" },
       { label: "Ratings", href: "/admin/ratings" },
+      { label: "Rating Leaderboard", href: "/admin/rating-leaderboard" },
       { label: "Scoring formula", href: "/admin/scoring" },
       { label: "Accolades", href: "/admin/accolades" },
       { label: "Streaks", href: "/admin/streaks" },
