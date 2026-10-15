@@ -18,7 +18,7 @@ import { cldImage } from "@/lib/cld";
 import { FeaturedPhotoRotator } from "@/components/welbees/FeaturedPhotoRotator";
 
 export const metadata: Metadata = {
-  title: "Welbee's Offer | LaserOps Malta",
+  title: "Welbee's Offer",
   alternates: { canonical: "/welbees-offer" },
   description:
     "Outdoor laser tag in Malta: pay for your first LaserOps game and get your second free. A Welbee's exclusive for first-timers.",
@@ -287,8 +287,8 @@ export default async function WelbeesOfferPage() {
           <StepHead n={3} title="Your free game lands in your profile" />
           <p className="mt-3 text-[14.5px] text-text-muted">After your first game, we assign a <b className="font-bold text-text">LaserOps Game Token</b> to your account. One token equals one free game.</p>
           <div className="mt-[18px] flex flex-col items-center">
-            <div className="relative w-[168px] max-w-[60%]">
-              <div className="absolute -inset-[16%] animate-pulse rounded-full blur-[6px]" style={{ background: "radial-gradient(circle, rgba(255,222,0,0.32), transparent 62%)" }} aria-hidden="true" />
+            <div className="relative w-[140px] max-w-[52%]">
+              <div className="absolute -inset-[24%] animate-pulse rounded-full blur-[10px]" style={{ background: "radial-gradient(circle, rgba(255,222,0,0.42), transparent 66%)" }} aria-hidden="true" />
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={cldImage(TOKEN_URL, { w: 400 })} alt="LaserOps Game Token" className="relative z-[1] block h-auto w-full" />
             </div>
