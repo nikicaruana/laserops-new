@@ -36,6 +36,15 @@ export function PageVisit({ path }: { path: string }) {
   useEffect(() => {
     if (sent.current) return;
     sent.current = true;
+    // Count once per tab per day: a refresh is not a new visit, and the server
+    // hash alone can split one person if their IP changes between loads (VPN,
+    // IPv6 rotation, wifi to mobile data). The flag holds no identifier and is
+    // never sent anywhere; it only suppresses the repeat ping.
+    const key = `lo_pv:${path}:${new Date().toDateString()}`;
+    try {
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, "1");
+    } catch { /* storage blocked: count anyway */ }
     send(path, "view");
   }, [path]);
   return null;

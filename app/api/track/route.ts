@@ -24,6 +24,16 @@ function maltaDay(): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Malta" }).format(new Date());
 }
 
+// IPv6 privacy addresses rotate within the household's /64, so hash the prefix.
+function networkOf(ip: string): string {
+  if (!ip.includes(":")) return ip;
+  const [head, tail = ""] = ip.split("::");
+  const h = head ? head.split(":") : [];
+  const t = ip.includes("::") && tail ? tail.split(":") : [];
+  const full = ip.includes("::") ? [...h, ...Array(8 - h.length - t.length).fill("0"), ...t] : h;
+  return full.slice(0, 4).map((p) => p.toLowerCase().replace(/^0+(?=.)/, "")).join(":");
+}
+
 function clip(v: unknown, max: number): string | null {
   if (typeof v !== "string") return null;
   const s = v.trim().toLowerCase();
@@ -46,7 +56,7 @@ export async function POST(request: NextRequest) {
     if (!supabase) return done;
 
     const day = maltaDay();
-    const ip = (request.headers.get("x-forwarded-for") ?? "").split(",")[0].trim();
+    const ip = networkOf((request.headers.get("x-forwarded-for") ?? "").split(",")[0].trim());
     const salt = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
     const visitorHash = createHash("sha256").update(`${salt}|${day}|${ip}|${ua}`).digest("hex").slice(0, 32);
 
