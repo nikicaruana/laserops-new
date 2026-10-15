@@ -125,7 +125,7 @@ async function getFeaturedPhotos(): Promise<string[]> {
     const sb = createPublicClient();
     let { data } = await sb.from("match_photos").select("secure_url, featured_home, created_at").eq("featured_home", true).order("created_at", { ascending: false }).limit(18);
     if (!data || data.length < 3) {
-      const r = await sb.from("match_photos").select("secure_url, created_at").order("created_at", { ascending: false }).limit(15);
+      const r = await sb.from("match_photos").select("secure_url, featured_home, created_at").order("created_at", { ascending: false }).limit(15);
       data = r.data ?? [];
     }
     return ((data ?? []) as { secure_url: string | null }[])
