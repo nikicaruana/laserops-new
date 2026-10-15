@@ -52,7 +52,7 @@ site (dataLayer.push)  →  GTM trigger  →  GA4 event tag      (gated on analy
 | `booking_form_submitted` | `event_type` | `components/booking/BookingForm.tsx` (on success) |
 | `booking_form_start` | `event_type` | `components/booking/BookingForm.tsx` (first field focus) |
 | `cookie_consent_update` | `consent_analytics`, `consent_marketing` | `components/tracking/CookieConsent.tsx` (active choice) |
-| `play_cta_click` | `cta` | `components/play/CtaTrack.tsx` (every /play CTA) |
+| `play_cta_click` | `cta` | `components/play/CtaTrack.tsx` (every /play CTA); `components/tracking/PageVisit.tsx` `TrackedCta` (Welbee's CTAs: `welbees_create_account`, `welbees_browse_games`) |
 | `engaged_session` | — | `components/tracking/EngagedSession.tsx` (site-wide) |
 
 ---

@@ -8,7 +8,11 @@
  * Live data: next upcoming open games (3rd slot pinned to the next Double XP
  * event, beginners-only game split into its own highlight) + the current
  * featured gallery photos (rotating). Chrome is hidden on this route (see
- * ChromeGate) so it reads as a focused landing page.
+ * ChromeGate) so it reads as a focused landing page; the cookie banner still
+ * shows so EEA visitors can opt in to GA4.
+ *
+ * Tracking: PageVisit/TrackedCta feed the consent-free first-party counter at
+ * /admin/landing-stats, and the CTAs also push `play_cta_click` to GA4.
  */
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -16,6 +20,7 @@ import { Container } from "@/components/ui/Container";
 import { createPublicClient } from "@/lib/supabase/public";
 import { cldImage } from "@/lib/cld";
 import { FeaturedPhotoRotator } from "@/components/welbees/FeaturedPhotoRotator";
+import { PageVisit, TrackedCta } from "@/components/tracking/PageVisit";
 
 export const metadata: Metadata = {
   title: "Welbee's Offer",
@@ -164,6 +169,7 @@ export default async function WelbeesOfferPage() {
 
   return (
     <div className="pb-10">
+      <PageVisit path="/welbees-offer" />
       {/* co-brand banner */}
       <header className="relative overflow-hidden bg-accent py-4">
         <Container size="narrow" className="relative flex flex-nowrap items-center justify-center gap-2.5 sm:gap-5">
@@ -312,16 +318,20 @@ export default async function WelbeesOfferPage() {
 
         {/* CTA */}
         <section className="pb-1 pt-1.5 text-center">
-          <Link
-            href="/player-portal/login"
-            className="inline-flex w-full max-w-[360px] items-center justify-center rounded-[2px] bg-accent px-[30px] py-4 text-[18px] font-bold uppercase tracking-wide text-bg shadow-[0_12px_34px_-14px_rgba(255,222,0,0.55)] transition-colors hover:bg-accent-soft"
-          >
-            Create your free account
-          </Link>
-          <div>
-            <Link href="/booking" className="mt-3 inline-flex items-center justify-center rounded-[2px] border border-border-strong px-5 py-[11px] text-[13.5px] font-bold uppercase tracking-wide text-text transition-colors hover:border-accent hover:text-accent">
-              Browse upcoming games
+          <TrackedCta path="/welbees-offer" kind="cta_signup" cta="welbees_create_account">
+            <Link
+              href="/player-portal/login"
+              className="inline-flex w-full max-w-[360px] items-center justify-center rounded-[2px] bg-accent px-[30px] py-4 text-[18px] font-bold uppercase tracking-wide text-bg shadow-[0_12px_34px_-14px_rgba(255,222,0,0.55)] transition-colors hover:bg-accent-soft"
+            >
+              Create your free account
             </Link>
+          </TrackedCta>
+          <div>
+            <TrackedCta path="/welbees-offer" kind="cta_games" cta="welbees_browse_games">
+              <Link href="/booking" className="mt-3 inline-flex items-center justify-center rounded-[2px] border border-border-strong px-5 py-[11px] text-[13.5px] font-bold uppercase tracking-wide text-text transition-colors hover:border-accent hover:text-accent">
+                Browse upcoming games
+              </Link>
+            </TrackedCta>
           </div>
           <p className="mt-[15px] text-[12.5px] text-text-subtle">Redeem before the offer ends. One free game per new player.</p>
         </section>

@@ -152,6 +152,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </main>
         <ChromeGate>
           <Footer />
+        </ChromeGate>
+        <ChromeGate adminOnly>
           <CookieConsent />
         </ChromeGate>
         <EngagedSessionTracker />

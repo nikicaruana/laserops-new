@@ -24,6 +24,7 @@ const SECTIONS: { heading: string; items: Item[] }[] = [
       { label: "Change log", href: "/admin/changelog" },
       { label: "User management", href: "/admin/users" },
       { label: "Notifications", href: "/admin/notifications" },
+      { label: "Landing page stats", href: "/admin/landing-stats" },
       { label: "Security", href: "/admin/security" },
     ],
   },
