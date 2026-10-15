@@ -123,15 +123,15 @@ async function getGames(): Promise<{ slips: Slip[]; beginner: Slip | null }> {
 async function getFeaturedPhotos(): Promise<string[]> {
   try {
     const sb = createPublicClient();
-    let { data } = await sb.from("match_photos").select("secure_url, featured_home, created_at").eq("featured_home", true).order("created_at", { ascending: false }).limit(8);
+    let { data } = await sb.from("match_photos").select("secure_url, featured_home, created_at").eq("featured_home", true).order("created_at", { ascending: false }).limit(18);
     if (!data || data.length < 3) {
-      const r = await sb.from("match_photos").select("secure_url, created_at").order("created_at", { ascending: false }).limit(8);
+      const r = await sb.from("match_photos").select("secure_url, created_at").order("created_at", { ascending: false }).limit(15);
       data = r.data ?? [];
     }
     return ((data ?? []) as { secure_url: string | null }[])
       .map((x) => x.secure_url)
       .filter((u): u is string => Boolean(u))
-      .slice(0, 8)
+      .slice(0, 18)
       .map((u) => cldImage(u, { w: 400 }));
   } catch {
     return [];
@@ -169,10 +169,10 @@ export default async function WelbeesOfferPage() {
         <div className="dimple-texture-dark pointer-events-none absolute inset-0 opacity-45" aria-hidden="true" />
         <Container size="narrow" className="relative flex flex-wrap items-center justify-center gap-5">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={cldImage(LOGO_URL, { w: 200 })} alt="LaserOps Malta" className="h-[34px] w-auto brightness-0" />
+          <img src={cldImage(LOGO_URL, { w: 200, trim: true })} alt="LaserOps Malta" className="h-[34px] w-auto brightness-0" />
           <span className="text-2xl font-extrabold text-bg opacity-50">✕</span>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/welbees-supermarket.jpg" alt="Welbee's Supermarket" className="h-[54px] w-auto mix-blend-multiply" />
+          <img src="/welbees-supermarket.png" alt="Welbee's Supermarket" className="h-[54px] w-auto mix-blend-multiply" />
         </Container>
       </header>
 
