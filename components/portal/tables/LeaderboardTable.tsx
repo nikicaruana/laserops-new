@@ -120,6 +120,8 @@ type LeaderboardTableProps<T> = {
    * Required if rowHref is provided.
    */
   rowLinkAriaLabel?: (row: T) => string;
+  /** Tighter column gaps + row padding for wide admin tables. */
+  dense?: boolean;
 };
 
 /* ---------- Internal sort state types ---------- */
@@ -140,6 +142,7 @@ export function LeaderboardTable<T>({
   maxHeight = "720px",
   rowHref,
   rowLinkAriaLabel,
+  dense = false,
 }: LeaderboardTableProps<T>) {
   const [sort, setSort] = useState<SortState>({ kind: "default" });
 
@@ -253,7 +256,8 @@ export function LeaderboardTable<T>({
             <div
               role="row"
               className={cn(
-                "lb-row items-center gap-1 px-2 py-3 sm:gap-4 sm:px-5",
+                "lb-row items-center gap-1 px-2 py-3",
+                dense ? "sm:gap-2 sm:px-3" : "sm:gap-4 sm:px-5",
                 "text-[0.55rem] font-bold uppercase tracking-[0.12em] text-text-muted sm:text-[0.65rem] sm:tracking-[0.16em]",
               )}
             >
@@ -280,7 +284,8 @@ export function LeaderboardTable<T>({
                 key={rowKey(row)}
                 role="row"
                 className={cn(
-                  "lb-row relative items-center gap-1 border-b border-border/60 px-2 py-2.5 sm:gap-4 sm:px-5 sm:py-3",
+                  "lb-row relative items-center gap-1 border-b border-border/60 px-2 py-2.5",
+                  dense ? "sm:gap-2 sm:px-3 sm:py-2" : "sm:gap-4 sm:px-5 sm:py-3",
                   "transition-colors hover:bg-bg-overlay/60",
                   "last:border-b-0",
                   highlight && "bg-accent/[0.03]",
