@@ -286,11 +286,11 @@ export default async function WelbeesOfferPage() {
         <section className="portal-card rounded-[4px] p-[22px]">
           <StepHead n={3} title="Your free game lands in your profile" />
           <p className="mt-3 text-[14.5px] text-text-muted">After your first game, we assign a <b className="font-bold text-text">LaserOps Game Token</b> to your account. One token equals one free game.</p>
-          <div className="mt-[18px] text-center">
-            <div className="relative inline-block">
+          <div className="mt-[18px] flex flex-col items-center">
+            <div className="relative w-[168px] max-w-[60%]">
               <div className="absolute -inset-[16%] animate-pulse rounded-full blur-[6px]" style={{ background: "radial-gradient(circle, rgba(255,222,0,0.32), transparent 62%)" }} aria-hidden="true" />
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={cldImage(TOKEN_URL, { w: 400 })} alt="LaserOps Game Token" className="relative z-[1] h-auto w-[168px] max-w-[58%]" style={{ maxWidth: "58%" }} />
+              <img src={cldImage(TOKEN_URL, { w: 400 })} alt="LaserOps Game Token" className="relative z-[1] block h-auto w-full" />
             </div>
             <div>
               <span className="mt-2.5 inline-flex items-center gap-2 rounded-[2px] border border-border-strong bg-bg-overlay/60 px-[15px] py-[7px] text-[14px] font-extrabold uppercase tracking-wider">
