@@ -511,6 +511,21 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         <MatchLocationEditor matchId={match.id} currentLocationId={(match as { location_id: string | null }).location_id} />
       )}
 
+      {participants.length > 0 && (
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border border-border bg-bg-elevated px-4 py-3">
+          <div>
+            <p className="text-sm font-semibold text-text">Team balancer</p>
+            <p className="text-xs text-text-subtle">Split the roster into two ELO-balanced teams, with fraggers and objective players spread evenly.</p>
+          </div>
+          <Link
+            href={`/admin/matches/${match.id}/teams`}
+            className="border border-accent bg-accent px-4 py-2 text-[0.65rem] font-bold uppercase tracking-[0.12em] text-bg transition-opacity hover:opacity-90"
+          >
+            Create teams
+          </Link>
+        </div>
+      )}
+
       {/* Players: payments + headbands (component renders both collapsible sub-sections) */}
       {(showRoster || Object.keys(ingestByHeadband).length > 0) && (
         <MatchParticipantsManager matchId={match.id} initial={participants} guns={guns} drinks={drinks} payments={payments} ingest={ingestByHeadband} published={!!match.xp_distributed_at} perPlayer={match.pricing_mode === "per_player"} />
