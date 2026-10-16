@@ -279,18 +279,22 @@ export function detectStreaks(round: Round): StreakAward[] {
     }
   }
 
-  // --- Revenge: kill the exact player who most recently killed you -----------
-  // Walk kills in time order tracking each player's most recent killer; when the
-  // actor kills that person it's a revenge, then cleared so they must be killed
-  // again before avenging the same player anew. (Mirrors streak-engine.ts.)
+  // --- Revenge: your FIRST kill after dying is the player who just killed you --
+  // Sequence A kills B, (B respawns), B kills A — with NO other kill BY B in
+  // between. B's first kill after being killed by A must be A, or the chance is
+  // forfeited. A dying to a third party in between does not break it (only B's
+  // own kills close the window). The avenge target is B's most recent killer, so
+  // if B is killed again by someone else first, that newer killer becomes the
+  // target. Walk kills in time order.
   {
-    const lastKiller = new Map<number, number>(); // victim -> who last killed them
+    const avengeTarget = new Map<number, number>(); // player -> killer they can still avenge on their next kill
     for (const k of kills) {
-      if (lastKiller.get(k.actor_id) === k.victim_id) {
-        add(k.actor_id, "revenge", k.time, `on ${k.victim_id}`);
-        lastKiller.delete(k.actor_id);
+      const tgt = avengeTarget.get(k.actor_id);
+      if (tgt !== undefined) {
+        if (k.victim_id === tgt) add(k.actor_id, "revenge", k.time, `on ${tgt}`);
+        avengeTarget.delete(k.actor_id); // this kill is the actor's "next kill" — window closes either way
       }
-      lastKiller.set(k.victim_id, k.actor_id);
+      avengeTarget.set(k.victim_id, k.actor_id); // the victim's newest killer becomes their avenge target
     }
   }
 

@@ -345,16 +345,20 @@ function runRule(ctx: Ctx, rule: StreakRuleConfig): Hit[] {
       break;
     }
     case "revenge": {
-      // Walk kills in time order tracking each player's most recent killer.
-      // When a player kills that exact person, it's a revenge (then cleared so
-      // they must be killed again before avenging the same player anew).
-      const lastKiller = new Map<number, number>(); // victim -> who last killed them
+      // A kills B, (B respawns), B kills A — with NO other kill BY B in between:
+      // B's FIRST kill after being killed by A must be A, or the chance is
+      // forfeited (any other kill by B closes the window). A dying to a third
+      // party in between is fine. The target is B's most recent killer, so if B
+      // is killed again by someone else first, that newer killer becomes the one
+      // to avenge. Walk kills in time order.
+      const avengeTarget = new Map<number, number>(); // player -> killer they can still avenge on their next kill
       for (const k of ctx.kills) {
-        if (lastKiller.get(k.actor_id) === k.victim_id) {
-          emit(k.actor_id, k.time, `on ${k.victim_id}`);
-          lastKiller.delete(k.actor_id);
+        const tgt = avengeTarget.get(k.actor_id);
+        if (tgt !== undefined) {
+          if (k.victim_id === tgt) emit(k.actor_id, k.time, `on ${tgt}`);
+          avengeTarget.delete(k.actor_id); // this kill is the actor's "next kill" — window closes either way
         }
-        lastKiller.set(k.victim_id, k.actor_id);
+        avengeTarget.set(k.victim_id, k.actor_id); // the victim's newest killer becomes their avenge target
       }
       break;
     }
