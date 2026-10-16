@@ -63,17 +63,19 @@ export function TeamBalancer({
 
   const [colourA, setColourA] = useState(defaultColourA);
   const [colourB, setColourB] = useState(defaultColourB);
-  const [teamA, setTeamA] = useState<string[]>(initial.teamA);
-  const [teamB, setTeamB] = useState<string[]>(initial.teamB);
+  // Sort ids high -> low ELO. Teams START sorted; manual reordering is kept.
+  function sortByElo(ids: string[]) {
+    return [...ids].sort((x, y) => (byId.get(y)?.elo ?? 0) - (byId.get(x)?.elo ?? 0));
+  }
+
+  const [teamA, setTeamA] = useState<string[]>(() => sortByElo(initial.teamA));
+  const [teamB, setTeamB] = useState<string[]>(() => sortByElo(initial.teamB));
   const [dragId, setDragId] = useState<string | null>(null);
   const [swapId, setSwapId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
-
-  // Display each team high -> low ELO.
-  const sortByElo = (ids: string[]) => [...ids].sort((x, y) => (byId.get(y)?.elo ?? 0) - (byId.get(x)?.elo ?? 0));
 
   const totals = (ids: string[]) => {
     let elo = 0;
@@ -102,10 +104,21 @@ export function TeamBalancer({
     setTeamA((prev) => prev.map((x) => (x === a ? b : x === b ? a : x)));
     setTeamB((prev) => prev.map((x) => (x === a ? b : x === b ? a : x)));
   }
+  // Move movingId to just before targetId within the same team (reorder).
+  function reorder(side: Side, movingId: string, targetId: string) {
+    const setter = side === "A" ? setTeamA : setTeamB;
+    setter((prev) => {
+      const without = prev.filter((x) => x !== movingId);
+      const idx = without.indexOf(targetId);
+      if (idx < 0) return prev;
+      return [...without.slice(0, idx), movingId, ...without.slice(idx)];
+    });
+  }
 
   // Tap-to-select (touch-friendly; works alongside drag on desktop). Tap a
-  // player to pick them up, then tap an opposing player to SWAP or the other
-  // column to MOVE. Tap the selected player again to cancel.
+  // player to pick them up, then tap an opposing player to SWAP, a team-mate to
+  // drop them into that spot (reorder), or the other column to MOVE. Tap the
+  // selected player again to cancel.
   function onCardTap(id: string, side: Side) {
     if (locked) return;
     if (selectedId === id) {
@@ -113,12 +126,8 @@ export function TeamBalancer({
       return;
     }
     if (selectedId) {
-      const selSide = sideOf(selectedId);
-      if (selSide !== side) swap(selectedId, id);
-      else {
-        setSelectedId(id);
-        return;
-      }
+      if (sideOf(selectedId) !== side) swap(selectedId, id);
+      else reorder(side, selectedId, id);
       setSelectedId(null);
       return;
     }
@@ -165,7 +174,7 @@ export function TeamBalancer({
     e.stopPropagation();
     if (dragId && dragId !== targetId) {
       if (sideOf(dragId) !== targetSide) swap(dragId, targetId);
-      else moveTo(dragId, targetSide);
+      else reorder(targetSide, dragId, targetId);
     }
     setDragId(null);
     setSwapId(null);
@@ -173,15 +182,15 @@ export function TeamBalancer({
 
   function autoBalance() {
     const res = balanceTeams(players);
-    setTeamA(res.teamA);
-    setTeamB(res.teamB);
+    setTeamA(sortByElo(res.teamA));
+    setTeamB(sortByElo(res.teamB));
     setSelectedId(null);
     setMsg(null);
     setErr(null);
   }
   function resetTeams() {
-    setTeamA(initial.teamA);
-    setTeamB(initial.teamB);
+    setTeamA(sortByElo(initial.teamA));
+    setTeamB(sortByElo(initial.teamB));
     setSelectedId(null);
     setMsg(null);
     setErr(null);
@@ -299,7 +308,7 @@ export function TeamBalancer({
           <span className="ml-auto flex-none text-[0.65rem] font-semibold text-text-subtle sm:text-xs">{ids.length}</span>
         </div>
         <div className="flex min-h-[140px] flex-col gap-2">
-          {sortByElo(ids).map((id) => card(id, side))}
+          {ids.map((id) => card(id, side))}
           {ids.length === 0 && <p className="grid flex-1 place-items-center border border-dashed border-border px-2 py-8 text-center text-[0.65rem] text-text-subtle">Tap or drop a player here</p>}
         </div>
       </div>
@@ -338,7 +347,7 @@ export function TeamBalancer({
       {msg && <p className="mb-3 border border-emerald-800 bg-emerald-950/30 px-4 py-2.5 text-sm text-emerald-400">{msg}</p>}
 
       <p className="mb-3 text-xs text-text-subtle">
-        Tap a player to pick them up, then tap the other team to move them or tap an opposing player to swap. On desktop you can also drag. Each team is sorted by ELO. Totals update live below.
+        Tap a player to pick them up, then tap the other team to move them, an opposing player to swap, or a team-mate to drop them into that spot (reorder). On desktop you can also drag. Teams start sorted by ELO. Totals update live below.
       </p>
 
       <div className="flex flex-row gap-2.5 sm:gap-5">
