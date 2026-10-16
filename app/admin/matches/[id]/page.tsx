@@ -511,7 +511,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         <MatchLocationEditor matchId={match.id} currentLocationId={(match as { location_id: string | null }).location_id} />
       )}
 
-      {participants.length > 0 && (
+      {participants.length > 0 && !match.xp_distributed_at && (
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border border-border bg-bg-elevated px-4 py-3">
           <div>
             <p className="text-sm font-semibold text-text">Team balancer</p>

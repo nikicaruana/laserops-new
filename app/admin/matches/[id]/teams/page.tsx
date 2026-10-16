@@ -33,8 +33,11 @@ export default async function TeamBalancerPage({ params }: { params: Promise<{ i
   const { id } = await params;
   const supabase = await createClient();
 
-  const { data: match } = await supabase.from("matches").select("id, title, match_code, scheduled_at").eq("id", id).maybeSingle();
+  const { data: match } = await supabase.from("matches").select("id, title, match_code, scheduled_at, xp_distributed_at").eq("id", id).maybeSingle();
   if (!match) notFound();
+  // Planning tool only: once a game is ingested its real teams come from the
+  // game files (match_player_aggregate.team_colour), so the planner is read-only.
+  const locked = !!(match as { xp_distributed_at: string | null }).xp_distributed_at;
 
   const { data: partData } = await supabase
     .from("match_participants")
@@ -149,9 +152,15 @@ export default async function TeamBalancerPage({ params }: { params: Promise<{ i
         </Link>
         <h1 className="mt-2 text-2xl font-extrabold uppercase tracking-tight text-text sm:text-3xl">Create teams</h1>
         <p className="mt-2 max-w-2xl text-sm text-text-muted">
-          {label} · {players.length} players. Balanced by ELO, with fraggers and objective players spread across both teams. Drag to adjust, then save.
+          {label} · {players.length} players. A planning tool only: balanced by ELO, with fraggers and objective players spread across both teams. Drag to adjust, then save. This never changes the real teams, which come from the game files at ingestion.
         </p>
       </header>
+
+      {locked && (
+        <p className="mb-5 border border-border-strong bg-bg-elevated px-4 py-3 text-sm text-text-muted">
+          This game has already been ingested, so its real teams come from the game files. This planner is read-only and saving is disabled.
+        </p>
+      )}
 
       {players.length === 0 ? (
         <p className="border border-border bg-bg-elevated px-4 py-6 text-sm text-text-muted">No players on this game's roster yet. Add players from the game page first.</p>
@@ -163,6 +172,7 @@ export default async function TeamBalancerPage({ params }: { params: Promise<{ i
           initial={initial}
           defaultColourA={defaultColourA}
           defaultColourB={defaultColourB}
+          locked={locked}
         />
       )}
     </div>
