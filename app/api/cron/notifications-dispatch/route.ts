@@ -72,18 +72,24 @@ export async function GET(req: NextRequest) {
       replyTo: r.type!.email_reply_to,
     });
     try {
-      await resend.emails.send({
+      // Resend returns { error } instead of throwing on API errors (invalid
+      // address, rate limit, etc.), so check it explicitly - otherwise a
+      // rejected send would still get stamped as sent below and never retry.
+      const { error: sendErr } = await resend.emails.send({
         from: sender.from,
         replyTo: sender.replyTo,
         to: [r.account!.email as string],
         subject: r.type!.email_subject || r.title,
         html,
       });
+      if (sendErr) throw new Error(sendErr.message || "Resend rejected the email");
       sent++;
     } catch (err) {
       console.error("[notifications-dispatch] send failed:", err);
       continue; // leave email_sent_at null to retry next run
     }
+    // Gentle pacing so a burst of reminders doesn't trip Resend's rate limit.
+    await new Promise((res) => setTimeout(res, 120));
     await supabase.from("notifications").update({ email_sent_at: new Date().toISOString() }).eq("id", r.id);
   }
 
