@@ -22,6 +22,17 @@ const labelCls = "mb-1 block text-xs font-semibold uppercase tracking-[0.1em] te
 
 type GameOption = { id: string; label: string };
 
+// A date-only entry for TODAY (or left blank) uses now() so it sorts with the
+// day's real activity on the dashboard instead of landing at midnight; a past
+// date uses midday to avoid midnight timezone edges.
+function occurredIso(dateStr: string): string | null {
+  if (!dateStr) return null;
+  const d = new Date();
+  const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  if (dateStr === today) return null;
+  return new Date(`${dateStr}T12:00:00`).toISOString();
+}
+
 export function ManualEntryForm({ games = [] }: { games?: GameOption[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -54,7 +65,7 @@ export function ManualEntryForm({ games = [] }: { games?: GameOption[] }) {
     }
 
     const { error } = await supabase.rpc("admin_add_financial_entry", {
-      p_occurred_at: occurredAt ? new Date(occurredAt).toISOString() : null,
+      p_occurred_at: occurredIso(occurredAt),
       p_direction: "payment",
       p_category: category,
       p_amount: amt,

@@ -142,9 +142,9 @@ export function FinancialSummary() {
 
   return (
     <section className="mb-8 border border-border bg-bg-elevated px-5 py-5">
-      <div className="mb-4 flex items-center justify-between gap-3">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-sm font-bold uppercase tracking-[0.12em] text-accent">Financial summary</h2>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <select
             value={period}
             onChange={(e) => setPeriod(e.target.value as Period)}

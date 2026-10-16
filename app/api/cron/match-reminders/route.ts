@@ -28,11 +28,13 @@ export async function GET(req: NextRequest) {
 
   const now = new Date();
   const cutoff = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString();
+  // Every confirmed match inside the next 24h (NOT filtered by the match's own
+  // reminder flag): we remind per-signup, so an already-reminded match is still
+  // checked for players who joined since.
   const { data: due, error } = await supabase
     .from("matches")
     .select("id, title, scheduled_at, invite_code, duration_minutes, location_id")
     .eq("status", "confirmed")
-    .is("reminder_sent_at", null)
     .not("scheduled_at", "is", null)
     .gt("scheduled_at", now.toISOString())
     .lte("scheduled_at", cutoff);
@@ -46,25 +48,24 @@ export async function GET(req: NextRequest) {
 
   let reminded = 0;
   for (const m of due as { id: string; title: string | null; scheduled_at: string; invite_code: string | null; duration_minutes: number | null; location_id: string | null }[]) {
-    // Claim it first so it can't double-fire.
-    const { data: claimed } = await supabase
-      .from("matches")
-      .update({ reminder_sent_at: new Date().toISOString() })
-      .eq("id", m.id)
-      .is("reminder_sent_at", null)
-      .select("id")
-      .maybeSingle();
-    if (!claimed) continue;
+    // Registered signups not yet reminded (includes anyone who joined late).
+    const { data: signups } = await supabase
+      .from("match_signups")
+      .select("id, account_id")
+      .eq("match_id", m.id)
+      .eq("status", "registered")
+      .is("reminder_sent_at", null);
+    const pending = (signups ?? []) as { id: string; account_id: string | null }[];
+    if (pending.length === 0) continue;
 
     const when = new Date(m.scheduled_at);
     const matchDate = when.toLocaleDateString("en-GB", { timeZone: "Europe/Malta", weekday: "long", day: "2-digit", month: "long", year: "numeric" });
     const matchTime = when.toLocaleTimeString("en-GB", { timeZone: "Europe/Malta", hour: "2-digit", minute: "2-digit" });
     const signupFormUrl = m.invite_code ? `${BASE}/invite/${m.invite_code}` : `${BASE}/player-portal/games`;
     const whatsappShareUrl = `https://wa.me/?text=${encodeURIComponent(`Join my LaserOps game (${m.title || "match"}) on ${matchDate}: ${signupFormUrl}`)}`;
-
     const loc = locFor(m.location_id);
-    const { data: signups } = await supabase.from("match_signups").select("account_id").eq("match_id", m.id).eq("status", "registered");
-    for (const s of (signups ?? []) as { account_id: string | null }[]) {
+
+    for (const s of pending) {
       if (!s.account_id) continue;
       await emitNotification(supabase, s.account_id, "match_reminder", {
         title: m.title || "Match reminder",
@@ -73,7 +74,12 @@ export async function GET(req: NextRequest) {
         data: { matchLabel: m.title || "your game", matchDate, matchTime, matchTimeRange: matchTimeRangeLabel(m.scheduled_at, m.duration_minutes), signupFormUrl, whatsappShareUrl, ...(loc?.playing_url ? { matchLocationUrl: loc.playing_url } : {}), ...(loc?.parking_url ? { parkingUrl: loc.parking_url } : {}) },
       });
     }
-    reminded++;
+
+    // Stamp these signups so they aren't reminded twice; stamp the match the
+    // first time for anything still reading matches.reminder_sent_at.
+    await supabase.from("match_signups").update({ reminder_sent_at: new Date().toISOString() }).in("id", pending.map((s) => s.id));
+    await supabase.from("matches").update({ reminder_sent_at: new Date().toISOString() }).eq("id", m.id).is("reminder_sent_at", null);
+    reminded += pending.length;
   }
 
   return Response.json({ ok: true, reminded });
