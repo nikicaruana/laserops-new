@@ -37,6 +37,10 @@ import { recomputeProgression } from "../lib/ingestion/progression";
 
 const WRITE = process.argv.includes("--write");
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+const STREAK_LABEL: Record<string, string> = {
+  revenge: "Revenge", redemption: "Redemption",
+  hold_base_10min: "10minHold", hold_base_5min: "5minHold", hold_base_3min: "3minHold",
+};
 
 function env() {
   const e: Record<string, string> = {};
@@ -178,12 +182,16 @@ async function main() {
       const oldRev = streakCount(cur?.streaks, "revenge");
       const oldRed = streakCount(cur?.streaks, "redemption");
       newRevAbs += newRev; newRedAbs += newRed; oldRevAbs += oldRev; oldRedAbs += oldRed;
-      if (newRev !== oldRev || newRed !== oldRed) {
-        const parts: string[] = [];
-        if (newRev !== oldRev) parts.push(`Revenge ${oldRev}->${newRev}`);
-        if (newRed !== oldRed) parts.push(`Redemption ${oldRed}->${newRed}`);
-        changes.push(`    ${a.nickname || a.headset_label}: ${parts.join(", ")}  (score ${Number(cur?.score ?? 0)} -> ${a.score})`);
+      // Report ALL streak-key changes (hold_base_*, etc.), not just rev/red, so a
+      // hold-only correction still counts as a change and triggers a rewrite.
+      const mapOf = (st: AggStreak[] | null | undefined) => { const mm = new Map<string, number>(); for (const s of (st ?? [])) mm.set(s.key, (mm.get(s.key) ?? 0) + (Number(s.count) || 0)); return mm; };
+      const nmap = mapOf(a.streaks as AggStreak[]); const omap = mapOf(cur?.streaks);
+      const parts: string[] = [];
+      for (const k of new Set([...nmap.keys(), ...omap.keys()])) {
+        const nv = nmap.get(k) ?? 0, ov = omap.get(k) ?? 0;
+        if (nv !== ov) parts.push(`${STREAK_LABEL[k] ?? k} ${ov}->${nv}`);
       }
+      if (parts.length) changes.push(`    ${a.nickname || a.headset_label}: ${parts.join(", ")}  (score ${Number(cur?.score ?? 0)} -> ${a.score})`);
     }
     const diverges = reasons.length > 0;
     const hasStreaks = (newRevAbs + newRedAbs) > 0;

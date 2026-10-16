@@ -295,9 +295,17 @@ function runRule(ctx: Ctx, rule: StreakRuleConfig): Hit[] {
       break;
     }
     case "hold_duration": {
+      // A base LOCKS the instant it burns — cap each possession's hold at its
+      // base's burn moment, exactly as the scoring/stat path does (effective.ts),
+      // so uncontested hold past the burn can't trip a hold streak on long rounds.
+      const burnEpochByBase: Record<number, number> = {};
+      for (const b of ctx.round.result.burns) if (burnEpochByBase[b.base_id] == null) burnEpochByBase[b.base_id] = b.burn_epoch;
       for (const period of ctx.round.base_ownership) {
-        if (period.held_seconds < rule.min_seconds) continue;
-        if (rule.up_to != null && period.held_seconds >= rule.up_to) continue; // a higher tier owns this hold
+        const be = burnEpochByBase[period.base_id];
+        const ct = toEpoch(period.from_time);
+        const held = be != null && !Number.isNaN(ct) ? Math.max(0, Math.min(period.held_seconds, be - ct)) : period.held_seconds;
+        if (held < rule.min_seconds) continue;
+        if (rule.up_to != null && held >= rule.up_to) continue; // a higher tier owns this hold
         const cap = ctx.round.events.captures.find(
           (c) => c.base_id === period.base_id && c.time === period.from_time && c.capturing_player_id != null,
         );
