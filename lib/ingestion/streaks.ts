@@ -42,7 +42,13 @@ export const STREAK_NAMES: Record<string, string> = {
   burner_1: "Burner",
   burner_2: "2x Burner",
   shadow: "Shadow",
+  revenge: "Revenge",
+  redemption: "Redemption",
 };
+
+// Redemption: a kill after this many consecutive deaths with no kills in between.
+// Mirrors streak_definitions.rule {"kind":"redemption","deaths_required":3}.
+const REDEMPTION_DEATHS_REQUIRED = 3;
 
 function toEpoch(t: string): number {
   const ms = Date.parse(t.replace(/\./g, "-").replace(" ", "T"));
@@ -270,6 +276,33 @@ export function detectStreaks(round: Round): StreakAward[] {
           }
         }
       }
+    }
+  }
+
+  // --- Revenge: kill the exact player who most recently killed you -----------
+  // Walk kills in time order tracking each player's most recent killer; when the
+  // actor kills that person it's a revenge, then cleared so they must be killed
+  // again before avenging the same player anew. (Mirrors streak-engine.ts.)
+  {
+    const lastKiller = new Map<number, number>(); // victim -> who last killed them
+    for (const k of kills) {
+      if (lastKiller.get(k.actor_id) === k.victim_id) {
+        add(k.actor_id, "revenge", k.time, `on ${k.victim_id}`);
+        lastKiller.delete(k.actor_id);
+      }
+      lastKiller.set(k.victim_id, k.actor_id);
+    }
+  }
+
+  // --- Redemption: a kill after >=3 consecutive deaths with no kills between --
+  // Per player: a run of deaths since their last kill. A kill while that run has
+  // reached the threshold redeems; any kill resets the run. (Mirrors streak-engine.ts.)
+  {
+    const deathRun = new Map<number, number>(); // player -> deaths since their last kill
+    for (const k of kills) {
+      if ((deathRun.get(k.actor_id) ?? 0) >= REDEMPTION_DEATHS_REQUIRED) add(k.actor_id, "redemption", k.time);
+      deathRun.set(k.actor_id, 0); // the actor got a kill
+      deathRun.set(k.victim_id, (deathRun.get(k.victim_id) ?? 0) + 1); // the victim died
     }
   }
 
