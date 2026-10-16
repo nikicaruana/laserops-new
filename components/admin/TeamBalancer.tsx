@@ -67,9 +67,13 @@ export function TeamBalancer({
   const [teamB, setTeamB] = useState<string[]>(initial.teamB);
   const [dragId, setDragId] = useState<string | null>(null);
   const [swapId, setSwapId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+
+  // Display each team high -> low ELO.
+  const sortByElo = (ids: string[]) => [...ids].sort((x, y) => (byId.get(y)?.elo ?? 0) - (byId.get(x)?.elo ?? 0));
 
   const totals = (ids: string[]) => {
     let elo = 0;
@@ -97,6 +101,33 @@ export function TeamBalancer({
   function swap(a: string, b: string) {
     setTeamA((prev) => prev.map((x) => (x === a ? b : x === b ? a : x)));
     setTeamB((prev) => prev.map((x) => (x === a ? b : x === b ? a : x)));
+  }
+
+  // Tap-to-select (touch-friendly; works alongside drag on desktop). Tap a
+  // player to pick them up, then tap an opposing player to SWAP or the other
+  // column to MOVE. Tap the selected player again to cancel.
+  function onCardTap(id: string, side: Side) {
+    if (locked) return;
+    if (selectedId === id) {
+      setSelectedId(null);
+      return;
+    }
+    if (selectedId) {
+      const selSide = sideOf(selectedId);
+      if (selSide !== side) swap(selectedId, id);
+      else {
+        setSelectedId(id);
+        return;
+      }
+      setSelectedId(null);
+      return;
+    }
+    setSelectedId(id);
+  }
+  function onColumnTap(side: Side) {
+    if (locked) return;
+    if (selectedId && sideOf(selectedId) !== side) moveTo(selectedId, side);
+    setSelectedId(null);
   }
 
   function onDragStart(e: DragEvent<HTMLDivElement>, id: string) {
@@ -144,12 +175,14 @@ export function TeamBalancer({
     const res = balanceTeams(players);
     setTeamA(res.teamA);
     setTeamB(res.teamB);
+    setSelectedId(null);
     setMsg(null);
     setErr(null);
   }
   function resetTeams() {
     setTeamA(initial.teamA);
     setTeamB(initial.teamB);
+    setSelectedId(null);
     setMsg(null);
     setErr(null);
   }
@@ -205,32 +238,41 @@ export function TeamBalancer({
     const isDragging = dragId === id;
     const isSwap = swapId === id;
     const colour = side === "A" ? colourA : colourB;
+    const isSelected = selectedId === id;
     return (
       <div
         key={id}
-        draggable
+        draggable={!locked}
+        onClick={(e) => {
+          e.stopPropagation();
+          onCardTap(id, side);
+        }}
         onDragStart={(e) => onDragStart(e, id)}
         onDragEnd={onDragEnd}
         onDragOver={(e) => onCardDragOver(e, id, side)}
         onDrop={(e) => onCardDrop(e, id, side)}
         className={cn(
-          "relative cursor-grab select-none border bg-bg-elevated px-3 py-2 transition-opacity active:cursor-grabbing",
-          isDragging ? "opacity-40" : isSwap ? "opacity-60 border-accent" : "border-border hover:border-border-strong",
+          "relative select-none border bg-bg-elevated px-2.5 py-2 transition-opacity sm:px-3",
+          locked ? "cursor-default" : "cursor-pointer sm:cursor-grab sm:active:cursor-grabbing",
+          isDragging ? "opacity-40" : isSwap ? "opacity-60 border-accent" : isSelected ? "border-accent ring-1 ring-accent" : "border-border hover:border-border-strong",
         )}
         style={{ borderLeft: `3px solid ${hex(colour)}` }}
       >
         {isSwap && (
           <div className="pointer-events-none absolute inset-0 z-10 grid place-items-center">
-            <span className="border border-accent bg-accent px-2 py-0.5 text-[0.65rem] font-extrabold uppercase tracking-[0.2em] text-bg">Swap</span>
+            <span className="border border-accent bg-accent px-2 py-0.5 text-[0.6rem] font-extrabold uppercase tracking-[0.2em] text-bg">Swap</span>
           </div>
         )}
-        <div className="flex items-center justify-between gap-2">
-          <span className="min-w-0 truncate text-sm font-semibold text-text">{p.name}</span>
-          <span className="font-mono text-sm font-bold tabular-nums text-text">{Math.round(p.elo)}</span>
+        <div className="flex items-start justify-between gap-1.5">
+          <span className="min-w-0 flex-1 truncate text-[0.8rem] font-semibold leading-tight text-text">{p.name}</span>
+          <span className="flex-none text-right leading-none">
+            <span className="block font-mono text-sm font-bold tabular-nums text-text">{Math.round(p.elo)}</span>
+            <span className="block text-[0.5rem] font-bold uppercase tracking-wider text-text-subtle">ELO</span>
+          </span>
         </div>
-        <div className="mt-1 flex items-center justify-between gap-2">
-          <span className={cn("border px-1.5 py-0.5 text-[0.55rem] font-bold uppercase tracking-[0.1em]", STYLE_META[p.style].cls)}>{STYLE_META[p.style].label}</span>
-          <span className="truncate text-[0.65rem] text-text-subtle">{p.hasStats ? `K/D ${p.kd.toFixed(1)} · ${p.killsPerRound.toFixed(1)} k/rd` : "No stats yet"}</span>
+        <div className="mt-1.5 flex items-center justify-between gap-1">
+          <span className={cn("border px-1 py-0.5 text-[0.5rem] font-bold uppercase tracking-[0.08em]", STYLE_META[p.style].cls)}>{STYLE_META[p.style].label}</span>
+          <span className="truncate text-[0.6rem] text-text-subtle">{p.hasStats ? `K/D ${p.kd.toFixed(1)}` : "No stats"}</span>
         </div>
       </div>
     );
@@ -240,23 +282,25 @@ export function TeamBalancer({
     const ids = side === "A" ? teamA : teamB;
     const colour = side === "A" ? colourA : colourB;
     return (
-      <div className="min-w-0 flex-1" onDragOver={onColumnDragOver} onDrop={(e) => onColumnDrop(e, side)}>
-        <div className="mb-3 flex items-center gap-2 border-b-2 pb-2" style={{ borderColor: hex(colour) }}>
-          <span className="h-3.5 w-3.5 flex-none rounded-full" style={{ background: hex(colour) }} />
+      <div className="min-w-0 flex-1" onClick={() => onColumnTap(side)} onDragOver={onColumnDragOver} onDrop={(e) => onColumnDrop(e, side)}>
+        <div className="mb-3 flex items-center gap-1.5 border-b-2 pb-2" style={{ borderColor: hex(colour) }}>
+          <span className="h-3 w-3 flex-none rounded-full" style={{ background: hex(colour) }} />
           <select
             value={colour}
             onChange={(e) => pickColour(side, e.target.value)}
-            className="border border-border-strong bg-bg px-2 py-1 text-sm font-bold uppercase tracking-wide text-text focus:border-accent focus:outline-none"
+            onClick={(e) => e.stopPropagation()}
+            disabled={locked}
+            className="min-w-0 border border-border-strong bg-bg px-1.5 py-1 text-xs font-bold uppercase tracking-wide text-text focus:border-accent focus:outline-none disabled:opacity-60 sm:text-sm"
           >
             {colourOptions.map((o) => (
               <option key={o.colour} value={o.colour}>{o.label}</option>
             ))}
           </select>
-          <span className="ml-auto text-xs font-semibold text-text-subtle">{ids.length} {ids.length === 1 ? "player" : "players"}</span>
+          <span className="ml-auto flex-none text-[0.65rem] font-semibold text-text-subtle sm:text-xs">{ids.length}</span>
         </div>
         <div className="flex min-h-[140px] flex-col gap-2">
-          {ids.map((id) => card(id, side))}
-          {ids.length === 0 && <p className="grid flex-1 place-items-center border border-dashed border-border py-8 text-center text-xs text-text-subtle">Drop players here</p>}
+          {sortByElo(ids).map((id) => card(id, side))}
+          {ids.length === 0 && <p className="grid flex-1 place-items-center border border-dashed border-border px-2 py-8 text-center text-[0.65rem] text-text-subtle">Tap or drop a player here</p>}
         </div>
       </div>
     );
@@ -294,10 +338,10 @@ export function TeamBalancer({
       {msg && <p className="mb-3 border border-emerald-800 bg-emerald-950/30 px-4 py-2.5 text-sm text-emerald-400">{msg}</p>}
 
       <p className="mb-3 text-xs text-text-subtle">
-        Drag a player to the other column to move them, or drop them onto an opposing player to swap the two. Totals update live below.
+        Tap a player to pick them up, then tap the other team to move them or tap an opposing player to swap. On desktop you can also drag. Each team is sorted by ELO. Totals update live below.
       </p>
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:gap-5">
+      <div className="flex flex-row gap-2.5 sm:gap-5">
         {column("A")}
         {column("B")}
       </div>
