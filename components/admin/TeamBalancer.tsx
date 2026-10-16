@@ -378,14 +378,14 @@ export function TeamBalancer({
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <button type="button" onClick={autoBalance} className="border border-accent bg-accent/10 px-4 py-2 text-[0.65rem] font-bold uppercase tracking-[0.12em] text-accent transition-colors hover:bg-accent/20">
+      <div className="mb-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
+        <button type="button" onClick={autoBalance} className="border border-accent bg-accent/10 px-4 py-2 text-center text-[0.65rem] font-bold uppercase tracking-[0.12em] text-accent transition-colors hover:bg-accent/20">
           Auto-balance
         </button>
-        <button type="button" onClick={resetTeams} className="border border-border-strong px-4 py-2 text-[0.65rem] font-bold uppercase tracking-[0.12em] text-text-muted transition-colors hover:text-text">
+        <button type="button" onClick={resetTeams} className="border border-border-strong px-4 py-2 text-center text-[0.65rem] font-bold uppercase tracking-[0.12em] text-text-muted transition-colors hover:text-text">
           Reset
         </button>
-        <button type="button" onClick={save} disabled={saving || locked} title={locked ? "Game already ingested - planner is read-only" : undefined} className="ml-auto border border-accent bg-accent px-5 py-2 text-[0.65rem] font-bold uppercase tracking-[0.12em] text-bg transition-opacity hover:opacity-90 disabled:opacity-50">
+        <button type="button" onClick={save} disabled={saving || locked} title={locked ? "Game already ingested - planner is read-only" : undefined} className="col-span-2 border border-accent bg-accent px-5 py-2 text-center text-[0.65rem] font-bold uppercase tracking-[0.12em] text-bg transition-opacity hover:opacity-90 disabled:opacity-50 sm:col-span-1 sm:ml-auto">
           {saving ? "Saving…" : "Save teams"}
         </button>
       </div>
