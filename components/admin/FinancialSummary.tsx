@@ -31,25 +31,29 @@ const CAT_LABEL: Record<string, string> = { tokens: "Tokens", game: "Game", drin
 function ranges(period: Period, now: Date) {
   const y = now.getFullYear();
   const m = now.getMonth();
-  let start: Date, prevStart: Date, prevEnd: Date;
+  // Run the window to the END of the period (not "now"), so entries recorded
+  // for later today or an upcoming day in this period (e.g. a cash payment
+  // booked for tomorrow) still show and count.
+  const eom = (yy: number, mm: number) => new Date(yy, mm + 1, 0, 23, 59, 59, 999); // last ms of month mm
+  let start: Date, end: Date, prevStart: Date, prevEnd: Date;
   if (period === "mtd") {
     start = new Date(y, m, 1);
+    end = eom(y, m);
     prevStart = new Date(y, m - 1, 1);
-    prevEnd = new Date(now);
-    prevEnd.setMonth(prevEnd.getMonth() - 1);
+    prevEnd = eom(y, m - 1);
   } else if (period === "qtd") {
-    const qStartMonth = Math.floor(m / 3) * 3;
-    start = new Date(y, qStartMonth, 1);
-    prevStart = new Date(y, qStartMonth - 3, 1);
-    prevEnd = new Date(now);
-    prevEnd.setMonth(prevEnd.getMonth() - 3);
+    const q = Math.floor(m / 3) * 3;
+    start = new Date(y, q, 1);
+    end = eom(y, q + 2);
+    prevStart = new Date(y, q - 3, 1);
+    prevEnd = eom(y, q - 1);
   } else {
     start = new Date(y, 0, 1);
+    end = new Date(y, 11, 31, 23, 59, 59, 999);
     prevStart = new Date(y - 1, 0, 1);
-    prevEnd = new Date(now);
-    prevEnd.setFullYear(prevEnd.getFullYear() - 1);
+    prevEnd = new Date(y - 1, 11, 31, 23, 59, 59, 999);
   }
-  return { start, end: now, prevStart, prevEnd };
+  return { start, end, prevStart, prevEnd };
 }
 
 function sums(entries: Entry[], start: Date, end: Date) {
@@ -150,9 +154,9 @@ export function FinancialSummary() {
             onChange={(e) => setPeriod(e.target.value as Period)}
             className="h-9 rounded-none border border-border-strong bg-bg px-2 text-xs font-semibold uppercase tracking-[0.1em] text-text focus:border-accent focus:outline-none [color-scheme:dark]"
           >
-            <option value="mtd">Month to date</option>
-            <option value="qtd">Quarter to date</option>
-            <option value="ytd">Year to date</option>
+            <option value="mtd">This month</option>
+            <option value="qtd">This quarter</option>
+            <option value="ytd">This year</option>
           </select>
           <Link href="/admin/reports" className="text-[0.65rem] font-bold uppercase tracking-[0.12em] text-text-muted hover:text-accent">
             Reports →
