@@ -13,11 +13,14 @@
  * Saving writes match_participants.assigned_team (the chosen colour) under the
  * admin session + RLS.
  */
-import { useMemo, useState, type DragEvent } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { balanceTeams, type BalancePlayer, type PlayerStyle, type TeamAssignment } from "@/lib/admin/team-balancer";
 import { cn } from "@/lib/cn";
+
+// useLayoutEffect on the client (avoids the SSR warning); FLIP needs pre-paint timing.
+const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 type ColourOption = { colour: string; label: string };
 type Side = "A" | "B";
@@ -77,6 +80,34 @@ export function TeamBalancer({
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
+  // FLIP: when the order changes (reorder / move / swap), slide the other cards
+  // from their old position to the new one so nothing jumps. The card being
+  // dragged is skipped so it doesn't fight the native drag ghost.
+  const cardRefs = useRef(new Map<string, HTMLDivElement>());
+  const prevRects = useRef(new Map<string, DOMRect>());
+  useIsoLayoutEffect(() => {
+    const reduce = typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    const prev = prevRects.current;
+    const next = new Map<string, DOMRect>();
+    cardRefs.current.forEach((el, id) => {
+      const rect = el.getBoundingClientRect();
+      next.set(id, rect);
+      if (reduce || id === dragId) return;
+      const p = prev.get(id);
+      if (!p) return;
+      const dx = p.left - rect.left;
+      const dy = p.top - rect.top;
+      if (!dx && !dy) return;
+      el.style.transition = "none";
+      el.style.transform = `translate(${dx}px, ${dy}px)`;
+      requestAnimationFrame(() => {
+        el.style.transition = "transform 220ms cubic-bezier(0.22, 1, 0.36, 1)";
+        el.style.transform = "";
+      });
+    });
+    prevRects.current = next;
+  }, [teamA, teamB, dragId]);
+
   const totals = (ids: string[]) => {
     let elo = 0;
     let frag = 0;
@@ -111,7 +142,11 @@ export function TeamBalancer({
       const without = prev.filter((x) => x !== movingId);
       const idx = without.indexOf(targetId);
       if (idx < 0) return prev;
-      return [...without.slice(0, idx), movingId, ...without.slice(idx)];
+      const nextArr = [...without.slice(0, idx), movingId, ...without.slice(idx)];
+      // Bail (keep the same array ref) if the order didn't actually change, so
+      // dragging over the same slot doesn't thrash re-renders.
+      if (nextArr.length === prev.length && nextArr.every((v, i) => v === prev[i])) return prev;
+      return nextArr;
     });
   }
 
@@ -166,8 +201,16 @@ export function TeamBalancer({
   function onCardDragOver(e: DragEvent<HTMLDivElement>, targetId: string, targetSide: Side) {
     e.preventDefault();
     e.stopPropagation();
-    if (dragId && dragId !== targetId && sideOf(dragId) !== targetSide) setSwapId(targetId);
-    else setSwapId(null);
+    if (!dragId || dragId === targetId) {
+      setSwapId(null);
+      return;
+    }
+    if (sideOf(dragId) !== targetSide) {
+      setSwapId(targetId); // hovering an opponent = swap
+    } else {
+      setSwapId(null);
+      reorder(targetSide, dragId, targetId); // hovering a team-mate = live reorder
+    }
   }
   function onCardDrop(e: DragEvent<HTMLDivElement>, targetId: string, targetSide: Side) {
     e.preventDefault();
@@ -251,6 +294,10 @@ export function TeamBalancer({
     return (
       <div
         key={id}
+        ref={(el) => {
+          if (el) cardRefs.current.set(id, el);
+          else cardRefs.current.delete(id);
+        }}
         draggable={!locked}
         onClick={(e) => {
           e.stopPropagation();
