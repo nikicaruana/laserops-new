@@ -18,9 +18,13 @@
 
 export type PlayerStyle = "fragger" | "objective" | "balanced";
 
+/** Which table the roster row came from (and where its team is saved). */
+export type RosterSource = "participant" | "signup";
+
 /** Raw per-player inputs the server gathers from player_stats_lifetime + aggregates. */
 export type RawPlayer = {
-  id: string; // match_participants.id
+  id: string; // match_participants.id or match_signups.id (per `source`)
+  source: RosterSource;
   accountId: string | null;
   name: string;
   elo: number;
@@ -34,6 +38,7 @@ export type RawPlayer = {
 
 export type BalancePlayer = {
   id: string;
+  source: RosterSource;
   accountId: string | null;
   name: string;
   elo: number;
@@ -87,6 +92,7 @@ export function classifyPlayers(raw: RawPlayer[]): BalancePlayer[] {
     else if (isObj) style = "objective";
     return {
       id: r.id,
+      source: r.source,
       accountId: r.accountId,
       name: r.name,
       elo: r.elo,

@@ -176,15 +176,21 @@ export function TeamBalancer({
     setMsg(null);
     try {
       const sb = createClient();
-      if (teamA.length) {
-        const { error } = await sb.from("match_participants").update({ assigned_team: colourA }).in("id", teamA);
+      // Each player's team colour is saved on the table its row came from
+      // (match_participants for the roster, match_signups pre-roster).
+      const idsIn = (ids: string[], src: "participant" | "signup") => ids.filter((id) => byId.get(id)?.source === src);
+      const writes: { table: "match_participants" | "match_signups"; ids: string[]; colour: string }[] = [
+        { table: "match_participants", ids: idsIn(teamA, "participant"), colour: colourA },
+        { table: "match_participants", ids: idsIn(teamB, "participant"), colour: colourB },
+        { table: "match_signups", ids: idsIn(teamA, "signup"), colour: colourA },
+        { table: "match_signups", ids: idsIn(teamB, "signup"), colour: colourB },
+      ];
+      for (const w of writes) {
+        if (!w.ids.length) continue;
+        const { error } = await sb.from(w.table).update({ assigned_team: w.colour }).in("id", w.ids);
         if (error) throw new Error(error.message);
       }
-      if (teamB.length) {
-        const { error } = await sb.from("match_participants").update({ assigned_team: colourB }).in("id", teamB);
-        if (error) throw new Error(error.message);
-      }
-      setMsg("Teams saved to the roster.");
+      setMsg("Teams saved.");
       router.refresh();
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Could not save teams.");
