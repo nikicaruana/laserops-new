@@ -358,6 +358,21 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         )}
       </header>
 
+      {(participants.length > 0 || signups.length > 0) && !match.xp_distributed_at && (
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border border-accent/40 bg-accent/5 px-4 py-3">
+          <div>
+            <p className="text-sm font-semibold text-text">Team balancer</p>
+            <p className="text-xs text-text-subtle">Split the roster into two ELO-balanced teams, with fraggers and objective players spread evenly.</p>
+          </div>
+          <Link
+            href={`/admin/matches/${match.id}/teams`}
+            className="border border-accent bg-accent px-4 py-2 text-[0.65rem] font-bold uppercase tracking-[0.12em] text-bg transition-opacity hover:opacity-90"
+          >
+            Create teams
+          </Link>
+        </div>
+      )}
+
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <MatchAdminActions matchId={match.id} status={match.status} scheduledAt={match.scheduled_at} />
         <RescheduleMatchButton matchId={match.id} status={match.status} scheduledAt={match.scheduled_at} />
@@ -509,21 +524,6 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
 
       {["tentative", "awaiting_confirm", "confirmed"].includes(match.status ?? "") && (
         <MatchLocationEditor matchId={match.id} currentLocationId={(match as { location_id: string | null }).location_id} />
-      )}
-
-      {(participants.length > 0 || signups.length > 0) && !match.xp_distributed_at && (
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border border-border bg-bg-elevated px-4 py-3">
-          <div>
-            <p className="text-sm font-semibold text-text">Team balancer</p>
-            <p className="text-xs text-text-subtle">Split the roster into two ELO-balanced teams, with fraggers and objective players spread evenly.</p>
-          </div>
-          <Link
-            href={`/admin/matches/${match.id}/teams`}
-            className="border border-accent bg-accent px-4 py-2 text-[0.65rem] font-bold uppercase tracking-[0.12em] text-bg transition-opacity hover:opacity-90"
-          >
-            Create teams
-          </Link>
-        </div>
       )}
 
       {/* Players: payments + headbands (component renders both collapsible sub-sections) */}
