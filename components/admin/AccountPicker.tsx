@@ -9,6 +9,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { cn } from "@/lib/cn";
 
 export type PickedAccount = { id: string; ops_tag: string | null; full_name: string | null };
 
@@ -16,10 +17,13 @@ export function AccountPicker({
   onPick,
   onCancel,
   autoFocus = true,
+  className,
 }: {
   onPick: (account: PickedAccount) => void;
   onCancel?: () => void;
   autoFocus?: boolean;
+  /** Override the default fixed width (e.g. "w-full" to fill a form cell). */
+  className?: string;
 }) {
   const [q, setQ] = useState("");
   const [results, setResults] = useState<PickedAccount[]>([]);
@@ -51,7 +55,7 @@ export function AccountPicker({
   }, [q]);
 
   return (
-    <div className="w-72 max-w-full border border-border-strong bg-bg p-2 shadow-lg">
+    <div className={cn("w-72 max-w-full border border-border-strong bg-bg p-2 shadow-lg", className)}>
       <div className="flex items-center gap-2">
         <input
           autoFocus={autoFocus}
