@@ -51,7 +51,7 @@ type Bucket = {
 
 type FinRow = { category: string | null; direction: string | null; amount_eur: number | string | null; occurred_at: string; match_id: string | null; account_id: string | null };
 type SpendRow = { account_id: string | null; delta: number | string | null; match_id: string | null; created_at: string };
-type MatchRow = { id: string; match_code: string | null; title: string | null; scheduled_at: string | null; played_on: string | null };
+type MatchRow = { id: string; match_code: string | null; title: string | null; scheduled_at: string | null; played_on: string | null; pricing_mode: string | null };
 type PartRow = { match_id: string | null; paid_at: string | null; payment_intent: string | null };
 
 const monthKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -85,7 +85,7 @@ export function FinancialCharts({ from, to }: { from: string; to: string }) {
         if (toEndIso) finQ = finQ.lte("occurred_at", toEndIso);
         let spendQ = supabase.from("token_transactions").select("account_id, delta, match_id, created_at").eq("kind", "spend").gte("created_at", fromIso).order("created_at");
         if (toEndIso) spendQ = spendQ.lte("created_at", toEndIso);
-        let gamesQ = supabase.from("matches").select("id, match_code, title, scheduled_at, played_on").eq("status", "completed").gte("scheduled_at", fromIso).order("scheduled_at");
+        let gamesQ = supabase.from("matches").select("id, match_code, title, scheduled_at, played_on, pricing_mode").eq("status", "completed").gte("scheduled_at", fromIso).order("scheduled_at");
         if (toEndIso) gamesQ = gamesQ.lte("scheduled_at", toEndIso);
         const [{ data: finData, error: finErr }, { data: spendData, error: spendErr }, { data: gamesData, error: gamesErr }] = await Promise.all([finQ, spendQ, gamesQ]);
         if (finErr) throw new Error(finErr.message);
@@ -103,7 +103,7 @@ export function FinancialCharts({ from, to }: { from: string; to: string }) {
         const acctIds = [...new Set([...spendRows.map((r) => r.account_id), ...finRows.filter((r) => r.category === "tokens").map((r) => r.account_id)].filter(Boolean) as string[])];
         const idList = [...refIds];
         const [missRes, acctRes, partRes, aggRes] = await Promise.all([
-          missing.length ? supabase.from("matches").select("id, match_code, title, scheduled_at, played_on").in("id", missing) : Promise.resolve({ data: [] }),
+          missing.length ? supabase.from("matches").select("id, match_code, title, scheduled_at, played_on, pricing_mode").in("id", missing) : Promise.resolve({ data: [] }),
           acctIds.length ? supabase.from("accounts").select("id, ops_tag").in("id", acctIds) : Promise.resolve({ data: [] }),
           idList.length ? supabase.from("match_participants").select("match_id, paid_at, payment_intent").in("match_id", idList) : Promise.resolve({ data: [] }),
           idList.length ? supabase.from("match_player_aggregate").select("match_id").in("match_id", idList) : Promise.resolve({ data: [] }),
@@ -141,9 +141,12 @@ export function FinancialCharts({ from, to }: { from: string; to: string }) {
     const gameBucket = (m: MatchRow) => { const md = new Date(m.scheduled_at || m.played_on || Date.now()); return ensure(`g:${m.id}`, m.match_code || m.title || "Game", md.getTime()); };
     const addPerson = (list: Person[], ops: string, value: number) => { const e = list.find((x) => x.ops === ops); if (e) e.value += value; else list.push({ ops, value }); };
 
-    // Games → attendance (paid vs played). In game mode every completed game is
-    // its own bar (so fully-unpaid games still show); else bucketed by game date.
+    // Games → attendance (paid vs played). ONLY per-player games: a flat-rate game
+    // (organiser pays one lump sum) has no per-player payments, so "0/12 paid"
+    // would be misleading there. Flat games still get their revenue bar from the
+    // revenue loop below; they just carry no paid/played line.
     for (const m of matchList) {
+      if (m.pricing_mode !== "per_player") continue;
       const md = new Date(m.scheduled_at || m.played_on || Date.now());
       const b = groupBy === "game" ? gameBucket(m) : dateBucket(md);
       b.played += playedByMatch.get(m.id) ?? 0;
