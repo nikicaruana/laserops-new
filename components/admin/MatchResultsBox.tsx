@@ -14,7 +14,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { TotpGate } from "@/components/admin/TotpGate";
 
-type Action = "publish" | "recompute";
+type Action = "publish" | "recompute" | "notify-report";
 
 export function MatchResultsBox({
   matchId,
@@ -39,14 +39,16 @@ export function MatchResultsBox({
       const res = await fetch(`/api/matches/${matchId}/${action}`, { method: "POST" });
       const data = (await res.json().catch(() => ({}))) as {
         ok?: boolean; error?: string; players?: number; winner?: string | null; matches?: number;
+        sent?: number; recipients?: string[]; skipped?: number;
       };
-      if (!res.ok || !data.ok) setErr(data.error || (action === "publish" ? "Publish failed." : "Recompute failed."));
-      else {
-        setMsg(
-          action === "publish"
-            ? `Published — ${data.players} players${data.winner ? `, winner ${data.winner}` : ""}.`
-            : `Recomputed ${data.players} players across ${data.matches} matches.`,
-        );
+      if (!res.ok || !data.ok) {
+        setErr(data.error || (action === "publish" ? "Publish failed." : action === "recompute" ? "Recompute failed." : "Sending report emails failed."));
+      } else {
+        if (action === "publish") setMsg(`Published — ${data.players} players${data.winner ? `, winner ${data.winner}` : ""}.`);
+        else if (action === "recompute") setMsg(`Recomputed ${data.players} players across ${data.matches} matches.`);
+        else setMsg((data.sent ?? 0) > 0
+          ? `Report email sent to ${data.sent} new player${data.sent === 1 ? "" : "s"}${data.recipients?.length ? `: ${data.recipients.join(", ")}` : ""}. (${data.skipped} already notified.)`
+          : `Everyone in the line-up has already been emailed — nothing to send.`);
         router.refresh();
       }
     } catch (e) {
@@ -92,14 +94,25 @@ export function MatchResultsBox({
               {busy === "recompute" ? "Recomputing…" : "Recompute XP & ELO only"}
             </button>
           )}
+          {published && (
+            <button
+              type="button"
+              disabled={busy !== null}
+              onClick={() => setPending("notify-report")}
+              title="Email the match report to any player added/corrected after publishing. Deduped — never double-sends."
+              className="border border-border-strong px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-text-muted hover:border-accent hover:text-accent disabled:opacity-50"
+            >
+              {busy === "notify-report" ? "Sending…" : "Email report to new players"}
+            </button>
+          )}
         </div>
       </div>
-      <p className="mt-2 text-[0.65rem] text-text-subtle">Both require 2FA. Publishing is blocked until every capture ambiguity is reviewed.</p>
+      <p className="mt-2 text-[0.65rem] text-text-subtle">All require 2FA. Publishing is blocked until every capture ambiguity is reviewed. &ldquo;Email report to new players&rdquo; only reaches players who haven&rsquo;t been emailed yet (e.g. a corrected walk-in) — it never re-scores or double-sends.</p>
       {msg && <p className="mt-2 text-xs text-emerald-300">{msg}</p>}
       {err && <p className="mt-2 text-xs text-red-400">{err}</p>}
       <TotpGate
         open={pending !== null}
-        action={pending === "recompute" ? "recompute results" : "publish match scores"}
+        action={pending === "recompute" ? "recompute results" : pending === "notify-report" ? "email the match report to new players" : "publish match scores"}
         onCancel={() => setPending(null)}
         onVerified={async () => {
           const a = pending;
