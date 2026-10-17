@@ -13,6 +13,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
+import { AccountPicker, type PickedAccount } from "@/components/admin/AccountPicker";
 
 // [color-scheme:dark] makes native date/time pickers (and their icons) render
 // light-on-dark instead of the invisible black-on-dark default.
@@ -40,7 +41,7 @@ export function ManualEntryForm({ games = [] }: { games?: GameOption[] }) {
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("cash");
   const [occurredAt, setOccurredAt] = useState("");
-  const [opsTag, setOpsTag] = useState("");
+  const [player, setPlayer] = useState<PickedAccount | null>(null);
   const [matchId, setMatchId] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
@@ -53,24 +54,13 @@ export function ManualEntryForm({ games = [] }: { games?: GameOption[] }) {
     setBusy(true);
     const supabase = createClient();
 
-    // Optional player link by ops tag.
-    let accountId: string | null = null;
-    if (opsTag.trim()) {
-      const { data: acct } = await supabase.from("accounts").select("id").ilike("ops_tag", opsTag.trim()).maybeSingle();
-      if (!acct) {
-        setBusy(false);
-        return setMsg({ ok: false, text: `No player found with ops tag “${opsTag.trim()}”.` });
-      }
-      accountId = acct.id;
-    }
-
     const { error } = await supabase.rpc("admin_add_financial_entry", {
       p_occurred_at: occurredIso(occurredAt),
       p_direction: "payment",
       p_category: category,
       p_amount: amt,
       p_method: method.trim() || null,
-      p_account_id: accountId,
+      p_account_id: player?.id ?? null, // optional player link (searchable picker)
       p_match_id: matchId || null,
       p_note: note.trim() || null,
     });
@@ -79,7 +69,7 @@ export function ManualEntryForm({ games = [] }: { games?: GameOption[] }) {
     setMsg({ ok: true, text: "Entry recorded." });
     setAmount("");
     setNote("");
-    setOpsTag("");
+    setPlayer(null);
     setMatchId("");
     router.refresh();
   }
@@ -125,7 +115,14 @@ export function ManualEntryForm({ games = [] }: { games?: GameOption[] }) {
             </div>
             <div>
               <label className={labelCls}>Player ops tag (optional)</label>
-              <input className={input} value={opsTag} onChange={(e) => setOpsTag(e.target.value)} placeholder="e.g. Kini" />
+              {player ? (
+                <div className="flex h-11 items-center justify-between gap-2 rounded-none border border-border-strong bg-bg-elevated px-3 text-sm text-text">
+                  <span className="truncate">{player.ops_tag || player.full_name || "Player"}</span>
+                  <button type="button" onClick={() => setPlayer(null)} className="shrink-0 text-lg leading-none text-text-subtle hover:text-text" aria-label="Clear player">×</button>
+                </div>
+              ) : (
+                <AccountPicker autoFocus={false} className="w-full" onPick={setPlayer} />
+              )}
             </div>
             <div>
               <label className={labelCls}>Game (optional)</label>
