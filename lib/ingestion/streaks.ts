@@ -231,18 +231,28 @@ export function detectStreaks(round: Round): StreakAward[] {
   }
 
   // --- Hold-base streaks (continuous hold by the capturer) ------------------
+  // A base LOCKS the instant it burns, so no possession accrues contested hold
+  // past the burn moment — cap each possession at its base's burn, exactly as the
+  // scoring/stat path does (lib/ingestion/effective.ts). Without this, a base held
+  // uncontested to round-end credits its whole open period (far beyond the burn),
+  // handing out undeserved 10-/5-/3-min hold streaks on long rounds.
+  const burnEpochByBase: Record<number, number> = {};
+  for (const b of round.result.burns) if (burnEpochByBase[b.base_id] == null) burnEpochByBase[b.base_id] = b.burn_epoch;
   for (const period of round.base_ownership) {
     const cap = round.events.captures.find(
       (c) => c.base_id === period.base_id && c.time === period.from_time && c.capturing_player_id != null,
     );
     if (cap?.capturing_player_id == null) continue;
     const pid = cap.capturing_player_id;
+    const be = burnEpochByBase[period.base_id];
+    const ct = toEpoch(period.from_time);
+    const held = be != null && !Number.isNaN(ct) ? Math.max(0, Math.min(period.held_seconds, be - ct)) : period.held_seconds;
     // Tiers are mutually exclusive: a single continuous hold fires only its
     // highest tier (a 10-min hold is not also a 5- and 3-min). Separate holds
     // each still fire their own tier.
-    if (period.held_seconds >= 600) add(pid, "hold_base_10min", period.from_time, `base ${period.base_id}`);
-    else if (period.held_seconds >= 300) add(pid, "hold_base_5min", period.from_time, `base ${period.base_id}`);
-    else if (period.held_seconds >= 180) add(pid, "hold_base_3min", period.from_time, `base ${period.base_id}`);
+    if (held >= 600) add(pid, "hold_base_10min", period.from_time, `base ${period.base_id}`);
+    else if (held >= 300) add(pid, "hold_base_5min", period.from_time, `base ${period.base_id}`);
+    else if (held >= 180) add(pid, "hold_base_3min", period.from_time, `base ${period.base_id}`);
   }
 
   // --- Burner: cumulative team hold per base reaches 600s (PROVISIONAL) ------
