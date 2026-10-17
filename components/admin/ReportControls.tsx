@@ -72,9 +72,13 @@ export function ReportControls({ type, from, to }: { type: string; from: string;
         <Button variant="secondary" size="md" onClick={() => apply()}>
           Apply
         </Button>
-        <Button variant="primary" size="md" href={exportHref}>
-          Download CSV
-        </Button>
+        {/* CSV is a raw row dump of the ledger — not meaningful for the aggregated
+            Charts view, which offers Print / Save PDF (chart + summary table). */}
+        {type !== "charts" && (
+          <Button variant="primary" size="md" href={exportHref}>
+            Download CSV
+          </Button>
+        )}
         <Button variant="ghost" size="md" onClick={() => window.print()}>
           Print / Save PDF
         </Button>
