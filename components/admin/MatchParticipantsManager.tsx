@@ -351,6 +351,7 @@ export function MatchParticipantsManager({
 
       {/* ----- Players & payments ----------------------------------------- */}
       <CollapsibleSection
+        defaultOpen={false}
         title="Players & payments"
         count={perPlayer ? owing : undefined}
         subtitle={
@@ -451,6 +452,7 @@ export function MatchParticipantsManager({
 
       {/* ----- Players & headbands ---------------------------------------- */}
       <CollapsibleSection
+        defaultOpen={false}
         title="Players & headbands"
         count={rows.length}
         subtitle="Everyone in the match with their headband, gun and profile. Assign the headbands the game file saw, add walk-ins by hand, or let signed-up players join live. Editing after publishing marks results stale &ndash; re-publish to apply."

@@ -533,7 +533,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
 
       {/* Signups (booking side) – shown for open games and private bookings */}
       {!isPlayed && (
-        <CollapsibleSection title="Signups" count={signups.length}>
+        <CollapsibleSection title="Signups" count={signups.length} defaultOpen={false}>
           {signups.length === 0 ? (
             <p className="border border-dashed border-border px-4 py-10 text-center text-sm text-text-muted">
               No signups yet. Players sign up from the games list on their account.
@@ -586,7 +586,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
 
       {/* Entries (played side) */}
       {isPlayed && (
-        <CollapsibleSection title="Player entries" count={entries.length}>
+        <CollapsibleSection title="Player entries" count={entries.length} defaultOpen={false}>
           {entries.length === 0 ? (
             <p className="border border-dashed border-border px-4 py-10 text-center text-sm text-text-muted">
               No entries yet. Players joining a live match or a JSON/CSV import will populate this.
@@ -647,6 +647,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
 
       {/* Live feed – toggle on to stream; off (default) for private bookings */}
       <CollapsibleSection
+        defaultOpen={false}
         title="Live feed"
         subtitle="Stream the game live to players' phones + a venue screen. Turn it on for public games; leave it off for private bookings (upload JSONs manually instead)."
       >
@@ -703,6 +704,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
 
       {/* Ingest data (preview) */}
       <CollapsibleSection
+        defaultOpen={false}
         title="Ingest data"
         subtitle="Upload the round JSON file(s) to preview the extracted stats. Preview only for now; committing stats (XP / ELO) turns on once the parser is validated against a real game file."
       >
@@ -723,6 +725,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
       {/* Offline round results – marshal enters per-round winners */}
       {isOfflineMatch && (
         <CollapsibleSection
+          defaultOpen={false}
           title="Offline rounds"
           subtitle="The offline file and its per-round winners. Offline files don't record the winner, so enter the winning team of each offline round (numbered after the online rounds). Save before publishing."
         >
@@ -738,6 +741,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
 
       {/* Match photos – uploaded to Cloudinary + the gallery, shown in the report */}
       <CollapsibleSection
+        defaultOpen={false}
         title="Photos"
         count={matchPhotos.length}
         subtitle="Upload photos from this match. They appear in the match report's Images section and in the public gallery. Players can tag themselves from the report."

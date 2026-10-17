@@ -241,6 +241,7 @@ function RoundPreview({
   const unreviewed = unreviewedCount(r, resolutions);
   const effectiveWinner = winnerOverride === "draw" ? null : (winnerOverride || r.result.winner_team);
   const [open, setOpen] = useState(true);
+  const [streaksOpen, setStreaksOpen] = useState(false); // per-file streaks list, collapsed by default
   const [csvResult, setCsvResult] = useState<null | { checked: number; issues: { player: string; field: string; json: number; csv: number }[]; source: string }>(null);
   const [convertedCsv, setConvertedCsv] = useState<{ name: string; text: string } | null>(null);
 
@@ -556,10 +557,17 @@ function RoundPreview({
 
       {streaksByPlayer.size > 0 && (
         <div className="border-t border-border px-4 py-3">
-          <p className="mb-2 text-[0.55rem] font-semibold uppercase tracking-[0.12em] text-text-subtle">
+          <button
+            type="button"
+            onClick={() => setStreaksOpen((o) => !o)}
+            aria-expanded={streaksOpen}
+            className="flex items-center gap-1.5 text-[0.55rem] font-semibold uppercase tracking-[0.12em] text-text-subtle hover:text-text-muted"
+          >
+            <span className={`transition-transform ${streaksOpen ? "rotate-90" : ""}`} aria-hidden>▸</span>
             Streaks ({streaks.length})
-          </p>
-          <div className="space-y-1.5">
+          </button>
+          {streaksOpen && (
+          <div className="mt-2 space-y-1.5">
             {[...streaksByPlayer.entries()].map(([pid, m]) => (
               <div key={pid} className="flex flex-wrap items-center gap-1.5 text-xs">
                 <span className="w-24 shrink-0 font-semibold text-text">{playerLabel(pid)}</span>
@@ -572,6 +580,7 @@ function RoundPreview({
               </div>
             ))}
           </div>
+          )}
         </div>
       )}
 
