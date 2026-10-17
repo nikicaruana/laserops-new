@@ -36,6 +36,13 @@ function baseSize(natW: number, natH: number, mode: Mode) {
   return pAR > fAR ? { w: FW, h: FW / pAR } : { w: FH * pAR, h: FH };
 }
 
+// Client-side team colour (mirrors teamHex in the server renderer), so the live
+// preview shows each team's real colour for any colour combination.
+function teamHexClient(colour: string): string {
+  const t = (colour || "").toLowerCase();
+  return t === "yellow" ? "#ffde00" : t === "blue" ? "#3b82f6" : t === "red" ? "#ef4444" : t === "green" ? "#22c55e" : "#9ca3af";
+}
+
 function CropBand({ overlay, data }: { overlay: PhotoOverlay; data: OverlayData }) {
   if (overlay === "none" || !data) return null;
   const Stat = ({ s }: { s: OverlayData["stats"][number] }) => (
@@ -77,7 +84,9 @@ function CropBand({ overlay, data }: { overlay: PhotoOverlay; data: OverlayData 
       <div className="flex flex-col items-center">
         <span className="text-[18px] font-extrabold" style={{ color: data.result.won ? "#ffde00" : "#dc2626" }}>{data.result.won ? "VICTORY" : "DEFEAT"}</span>
         <span className="text-[11px] font-extrabold text-white">
-          <span style={{ color: "#ef4444" }}>RED {data.result.redRounds}</span> - <span style={{ color: "#3b82f6" }}>{data.result.blueRounds} BLUE</span>
+          <span style={{ color: teamHexClient(data.result.mineColour) }}>{(data.result.mineColour || "").toUpperCase()} {data.result.mineRounds}</span>
+          {" - "}
+          <span style={{ color: teamHexClient(data.result.oppColour) }}>{data.result.oppRounds} {(data.result.oppColour || "").toUpperCase()}</span>
         </span>
       </div>
     );

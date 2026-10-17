@@ -122,6 +122,25 @@ function teamHex(team: string): string {
   return C.muted;
 }
 
+/** The two sides of a match result from the PLAYER's perspective, for ANY two
+ *  team colours (the old code assumed Red vs Blue, so Blue-vs-Yellow games showed
+ *  a phantom Red 0 and both badges fell back to the losing team's). `mine` is the
+ *  player's team, `opp` the other, each with its colour, round wins and badge. */
+function resultSides(g: MatchReport["game"], p: MatchPlayer) {
+  const won = p.isWinner;
+  const mine = {
+    colour: won ? g.winningTeam : g.losingTeam,
+    rounds: won ? g.winningTeamRounds : g.losingTeamRounds,
+    badge: won ? g.winningTeamBadge : g.losingTeamBadge,
+  };
+  const opp = {
+    colour: won ? g.losingTeam : g.winningTeam,
+    rounds: won ? g.losingTeamRounds : g.winningTeamRounds,
+    badge: won ? g.losingTeamBadge : g.winningTeamBadge,
+  };
+  return { won, mine, opp };
+}
+
 /* ---------- shared frame ---------- */
 
 function Frame({ logo, eyebrow, children }: { logo: string; eyebrow: string; children: ReactElement | ReactElement[] }): ReactElement {
@@ -252,11 +271,7 @@ function PersonalStory(report: MatchReport, p: MatchPlayer, logo: string): React
 
 function TeamStory(report: MatchReport, p: MatchPlayer, logo: string): ReactElement {
   const g = report.game;
-  const won = p.isWinner;
-  const redRounds = g.teams.red.roundWins;
-  const blueRounds = g.teams.blue.roundWins;
-  const redBadge = g.winningTeam === "Red" ? g.winningTeamBadge : g.losingTeamBadge;
-  const blueBadge = g.winningTeam === "Blue" ? g.winningTeamBadge : g.losingTeamBadge;
+  const { won, mine, opp } = resultSides(g, p);
   const scoreTop2 = p.scoreRank > 0 && p.scoreRank <= 2;
   return (
     <Frame logo={logo} eyebrow="Match Result">
@@ -266,13 +281,13 @@ function TeamStory(report: MatchReport, p: MatchPlayer, logo: string): ReactElem
           <div style={{ display: "flex", fontSize: 30, fontWeight: 700, letterSpacing: 3, color: C.muted, textTransform: "uppercase", marginTop: 4 }}>{report.matchDate}</div>
         </div>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 54 }}>
-          <Im url={redBadge} size={230} />
+          <Im url={mine.badge} size={230} />
           <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-            <div style={{ display: "flex", fontSize: 160, fontWeight: 800, color: C.red }}>{redRounds}</div>
+            <div style={{ display: "flex", fontSize: 160, fontWeight: 800, color: teamHex(mine.colour) }}>{mine.rounds}</div>
             <div style={{ display: "flex", fontSize: 96, fontWeight: 800, color: C.subtle }}>-</div>
-            <div style={{ display: "flex", fontSize: 160, fontWeight: 800, color: C.blue }}>{blueRounds}</div>
+            <div style={{ display: "flex", fontSize: 160, fontWeight: 800, color: teamHex(opp.colour) }}>{opp.rounds}</div>
           </div>
-          <Im url={blueBadge} size={230} />
+          <Im url={opp.badge} size={230} />
         </div>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
           <Im url={p.profilePicUrl} size={380} radius={18} cover border={`6px solid ${teamHex(p.teamColor)}`} />
@@ -486,17 +501,16 @@ function OverlayBand(report: MatchReport, p: MatchPlayer, overlay: PhotoOverlay)
   }
 
   if (overlay === "result") {
-    const g = report.game;
-    const won = p.isWinner;
+    const { won, mine, opp } = resultSides(report.game, p);
     return (
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
         <div style={{ display: "flex", fontSize: 96, fontWeight: 800, color: won ? C.accent : C.loss }}>{won ? "VICTORY" : "DEFEAT"}</div>
         <div style={{ display: "flex", alignItems: "center", gap: 20, marginTop: 8 }}>
-          <div style={{ display: "flex", fontSize: 30, fontWeight: 800, color: C.red }}>RED</div>
-          <div style={{ display: "flex", fontSize: 64, fontWeight: 800, color: C.red }}>{g.teams.red.roundWins}</div>
+          <div style={{ display: "flex", fontSize: 30, fontWeight: 800, color: teamHex(mine.colour) }}>{(mine.colour || "").toUpperCase()}</div>
+          <div style={{ display: "flex", fontSize: 64, fontWeight: 800, color: teamHex(mine.colour) }}>{mine.rounds}</div>
           <div style={{ display: "flex", fontSize: 44, fontWeight: 800, color: C.subtle }}>-</div>
-          <div style={{ display: "flex", fontSize: 64, fontWeight: 800, color: C.blue }}>{g.teams.blue.roundWins}</div>
-          <div style={{ display: "flex", fontSize: 30, fontWeight: 800, color: C.blue }}>BLUE</div>
+          <div style={{ display: "flex", fontSize: 64, fontWeight: 800, color: teamHex(opp.colour) }}>{opp.rounds}</div>
+          <div style={{ display: "flex", fontSize: 30, fontWeight: 800, color: teamHex(opp.colour) }}>{(opp.colour || "").toUpperCase()}</div>
         </div>
       </div>
     );
