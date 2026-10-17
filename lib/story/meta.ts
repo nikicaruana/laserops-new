@@ -51,7 +51,8 @@ export type OverlayData = {
   matchDate: string;
   stats: OverlayStat[]; // Score, Kills, Deaths, K/D, Accuracy, Damage, Caps, Cap Time
   captureStats: OverlayStat[]; // Score, Captures, Cap Time
-  result: { won: boolean; redRounds: number; blueRounds: number };
+  // The player's team vs the opponent, for ANY two colours (not just Red/Blue).
+  result: { won: boolean; mineColour: string; mineRounds: number; oppColour: string; oppRounds: number };
   accolades: OverlayBadge[];
   streaks: OverlayBadge[];
 };
@@ -95,7 +96,13 @@ export function buildOverlayData(report: MatchReport, player: MatchPlayer): Over
     matchDate: report.matchDate,
     stats,
     captureStats,
-    result: { won: player.isWinner, redRounds: report.game.teams.red.roundWins, blueRounds: report.game.teams.blue.roundWins },
+    result: {
+      won: player.isWinner,
+      mineColour: player.isWinner ? report.game.winningTeam : report.game.losingTeam,
+      mineRounds: player.isWinner ? report.game.winningTeamRounds : report.game.losingTeamRounds,
+      oppColour: player.isWinner ? report.game.losingTeam : report.game.winningTeam,
+      oppRounds: player.isWinner ? report.game.losingTeamRounds : report.game.winningTeamRounds,
+    },
     accolades,
     streaks,
   };
