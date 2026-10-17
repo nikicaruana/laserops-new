@@ -40,12 +40,18 @@ type Props = {
   demo?: boolean;
   /** The viewer's overlay data, for the live band in the share composer. */
   overlayData?: OverlayData;
+  /** Admins only: every match player's overlay data, keyed by lowercased ops,
+   *  so an admin can preview + share any player's stats on a photo. */
+  overlayDataByOps?: Record<string, OverlayData>;
 };
 
-export function MatchImages({ photos, matchId, viewerOps = "", isAdmin = false, roster = [], demo = false, overlayData }: Props) {
+export function MatchImages({ photos, matchId, viewerOps = "", isAdmin = false, roster = [], demo = false, overlayData, overlayDataByOps }: Props) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<number | null>(null);
   const [composerPhoto, setComposerPhoto] = useState<string | null>(null);
+  // Whose stats the open composer renders — the viewer for a normal self-share,
+  // or an admin-picked player.
+  const [composerOps, setComposerOps] = useState<string>("");
   const [tags, setTags] = useState<Record<string, string[]>>(() => Object.fromEntries(photos.map((p) => [p.id, p.taggedOps])));
 
   // In demo mode (admin preview) the sample photos aren't real DB rows, so tags
@@ -154,11 +160,34 @@ export function MatchImages({ photos, matchId, viewerOps = "", isAdmin = false, 
           {selfTagged && (
             <button
               type="button"
-              onClick={() => { setComposerPhoto(p.url); setActive(null); }}
+              onClick={() => { setComposerOps(viewerOps); setComposerPhoto(p.url); setActive(null); }}
               className={cn(btn, "border-accent bg-accent text-bg hover:bg-accent-soft")}
             >
               Share to story
             </button>
+          )}
+
+          {/* Admins can share ANY player's stats on a photo, always — to make
+              content for the LaserOps pages. Picking a player opens the same
+              composer the player would see, for that player's stats. */}
+          {isAdmin && roster.length > 0 && (
+            <select
+              value=""
+              onChange={(e) => {
+                if (e.target.value) {
+                  setComposerOps(e.target.value);
+                  setComposerPhoto(p.url);
+                  setActive(null);
+                }
+              }}
+              className={cn(btn, "cursor-pointer border-accent bg-accent/15 text-accent")}
+              aria-label="Share to story: pick a player"
+            >
+              <option value="" disabled>Share to story: pick player…</option>
+              {roster.map((r) => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+            </select>
           )}
 
           {isAdmin && untagged.length > 0 && (
@@ -212,8 +241,14 @@ export function MatchImages({ photos, matchId, viewerOps = "", isAdmin = false, 
 
       <GalleryLightbox images={lightboxImages} index={active} onClose={() => setActive(null)} renderActions={renderActions} />
 
-      {composerPhoto && viewerOps && (
-        <PhotoStoryComposer matchId={matchId} ops={viewerOps} photoUrl={composerPhoto} overlayData={overlayData} onClose={() => setComposerPhoto(null)} />
+      {composerPhoto && composerOps && (
+        <PhotoStoryComposer
+          matchId={matchId}
+          ops={composerOps}
+          photoUrl={composerPhoto}
+          overlayData={overlayDataByOps?.[composerOps.trim().toLowerCase()] ?? (composerOps.trim().toLowerCase() === viewerLc ? overlayData : undefined)}
+          onClose={() => { setComposerPhoto(null); setComposerOps(""); }}
+        />
       )}
     </section>
   );
