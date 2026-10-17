@@ -162,6 +162,11 @@ async function MatchContent({
   // Overlay data for the viewer's own stats (live band in the share composer).
   const viewerPlayer = myOpsLc ? findPlayerInReport(report, myOps) : undefined;
   const overlayData = viewerPlayer ? buildOverlayData(report, viewerPlayer) : undefined;
+  // Admins can share any player's stats, so pre-build every player's overlay
+  // data (keyed by lowercased nickname) for an accurate live preview per pick.
+  const overlayDataByOps = isAdmin
+    ? Object.fromEntries(report.players.map((pl) => [pl.nickname.trim().toLowerCase(), buildOverlayData(report, pl)]))
+    : undefined;
 
   return (
     <PlayerNavProvider>
@@ -185,6 +190,7 @@ async function MatchContent({
         isAdmin={isAdmin}
         roster={report.players.map((pl) => pl.nickname)}
         overlayData={overlayData}
+        overlayDataByOps={overlayDataByOps}
       />
     </div>
     </PlayerNavProvider>

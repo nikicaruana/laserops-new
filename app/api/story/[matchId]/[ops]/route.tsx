@@ -85,11 +85,15 @@ export async function GET(req: Request, ctx: { params: Promise<{ matchId: string
     const { buildPreviewReportFromDb } = await import("@/lib/match-report/preview-report");
     report = await buildPreviewReportFromDb();
   } else {
-    // The requested player must be the signed-in account's own ops tag.
-    const { data: account } = await supabase.from("accounts").select("ops_tag").eq("auth_user_id", user.id).maybeSingle();
-    const myOps = (account?.ops_tag ?? "").trim().toLowerCase();
-    if (!myOps || myOps !== decodedOps.trim().toLowerCase()) {
-      return new Response("You can only share your own match stats", { status: 403 });
+    // A player can only make a story for their OWN stats; an admin can make one
+    // for any player in the match (to generate content for the LaserOps pages).
+    const { data: isAdmin } = await supabase.rpc("is_admin");
+    if (!isAdmin) {
+      const { data: account } = await supabase.from("accounts").select("ops_tag").eq("auth_user_id", user.id).maybeSingle();
+      const myOps = (account?.ops_tag ?? "").trim().toLowerCase();
+      if (!myOps || myOps !== decodedOps.trim().toLowerCase()) {
+        return new Response("You can only share your own match stats", { status: 403 });
+      }
     }
     const { fetchMatchReportSupabase } = await import("@/lib/match-report/supabase-engine");
     const result = await fetchMatchReportSupabase(supabase, decodedMatch);
