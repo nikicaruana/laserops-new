@@ -82,16 +82,25 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   let truncated = false;
   let financialEntries: FinEntry[] = [];
 
-  // All completed games (newest first), so a manual in-person entry can be tied
-  // to any game id.
+  // All completed games, newest first by their actual PLAYED date. Order in JS by
+  // coalesce(played_on, scheduled_at): older/backlog games have no scheduled_at
+  // (only played_on), and SQL `scheduled_at DESC` puts those NULLs first — which
+  // floated undated games to the top. Every option shows its date.
   const { data: recentGames } =
     type === "financial"
-      ? await supabase.from("matches").select("id, match_code, title, scheduled_at").eq("status", "completed").order("scheduled_at", { ascending: false })
-      : { data: [] as { id: string; match_code: string | null; title: string | null; scheduled_at: string | null }[] };
-  const gameOptions = (recentGames ?? []).map((g) => ({
-    id: g.id,
-    label: `${g.match_code || g.title || "Game"}${g.scheduled_at ? ` · ${new Date(g.scheduled_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}` : ""}`,
-  }));
+      ? await supabase.from("matches").select("id, match_code, title, scheduled_at, played_on").eq("status", "completed")
+      : { data: [] as { id: string; match_code: string | null; title: string | null; scheduled_at: string | null; played_on: string | null }[] };
+  const gameOptions = (recentGames ?? [])
+    .map((g) => {
+      const dateStr = g.played_on || g.scheduled_at || null;
+      return {
+        id: g.id,
+        sort: dateStr ? new Date(dateStr).getTime() : 0,
+        label: `${g.match_code || g.title || "Game"}${dateStr ? ` · ${new Date(dateStr).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}` : ""}`,
+      };
+    })
+    .sort((a, b) => b.sort - a.sort)
+    .map(({ id, label }) => ({ id, label }));
 
   if (type === "token_ledger") {
     let q = supabase
