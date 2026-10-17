@@ -10,6 +10,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
+import { TotpGate } from "@/components/admin/TotpGate";
 
 function toLocalInput(iso: string | null): string {
   if (!iso) return "";
@@ -24,11 +25,22 @@ export function RescheduleMatchButton({ matchId, status, scheduledAt }: { matchI
   const [when, setWhen] = useState(toLocalInput(scheduledAt));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Rescheduling moves the game and re-notifies every signed-up player, so it is
+  // 2FA-gated: "Move game" validates the input then opens TotpGate; the write
+  // only runs once the code verifies.
+  const [gateOpen, setGateOpen] = useState(false);
 
   if (status && ["live", "completed", "cancelled"].includes(status)) return null;
 
+  function requestSave() {
+    if (!when) return setError("Pick a new date and time.");
+    setError(null);
+    setGateOpen(true);
+  }
+
   async function save() {
     if (!when) return setError("Pick a new date and time.");
+    setGateOpen(false);
     setBusy(true);
     setError(null);
     const iso = new Date(when).toISOString();
@@ -65,9 +77,15 @@ export function RescheduleMatchButton({ matchId, status, scheduledAt }: { matchI
     <div className="flex flex-wrap items-center gap-3 border border-border bg-bg-elevated px-4 py-3">
       <span className="text-[0.6rem] font-bold uppercase tracking-[0.14em] text-text-muted">New date / time</span>
       <input type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} className="h-9 border border-border-strong bg-bg px-2 text-sm text-text" />
-      <Button type="button" size="sm" onClick={save} disabled={busy}>{busy ? "Moving…" : "Move game"}</Button>
+      <Button type="button" size="sm" onClick={requestSave} disabled={busy}>{busy ? "Moving…" : "Move game"}</Button>
       <button type="button" onClick={() => setOpen(false)} className="text-xs font-bold uppercase tracking-[0.12em] text-text-subtle hover:text-accent">Cancel</button>
       {error && <span className="w-full text-xs text-red-400">{error}</span>}
+      <TotpGate
+        open={gateOpen}
+        action="reschedule this game"
+        onCancel={() => setGateOpen(false)}
+        onVerified={save}
+      />
     </div>
   );
 }

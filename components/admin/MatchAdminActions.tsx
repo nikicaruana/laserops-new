@@ -5,24 +5,30 @@
  * --------------------------------------------------------------------
  * Lifecycle actions for a match in the admin detail view. Which buttons show
  * depends on the current status:
- *   tentative / awaiting_confirm -> Confirm game, Cancel*
- *   confirmed                    -> Start match, Cancel*
- *   live                         -> Complete match*, End early (weather refund)*, Undo go-live
- *                                   (Undo reverts an accidental start back to confirmed; only when
- *                                   no game data exists yet, and it is NOT 2FA-gated as it moves no money.)
+ *   tentative / awaiting_confirm -> Confirm game, Cancel
+ *   confirmed                    -> Start match, Cancel
+ *   live                         -> Complete match, End early (weather refund), Undo go-live
  *   cancelled                    -> Reopen
- * ENDING a game - completing it, ending it early, or cancelling it - moves money
- * (refunds) and is irreversible, so each of those (*) requires a 2FA-elevated
- * session: the action opens TotpGate, and only runs once the code is verified.
- * The matching API routes also enforce aal2 server-side. Confirm / Start / Reopen
- * are unchanged (direct writes via admin_all RLS).
+ * EVERY lifecycle action here is 2FA-gated: the button opens TotpGate and the
+ * action only runs once the code is verified (the matching API routes / RPCs
+ * still enforce their own admin checks server-side). The one top-of-page control
+ * that is NOT gated is "Create teams", which is a separate link. Ending a game -
+ * completing it, ending it early, or cancelling it - also moves money (refunds)
+ * and is irreversible, so those carry an extra refund advisory in the gate.
  */
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { TotpGate } from "@/components/admin/TotpGate";
 
-type Gate = { kind: "complete" } | { kind: "cancel" } | { kind: "endEarly" };
+type Gate =
+  | { kind: "complete" }
+  | { kind: "cancel" }
+  | { kind: "endEarly" }
+  | { kind: "confirm" }
+  | { kind: "start"; notice: string }
+  | { kind: "undo" }
+  | { kind: "reopen" };
 
 export function MatchAdminActions({
   matchId,
@@ -38,44 +44,17 @@ export function MatchAdminActions({
   const [error, setError] = useState<string | null>(null);
   const [gate, setGate] = useState<Gate | null>(null);
 
-  async function patch(fields: Record<string, unknown>, confirmMsg?: string) {
-    if (confirmMsg && !window.confirm(confirmMsg)) return;
-    setBusy(true);
-    setError(null);
-    const supabase = createClient();
-    const { error: err } = await supabase.from("matches").update(fields).eq("id", matchId);
-    setBusy(false);
-    if (err) {
-      setError(err.message);
-      return;
-    }
-    router.refresh();
-  }
-
-  async function callRpc(fn: string, confirmMsg: string) {
-    if (!window.confirm(confirmMsg)) return;
-    setBusy(true);
-    setError(null);
-    const supabase = createClient();
-    const { error: err } = await supabase.rpc(fn, { p_match_id: matchId });
-    setBusy(false);
-    if (err) {
-      setError(err.message);
-      return;
-    }
-    router.refresh();
-  }
-
   // Starting a match notifies every registered player, so warn loudly when it
   // is not due to start soon (the common accidental-start case). Games also go
-  // live automatically 30 min before start.
+  // live automatically 30 min before start. The warning rides along as the 2FA
+  // gate's notice.
   function startMatch() {
     const HOUR = 60 * 60 * 1000;
     const startMs = scheduledAt ? new Date(scheduledAt).getTime() : null;
-    let msg = "Start this match now? It goes live and gets a join code for players.";
+    let notice = "This goes live and gets a join code for players, who are all notified immediately.";
     if (startMs == null) {
-      msg =
-        "Heads up: this game has no scheduled start time.\n\nSetting it live now will immediately notify all registered players that their game is live. Are you sure you want to go live now?";
+      notice =
+        "This game has no scheduled start time. Going live now immediately notifies all registered players that their game is live.";
     } else if (startMs - Date.now() > HOUR) {
       const mins = Math.round((startMs - Date.now()) / 60000);
       const hrs = Math.round(mins / 60);
@@ -89,48 +68,50 @@ export function MatchAdminActions({
         hour: "2-digit",
         minute: "2-digit",
       });
-      msg = `Heads up: this game is not due to start for another ${human} (starts ${when}).\n\nSetting it live now will immediately notify all registered players that their game is live. Games also go live automatically 30 minutes before start.\n\nAre you sure you want to go live now?`;
+      notice = `Heads up: this game is not due to start for another ${human} (starts ${when}). Going live now immediately notifies all registered players. Games also go live automatically 30 minutes before start.`;
     }
-    callRpc("admin_start_match", msg);
+    setGate({ kind: "start", notice });
   }
 
-    async function confirmGame() {
-    setBusy(true);
-    setError(null);
-    const res = await fetch(`/api/matches/${matchId}/confirm`, { method: "POST" });
-    const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
-    setBusy(false);
-    if (!res.ok || !data.ok) {
-      setError(data.error || "Couldn't confirm the game.");
-      return;
-    }
-    router.refresh();
-  }
-
-  // The three game-ending actions all run only after 2FA (TotpGate.onVerified).
+  // Every gated action runs here, only after TotpGate verifies the code.
   async function runGated() {
     if (!gate) return;
     setBusy(true);
     setError(null);
-    let url: string;
-    let body: string | undefined;
-    if (gate.kind === "complete") url = `/api/matches/${matchId}/complete`;
-    else if (gate.kind === "cancel") url = `/api/matches/${matchId}/cancel`;
-    else {
-      url = `/api/matches/${matchId}/end-early`;
-    }
-    const res = await fetch(url, {
-      method: "POST",
-      headers: body ? { "Content-Type": "application/json" } : undefined,
-      body,
-    });
-    const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
-    setBusy(false);
-    setGate(null);
-    if (!res.ok || !data.ok) {
-      setError(data.error || "Something went wrong.");
+    const supabase = createClient();
+    try {
+      if (gate.kind === "confirm") {
+        const res = await fetch(`/api/matches/${matchId}/confirm`, { method: "POST" });
+        const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+        if (!res.ok || !data.ok) throw new Error(data.error || "Couldn't confirm the game.");
+      } else if (gate.kind === "start") {
+        const { error: err } = await supabase.rpc("admin_start_match", { p_match_id: matchId });
+        if (err) throw new Error(err.message);
+      } else if (gate.kind === "undo") {
+        const { error: err } = await supabase.rpc("admin_undo_go_live", { p_match_id: matchId });
+        if (err) throw new Error(err.message);
+      } else if (gate.kind === "reopen") {
+        const { error: err } = await supabase.from("matches").update({ status: "tentative" }).eq("id", matchId);
+        if (err) throw new Error(err.message);
+      } else {
+        const url =
+          gate.kind === "complete"
+            ? `/api/matches/${matchId}/complete`
+            : gate.kind === "cancel"
+              ? `/api/matches/${matchId}/cancel`
+              : `/api/matches/${matchId}/end-early`;
+        const res = await fetch(url, { method: "POST" });
+        const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+        if (!res.ok || !data.ok) throw new Error(data.error || "Something went wrong.");
+      }
+    } catch (e) {
+      setBusy(false);
+      setGate(null);
+      setError(e instanceof Error ? e.message : "Something went wrong.");
       return;
     }
+    setBusy(false);
+    setGate(null);
     router.refresh();
   }
 
@@ -139,17 +120,30 @@ export function MatchAdminActions({
       ? "complete this game"
       : gate?.kind === "cancel"
         ? "cancel this game"
-        : gate
+        : gate?.kind === "endEarly"
           ? "end this game early"
-          : "this change";
+          : gate?.kind === "confirm"
+            ? "confirm this game"
+            : gate?.kind === "start"
+              ? "start this game"
+              : gate?.kind === "undo"
+                ? "undo go-live"
+                : gate?.kind === "reopen"
+                  ? "reopen this game"
+                  : "this change";
 
-  // Refund advisory shown in the confirmation popup for the money-moving actions.
+  // Advisory shown in the 2FA popup. The money-moving actions carry a refund note;
+  // start/undo carry their own heads-up.
   const gateNotice =
-    gate?.kind === "cancel"
-      ? "Nothing is charged until after a game, so a cancelled game has nothing to refund. Everyone signed up is notified that the game is off."
-      : gate?.kind === "endEarly"
-        ? "The game is marked completed so it can be scored and settled. Players settle up afterwards as usual - knock money off a shortened session when you mark each player paid."
-        : undefined;
+    gate?.kind === "start"
+      ? gate.notice
+      : gate?.kind === "undo"
+        ? "This match isn't actually being played? Revert it to Confirmed and clear the join code. Players already notified won't be un-notified."
+        : gate?.kind === "cancel"
+          ? "Nothing is charged until after a game, so a cancelled game has nothing to refund. Everyone signed up is notified that the game is off."
+          : gate?.kind === "endEarly"
+            ? "The game is marked completed so it can be scored and settled. Players settle up afterwards as usual - knock money off a shortened session when you mark each player paid."
+            : undefined;
 
   const s = status ?? "tentative";
 
@@ -158,7 +152,7 @@ export function MatchAdminActions({
       {(s === "tentative" || s === "awaiting_confirm") && (
         <button
           type="button"
-          onClick={confirmGame}
+          onClick={() => setGate({ kind: "confirm" })}
           disabled={busy}
           className="border border-accent bg-accent px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-bg transition-transform active:scale-[0.98] disabled:opacity-50"
         >
@@ -199,12 +193,7 @@ export function MatchAdminActions({
 
           <button
             type="button"
-            onClick={() =>
-              callRpc(
-                "admin_undo_go_live",
-                "This match isn't actually being played? Revert it to Confirmed and clear the join code. Players already notified won't be un-notified.",
-              )
-            }
+            onClick={() => setGate({ kind: "undo" })}
             disabled={busy}
             className="border border-border-strong px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-text-muted hover:border-accent hover:text-accent disabled:opacity-50"
           >
@@ -227,7 +216,7 @@ export function MatchAdminActions({
       {s === "cancelled" && (
         <button
           type="button"
-          onClick={() => patch({ status: "tentative" })}
+          onClick={() => setGate({ kind: "reopen" })}
           disabled={busy}
           className="border border-border-strong px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-text-muted hover:border-accent hover:text-accent disabled:opacity-50"
         >
