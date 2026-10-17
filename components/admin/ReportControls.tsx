@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/Button";
 const TYPES = [
   { key: "financial", label: "Financial ledger" },
   { key: "token_ledger", label: "Token ledger" },
+  { key: "charts", label: "Charts" },
 ] as const;
 
 export function ReportControls({ type, from, to }: { type: string; from: string; to: string }) {

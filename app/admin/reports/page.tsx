@@ -13,6 +13,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ReportControls } from "@/components/admin/ReportControls";
 import { ManualEntryForm } from "@/components/admin/ManualEntryForm";
 import { FinancialEntriesEditor, type FinEntry } from "@/components/admin/FinancialEntriesEditor";
+import { FinancialCharts } from "@/components/admin/FinancialCharts";
 import { formatEur } from "@/lib/money";
 
 export const metadata: Metadata = { title: "Financial reports" };
@@ -48,10 +49,28 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: "po
 
 export default async function ReportsPage({ searchParams }: { searchParams: Promise<{ type?: string; from?: string; to?: string }> }) {
   const sp = await searchParams;
-  const type = sp.type === "token_ledger" ? "token_ledger" : "financial";
+  const type = sp.type === "token_ledger" ? "token_ledger" : sp.type === "charts" ? "charts" : "financial";
   const from = sp.from || "";
   const to = sp.to || "";
   const toEnd = to ? new Date(new Date(to).getTime() + 86_400_000).toISOString() : null;
+
+  // Charts tab: a client component fetches + renders its own data (admin RLS),
+  // using the same From/To range. No server-side ledger queries needed here.
+  if (type === "charts") {
+    const rangeLabel = from || to ? `${from || "start"} → ${to || "now"}` : "Last 12 months";
+    return (
+      <div>
+        <header className="mb-6 border-b border-border pb-5">
+          <h1 className="text-2xl font-extrabold uppercase tracking-tight text-text sm:text-3xl">Financial reports</h1>
+          <p className="mt-2 max-w-2xl text-sm text-text-muted">
+            Revenue over time by type, plus token-usage frequency. Range: <span className="text-text">{rangeLabel}</span>.
+          </p>
+        </header>
+        <ReportControls type={type} from={from} to={to} />
+        <FinancialCharts from={from} to={to} />
+      </div>
+    );
+  }
 
   const supabase = await createClient();
 
