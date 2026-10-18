@@ -181,8 +181,18 @@ export function buildMatchReportV2(
     }
     const filtered = rr.events.captures.filter((c) => !(c.capturing_player_id != null && c.base_id >= 0 && excludedKey.has(`${c.capturing_player_id}:${c.base_id}:${c.time}`)));
     const rStreak: Round = { ...rr, events: { ...rr.events, captures: filtered } };
+    // Deaths summed across every headband a player wore this round, keyed by name.
+    // detectStreaks runs per headband (in_game_player_id); a mid-round headband
+    // switch splits a player's deaths onto the old band and leaves the new band at
+    // 0, which can fake a Shadow (survive the round with 0 deaths). Shadow is
+    // re-checked against this identity-level total below.
+    const roundDeathsByName: Record<string, number> = {};
+    for (const p of r.players) { const c = r.final_player_counters[p.in_game_player_id]; if (c) roundDeathsByName[p.name] = (roundDeathsByName[p.name] ?? 0) + c.deaths; }
     for (const aw of detectStreaks(rStreak)) {
       if (KILL_STREAK_KEYS.has(aw.key)) continue; const pts = streakPointsOf(aw.key); if (!pts) continue; const nm = nameOf[aw.player_id]; if (!nm) continue;
+      // Shadow demands a deathless round, so disqualify anyone who died on any of
+      // their headbands even if the band that got the kills shows 0 deaths.
+      if (aw.key === "shadow" && (roundDeathsByName[nm] ?? 0) > 0) continue;
       const a = acc[nm]; if (!a) continue; a.streakPoints += pts; a.streaks[aw.key] = (a.streaks[aw.key] ?? 0) + 1;
     }
   });

@@ -117,10 +117,18 @@ export async function getPlayerLastMatchId(
   return matches[0].match_code;
 }
 
-/** All match codes (newest first) for the match-ID search autocomplete. */
+/**
+ * All match codes (newest first) for the match-ID search autocomplete.
+ * Only games that have a scored report (match_player_aggregate rows) are listed,
+ * so empty shells never surface to players - notably the finance-reconciliation
+ * containers (e.g. LO-WR-25-NN), which carry money only and have no player data.
+ */
 export async function listAllMatchIdsSupabase(supabase: SupabaseClient): Promise<string[]> {
-  const { data } = await supabase.from("matches").select("match_code").order("match_code", { ascending: false });
-  return ((data ?? []) as { match_code: string }[]).map((m) => m.match_code).filter(Boolean);
+  const { data } = await supabase.from("match_player_aggregate").select("matches!inner(match_code)");
+  const codes = ((data ?? []) as unknown as { matches: { match_code: string } | null }[])
+    .map((r) => r.matches?.match_code)
+    .filter((c): c is string => !!c);
+  return Array.from(new Set(codes)).sort((a, b) => b.localeCompare(a, "en", { numeric: true }));
 }
 
 export async function fetchMatchReportSupabase(
