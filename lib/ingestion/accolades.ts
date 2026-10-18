@@ -26,7 +26,13 @@ export type AccoladeStat = {
   damage: number;
   captures: number; // counted base captures (incl. recaptures)
   holdSeconds: number; // total seconds bases held
+  roundsPlayed?: number; // rounds this PERSON played (merged across headbands); online-only
 };
+
+// "Min" accolades reward the LEAST of a stat (fewest deaths / shots / wounds /
+// damage), so a player who played fewer rounds wins them unfairly. They require
+// FULL attendance (see computeAccolades). Online-only; absent round data -> no gate.
+const MIN_ROUNDS_GATED = new Set(["Ghost", "Ammo_Saver", "Pacifist", "Tank"]);
 
 import type { AccoladeWin } from "@/lib/match-report-v2/types";
 export type { AccoladeWin } from "@/lib/match-report-v2/types";
@@ -58,13 +64,23 @@ export function computeAccolades(players: AccoladeStat[]): AccoladeWin[] {
   if (players.length === 0) return [];
   const out: AccoladeWin[] = [];
 
+  // Full-attendance bar for the "min" accolades: as many rounds as the most-present
+  // player. roundsPlayed is per PERSON (headband switches already merged), so a
+  // 3+2 split still counts as a full game; and in an early-stopped game the bar is
+  // the game as actually played, so those accolades are still issued. maxRounds = 0
+  // (no round data, e.g. offline) disables the gate.
+  const rp = (p: AccoladeStat) => p.roundsPlayed ?? 0;
+  const maxRounds = Math.max(0, ...players.map(rp));
+
   for (const def of DEFS) {
     let winner: AccoladeStat | undefined;
     let winVal = 0;
+    const pool = maxRounds > 0 && MIN_ROUNDS_GATED.has(def.key) ? players.filter((p) => rp(p) >= maxRounds) : players;
+    if (pool.length === 0) continue;
 
     if (def.stat === "apex") {
       // K/D max: undefeated (0 deaths) rank above everyone; tie-break by frags.
-      const sorted = [...players].sort((a, b) => {
+      const sorted = [...pool].sort((a, b) => {
         const az = a.deaths === 0 ? 1 : 0, bz = b.deaths === 0 ? 1 : 0;
         if (az !== bz) return bz - az;
         if (b.kd !== a.kd) return b.kd - a.kd;
@@ -74,7 +90,7 @@ export function computeAccolades(players: AccoladeStat[]): AccoladeWin[] {
       winVal = winner?.kd ?? 0;
     } else {
       const stat = def.stat;
-      const sorted = [...players].sort((a, b) => {
+      const sorted = [...pool].sort((a, b) => {
         const av = a[stat] as number, bv = b[stat] as number;
         if (av !== bv) return def.dir === "max" ? bv - av : av - bv;
         // Optional primary tie-break (e.g. CAP-Tain ties broken by hold time).
