@@ -292,7 +292,7 @@ export function buildMatchReportV2(
   const accoladeStats = players.map((p) => ({
     id: p.id, name: p.name, team: p.team, score: p.totalScore, frags: p.frags, deaths: p.deaths,
     kd: p.kd, shots: p.shots, hits: p.hits, accuracy: p.accuracy, wounds: p.wounds, damage: p.damage,
-    captures: p.captures + p.recaptures, holdSeconds: p.holdSeconds,
+    captures: p.captures + p.recaptures, holdSeconds: p.holdSeconds, roundsPlayed: p.roundsPlayed,
   }));
   const accolades = computeAccolades(accoladeStats);
   const wonBy: Record<number, string[]> = {};
