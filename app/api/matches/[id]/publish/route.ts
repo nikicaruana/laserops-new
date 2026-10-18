@@ -44,7 +44,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   if (aal?.currentLevel !== "aal2") return NextResponse.json({ error: "Two-factor authentication is required to publish scores." }, { status: 403 });
 
   // Load ingested rounds (raw file + mode).
-  const { data: rows, error: rErr } = await supabase.from("match_ingest_rounds").select("raw_file, resolutions, mode, winner_override").eq("match_id", id).order("created_at");
+  const { data: rows, error: rErr } = await supabase.from("match_ingest_rounds").select("raw_file, resolutions, mode, winner_override, counts_as_round, identity_overrides").eq("match_id", id).order("created_at");
   if (rErr) return NextResponse.json({ error: rErr.message }, { status: 500 });
   const ingested = (rows ?? []).filter((r) => r.raw_file);
   if (ingested.length === 0) return NextResponse.json({ error: "No ingested rounds to publish." }, { status: 400 });
@@ -60,6 +60,24 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   const identity = await resolveRoster(supabase, id);
   // Admin-authoritative scoring config (formula + exploit thresholds) for the mode.
   const scoringRuntime = await getScoringConfig(supabase);
+
+  // Per-round identity overrides: match_ingest_rounds.identity_overrides is
+  // { "<headband>": { person: "<ops_tag>" } } for a round where that headband was
+  // worn by someone OTHER than the match-level roster owner (same headband, two
+  // people across rounds). Resolve each stored ops tag to the engine's canonical
+  // nickname so the round's stats aggregate to the right person (splitting them
+  // into separate player rows). Empty / absent -> use the match-level roster.
+  const roundOverrides = (raw: unknown): Record<number, string> | undefined => {
+    const o = (raw ?? {}) as Record<string, { person?: string | null } | null>;
+    const out: Record<number, string> = {};
+    for (const [hb, v] of Object.entries(o)) {
+      const person = v?.person;
+      const hbNum = Number(hb);
+      if (!person || !Number.isFinite(hbNum)) continue;
+      out[hbNum] = identity(person).nickname || person;
+    }
+    return Object.keys(out).length ? out : undefined;
+  };
 
   // Match flags + date (date drives date-scoped gun damage for offline).
   const { data: mFlags } = await supabase.from("matches").select("played_on, scheduled_at, is_double_xp, offline_round_results, scoring_mode, title, match_code, duration_minutes, pricing_mode").eq("id", id).maybeSingle();
@@ -95,7 +113,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
         let pls: ReturnType<typeof lwaMatchPlayers> = [];
         try { pls = lwaMatchPlayers(r.raw_file as string); } catch { pls = []; }
         for (const pl of pls) {
-          const hb = Number(String(pl.headband).match(/d+/)?.[0]);
+          const hb = Number(String(pl.headband).match(/\d+/)?.[0]);
           if (!Number.isFinite(hb)) continue;
           const e = identity(String(hb));
           const prev = statsByHeadband[hb];
@@ -108,8 +126,8 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
           if (e.accountId) opsTagByHeadband[hb] = e.nickname;
         }
       }
-      const onlineRounds = jsonRows.map((r) => ({ raw: r.raw_file as string, resolutions: (r.resolutions ?? {}) as RoundResolutions, winnerOverride: (r.winner_override as string | null) ?? null }));
-      onlineRoundCount = onlineRounds.length;
+      const onlineRounds = jsonRows.map((r) => ({ raw: r.raw_file as string, resolutions: (r.resolutions ?? {}) as RoundResolutions, winnerOverride: (r.winner_override as string | null) ?? null, countsAsRound: (r as { counts_as_round?: boolean }).counts_as_round !== false, identityOverrides: roundOverrides((r as { identity_overrides?: unknown }).identity_overrides) }));
+      onlineRoundCount = onlineRounds.filter((r) => r.countsAsRound).length;
       offlineRoundCount = offlineWinners.length;
       result = computeMatchCommit(onlineRounds, accoladeByKey, identity, cfg, isDoubleXp, streakConfig, scoringRuntime, { statsByHeadband, roundWinners: offlineWinners, opsTagByHeadband });
     } else {
@@ -126,13 +144,13 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     }
   } else {
     // Online: JSON event-stream rounds.
-    const rounds = ingested.filter((r) => !isLwa(r.raw_file as string)).map((r) => ({ raw: r.raw_file as string, resolutions: (r.resolutions ?? {}) as RoundResolutions, winnerOverride: (r.winner_override as string | null) ?? null }));
+    const rounds = ingested.filter((r) => !isLwa(r.raw_file as string)).map((r) => ({ raw: r.raw_file as string, resolutions: (r.resolutions ?? {}) as RoundResolutions, winnerOverride: (r.winner_override as string | null) ?? null, countsAsRound: (r as { counts_as_round?: boolean }).counts_as_round !== false, identityOverrides: roundOverrides((r as { identity_overrides?: unknown }).identity_overrides) }));
     if (rounds.length === 0) return NextResponse.json({ error: "No online (JSON) rounds to score. If this game was played offline, switch the match to Offline mode." }, { status: 400 });
     // Gate: every same-second capture ambiguity must be reviewed first.
     let unreviewed = 0;
     for (const rd of rounds) unreviewed += unreviewedCount(parseRound(rd.raw, { spawnWindowSeconds: scoringRuntime.scoring.spawnWindowSeconds }), rd.resolutions);
     if (unreviewed > 0) return NextResponse.json({ error: `${unreviewed} unreviewed capture ambiguity${unreviewed === 1 ? "" : "ies"} — resolve them before publishing.` }, { status: 400 });
-    onlineRoundCount = rounds.length;
+    onlineRoundCount = rounds.filter((r) => r.countsAsRound).length;
     result = computeMatchCommit(rounds, accoladeByKey, identity, cfg, isDoubleXp, streakConfig, scoringRuntime);
   }
 

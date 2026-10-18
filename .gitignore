@@ -52,3 +52,6 @@ next-env.d.ts
 # Local real game-data samples (not committed)
 sample-game-data/*
 !sample-game-data/README.md
+
+# Re-ingestion staging + baseline snapshots (raw game data lives in the DB after ingest)
+reingest-data/

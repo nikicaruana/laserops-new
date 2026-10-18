@@ -64,7 +64,7 @@ type Acc = {
 };
 
 export function buildMatchReportV2(
-  rawRounds: { raw: string; resolutions?: RoundResolutions; winnerOverride?: string | null; countsAsRound?: boolean }[],
+  rawRounds: { raw: string; resolutions?: RoundResolutions; winnerOverride?: string | null; countsAsRound?: boolean; identityOverrides?: Record<number, string> }[],
   meta: { matchId: string; label: string; date?: string | null },
   opts?: {
     scoring?: Partial<typeof V2_SCORING>;
@@ -140,6 +140,16 @@ export function buildMatchReportV2(
       if (winnerTeam) roundsWonByTeam[winnerTeam] = (roundsWonByTeam[winnerTeam] ?? 0) + 1;
     }
     for (const t of r.teams) teamNames[t.colour] = t.name;
+
+    // Per-round identity override: the same headband number worn by a DIFFERENT
+    // person in this round than the match-level roster says (e.g. Head 21 = Player A
+    // in R1-2, Player B in R3-5). Applied AFTER the match-level remap above, so it
+    // wins for this round only. Aggregation keys on p.name, so the two people split
+    // into separate player rows automatically (and streaks/spawn follow p.name).
+    const roundIdentity = rawRounds[i].identityOverrides;
+    if (roundIdentity) {
+      for (const p of r.players) { if (p.headband_no != null && roundIdentity[p.headband_no]) p.name = roundIdentity[p.headband_no]; }
+    }
 
     const nameOf: Record<number, string> = {};
     for (const p of r.players) { nameOf[p.in_game_player_id] = p.name; (teamMembers[p.team] ??= new Set()).add(p.name); }

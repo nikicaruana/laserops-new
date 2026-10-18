@@ -54,7 +54,7 @@ export type CommitResult = {
 };
 
 export function computeMatchCommit(
-  rawRounds: { raw: string; resolutions?: RoundResolutions; winnerOverride?: string | null }[],
+  rawRounds: { raw: string; resolutions?: RoundResolutions; winnerOverride?: string | null; countsAsRound?: boolean; identityOverrides?: Record<number, string> }[],
   accoladeByKey: Map<string, { id: string; xp: number }>,
   identity: (headband: string) => { nickname: string; accountId: string | null; profilePicUrl?: string | null; gun?: string | null; xpMultiplier?: number },
   cfg: XpConfig = DEFAULT_XP_CONFIG,
