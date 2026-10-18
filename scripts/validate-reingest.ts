@@ -116,6 +116,12 @@ async function main() {
   // ---- Diff vs live DB ----
   const STAT = ["frags", "deaths", "hits", "shots", "captures", "hold_seconds", "damage"] as const;
   const streakTot = (s: any[] | null | undefined) => (s ?? []).reduce((n: number, x: any) => n + (Number(x.count) || 0), 0);
+  const streakMap = (s: any[] | null | undefined) => { const m: Record<string, number> = {}; for (const x of s ?? []) m[x.key] = (m[x.key] ?? 0) + (Number(x.count) || 0); return m; };
+  const streakKeyDiff = (oldS: any, newS: any) => {
+    const o = streakMap(oldS), n = streakMap(newS);
+    return [...new Set([...Object.keys(o), ...Object.keys(n)])].sort()
+      .filter((k) => (o[k] ?? 0) !== (n[k] ?? 0)).map((k) => `${k} ${o[k] ?? 0}->${n[k] ?? 0}`).join(", ");
+  };
   let unexpected = 0, expected = 0, missing = 0;
   console.log(`\n== ${matchCode} :: recompute (current code) vs live DB ==`);
   console.log(`rounds=${result.roundCount} winner=${result.winnerColour ?? "-"} players=${result.aggregates.length} (live ${live?.length ?? 0})\n`);
@@ -132,7 +138,8 @@ async function main() {
       console.log(`  !! STAT DRIFT ${a.nickname}: ${drift.map((f) => `${f} ${Math.round(Number(L[f]))}->${Math.round((a as any)[f])}`).join(", ")}  score ${L.score}->${a.score}`);
     } else if (sNew !== sOld || scoreD !== 0) {
       expected++;
-      console.log(`  ~ ${a.nickname}: streaks ${sOld}->${sNew}, score ${L.score}->${a.score} (${scoreD >= 0 ? "+" : ""}${scoreD})`);
+      const kd = streakKeyDiff(L.streaks, a.streaks);
+      console.log(`  ~ ${a.nickname}: score ${L.score}->${a.score} (${scoreD >= 0 ? "+" : ""}${scoreD})${kd ? `  [${kd}]` : ""}`);
     }
   }
   for (const [k, L] of liveByNick) if (!seen.has(k)) { console.log(`  DROPPED (in live, not recomputed): ${L.nickname}  <-- investigate`); missing++; }
