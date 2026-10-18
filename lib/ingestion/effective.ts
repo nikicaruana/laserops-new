@@ -31,7 +31,15 @@ export type EffectiveCaptures = {
 };
 
 function toEpoch(t: string): number {
-  const ms = Date.parse(t.replace(/\./g, "-").replace(" ", "T"));
+  // Force UTC. These LaserWar timestamps carry no timezone offset, and Date.parse
+  // would read a bare "YYYY-MM-DDTHH:MM:SS" in the RUNTIME's local zone. That silently
+  // broke the burn cap: burn_epoch is computed server-side (Vercel = UTC) and embedded
+  // in the round, while this function recomputes capture epochs in the BROWSER (admin's
+  // local zone) when the ingest preview runs client-side - so `burn - capture` was off
+  // by the TZ offset and the cap never applied. Appending Z makes every runtime agree;
+  // only epoch DIFFERENCES are ever used, so absolute UTC vs local is immaterial.
+  const iso = t.replace(/\./g, "-").replace(" ", "T");
+  const ms = Date.parse(/[zZ]|[+-]\d\d:?\d\d$/.test(iso) ? iso : iso + "Z");
   return Number.isNaN(ms) ? NaN : Math.floor(ms / 1000);
 }
 

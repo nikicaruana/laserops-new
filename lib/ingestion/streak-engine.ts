@@ -94,7 +94,10 @@ export const BUILTIN_STREAK_RULES: Record<string, StreakRuleConfig> = {
 // --- Shared derived facts --------------------------------------------------
 
 function toEpoch(t: string): number {
-  const ms = Date.parse(t.replace(/\./g, "-").replace(" ", "T"));
+  // Force UTC so epochs match across runtimes (server parse vs browser recompute);
+  // only epoch differences are used. See effective.ts for the full rationale.
+  const iso = t.replace(/\./g, "-").replace(" ", "T");
+  const ms = Date.parse(/[zZ]|[+-]\d\d:?\d\d$/.test(iso) ? iso : iso + "Z");
   return Number.isNaN(ms) ? NaN : Math.floor(ms / 1000);
 }
 
