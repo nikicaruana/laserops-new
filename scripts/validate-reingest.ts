@@ -82,15 +82,23 @@ async function main() {
   // Build rawRounds (+ per-round countsAsRound + identityOverrides from swaps).
   const swapsByRound: Record<number, Record<number, string>> = {};
   for (const s of cfg.identitySwaps ?? []) { (swapsByRound[s.round] ??= {})[s.headband] = identity(s.person).nickname || s.person; }
-  let rawRounds: { raw: string; winnerOverride: string | null; countsAsRound: boolean; identityOverrides?: Record<number, string> }[];
+  let rawRounds: { raw: string; winnerOverride: string | null; countsAsRound: boolean; identityOverrides?: Record<number, string>; resolutions?: any }[];
+  let fileOf: string[];
   if (cfg.onlineFiles) {
+    fileOf = cfg.onlineFiles.map((o) => o.file);
     rawRounds = cfg.onlineFiles.map((o, i) => ({ raw: readFileSync(`${DIR}/jsons/${o.file}`, "utf8"), winnerOverride: o.win, countsAsRound: true, identityOverrides: swapsByRound[i] }));
   } else {
     const jsonFiles = readdirSync(`${DIR}/jsons`).filter((f) => f.toLowerCase().endsWith(".json")).sort();
     const meta = cfg.roundMeta ?? jsonFiles.map(() => ({ win: null as string | null, counts: true }));
     if (meta.length !== jsonFiles.length) { console.error(`config has ${meta.length} rounds but ${jsonFiles.length} JSON files`); process.exit(1); }
+    fileOf = jsonFiles;
     rawRounds = jsonFiles.map((f, i) => ({ raw: readFileSync(`${DIR}/jsons/${f}`, "utf8"), winnerOverride: meta[i].win, countsAsRound: meta[i].counts, identityOverrides: swapsByRound[i] }));
   }
+  // Apply any admin capture-ambiguity resolutions already staged in the DB (so a
+  // post-publish re-validation accounts for them). Pre-publish there are none.
+  const { data: dbRounds } = await svc.from("match_ingest_rounds").select("filename, resolutions").eq("match_id", m.id);
+  const resByFile = new Map((dbRounds ?? []).map((r: any) => [r.filename, r.resolutions ?? {}]));
+  if (resByFile.size) rawRounds.forEach((r, i) => { r.resolutions = resByFile.get(fileOf[i]) ?? {}; });
 
   // Hybrid offline injection (LWA), if present on disk.
   let offlineInj: any = { statsByHeadband: {}, roundWinners: [], opsTagByHeadband: cfg.opsByHead, excludeHeadbands: cfg.excludeHeadbands };
