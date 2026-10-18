@@ -36,7 +36,9 @@ export type GameCfg = {
 export const GAMES: Record<string, GameCfg> = {
   "27": {
     date: "2026-09-05",
-    opsByHead: { 1: "Snaaaaaaake", 2: "Buwdha", 4: "Sina", 6: "Jens", 37: "BSoD", 39: "Jinnies", 40: "TheHolySpirit", 41: "Glenn", 42: "Tompa", 45: "aximus" },
+    // Head 37 was "BSoD" at game time; that account has since been renamed to
+    // "Colin" (Colin Dooley) and the live DB reflects the new name - use current.
+    opsByHead: { 1: "Snaaaaaaake", 2: "Buwdha", 4: "Sina", 6: "Jens", 37: "Colin", 39: "Jinnies", 40: "TheHolySpirit", 41: "Glenn", 42: "Tompa", 45: "aximus" },
   },
   "28": {
     date: "2026-09-08",
