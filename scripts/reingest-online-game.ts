@@ -85,7 +85,7 @@ async function main() {
     files = jsonFiles.map((f, i) => ({ file: f, win: meta[i].win, counts: meta[i].counts }));
   }
   const base = Date.parse(`${cfg.date}T00:00:00Z`);
-  const ingestRows = files.map((f, i) => ({
+  const ingestRows: any[] = files.map((f, i) => ({
     operator_id: OPERATOR_ID, match_id: m.id, filename: f.file,
     raw_file: readFileSync(`${DIR}/jsons/${f.file}`, "utf8"),
     mode: "online", round_no: i + 1, winner_override: f.win,
@@ -94,6 +94,19 @@ async function main() {
     note: null as string | null,
     created_at: new Date(base + i * 1000).toISOString(), // preserve round order (publish sorts by created_at)
   }));
+  // HYBRID: the offline rounds come from one .lwa (whole-match aggregate); the
+  // publish hybrid path reads it as an LWA row + matches.offline_round_results.
+  if (cfg.offline) {
+    const lwaPath = `${DIR}/lwas/${cfg.offline.lwaFile}`;
+    if (!existsSync(lwaPath)) { console.error(`HYBRID needs offline LWA at ${lwaPath} (missing) - supply it.`); process.exit(1); }
+    ingestRows.push({
+      operator_id: OPERATOR_ID, match_id: m.id, filename: cfg.offline.lwaFile,
+      raw_file: readFileSync(lwaPath, "utf8"),
+      mode: "offline", round_no: ingestRows.length + 1, winner_override: null,
+      counts_as_round: true, identity_overrides: {}, note: `Offline rounds (${cfg.offline.winners.length}); winners from matches.offline_round_results.`,
+      created_at: new Date(base + ingestRows.length * 1000).toISOString(),
+    });
+  }
 
   const notesBits: string[] = [`Re-ingested from raw JSONs (${new Date().toISOString().slice(0, 10)}).`];
   const merges = Object.entries(bandsByOps).filter(([, b]) => b.length > 1).map(([ops, b]) => `${ops}=${[...b].sort((x, y) => x - y).map((n) => `Head ${n}`).join("+")}`);
