@@ -80,7 +80,8 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   };
 
   // Match flags + date (date drives date-scoped gun damage for offline).
-  const { data: mFlags } = await supabase.from("matches").select("played_on, scheduled_at, is_double_xp, offline_round_results, scoring_mode, title, match_code, duration_minutes, pricing_mode").eq("id", id).maybeSingle();
+  const { data: mFlags } = await supabase.from("matches").select("played_on, scheduled_at, is_double_xp, offline_round_results, scoring_mode, title, match_code, duration_minutes, pricing_mode, exclude_headbands").eq("id", id).maybeSingle();
+  const excludeHeadbands = ((mFlags?.exclude_headbands as number[] | null) ?? undefined);
   const now = new Date().toISOString();
   const playedOn = (mFlags?.played_on as string | null) || ((mFlags?.scheduled_at as string | null)?.slice(0, 10)) || now.slice(0, 10);
   const isDoubleXp = mFlags?.is_double_xp === true;
@@ -129,7 +130,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
       const onlineRounds = jsonRows.map((r) => ({ raw: r.raw_file as string, resolutions: (r.resolutions ?? {}) as RoundResolutions, winnerOverride: (r.winner_override as string | null) ?? null, countsAsRound: (r as { counts_as_round?: boolean }).counts_as_round !== false, identityOverrides: roundOverrides((r as { identity_overrides?: unknown }).identity_overrides) }));
       onlineRoundCount = onlineRounds.filter((r) => r.countsAsRound).length;
       offlineRoundCount = offlineWinners.length;
-      result = computeMatchCommit(onlineRounds, accoladeByKey, identity, cfg, isDoubleXp, streakConfig, scoringRuntime, { statsByHeadband, roundWinners: offlineWinners, opsTagByHeadband });
+      result = computeMatchCommit(onlineRounds, accoladeByKey, identity, cfg, isDoubleXp, streakConfig, scoringRuntime, { statsByHeadband, roundWinners: offlineWinners, opsTagByHeadband, excludeHeadbands });
     } else {
       // Pure offline: one or more .lwa whole-match aggregates, scored kill-only.
       const players: OfflinePlayerStat[] = [];
@@ -151,7 +152,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     for (const rd of rounds) unreviewed += unreviewedCount(parseRound(rd.raw, { spawnWindowSeconds: scoringRuntime.scoring.spawnWindowSeconds }), rd.resolutions);
     if (unreviewed > 0) return NextResponse.json({ error: `${unreviewed} unreviewed capture ambiguity${unreviewed === 1 ? "" : "ies"} — resolve them before publishing.` }, { status: 400 });
     onlineRoundCount = rounds.filter((r) => r.countsAsRound).length;
-    result = computeMatchCommit(rounds, accoladeByKey, identity, cfg, isDoubleXp, streakConfig, scoringRuntime);
+    result = computeMatchCommit(rounds, accoladeByKey, identity, cfg, isDoubleXp, streakConfig, scoringRuntime, undefined, excludeHeadbands);
   }
 
   // Write via the service role (RLS-bypassing; grants added in migration).

@@ -123,7 +123,7 @@ async function main() {
   if (pErr) { console.error(`participants insert failed: ${pErr.message}`); process.exit(1); }
   const { error: iErr } = await svc.from("match_ingest_rounds").insert(ingestRows);
   if (iErr) { console.error(`ingest insert failed: ${iErr.message}`); process.exit(1); }
-  const patch: any = { processing_notes: processingNotes };
+  const patch: any = { processing_notes: processingNotes, exclude_headbands: cfg.excludeHeadbands ?? [] };
   if (cfg.offline) { patch.scoring_mode = "offline"; patch.offline_round_results = cfg.offline.winners; }
   else patch.scoring_mode = "online";
   const { error: mErr } = await svc.from("matches").update(patch).eq("id", m.id);

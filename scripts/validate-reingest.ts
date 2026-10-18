@@ -119,7 +119,7 @@ async function main() {
     offlineInj.roundWinners = cfg.offline.winners;
   }
 
-  const result = computeMatchCommit(rawRounds as any, accoladeByKey, identity, xpCfg, false, streakConfig, scoring, cfg.offline ? offlineInj : undefined);
+  const result = computeMatchCommit(rawRounds as any, accoladeByKey, identity, xpCfg, false, streakConfig, scoring, cfg.offline ? offlineInj : undefined, cfg.excludeHeadbands);
 
   // ---- Diff vs live DB ----
   const STAT = ["frags", "deaths", "hits", "shots", "captures", "hold_seconds", "damage"] as const;
