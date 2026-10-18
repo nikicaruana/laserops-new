@@ -160,8 +160,11 @@ const DEFAULT_BURN_THRESHOLD_SECONDS = 600; // 10 min cumulative hold burns a ba
 /** "2026.08.01 02:30:05" -> epoch seconds (local). Returns NaN if unparseable. */
 function toEpoch(t: string | undefined): number {
   if (!t) return NaN;
+  // Force UTC so epochs match across runtimes (server parse vs browser recompute).
+  // A bare timestamp has no offset and would otherwise be read in local time; only
+  // epoch differences are used, so UTC vs local is immaterial. See effective.ts.
   const iso = t.replace(/\./g, "-").replace(" ", "T");
-  const ms = Date.parse(iso);
+  const ms = Date.parse(/[zZ]|[+-]\d\d:?\d\d$/.test(iso) ? iso : iso + "Z");
   return Number.isNaN(ms) ? NaN : Math.floor(ms / 1000);
 }
 
