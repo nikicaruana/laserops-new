@@ -59,7 +59,12 @@ export function SignupForm({ next }: { next?: string }) {
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback${nextQ}` },
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback${nextQ}`,
+        // Server-side carrier for the destination - rides on the user record, so
+        // it survives the email round-trip even if the query + cookie don't.
+        data: next ? { lo_next: next } : undefined,
+      },
     });
     setBusy(false);
 

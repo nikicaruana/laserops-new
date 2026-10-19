@@ -52,6 +52,12 @@ export async function GET(request: Request) {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) return `${origin}${next}`;
+    // Most robust carrier: the intended destination stashed in the user's auth
+    // metadata at signup (`options.data.lo_next`). Unlike a query param or cookie,
+    // it rides on the user record itself, so it can't be lost across the email /
+    // OAuth round-trip. Used only when the query/cookie didn't carry one.
+    const metaNext = safeNextPath((user.user_metadata as { lo_next?: string } | null)?.lo_next);
+    const eff = next !== "/player-portal" ? next : metaNext ?? "/player-portal";
     const { data: account } = await supabase
       .from("accounts")
       .select("ops_tag, waiver_accepted_at")
@@ -62,11 +68,11 @@ export async function GET(request: Request) {
       // Incomplete account must finish onboarding/waiver first, but carry the
       // intended destination (e.g. a game invite's auto-join landing) THROUGH the
       // gate so the player returns to it once setup is done. Default target -> no next.
-      if (next === "/player-portal") return `${origin}${gated}`;
+      if (eff === "/player-portal") return `${origin}${gated}`;
       const sep = gated.includes("?") ? "&" : "?";
-      return `${origin}${gated}${sep}next=${encodeURIComponent(next)}`;
+      return `${origin}${gated}${sep}next=${encodeURIComponent(eff)}`;
     }
-    return `${origin}${next !== "/player-portal" ? next : gated}`;
+    return `${origin}${eff !== "/player-portal" ? eff : gated}`;
   }
 
   // Redirect + consume the one-shot next cookie (so it can't mis-route a later auth).
