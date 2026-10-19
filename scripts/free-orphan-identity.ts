@@ -52,10 +52,13 @@ async function main() {
 
   for (const o of orphans) {
     const patch: any = {};
+    // Email can be nulled; ops_tag CANNOT (an update trigger propagates it to
+    // denormalized nickname columns that are NOT NULL - e.g. player_armory), so
+    // retire it to a unique non-null placeholder, which frees the real tag.
     if (EMAIL && (o.email ?? "").toLowerCase() === EMAIL.toLowerCase()) patch.email = null;
-    if (OPS && (o.ops_tag ?? "").toLowerCase() === OPS.toLowerCase()) { patch.ops_tag = null; patch.reclaim_code = null; }
+    if (OPS && (o.ops_tag ?? "").toLowerCase() === OPS.toLowerCase()) { patch.ops_tag = `freed-${o.id.slice(0, 8)}`; patch.reclaim_code = null; }
     if (!Object.keys(patch).length) continue;
-    console.log(`${WRITE ? "FREE" : "would free"} account ${o.id.slice(0, 8)} (ops_tag='${o.ops_tag}' email='${o.email}') -> null ${Object.keys(patch).join(", ")}`);
+    console.log(`${WRITE ? "FREE" : "would free"} account ${o.id.slice(0, 8)} (ops_tag='${o.ops_tag}' email='${o.email}') -> ${JSON.stringify(patch)}`);
     if (WRITE) {
       const { error } = await svc.from("accounts").update(patch).eq("id", o.id);
       if (error) console.error(`  failed: ${error.message}`);
