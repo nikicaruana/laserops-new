@@ -5,11 +5,12 @@
  * --------------------------------------------------------------------
  * Player-facing private booking request. Contact details are prefilled from the
  * account (read-only here; edited in the profile). Player picks a date, start
- * time (3h), and headcount; we create an unlisted 'tentative' match via the
- * create_private_booking RPC for an admin to price and confirm.
+ * time (3h), and headcount; we EMAIL the request to the team (and raise an admin
+ * alert) via /api/private-booking-enquiry. No game is created here - we set it up
+ * for the player and send them the invite link. Shows a "request sent"
+ * confirmation on success.
  */
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
@@ -35,15 +36,16 @@ export function CreatePrivateBookingForm({
   fullName: string | null;
   phone: string | null;
 }) {
-  const router = useRouter();
   const [date, setDate] = useState("");
   const [startTime, setStartTime] = useState("");
   const [headcount, setHeadcount] = useState("10");
   const [title, setTitle] = useState("");
   const [titleDirty, setTitleDirty] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [phonePrompt, setPhonePrompt] = useState(false);
+  const [hasPhone, setHasPhone] = useState(!!phone);
   const [cfg, setCfg] = useState({ sessionMinutes: 180, bufferMinutes: 60 });
   useEffect(() => {
     const supabase = createClient();
@@ -65,7 +67,7 @@ export function CreatePrivateBookingForm({
     await submit();
   }
 
-  async function submit() {
+  async function submit(phoneJustAdded = false) {
     setError(null);
     if (!date || !startTime) {
       setError("Pick a date and start time.");
@@ -76,20 +78,52 @@ export function CreatePrivateBookingForm({
       setError("That date and time isn't valid.");
       return;
     }
-    setSaving(true);
-    const supabase = createClient();
-    const { data, error: err } = await supabase.rpc("create_private_booking", {
-      p_title: title.trim() || null,
-      p_scheduled_at: when.toISOString(),
-      p_headcount: Number(headcount) || 1,
-    });
-    setSaving(false);
-    if (err || !data) {
-      setError(err?.message || "Couldn't send your booking request.");
-      if (err && /mobile number/i.test(err.message)) setPhonePrompt(true);
+    // We need a number to confirm the booking on - prompt for one if missing.
+    if (!hasPhone && !phoneJustAdded) {
+      setPhonePrompt(true);
       return;
     }
-    router.push(`/player-portal/games/${data}`);
+    setSaving(true);
+    let res: Response;
+    try {
+      res = await fetch("/api/private-booking-enquiry", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: title.trim() || null,
+          scheduledAt: when.toISOString(),
+          headcount: Number(headcount) || 1,
+        }),
+      });
+    } catch {
+      setSaving(false);
+      setError("Couldn't send your request. Check your connection and try again.");
+      return;
+    }
+    setSaving(false);
+    const out = await res.json().catch(() => ({}));
+    if (!res.ok || !out?.ok) {
+      setError(out?.error || "Couldn't send your booking request.");
+      return;
+    }
+    setSent(true);
+  }
+
+  if (sent) {
+    return (
+      <div className="portal-card max-w-2xl px-6 py-8 text-center">
+        <p className="text-lg font-bold text-accent">Request sent</p>
+        <p className="mt-2 text-sm text-text-muted">
+          Thanks{opsTag ? `, ${opsTag}` : ""} - we&apos;ve got your private booking request. We&apos;ll confirm the
+          price and details with you, set the game up, and send you an invite link to share with your group.
+        </p>
+        <div className="mt-6 flex justify-center">
+          <Link href="/player-portal/games" className="text-xs font-bold uppercase tracking-[0.12em] text-accent hover:text-accent-soft">
+            Back to games
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -153,15 +187,15 @@ export function CreatePrivateBookingForm({
 
       <div className="flex items-center gap-4">
         <Button type="submit" size="md" disabled={saving}>
-          {saving ? "Sending…" : "Request booking"}
+          {saving ? "Sending…" : "Send booking request"}
         </Button>
-        <p className="text-[0.65rem] text-text-subtle">We&apos;ll confirm the price and details with you.</p>
+        <p className="text-[0.65rem] text-text-subtle">We&apos;ll set it up and send you an invite link to share.</p>
       </div>
 
       {phonePrompt && (
         <AddPhoneModal
           onClose={() => setPhonePrompt(false)}
-          onSaved={() => { setPhonePrompt(false); setError(null); router.refresh(); submit(); }}
+          onSaved={() => { setPhonePrompt(false); setHasPhone(true); setError(null); submit(true); }}
         />
       )}
     </form>
