@@ -12,19 +12,26 @@
  */
 import { type EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { postAuthPath } from "@/lib/portalRoute";
+import { postAuthPath, safeNextPath } from "@/lib/portalRoute";
+
+// Cookie fallback for the post-auth destination. Email-confirm / OAuth links
+// bounce through Supabase's domain, which may drop the `?next=` query depending on
+// the redirect-URL config; the signup/login flow also stashes `next` in this
+// cookie (same browser), so we recover it here when the query didn't survive.
+const NEXT_COOKIE = "lo_join_next";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
-  const rawNext = searchParams.get("next") ?? "/player-portal";
-  // Only ever redirect within the app – reject absolute or protocol-relative
-  // ("//evil.com") targets to avoid an open redirect.
-  const next =
-    rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/player-portal";
+  const cookieStore = await cookies();
+  const cookieRaw = cookieStore.get(NEXT_COOKIE)?.value;
+  const cookieNext = cookieRaw ? safeNextPath(decodeURIComponent(cookieRaw)) : null;
+  // Prefer an explicit query `next`, else the stashed cookie, else the portal.
+  const next = safeNextPath(searchParams.get("next")) ?? cookieNext ?? "/player-portal";
 
   // Surface any error Supabase itself passed back (e.g. expired link).
   const providerError =
@@ -45,6 +52,12 @@ export async function GET(request: Request) {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) return `${origin}${next}`;
+    // Most robust carrier: the intended destination stashed in the user's auth
+    // metadata at signup (`options.data.lo_next`). Unlike a query param or cookie,
+    // it rides on the user record itself, so it can't be lost across the email /
+    // OAuth round-trip. Used only when the query/cookie didn't carry one.
+    const metaNext = safeNextPath((user.user_metadata as { lo_next?: string } | null)?.lo_next);
+    const eff = next !== "/player-portal" ? next : metaNext ?? "/player-portal";
     const { data: account } = await supabase
       .from("accounts")
       .select("ops_tag, waiver_accepted_at")
@@ -55,20 +68,27 @@ export async function GET(request: Request) {
       // Incomplete account must finish onboarding/waiver first, but carry the
       // intended destination (e.g. a game invite's auto-join landing) THROUGH the
       // gate so the player returns to it once setup is done. Default target -> no next.
-      if (next === "/player-portal") return `${origin}${gated}`;
+      if (eff === "/player-portal") return `${origin}${gated}`;
       const sep = gated.includes("?") ? "&" : "?";
-      return `${origin}${gated}${sep}next=${encodeURIComponent(next)}`;
+      return `${origin}${gated}${sep}next=${encodeURIComponent(eff)}`;
     }
-    return `${origin}${next !== "/player-portal" ? next : gated}`;
+    return `${origin}${eff !== "/player-portal" ? eff : gated}`;
   }
+
+  // Redirect + consume the one-shot next cookie (so it can't mis-route a later auth).
+  const go = (url: string) => {
+    const res = NextResponse.redirect(url);
+    res.cookies.set(NEXT_COOKIE, "", { path: "/", maxAge: 0 });
+    return res;
+  };
 
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) return NextResponse.redirect(await destination());
+    if (!error) return go(await destination());
     console.error("[auth/callback] exchangeCodeForSession failed:", error.message);
   } else if (tokenHash && type) {
     const { error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
-    if (!error) return NextResponse.redirect(await destination());
+    if (!error) return go(await destination());
     console.error("[auth/callback] verifyOtp failed:", error.message);
   } else {
     console.error(
@@ -77,5 +97,5 @@ export async function GET(request: Request) {
     );
   }
 
-  return NextResponse.redirect(`${origin}/player-portal/login?error=auth`);
+  return go(`${origin}/player-portal/login?error=auth`);
 }

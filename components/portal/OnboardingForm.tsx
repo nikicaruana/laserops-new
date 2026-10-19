@@ -101,8 +101,8 @@ export function OnboardingForm({
       return;
     }
     // Return to the pending destination (e.g. auto-join the game they were invited
-    // to), else the portal.
-    window.location.assign(next || "/player-portal");
+    // to), else the games list - the most useful first stop for a new player.
+    window.location.assign(next || "/player-portal/games");
   }
 
   return (

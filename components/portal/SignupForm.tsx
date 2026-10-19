@@ -51,18 +51,29 @@ export function SignupForm({ next }: { next?: string }) {
     const supabase = createClient();
     // Carry the originating destination (e.g. a game invite's auto-join landing)
     // through the email-confirm callback so the player returns to it after setup.
+    // Also stash it in a short-lived cookie: the email link bounces through
+    // Supabase's domain (possibly dropping the query), and the cookie survives the
+    // round-trip in the same browser even when opened in a new tab.
     const nextQ = next ? `?next=${encodeURIComponent(next)}` : "";
+    if (next) document.cookie = `lo_join_next=${encodeURIComponent(next)}; path=/; max-age=1800; samesite=lax`;
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback${nextQ}` },
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback${nextQ}`,
+        // Server-side carrier for the destination - rides on the user record, so
+        // it survives the email round-trip even if the query + cookie don't.
+        data: next ? { lo_next: next } : undefined,
+      },
     });
     setBusy(false);
 
     if (error) {
       setError(error.message);
     } else if (data.session) {
-      // Immediate session (no email confirmation): straight to onboarding, carrying next.
+      // Immediate session (no email confirmation): next rides the URL here, so
+      // don't leave the fallback cookie behind.
+      document.cookie = "lo_join_next=; path=/; max-age=0";
       window.location.assign(`/player-portal/onboarding${nextQ}`);
     } else {
       setSent(true);
