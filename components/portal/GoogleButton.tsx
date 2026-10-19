@@ -12,6 +12,9 @@ export function GoogleButton({ label, next, disabled = false }: { label: string;
   async function signIn() {
     if (disabled) return;
     const supabase = createClient();
+    // Stash next in a cookie too: Google OAuth bounces through Supabase and may
+    // drop the query param; the cookie survives the round-trip (same browser).
+    if (next) document.cookie = `lo_join_next=${encodeURIComponent(next)}; path=/; max-age=1800; samesite=lax`;
     const callback = next
       ? `/auth/callback?next=${encodeURIComponent(next)}`
       : "/auth/callback";
