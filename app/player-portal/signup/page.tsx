@@ -8,17 +8,19 @@ import { redirect } from "next/navigation";
 import { Container } from "@/components/ui/Container";
 import { SignupForm } from "@/components/portal/SignupForm";
 import { createClient } from "@/lib/supabase/server";
+import { safeNextPath } from "@/lib/portalRoute";
 
 export const metadata: Metadata = {
   title: "Create Account",
 };
 
-export default async function SignupPage() {
+export default async function SignupPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
+  const next = safeNextPath((await searchParams).next);
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (user) redirect("/player-portal/player-stats");
+  if (user) redirect(next ?? "/player-portal/player-stats");
 
   return (
     <Container size="narrow" className="py-16 sm:py-24">
@@ -31,7 +33,7 @@ export default async function SignupPage() {
             Join the LaserOps player portal to track your stats, ratings, and season standings.
           </p>
         </div>
-        <SignupForm />
+        <SignupForm next={next ?? undefined} />
       </div>
     </Container>
   );

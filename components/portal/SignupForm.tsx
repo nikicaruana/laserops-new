@@ -22,7 +22,7 @@ const inputStyles =
 
 const MIN_PASSWORD = 8;
 
-export function SignupForm() {
+export function SignupForm({ next }: { next?: string }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -49,17 +49,21 @@ export function SignupForm() {
 
     setBusy(true);
     const supabase = createClient();
+    // Carry the originating destination (e.g. a game invite's auto-join landing)
+    // through the email-confirm callback so the player returns to it after setup.
+    const nextQ = next ? `?next=${encodeURIComponent(next)}` : "";
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback${nextQ}` },
     });
     setBusy(false);
 
     if (error) {
       setError(error.message);
     } else if (data.session) {
-      window.location.assign("/player-portal/onboarding");
+      // Immediate session (no email confirmation): straight to onboarding, carrying next.
+      window.location.assign(`/player-portal/onboarding${nextQ}`);
     } else {
       setSent(true);
     }
@@ -154,14 +158,14 @@ export function SignupForm() {
         <span className="h-px flex-1 bg-border" />
       </div>
 
-      <GoogleButton label="Sign up with Google" disabled={!agreed} />
+      <GoogleButton label="Sign up with Google" next={next} disabled={!agreed} />
       {!agreed && (
         <p className="mt-2 text-center text-[0.7rem] text-text-subtle">Accept the terms above to sign up.</p>
       )}
 
       <p className="mt-6 text-center text-xs text-text-subtle">
         Already have an account?{" "}
-        <Link href="/player-portal/login" className="text-text-muted hover:text-accent">
+        <Link href={next ? `/player-portal/login?next=${encodeURIComponent(next)}` : "/player-portal/login"} className="text-text-muted hover:text-accent">
           Sign in
         </Link>
       </p>

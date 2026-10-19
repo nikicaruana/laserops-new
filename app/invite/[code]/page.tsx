@@ -138,7 +138,10 @@ export default async function GameInvitePage({ params }: { params: Promise<{ cod
   const isFull = g.max_players != null && reg >= g.max_players;
   const pct = Math.min(100, Math.round((reg / Math.max(1, min)) * 100));
   const showPrice = g.price_eur != null && g.pricing_mode === "per_player";
-  const backHref = `/invite/${code}`;
+  // After a logged-out visitor authenticates (+ onboards, for a brand-new account),
+  // send them to the auto-join landing so they're signed up to THIS game and taken
+  // to the game page - instead of dropping them on the generic portal.
+  const joinNext = encodeURIComponent(`/player-portal/games/join/${code}`);
   const isLiveMine = g.status === "live" && mySignup?.status === "registered";
 
   return (
@@ -234,10 +237,10 @@ export default async function GameInvitePage({ params }: { params: Promise<{ cod
             <div>
               <p className="mb-4 text-sm text-white/70">Sign in or create an account to lock in your spot.</p>
               <div className="flex flex-wrap justify-center gap-3">
-                <Button href={`/player-portal/login?next=${backHref}`} variant="primary" size="md">
+                <Button href={`/player-portal/login?next=${joinNext}`} variant="primary" size="md">
                   Sign in
                 </Button>
-                <Button href={`/player-portal/signup?next=${backHref}`} variant="secondary" size="md">
+                <Button href={`/player-portal/signup?next=${joinNext}`} variant="secondary" size="md">
                   Create account
                 </Button>
               </div>

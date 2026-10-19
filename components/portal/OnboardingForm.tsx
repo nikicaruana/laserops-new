@@ -25,9 +25,12 @@ const inputStyles =
 export function OnboardingForm({
   initialFullName,
   initialAvatarUrl,
+  next,
 }: {
   initialFullName: string | null;
   initialAvatarUrl: string | null;
+  /** Where to go once setup is done (e.g. a game invite's auto-join landing). */
+  next?: string;
 }) {
   const [opsTag, setOpsTag] = useState("");
   const [fullName, setFullName] = useState(initialFullName ?? "");
@@ -97,7 +100,9 @@ export function OnboardingForm({
       setError(data.error || "Couldn't save. Please try again.");
       return;
     }
-    window.location.assign("/player-portal");
+    // Return to the pending destination (e.g. auto-join the game they were invited
+    // to), else the portal.
+    window.location.assign(next || "/player-portal");
   }
 
   return (

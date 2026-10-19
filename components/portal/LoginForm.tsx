@@ -198,7 +198,7 @@ export function LoginForm({ hadError, next }: { hadError?: boolean; next?: strin
 
           <p className="mt-6 text-center text-xs text-text-subtle">
             New here?{" "}
-            <Link href="/player-portal/signup" className="text-text-muted hover:text-accent">
+            <Link href={next ? `/player-portal/signup?next=${encodeURIComponent(next)}` : "/player-portal/signup"} className="text-text-muted hover:text-accent">
               Create an account
             </Link>
           </p>
