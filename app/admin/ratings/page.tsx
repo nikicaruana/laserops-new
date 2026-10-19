@@ -88,8 +88,10 @@ export default async function AdminRatingsPage() {
 
       <div className="mb-6 border-l-4 border-amber-500 bg-amber-500/10 px-4 py-3 text-sm text-amber-200/90">
         <span className="font-semibold text-amber-300">Heads up –</span> these weights and gates are
-        finely tuned so ratings compare players fairly. Changing them re-ranks everyone on the next
-        read, so adjust deliberately. The component weights must sum to 1, or ratings get skewed.
+        finely tuned so ratings compare players fairly, so adjust deliberately. Saving only updates
+        the config — nobody is re-ranked until you run <span className="font-semibold text-amber-300">Recompute</span> on
+        the dashboard, which rewrites every player&apos;s stored rating against these weights. The
+        component weights must sum to 1, or ratings get skewed.
       </div>
 
       <section className="mb-10">
