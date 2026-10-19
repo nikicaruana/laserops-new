@@ -15,26 +15,44 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { verifiedFactorIds, authenticateWithBiometrics, webauthnSupported } from "@/lib/mfa-client";
 
 export function AdminStepUpGate({ canStepUp }: { canStepUp: boolean }) {
   const router = useRouter();
   const pathname = usePathname();
   const [factorId, setFactorId] = useState<string | null>(null);
+  const [webauthnId, setWebauthnId] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [verified, setVerified] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const onEnrolPage = pathname?.startsWith("/admin/security");
+  const canBiometric = !!webauthnId && webauthnSupported();
 
   useEffect(() => {
     if (!canStepUp) return;
     const supabase = createClient();
-    supabase.auth.mfa.listFactors().then(({ data }) => {
-      const v = (data?.totp ?? []).find((f) => f.status === "verified");
-      setFactorId(v?.id ?? null);
+    verifiedFactorIds(supabase).then(({ totpId, webauthnId }) => {
+      setFactorId(totpId);
+      setWebauthnId(webauthnId);
     });
   }, [canStepUp]);
+
+  async function doBiometrics() {
+    if (!webauthnId) return;
+    setBusy(true);
+    setError(null);
+    const supabase = createClient();
+    const err = await authenticateWithBiometrics(supabase, webauthnId);
+    setBusy(false);
+    if (err) {
+      if (err !== "cancelled") setError(err);
+      return;
+    }
+    setVerified(true);
+    router.refresh();
+  }
 
   // Lock scroll while the gate is up.
   useEffect(() => {
@@ -85,30 +103,50 @@ export function AdminStepUpGate({ canStepUp }: { canStepUp: boolean }) {
         {canStepUp ? (
           <>
             <p className="mt-2 text-xs text-text-muted">
-              Enter the 6-digit code from your authenticator app to open the admin panel.
+              {canBiometric
+                ? "Use biometrics, or enter the code from your authenticator app, to open the admin panel."
+                : "Enter the 6-digit code from your authenticator app to open the admin panel."}
             </p>
-            <form onSubmit={submit}>
-              <input
-                autoFocus
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                maxLength={6}
-                value={code}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-                placeholder="000000"
-                className="mt-4 h-12 w-full rounded-none border border-border-strong bg-bg px-3 text-center font-mono text-lg tracking-[0.4em] text-text placeholder:text-text-subtle focus:border-accent focus:outline-none"
-              />
-              {error && (
-                <p className="mt-3 border border-red-800 bg-red-950/40 px-3 py-2 text-xs text-red-400">{error}</p>
-              )}
+
+            {canBiometric && (
               <button
-                type="submit"
+                type="button"
+                onClick={doBiometrics}
                 disabled={busy}
                 className="mt-4 h-11 w-full border border-accent bg-accent text-sm font-bold uppercase tracking-[0.12em] text-bg hover:bg-accent-soft disabled:opacity-50"
               >
-                {busy ? "Verifying…" : "Enter admin"}
+                {busy ? "…" : "Unlock with biometrics"}
               </button>
-            </form>
+            )}
+
+            {factorId && (
+              <form onSubmit={submit}>
+                {canBiometric && (
+                  <p className="mt-4 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-text-subtle">or enter a code</p>
+                )}
+                <input
+                  autoFocus={!canBiometric}
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={6}
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+                  placeholder="000000"
+                  className="mt-3 h-12 w-full rounded-none border border-border-strong bg-bg px-3 text-center font-mono text-lg tracking-[0.4em] text-text placeholder:text-text-subtle focus:border-accent focus:outline-none"
+                />
+                <button
+                  type="submit"
+                  disabled={busy}
+                  className={`mt-4 h-11 w-full text-sm font-bold uppercase tracking-[0.12em] disabled:opacity-50 ${canBiometric ? "border border-border-strong text-text hover:border-accent hover:text-accent" : "border border-accent bg-accent text-bg hover:bg-accent-soft"}`}
+                >
+                  {busy ? "Verifying…" : "Enter admin"}
+                </button>
+              </form>
+            )}
+
+            {error && (
+              <p className="mt-3 border border-red-800 bg-red-950/40 px-3 py-2 text-xs text-red-400">{error}</p>
+            )}
           </>
         ) : (
           <>
