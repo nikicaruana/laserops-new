@@ -101,6 +101,14 @@ export async function PATCH(request: Request) {
     return Response.json({ ok: false, error: "Nothing to update." }, { status: 400 });
   }
 
+  // Ops tags are reserved for 2 years after an account is retired; past that the
+  // name is released. If this tag's only holder is a 2-years-retired account, free
+  // it so the claim below can succeed. A live / recently-retired holder is left
+  // untouched, so the unique index still rejects it (-> "already taken").
+  if (typeof updates.ops_tag === "string" && updates.ops_tag.toLowerCase() !== (account.ops_tag ?? "").toLowerCase()) {
+    await supabase.rpc("free_expired_ops_tag", { p_ops_tag: updates.ops_tag });
+  }
+
   const { error } = await supabase.from("accounts").update(updates).eq("id", account.id);
   if (error) {
     if (error.code === "23505") {
