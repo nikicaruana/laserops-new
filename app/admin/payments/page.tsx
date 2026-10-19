@@ -19,6 +19,14 @@ export default async function PaymentsDuePage() {
   const { data, error } = await supabase.rpc("admin_outstanding_settlements");
   const rows = (data ?? []) as DueRow[];
 
+  // Current game-token balance per owing player (for the Tokens column).
+  const tokenBalances: Record<string, number> = {};
+  const accountIds = [...new Set(rows.map((r) => r.account_id).filter(Boolean))];
+  if (accountIds.length) {
+    const { data: balRows } = await supabase.rpc("admin_token_balances", { p_account_ids: accountIds });
+    for (const b of (balRows ?? []) as { account_id: string; balance: number }[]) tokenBalances[b.account_id] = Number(b.balance);
+  }
+
   return (
     <div>
       <header className="mb-6 border-b border-border pb-5">
@@ -32,7 +40,7 @@ export default async function PaymentsDuePage() {
       {error ? (
         <p className="border border-red-800 bg-red-950/40 px-4 py-3 text-sm text-red-400">{error.message}</p>
       ) : (
-        <PaymentsDueManager initial={rows} />
+        <PaymentsDueManager initial={rows} tokenBalances={tokenBalances} />
       )}
     </div>
   );

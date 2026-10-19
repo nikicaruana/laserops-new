@@ -127,7 +127,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   const [{ data: participantRows }, { data: gunRows }, { data: ingestRows }, { data: formulaRows }, { data: spawnRows }, { data: streakRows }] = await Promise.all([
     supabase
       .from("match_participants")
-      .select("id, account_id, headset_label, extra_headbands, gun_used, display_name, source, payment_intent, paid_at, paid_amount_eur, settlement_token_intent, drinks_total_eur, settlement_method, settled_declared_at, player_marked_paid_at, account:accounts(ops_tag, full_name)")
+      .select("id, account_id, headset_label, extra_headbands, gun_used, display_name, source, payment_intent, paid_at, paid_amount_eur, settlement_token_intent, drinks_total_eur, settlement_method, settled_declared_at, player_marked_paid_at, account:accounts(ops_tag, full_name, email, discount_price_eur)")
       .eq("match_id", id)
       .order("joined_at"),
     supabase.from("guns").select("name").order("name"),
@@ -291,6 +291,14 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   const { data: drinkRows } = await supabase.from("drink_menu").select("id, name, price_eur").eq("is_active", true).order("sort_order");
   const drinks = (drinkRows ?? []) as { id: string; name: string; price_eur: number }[];
   const participants = (participantRows ?? []) as unknown as Participant[];
+
+  // Current game-token balance per signed-up player (for the settlement Tokens column).
+  const tokenBalances: Record<string, number> = {};
+  const linkedAccountIds = [...new Set(participants.map((p) => p.account_id).filter((x): x is string => !!x))];
+  if (linkedAccountIds.length) {
+    const { data: balRows } = await supabase.rpc("admin_token_balances", { p_account_ids: linkedAccountIds });
+    for (const b of (balRows ?? []) as { account_id: string; balance: number }[]) tokenBalances[b.account_id] = Number(b.balance);
+  }
   const guns = orderMatchGuns(((gunRows ?? []) as { name: string }[]).map((g) => g.name).filter(Boolean));
   const isPlayed = match.status === "completed" || entries.length > 0;
   const showRoster = ["confirmed", "live", "completed"].includes(match.status ?? "") || match.is_private || participants.length > 0;
@@ -528,7 +536,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
 
       {/* Players: payments + headbands (component renders both collapsible sub-sections) */}
       {(showRoster || Object.keys(ingestByHeadband).length > 0) && (
-        <MatchParticipantsManager matchId={match.id} initial={participants} guns={guns} drinks={drinks} payments={payments} ingest={ingestByHeadband} published={!!match.xp_distributed_at} perPlayer={match.pricing_mode === "per_player"} />
+        <MatchParticipantsManager matchId={match.id} initial={participants} guns={guns} drinks={drinks} payments={payments} ingest={ingestByHeadband} published={!!match.xp_distributed_at} perPlayer={match.pricing_mode === "per_player"} priceEur={match.price_eur} tokenBalances={tokenBalances} />
       )}
 
       {/* Signups (booking side) – shown for open games and private bookings */}

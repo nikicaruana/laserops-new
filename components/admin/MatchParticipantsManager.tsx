@@ -42,7 +42,7 @@ export type Participant = {
   settlement_method: string | null;
   settled_declared_at: string | null;
   player_marked_paid_at: string | null;
-  account: { ops_tag: string | null; full_name: string | null } | null;
+  account: { ops_tag: string | null; full_name: string | null; email: string | null; discount_price_eur: number | null } | null;
 };
 
 type EditRow = Participant & { extra: string[] };
@@ -70,7 +70,6 @@ const hbNumber = (s: string | null | undefined): number => {
 };
 
 const fmtTok = (n: number) => (Number.isInteger(n) ? String(n) : String(parseFloat(n.toFixed(2))));
-const tokenLabel = (n: number) => (n <= 0 ? "" : `${fmtTok(n)} ${n === 1 ? "token" : "tokens"}`);
 
 export function MatchParticipantsManager({
   matchId,
@@ -81,6 +80,8 @@ export function MatchParticipantsManager({
   ingest = {},
   published = false,
   perPlayer = true,
+  priceEur = null,
+  tokenBalances = {},
 }: {
   matchId: string;
   initial: Participant[];
@@ -91,6 +92,10 @@ export function MatchParticipantsManager({
   ingest?: Record<number, IngestInfo>;
   published?: boolean;
   perPlayer?: boolean;
+  /** Per-player game price for this match (overridden by a player's family & friends price). */
+  priceEur?: number | null;
+  /** Current game-token balance per account_id (for the Tokens column). */
+  tokenBalances?: Record<string, number>;
 }) {
   const router = useRouter();
   const [rows, setRows] = useState<EditRow[]>(
@@ -103,18 +108,32 @@ export function MatchParticipantsManager({
   const [uaGun, setUaGun] = useState<Record<number, string>>({});
   const [uaLinkFor, setUaLinkFor] = useState<number | null>(null);
   const [paySel, setPaySel] = useState<Record<string, string>>({});
+  const [feeInput, setFeeInput] = useState<Record<string, string>>({});
+  const [drinksInput, setDrinksInput] = useState<Record<string, string>>({});
   const [drinkFor, setDrinkFor] = useState<EditRow | null>(null);
   const [drinkQty, setDrinkQty] = useState<Record<string, number>>({});
+
+  // Settlement figures for a row: net game fee after any token, declared drinks, owed.
+  const feeFor = (r: EditRow) => Number(r.account?.discount_price_eur ?? priceEur ?? 0);
+  const tokenFor = (r: EditRow) => Number(r.settlement_token_intent ?? 0);
+  const netGameFor = (r: EditRow) => Math.round(feeFor(r) * (1 - tokenFor(r)) * 100) / 100;
+  const drinksStored = (r: EditRow) => Number(r.drinks_total_eur ?? 0);
+  const drinksShown = (r: EditRow) => (drinksInput[r.id] !== undefined ? Number(drinksInput[r.id] || 0) : drinksStored(r));
+  const owedFor = (r: EditRow) => Math.round((netGameFor(r) + drinksShown(r)) * 100) / 100;
 
   async function markPaid(r: EditRow, method: string) {
     if (!r.account_id) { setError("Link this player to a profile first."); return; }
     setBusy(true);
     setError(null);
     const supabase = createClient();
-    const { error: err } = await supabase.rpc("admin_confirm_settlement", { p_match_id: matchId, p_account_id: r.account_id, p_method: method });
+    // Only override when the admin actually edited an input; otherwise let the RPC
+    // use the computed game fee (and keep any itemised drinks).
+    const amountOverride = feeInput[r.id] !== undefined ? Number(feeInput[r.id] || 0) : null;
+    const drinksOverride = drinksInput[r.id] !== undefined ? Number(drinksInput[r.id] || 0) : null;
+    const { error: err } = await supabase.rpc("admin_confirm_settlement", { p_match_id: matchId, p_account_id: r.account_id, p_method: method, p_amount_override: amountOverride, p_drinks_override: drinksOverride });
     setBusy(false);
     if (err) return setError(err.message);
-    setRows((prev) => prev.map((x) => (x.id === r.id ? { ...x, paid_at: new Date().toISOString(), payment_intent: "on_day", settlement_method: method } : x)));
+    setRows((prev) => prev.map((x) => (x.id === r.id ? { ...x, paid_at: new Date().toISOString(), payment_intent: "on_day", settlement_method: method, drinks_total_eur: drinksOverride != null ? drinksOverride : x.drinks_total_eur } : x)));
     router.refresh();
   }
   async function undoPaid(r: EditRow) {
@@ -202,7 +221,7 @@ export function MatchParticipantsManager({
     setLinkFor(null);
     if (err) return setError(err.message);
     setRows((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, account_id: account.id, account: { ops_tag: account.ops_tag, full_name: account.full_name } } : r)),
+      prev.map((r) => (r.id === id ? { ...r, account_id: account.id, account: { ops_tag: account.ops_tag, full_name: account.full_name, email: null, discount_price_eur: null } } : r)),
     );
     router.refresh();
   }
@@ -287,7 +306,7 @@ export function MatchParticipantsManager({
       const p = inserted as Participant;
       setRows((prev) => [
         ...prev,
-        { ...p, account: account ? { ops_tag: account.ops_tag, full_name: account.full_name } : null, extra: [...(p.extra_headbands ?? [])] },
+        { ...p, account: account ? { ops_tag: account.ops_tag, full_name: account.full_name, email: null, discount_price_eur: null } : null, extra: [...(p.extra_headbands ?? [])] },
       ]);
     }
     router.refresh();
@@ -370,67 +389,73 @@ export function MatchParticipantsManager({
               <thead>
                 <tr className="border-b border-border bg-bg-elevated text-[0.6rem] uppercase tracking-[0.14em] text-text-muted">
                   <th className="px-3 py-3 font-semibold">Player</th>
-                  <th className="px-3 py-3 font-semibold">Ops tag</th>
-                  <th className="px-3 py-3 font-semibold">Tokens used</th>
-                  <th className="px-3 py-3 font-semibold">Status</th>
+                  <th className="px-3 py-3 font-semibold">Declared</th>
+                  <th className="px-3 py-3 font-semibold">Tokens</th>
+                  <th className="px-3 py-3 text-right font-semibold">Owed</th>
                   <th className="px-3 py-3 text-right font-semibold">Settle</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((r) => {
                   const name = r.account?.full_name || r.account?.ops_tag || r.display_name;
+                  const bal = r.account_id ? Number(tokenBalances[r.account_id] ?? 0) : 0;
+                  const usedTok = tokenFor(r);
                   return (
-                    <tr key={r.id} className="border-b border-border align-middle last:border-0">
-                      <td className="px-3 py-2.5 font-semibold text-text">{name ?? "Player"}</td>
-                      <td className="px-3 py-2.5 font-mono text-xs text-text-muted">
-                        {r.account?.ops_tag ?? <span className="text-text-subtle">–</span>}
+                    <tr key={r.id} className="border-b border-border align-top last:border-0">
+                      {/* Player: name + ops-tag chip + email (shared with Payments Due) */}
+                      <td className="px-3 py-2.5">
+                        <div className="flex flex-col gap-0.5">
+                          <span>
+                            <span className="font-semibold text-text">{name ?? "Player"}</span>
+                            {r.account?.ops_tag && <span className="ml-2 font-mono text-[0.7rem] text-text-subtle">{r.account.ops_tag}</span>}
+                          </span>
+                          {r.account?.email && (
+                            <a href={`mailto:${r.account.email}`} className="text-[0.7rem] text-text-subtle underline hover:text-accent">{r.account.email}</a>
+                          )}
+                        </div>
                       </td>
-                      <td className="px-3 py-2.5 text-xs">
-                        {Number(r.settlement_token_intent) > 0 ? <span className="font-semibold text-accent">{tokenLabel(Number(r.settlement_token_intent))}</span> : <span className="text-text-subtle">–</span>}
-                      </td>
+                      {/* Declared: what the player said on the pay page */}
                       <td className="px-3 py-2.5">
                         {r.account_id ? paymentStatus(r) : <span className="text-xs text-text-subtle">Not a member</span>}
                       </td>
+                      {/* Tokens: balance; before -> after when one was used; flag unused */}
+                      <td className="px-3 py-2.5 text-xs">
+                        {!r.account_id ? <span className="text-text-subtle">–</span>
+                          : usedTok > 0 ? <span className="font-semibold text-accent" title="Token used this game (before → after)">{fmtTok(bal + usedTok)} → {fmtTok(bal)}</span>
+                          : bal > 0 ? <span className="font-semibold text-amber-300" title="Has tokens but didn't use one">{fmtTok(bal)} available</span>
+                          : <span className="text-text-subtle">0</span>}
+                      </td>
+                      {/* Owed: net game fee after token + drinks */}
+                      <td className="px-3 py-2.5 text-right font-semibold text-text">
+                        {r.account_id ? formatEur(owedFor(r)) : <span className="text-text-subtle">–</span>}
+                      </td>
+                      {/* Settle */}
                       <td className="px-3 py-2.5 text-right">
                         {!r.account_id ? (
                           <span className="text-[0.65rem] text-text-subtle">Link a profile in the roster below to settle</span>
                         ) : r.paid_at ? (
-                          <button
-                            type="button"
-                            onClick={() => undoPaid(r)}
-                            disabled={busy}
-                            className="text-[0.6rem] font-bold uppercase tracking-[0.1em] text-text-subtle hover:text-red-400 disabled:opacity-50"
-                          >
-                            Undo
-                          </button>
+                          <div className="flex flex-col items-end gap-0.5">
+                            <span className="text-[0.7rem] text-accent">Paid {formatEur(Number(r.paid_amount_eur ?? 0))} · {r.settlement_method ?? "cash"}</span>
+                            <button type="button" onClick={() => undoPaid(r)} disabled={busy} className="text-[0.6rem] font-bold uppercase tracking-[0.1em] text-text-subtle hover:text-red-400 disabled:opacity-50">Undo</button>
+                          </div>
                         ) : (
                           <div className="flex flex-col items-end gap-1">
-                            <div className="flex items-center justify-end gap-1.5">
-                              <select
-                                className="h-8 rounded-none border border-border-strong bg-bg px-1.5 text-xs text-text focus:border-accent focus:outline-none"
-                                value={paySel[r.id] ?? r.settlement_method ?? "cash"}
-                                onChange={(e) => setPaySel((s) => ({ ...s, [r.id]: e.target.value }))}
-                              >
-                                <option value="cash">Cash</option>
-                                <option value="revolut">Revolut</option>
-                              </select>
-                              <button
-                                type="button"
-                                onClick={() => markPaid(r, paySel[r.id] ?? r.settlement_method ?? "cash")}
-                                disabled={busy}
-                                className="border border-accent bg-accent/10 px-2.5 py-1.5 text-[0.6rem] font-bold uppercase tracking-[0.1em] text-accent hover:bg-accent/20 disabled:opacity-50"
-                              >
-                                Mark paid
-                              </button>
+                            <div className="flex items-start justify-end gap-1.5">
+                              <div className="flex flex-col gap-0.5">
+                                <label className="flex items-center justify-end gap-1 text-[0.55rem] uppercase tracking-[0.08em] text-text-subtle">Game €
+                                  <input type="number" step="0.01" min="0" value={feeInput[r.id] ?? String(netGameFor(r))} onChange={(e) => setFeeInput((s) => ({ ...s, [r.id]: e.target.value }))} className="h-7 w-16 rounded-none border border-border-strong bg-bg px-1.5 text-xs text-text focus:border-accent focus:outline-none" /></label>
+                                <label className="flex items-center justify-end gap-1 text-[0.55rem] uppercase tracking-[0.08em] text-text-subtle">Drinks €
+                                  <input type="number" step="0.01" min="0" placeholder="0" value={drinksInput[r.id] ?? (drinksStored(r) > 0 ? String(drinksStored(r)) : "")} onChange={(e) => setDrinksInput((s) => ({ ...s, [r.id]: e.target.value }))} className="h-7 w-16 rounded-none border border-border-strong bg-bg px-1.5 text-xs text-text focus:border-accent focus:outline-none" /></label>
+                              </div>
+                              <div className="flex flex-col gap-1">
+                                <select className="h-7 rounded-none border border-border-strong bg-bg px-1.5 text-xs text-text focus:border-accent focus:outline-none" value={paySel[r.id] ?? r.settlement_method ?? "cash"} onChange={(e) => setPaySel((s) => ({ ...s, [r.id]: e.target.value }))}>
+                                  <option value="cash">Cash</option>
+                                  <option value="revolut">Revolut</option>
+                                </select>
+                                <button type="button" onClick={() => markPaid(r, paySel[r.id] ?? r.settlement_method ?? "cash")} disabled={busy} className="border border-accent bg-accent/10 px-2.5 py-1.5 text-[0.6rem] font-bold uppercase tracking-[0.1em] text-accent hover:bg-accent/20 disabled:opacity-50">Mark paid</button>
+                              </div>
                             </div>
-                            <button
-                              type="button"
-                              onClick={() => openDrinks(r)}
-                              disabled={busy}
-                              className="text-[0.6rem] uppercase tracking-[0.1em] text-text-subtle hover:text-accent disabled:opacity-50"
-                            >
-                              {Number(r.drinks_total_eur) > 0 ? `Edit drinks (${formatEur(Number(r.drinks_total_eur))})` : "Add drinks"}
-                            </button>
+                            <button type="button" onClick={() => openDrinks(r)} disabled={busy} className="text-[0.55rem] uppercase tracking-[0.1em] text-text-subtle hover:text-accent disabled:opacity-50">Itemise drinks</button>
                           </div>
                         )}
                       </td>
