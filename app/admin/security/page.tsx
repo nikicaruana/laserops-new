@@ -5,7 +5,6 @@
  * changes require a code from an enrolled authenticator.
  */
 import { TotpEnroll } from "@/components/admin/TotpEnroll";
-import { PasskeyEnroll } from "@/components/admin/PasskeyEnroll";
 
 export const metadata = { title: "Security" };
 
@@ -23,10 +22,7 @@ export default function AdminSecurityPage() {
         </p>
       </header>
 
-      <div className="space-y-8">
-        <TotpEnroll />
-        <PasskeyEnroll />
-      </div>
+      <TotpEnroll />
     </div>
   );
 }
