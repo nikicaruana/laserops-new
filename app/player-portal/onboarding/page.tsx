@@ -11,17 +11,19 @@ import { redirect } from "next/navigation";
 import { Container } from "@/components/ui/Container";
 import { OnboardingForm } from "@/components/portal/OnboardingForm";
 import { createClient } from "@/lib/supabase/server";
+import { safeNextPath } from "@/lib/portalRoute";
 
 export const metadata: Metadata = {
   title: "Set Up Your Profile",
 };
 
-export default async function OnboardingPage() {
+export default async function OnboardingPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
+  const next = safeNextPath((await searchParams).next);
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/player-portal/login?next=/player-portal/onboarding");
+  if (!user) redirect(`/player-portal/login?next=${encodeURIComponent(next ?? "/player-portal/onboarding")}`);
 
   const { data: account } = await supabase
     .from("accounts")
@@ -29,8 +31,8 @@ export default async function OnboardingPage() {
     .eq("auth_user_id", user.id)
     .maybeSingle();
 
-  // Already has a callsign -> already onboarded.
-  if (account?.ops_tag) redirect("/player-portal");
+  // Already has a callsign -> already onboarded; honour the pending destination.
+  if (account?.ops_tag) redirect(next ?? "/player-portal");
 
   return (
     <Container size="narrow" className="py-12 sm:py-16">
@@ -47,6 +49,7 @@ export default async function OnboardingPage() {
         <OnboardingForm
           initialFullName={account?.full_name ?? null}
           initialAvatarUrl={account?.profile_pic_url ?? null}
+          next={next ?? undefined}
         />
       </div>
     </Container>

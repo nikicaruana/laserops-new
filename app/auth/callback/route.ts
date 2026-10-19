@@ -52,7 +52,12 @@ export async function GET(request: Request) {
       .maybeSingle();
     const gated = postAuthPath(account);
     if (!account?.ops_tag || !account?.waiver_accepted_at) {
-      return `${origin}${gated}`;
+      // Incomplete account must finish onboarding/waiver first, but carry the
+      // intended destination (e.g. a game invite's auto-join landing) THROUGH the
+      // gate so the player returns to it once setup is done. Default target -> no next.
+      if (next === "/player-portal") return `${origin}${gated}`;
+      const sep = gated.includes("?") ? "&" : "?";
+      return `${origin}${gated}${sep}next=${encodeURIComponent(next)}`;
     }
     return `${origin}${next !== "/player-portal" ? next : gated}`;
   }
