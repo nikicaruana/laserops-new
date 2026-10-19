@@ -6,6 +6,11 @@
  * Runs recompute_read_models() (refreshes lifetime stats, period stats, gun
  * stats, ratings, season standings). Use after importing games or editing
  * season/challenge/rating config. Shows the per-table counts on success.
+ *
+ * The recompute rewrites the stored read-models, but the public leaderboard /
+ * Hall of Fame boards are cached (~30-min TTL, "leaderboards" tag), so we also
+ * ping /api/admin/revalidate-leaderboards to bust that cache and let the boards
+ * show the fresh numbers immediately instead of waiting out the TTL.
  */
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -24,11 +29,18 @@ export function RecomputeButton() {
     setResult(null);
     const supabase = createClient();
     const { data, error: err } = await supabase.rpc("recompute_read_models");
-    setBusy(false);
     if (err) {
+      setBusy(false);
       setError(err.message || "Recompute failed.");
       return;
     }
+    // Bust the cached public boards so they show the fresh numbers right away.
+    try {
+      await fetch("/api/admin/revalidate-leaderboards", { method: "POST" });
+    } catch {
+      // Non-fatal: the boards still catch up on their own TTL.
+    }
+    setBusy(false);
     setResult((data ?? null) as Record<string, number> | null);
     router.refresh();
   }
