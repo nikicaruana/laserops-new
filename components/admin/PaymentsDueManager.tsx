@@ -34,7 +34,6 @@ export type DueRow = {
 };
 
 const fmtTok = (n: number) => (Number.isInteger(n) ? String(n) : String(parseFloat(n.toFixed(2))));
-const tokenLabel = (n: number) => (n <= 0 ? "" : `${fmtTok(n)} ${n === 1 ? "token" : "tokens"}`);
 const fmtDate = (iso: string | null) =>
   iso ? new Date(iso).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "";
 
@@ -47,13 +46,14 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function PaymentsDueManager({ initial }: { initial: DueRow[] }) {
+export function PaymentsDueManager({ initial, tokenBalances = {} }: { initial: DueRow[]; tokenBalances?: Record<string, number> }) {
   const router = useRouter();
   const [rows, setRows] = useState<DueRow[]>(initial);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [method, setMethod] = useState<Record<string, string>>({});
   const [amt, setAmt] = useState<Record<string, string>>({});
+  const [drinksAmt, setDrinksAmt] = useState<Record<string, string>>({});
   const gamePortion = (r: DueRow) => Math.round((Number(r.owed ?? 0) - Number(r.drinks_total_eur ?? 0)) * 100) / 100;
 
   const keyOf = (r: DueRow) => `${r.match_id}:${r.account_id}`;
@@ -65,11 +65,13 @@ export function PaymentsDueManager({ initial }: { initial: DueRow[] }) {
     const m = method[keyOf(r)] ?? r.settlement_method ?? "cash";
     const ovRaw = amt[keyOf(r)];
     const ov = ovRaw !== undefined && ovRaw !== "" ? Number(ovRaw) : NaN;
+    const dRaw = drinksAmt[keyOf(r)];
     const { error: err } = await supabase.rpc("admin_confirm_settlement", {
       p_match_id: r.match_id,
       p_account_id: r.account_id,
       p_method: m,
       p_amount_override: Number.isNaN(ov) ? null : ov,
+      p_drinks_override: dRaw !== undefined ? Number(dRaw || 0) : null,
     });
     setBusy(false);
     if (err) return setError(err.message);
@@ -178,37 +180,29 @@ export function PaymentsDueManager({ initial }: { initial: DueRow[] }) {
                           )}
                         </td>
                         <td className="px-4 py-2.5 text-xs">
-                          {tok > 0 ? <span className="font-semibold text-accent">{tokenLabel(tok)}</span> : <span className="text-text-subtle">&ndash;</span>}
+                          {(() => {
+                            const bal = Number(tokenBalances[r.account_id] ?? 0);
+                            return tok > 0 ? <span className="font-semibold text-accent" title="Token used this game (before → after)">{fmtTok(bal + tok)} → {fmtTok(bal)}</span>
+                              : bal > 0 ? <span className="font-semibold text-amber-300" title="Has tokens but didn't use one">{fmtTok(bal)} available</span>
+                              : <span className="text-text-subtle">0</span>;
+                          })()}
                         </td>
                         <td className="px-4 py-2.5 text-right font-semibold text-text">{formatEur(Number(r.owed ?? 0))}</td>
                         <td className="px-4 py-2.5">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <span className="text-xs text-text-subtle">€</span>
-                            <input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              value={amt[k] ?? String(gamePortion(r))}
-                              onChange={(e) => setAmt((s) => ({ ...s, [k]: e.target.value }))}
-                              title="Game fee to charge (drinks are added on top)"
-                              className="h-8 w-16 rounded-none border border-border-strong bg-bg px-1.5 text-xs text-text focus:border-accent focus:outline-none"
-                            />
-                            <select
-                              className="h-8 rounded-none border border-border-strong bg-bg px-1.5 text-xs text-text focus:border-accent focus:outline-none"
-                              value={method[k] ?? r.settlement_method ?? "cash"}
-                              onChange={(e) => setMethod((s) => ({ ...s, [k]: e.target.value }))}
-                            >
-                              <option value="cash">Cash</option>
-                              <option value="revolut">Revolut</option>
-                            </select>
-                            <button
-                              type="button"
-                              onClick={() => markPaid(r)}
-                              disabled={busy}
-                              className="border border-accent bg-accent/10 px-2.5 py-1.5 text-[0.6rem] font-bold uppercase tracking-[0.1em] text-accent hover:bg-accent/20 disabled:opacity-50"
-                            >
-                              Mark paid
-                            </button>
+                          <div className="flex items-start justify-end gap-1.5">
+                            <div className="flex flex-col gap-0.5">
+                              <label className="flex items-center justify-end gap-1 text-[0.55rem] uppercase tracking-[0.08em] text-text-subtle">Game €
+                                <input type="number" step="0.01" min="0" value={amt[k] ?? String(gamePortion(r))} onChange={(e) => setAmt((s) => ({ ...s, [k]: e.target.value }))} className="h-7 w-16 rounded-none border border-border-strong bg-bg px-1.5 text-xs text-text focus:border-accent focus:outline-none" /></label>
+                              <label className="flex items-center justify-end gap-1 text-[0.55rem] uppercase tracking-[0.08em] text-text-subtle">Drinks €
+                                <input type="number" step="0.01" min="0" placeholder="0" value={drinksAmt[k] ?? (drinks > 0 ? String(drinks) : "")} onChange={(e) => setDrinksAmt((s) => ({ ...s, [k]: e.target.value }))} className="h-7 w-16 rounded-none border border-border-strong bg-bg px-1.5 text-xs text-text focus:border-accent focus:outline-none" /></label>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <select className="h-7 rounded-none border border-border-strong bg-bg px-1.5 text-xs text-text focus:border-accent focus:outline-none" value={method[k] ?? r.settlement_method ?? "cash"} onChange={(e) => setMethod((s) => ({ ...s, [k]: e.target.value }))}>
+                                <option value="cash">Cash</option>
+                                <option value="revolut">Revolut</option>
+                              </select>
+                              <button type="button" onClick={() => markPaid(r)} disabled={busy} className="border border-accent bg-accent/10 px-2.5 py-1.5 text-[0.6rem] font-bold uppercase tracking-[0.1em] text-accent hover:bg-accent/20 disabled:opacity-50">Mark paid</button>
+                            </div>
                           </div>
                         </td>
                       </tr>
