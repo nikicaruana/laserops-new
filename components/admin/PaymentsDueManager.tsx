@@ -143,7 +143,8 @@ export function PaymentsDueManager({ initial, tokenBalances = {} }: { initial: D
                   <tr className="border-b border-border text-[0.6rem] uppercase tracking-[0.14em] text-text-muted">
                     <th className="px-4 py-2.5 font-semibold">Player</th>
                     <th className="px-4 py-2.5 font-semibold">Declared</th>
-                    <th className="px-4 py-2.5 font-semibold">Tokens used</th>
+                    <th className="px-2 py-2.5 text-center font-semibold">Tokens</th>
+                    <th className="px-2 py-2.5 text-center font-semibold">Used</th>
                     <th className="px-4 py-2.5 text-right font-semibold">Owed</th>
                     <th className="px-4 py-2.5 text-right font-semibold">Settle</th>
                   </tr>
@@ -155,7 +156,7 @@ export function PaymentsDueManager({ initial, tokenBalances = {} }: { initial: D
                     const k = keyOf(r);
                     return (
                       <tr key={k} className="border-b border-border/60 last:border-0 align-middle">
-                        <td className="px-4 py-2.5">
+                        <td className="px-4 py-2">
                           <div className="flex flex-col gap-0.5">
                             <span>
                               <span className="font-semibold text-text">{r.full_name || r.ops_tag || "Player"}</span>
@@ -168,7 +169,7 @@ export function PaymentsDueManager({ initial, tokenBalances = {} }: { initial: D
                             )}
                           </div>
                         </td>
-                        <td className="px-4 py-2.5 text-xs">
+                        <td className="px-4 py-2 text-xs">
                           {r.settled_declared_at ? (
                             <span className={r.player_marked_paid_at ? "text-emerald-300" : "text-amber-300"}>
                               {drinks > 0 ? `Drinks ${formatEur(drinks)} · ` : ""}
@@ -179,30 +180,30 @@ export function PaymentsDueManager({ initial, tokenBalances = {} }: { initial: D
                             <span className="text-text-subtle">Not declared</span>
                           )}
                         </td>
-                        <td className="px-4 py-2.5 text-xs">
+                        <td className="px-2 py-2 text-center text-xs whitespace-nowrap">
                           {(() => {
                             const bal = Number(tokenBalances[r.account_id] ?? 0);
                             return tok > 0 ? <span className="font-semibold text-accent" title="Token used this game (before → after)">{fmtTok(bal + tok)} → {fmtTok(bal)}</span>
-                              : bal > 0 ? <span className="font-semibold text-amber-300" title="Has tokens but didn't use one">{fmtTok(bal)} available</span>
-                              : <span className="text-text-subtle">0</span>;
+                              : <span className={bal > 0 ? "font-semibold text-amber-300" : "text-text-subtle"} title={bal > 0 ? "Has tokens but didn't use one" : undefined}>{fmtTok(bal)}</span>;
                           })()}
                         </td>
-                        <td className="px-4 py-2.5 text-right font-semibold text-text">{formatEur(Number(r.owed ?? 0))}</td>
-                        <td className="px-4 py-2.5">
-                          <div className="flex items-start justify-end gap-1.5">
+                        <td className="px-2 py-2 text-center">
+                          {tok > 0 ? <span className="text-accent" title="Token used">✓</span> : <span className="text-text-subtle/40">·</span>}
+                        </td>
+                        <td className="px-4 py-2 text-right font-semibold text-text">{formatEur(Number(r.owed ?? 0))}</td>
+                        <td className="px-4 py-2">
+                          <div className="flex items-center justify-end gap-2">
                             <div className="flex flex-col gap-0.5">
                               <label className="flex items-center justify-end gap-1 text-[0.55rem] uppercase tracking-[0.08em] text-text-subtle">Game €
-                                <input type="number" step="0.01" min="0" value={amt[k] ?? String(gamePortion(r))} onChange={(e) => setAmt((s) => ({ ...s, [k]: e.target.value }))} className="h-7 w-16 rounded-none border border-border-strong bg-bg px-1.5 text-xs text-text focus:border-accent focus:outline-none" /></label>
+                                <input type="number" step="0.01" min="0" value={amt[k] ?? String(gamePortion(r))} onChange={(e) => setAmt((s) => ({ ...s, [k]: e.target.value }))} className="h-6 w-16 rounded-none border border-border-strong bg-bg px-1.5 text-xs text-text focus:border-accent focus:outline-none" /></label>
                               <label className="flex items-center justify-end gap-1 text-[0.55rem] uppercase tracking-[0.08em] text-text-subtle">Drinks €
-                                <input type="number" step="0.01" min="0" placeholder="0" value={drinksAmt[k] ?? (drinks > 0 ? String(drinks) : "")} onChange={(e) => setDrinksAmt((s) => ({ ...s, [k]: e.target.value }))} className="h-7 w-16 rounded-none border border-border-strong bg-bg px-1.5 text-xs text-text focus:border-accent focus:outline-none" /></label>
+                                <input type="number" step="0.01" min="0" placeholder="0" value={drinksAmt[k] ?? (drinks > 0 ? String(drinks) : "")} onChange={(e) => setDrinksAmt((s) => ({ ...s, [k]: e.target.value }))} className="h-6 w-16 rounded-none border border-border-strong bg-bg px-1.5 text-xs text-text focus:border-accent focus:outline-none" /></label>
                             </div>
-                            <div className="flex flex-col gap-1">
-                              <select className="h-7 rounded-none border border-border-strong bg-bg px-1.5 text-xs text-text focus:border-accent focus:outline-none" value={method[k] ?? r.settlement_method ?? "cash"} onChange={(e) => setMethod((s) => ({ ...s, [k]: e.target.value }))}>
-                                <option value="cash">Cash</option>
-                                <option value="revolut">Revolut</option>
-                              </select>
-                              <button type="button" onClick={() => markPaid(r)} disabled={busy} className="border border-accent bg-accent/10 px-2.5 py-1.5 text-[0.6rem] font-bold uppercase tracking-[0.1em] text-accent hover:bg-accent/20 disabled:opacity-50">Mark paid</button>
-                            </div>
+                            <select className="h-7 rounded-none border border-border-strong bg-bg px-1.5 text-xs text-text focus:border-accent focus:outline-none" value={method[k] ?? r.settlement_method ?? "cash"} onChange={(e) => setMethod((s) => ({ ...s, [k]: e.target.value }))}>
+                              <option value="cash">Cash</option>
+                              <option value="revolut">Revolut</option>
+                            </select>
+                            <button type="button" onClick={() => markPaid(r)} disabled={busy} className="whitespace-nowrap border border-accent bg-accent/10 px-3 py-1.5 text-[0.6rem] font-bold uppercase tracking-[0.1em] text-accent hover:bg-accent/20 disabled:opacity-50">Mark paid</button>
                           </div>
                         </td>
                       </tr>

@@ -390,7 +390,8 @@ export function MatchParticipantsManager({
                 <tr className="border-b border-border bg-bg-elevated text-[0.6rem] uppercase tracking-[0.14em] text-text-muted">
                   <th className="px-3 py-3 font-semibold">Player</th>
                   <th className="px-3 py-3 font-semibold">Declared</th>
-                  <th className="px-3 py-3 font-semibold">Tokens</th>
+                  <th className="px-2 py-3 text-center font-semibold">Tokens</th>
+                  <th className="px-2 py-3 text-center font-semibold">Used</th>
                   <th className="px-3 py-3 text-right font-semibold">Owed</th>
                   <th className="px-3 py-3 text-right font-semibold">Settle</th>
                 </tr>
@@ -419,11 +420,14 @@ export function MatchParticipantsManager({
                         {r.account_id ? paymentStatus(r) : <span className="text-xs text-text-subtle">Not a member</span>}
                       </td>
                       {/* Tokens: balance; before -> after when one was used; flag unused */}
-                      <td className="px-3 py-2.5 text-xs">
+                      <td className="px-2 py-2.5 text-center text-xs whitespace-nowrap">
                         {!r.account_id ? <span className="text-text-subtle">–</span>
                           : usedTok > 0 ? <span className="font-semibold text-accent" title="Token used this game (before → after)">{fmtTok(bal + usedTok)} → {fmtTok(bal)}</span>
-                          : bal > 0 ? <span className="font-semibold text-amber-300" title="Has tokens but didn't use one">{fmtTok(bal)} available</span>
-                          : <span className="text-text-subtle">0</span>}
+                          : <span className={bal > 0 ? "font-semibold text-amber-300" : "text-text-subtle"} title={bal > 0 ? "Has tokens but didn't use one" : undefined}>{fmtTok(bal)}</span>}
+                      </td>
+                      {/* Token used: tick when one was applied */}
+                      <td className="px-2 py-2.5 text-center">
+                        {usedTok > 0 ? <span className="text-accent" title="Token used">✓</span> : <span className="text-text-subtle/40">·</span>}
                       </td>
                       {/* Owed: net game fee after token + drinks */}
                       <td className="px-3 py-2.5 text-right font-semibold text-text">
@@ -440,20 +444,18 @@ export function MatchParticipantsManager({
                           </div>
                         ) : (
                           <div className="flex flex-col items-end gap-1">
-                            <div className="flex items-start justify-end gap-1.5">
+                            <div className="flex items-center justify-end gap-2">
                               <div className="flex flex-col gap-0.5">
                                 <label className="flex items-center justify-end gap-1 text-[0.55rem] uppercase tracking-[0.08em] text-text-subtle">Game €
-                                  <input type="number" step="0.01" min="0" value={feeInput[r.id] ?? String(netGameFor(r))} onChange={(e) => setFeeInput((s) => ({ ...s, [r.id]: e.target.value }))} className="h-7 w-16 rounded-none border border-border-strong bg-bg px-1.5 text-xs text-text focus:border-accent focus:outline-none" /></label>
+                                  <input type="number" step="0.01" min="0" value={feeInput[r.id] ?? String(netGameFor(r))} onChange={(e) => setFeeInput((s) => ({ ...s, [r.id]: e.target.value }))} className="h-6 w-16 rounded-none border border-border-strong bg-bg px-1.5 text-xs text-text focus:border-accent focus:outline-none" /></label>
                                 <label className="flex items-center justify-end gap-1 text-[0.55rem] uppercase tracking-[0.08em] text-text-subtle">Drinks €
-                                  <input type="number" step="0.01" min="0" placeholder="0" value={drinksInput[r.id] ?? (drinksStored(r) > 0 ? String(drinksStored(r)) : "")} onChange={(e) => setDrinksInput((s) => ({ ...s, [r.id]: e.target.value }))} className="h-7 w-16 rounded-none border border-border-strong bg-bg px-1.5 text-xs text-text focus:border-accent focus:outline-none" /></label>
+                                  <input type="number" step="0.01" min="0" placeholder="0" value={drinksInput[r.id] ?? (drinksStored(r) > 0 ? String(drinksStored(r)) : "")} onChange={(e) => setDrinksInput((s) => ({ ...s, [r.id]: e.target.value }))} className="h-6 w-16 rounded-none border border-border-strong bg-bg px-1.5 text-xs text-text focus:border-accent focus:outline-none" /></label>
                               </div>
-                              <div className="flex flex-col gap-1">
-                                <select className="h-7 rounded-none border border-border-strong bg-bg px-1.5 text-xs text-text focus:border-accent focus:outline-none" value={paySel[r.id] ?? r.settlement_method ?? "cash"} onChange={(e) => setPaySel((s) => ({ ...s, [r.id]: e.target.value }))}>
-                                  <option value="cash">Cash</option>
-                                  <option value="revolut">Revolut</option>
-                                </select>
-                                <button type="button" onClick={() => markPaid(r, paySel[r.id] ?? r.settlement_method ?? "cash")} disabled={busy} className="border border-accent bg-accent/10 px-2.5 py-1.5 text-[0.6rem] font-bold uppercase tracking-[0.1em] text-accent hover:bg-accent/20 disabled:opacity-50">Mark paid</button>
-                              </div>
+                              <select className="h-7 rounded-none border border-border-strong bg-bg px-1.5 text-xs text-text focus:border-accent focus:outline-none" value={paySel[r.id] ?? r.settlement_method ?? "cash"} onChange={(e) => setPaySel((s) => ({ ...s, [r.id]: e.target.value }))}>
+                                <option value="cash">Cash</option>
+                                <option value="revolut">Revolut</option>
+                              </select>
+                              <button type="button" onClick={() => markPaid(r, paySel[r.id] ?? r.settlement_method ?? "cash")} disabled={busy} className="whitespace-nowrap border border-accent bg-accent/10 px-3 py-1.5 text-[0.6rem] font-bold uppercase tracking-[0.1em] text-accent hover:bg-accent/20 disabled:opacity-50">Mark paid</button>
                             </div>
                             <button type="button" onClick={() => openDrinks(r)} disabled={busy} className="text-[0.55rem] uppercase tracking-[0.1em] text-text-subtle hover:text-accent disabled:opacity-50">Itemise drinks</button>
                           </div>
@@ -464,7 +466,7 @@ export function MatchParticipantsManager({
                 })}
                 {rows.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-3 py-8 text-center text-sm text-text-muted">
+                    <td colSpan={6} className="px-3 py-8 text-center text-sm text-text-muted">
                       No players on this match yet.
                     </td>
                   </tr>
