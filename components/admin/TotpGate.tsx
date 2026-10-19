@@ -16,6 +16,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
+import { verifiedFactorIds, authenticateWithBiometrics, webauthnSupported } from "@/lib/mfa-client";
 
 export function TotpGate({
   open,
@@ -32,10 +33,13 @@ export function TotpGate({
   onVerified: () => void | Promise<void>;
 }) {
   const [factorId, setFactorId] = useState<string | null>(null);
+  const [webauthnId, setWebauthnId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const canBiometric = !!webauthnId && webauthnSupported();
 
   useEffect(() => {
     if (!open) return;
@@ -43,16 +47,13 @@ export function TotpGate({
     setError(null);
     setLoading(true);
     const supabase = createClient();
-    supabase.auth.mfa.listFactors().then(({ data, error: err }) => {
-      if (err) {
-        setError(err.message);
-        setLoading(false);
-        return;
-      }
-      const verified = (data?.totp ?? []).find((f) => f.status === "verified");
-      setFactorId(verified?.id ?? null);
-      setLoading(false);
-    });
+    verifiedFactorIds(supabase)
+      .then(({ totpId, webauthnId }) => {
+        setFactorId(totpId);
+        setWebauthnId(webauthnId);
+      })
+      .catch((err) => setError(err instanceof Error ? err.message : "Couldn't load your 2FA factors."))
+      .finally(() => setLoading(false));
   }, [open]);
 
   useEffect(() => {
@@ -86,6 +87,22 @@ export function TotpGate({
     await onVerified();
   }
 
+  async function doBiometrics() {
+    if (!webauthnId) return;
+    setBusy(true);
+    setError(null);
+    const supabase = createClient();
+    const err = await authenticateWithBiometrics(supabase, webauthnId);
+    if (err) {
+      setBusy(false);
+      if (err !== "cancelled") setError(err);
+      return;
+    }
+    setBusy(false);
+    setCode("");
+    await onVerified();
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
       <div className="w-full max-w-sm border border-border-strong bg-bg-elevated p-6">
@@ -93,7 +110,7 @@ export function TotpGate({
 
         {loading ? (
           <p className="mt-3 text-xs text-text-subtle">Checking…</p>
-        ) : !factorId ? (
+        ) : !factorId && !webauthnId ? (
           <>
             <p className="mt-2 text-xs text-text-muted">
               Two-factor authentication isn&rsquo;t set up on your account yet. Sensitive changes
@@ -112,37 +129,53 @@ export function TotpGate({
             </div>
           </>
         ) : (
-          <form onSubmit={submit}>
+          <div>
             <p className="mt-2 text-xs text-text-muted">
-              Enter the 6-digit code from your authenticator app to apply {action}.
+              {canBiometric
+                ? <>Confirm with biometrics, or your authenticator code, to apply {action}.</>
+                : <>Enter the 6-digit code from your authenticator app to apply {action}.</>}
             </p>
             {notice && (
               <p className="mt-3 border-l-2 border-amber-500/70 bg-amber-500/10 px-3 py-2 text-xs leading-relaxed text-amber-200">
                 {notice}
               </p>
             )}
-            <input
-              autoFocus
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              maxLength={6}
-              value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-              placeholder="000000"
-              className="mt-4 h-12 w-full rounded-none border border-border-strong bg-bg px-3 text-center font-mono text-lg tracking-[0.4em] text-text placeholder:text-text-subtle focus:border-accent focus:outline-none"
-            />
+
+            {canBiometric && (
+              <Button type="button" size="md" onClick={doBiometrics} disabled={busy} className="mt-4 w-full">
+                {busy ? "…" : "Confirm with biometrics"}
+              </Button>
+            )}
+
+            {factorId && (
+              <form onSubmit={submit}>
+                {canBiometric && (
+                  <p className="mt-4 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-text-subtle">or enter a code</p>
+                )}
+                <input
+                  autoFocus={!canBiometric}
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={6}
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+                  placeholder="000000"
+                  className="mt-3 h-12 w-full rounded-none border border-border-strong bg-bg px-3 text-center font-mono text-lg tracking-[0.4em] text-text placeholder:text-text-subtle focus:border-accent focus:outline-none"
+                />
+                <Button type="submit" size="md" disabled={busy} className="mt-4 w-full">
+                  {busy ? "Verifying…" : "Confirm"}
+                </Button>
+              </form>
+            )}
+
             {error && (
               <p className="mt-3 border border-red-800 bg-red-950/40 px-3 py-2 text-xs text-red-400">{error}</p>
             )}
-            <div className="mt-5 flex gap-3">
-              <Button type="button" variant="secondary" size="md" onClick={onCancel} disabled={busy} className="flex-1">
-                Cancel
-              </Button>
-              <Button type="submit" size="md" disabled={busy} className="flex-1">
-                {busy ? "Verifying…" : "Confirm"}
-              </Button>
-            </div>
-          </form>
+
+            <Button type="button" variant="secondary" size="md" onClick={onCancel} disabled={busy} className="mt-3 w-full">
+              Cancel
+            </Button>
+          </div>
         )}
       </div>
     </div>

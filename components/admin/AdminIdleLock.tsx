@@ -16,16 +16,20 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { verifiedFactorIds, authenticateWithBiometrics, webauthnSupported } from "@/lib/mfa-client";
 
 const IDLE_MS = 15 * 60 * 1000; // 15 minutes of inactivity before the lock.
 
 export function AdminIdleLock() {
   const [locked, setLocked] = useState(false);
   const [factorId, setFactorId] = useState<string | null>(null);
+  const [webauthnId, setWebauthnId] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const lastRef = useRef(Date.now());
+
+  const canBiometric = !!webauthnId && webauthnSupported();
 
   const signOut = useCallback(() => {
     const supabase = createClient();
@@ -49,13 +53,13 @@ export function AdminIdleLock() {
       clearInterval(interval);
       // Lock behind 2FA if a factor exists; otherwise sign out (can't gate).
       const supabase = createClient();
-      const { data } = await supabase.auth.mfa.listFactors();
-      const verified = (data?.totp ?? []).find((f) => f.status === "verified");
-      if (!verified) {
+      const { totpId, webauthnId } = await verifiedFactorIds(supabase);
+      if (!totpId && !webauthnId) {
         signOut();
         return;
       }
-      setFactorId(verified.id);
+      setFactorId(totpId);
+      setWebauthnId(webauthnId);
       setCode("");
       setError(null);
       setLocked(true);
@@ -76,6 +80,21 @@ export function AdminIdleLock() {
       document.body.style.overflow = prev;
     };
   }, [locked]);
+
+  async function doBiometrics() {
+    if (!webauthnId) return;
+    setBusy(true);
+    setError(null);
+    const supabase = createClient();
+    const err = await authenticateWithBiometrics(supabase, webauthnId);
+    setBusy(false);
+    if (err) {
+      if (err !== "cancelled") setError(err);
+      return;
+    }
+    setCode("");
+    setLocked(false); // Resume; the idle effect re-arms and resets the timer.
+  }
 
   async function unlock(e: React.FormEvent) {
     e.preventDefault();
@@ -104,30 +123,49 @@ export function AdminIdleLock() {
         <p className="text-[0.65rem] font-bold uppercase tracking-[0.16em] text-text-subtle">LaserOps Admin</p>
         <h3 className="mt-2 text-lg font-bold uppercase tracking-[0.08em] text-accent">Session locked</h3>
         <p className="mt-2 text-xs text-text-muted">
-          You were idle for a while. Enter the 6-digit code from your authenticator app to carry on.
+          You were idle for a while.{" "}
+          {canBiometric ? "Unlock with biometrics or your authenticator code to carry on." : "Enter the 6-digit code from your authenticator app to carry on."}
         </p>
-        <form onSubmit={unlock}>
-          <input
-            autoFocus
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            maxLength={6}
-            value={code}
-            onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-            placeholder="000000"
-            className="mt-4 h-12 w-full rounded-none border border-border-strong bg-bg px-3 text-center font-mono text-lg tracking-[0.4em] text-text placeholder:text-text-subtle focus:border-accent focus:outline-none"
-          />
-          {error && (
-            <p className="mt-3 border border-red-800 bg-red-950/40 px-3 py-2 text-xs text-red-400">{error}</p>
-          )}
+
+        {canBiometric && (
           <button
-            type="submit"
+            type="button"
+            onClick={doBiometrics}
             disabled={busy}
             className="mt-4 h-11 w-full border border-accent bg-accent text-sm font-bold uppercase tracking-[0.12em] text-bg hover:bg-accent-soft disabled:opacity-50"
           >
-            {busy ? "Unlocking…" : "Unlock"}
+            {busy ? "…" : "Unlock with biometrics"}
           </button>
-        </form>
+        )}
+
+        {factorId && (
+          <form onSubmit={unlock}>
+            {canBiometric && (
+              <p className="mt-4 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-text-subtle">or enter a code</p>
+            )}
+            <input
+              autoFocus={!canBiometric}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={6}
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+              placeholder="000000"
+              className="mt-3 h-12 w-full rounded-none border border-border-strong bg-bg px-3 text-center font-mono text-lg tracking-[0.4em] text-text placeholder:text-text-subtle focus:border-accent focus:outline-none"
+            />
+            <button
+              type="submit"
+              disabled={busy}
+              className={`mt-4 h-11 w-full text-sm font-bold uppercase tracking-[0.12em] disabled:opacity-50 ${canBiometric ? "border border-border-strong text-text hover:border-accent hover:text-accent" : "border border-accent bg-accent text-bg hover:bg-accent-soft"}`}
+            >
+              {busy ? "Unlocking…" : "Unlock"}
+            </button>
+          </form>
+        )}
+
+        {error && (
+          <p className="mt-3 border border-red-800 bg-red-950/40 px-3 py-2 text-xs text-red-400">{error}</p>
+        )}
         <button
           type="button"
           onClick={signOut}
