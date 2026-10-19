@@ -2,8 +2,9 @@
  * app/player-portal/games/private/page.tsx
  * --------------------------------------------------------------------
  * Player-facing private booking request (Game Portal). Auth-gated. Prefills the
- * form with the player's account contact details; the create_private_booking RPC
- * creates an unlisted 'tentative' match for an admin to price and confirm.
+ * form with the player's account contact details; submitting emails the request
+ * to the team and raises an admin alert (via /api/private-booking-enquiry). No
+ * game is created here - an admin sets it up and sends the player the invite.
  */
 import type { Metadata } from "next";
 import Link from "next/link";
