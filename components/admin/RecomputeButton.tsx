@@ -15,6 +15,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
+import { TotpGate } from "@/components/admin/TotpGate";
 import { createClient } from "@/lib/supabase/client";
 
 export function RecomputeButton() {
@@ -22,6 +23,7 @@ export function RecomputeButton() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Record<string, number> | null>(null);
+  const [gateOpen, setGateOpen] = useState(false);
 
   async function run() {
     setBusy(true);
@@ -48,7 +50,7 @@ export function RecomputeButton() {
   return (
     <div>
       <div className="flex items-center gap-3">
-        <Button type="button" size="md" onClick={run} disabled={busy}>
+        <Button type="button" size="md" onClick={() => setGateOpen(true)} disabled={busy}>
           {busy ? "Recomputing…" : "Recompute now"}
         </Button>
         {result && (
@@ -58,6 +60,16 @@ export function RecomputeButton() {
         )}
       </div>
       {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
+
+      <TotpGate
+        open={gateOpen}
+        action="a read-model recompute"
+        onCancel={() => setGateOpen(false)}
+        onVerified={async () => {
+          setGateOpen(false);
+          await run();
+        }}
+      />
     </div>
   );
 }
