@@ -8,7 +8,14 @@
  * ones stay listed below (dimmed) so players can go back to recent activity,
  * Facebook-style. The badge counts only unread. Clicking marks that one seen but
  * keeps it in the list; "Mark all as seen" clears the unread state with an Undo.
- * Realtime + a slow poll (so delayed notifications appear when they come due).
+ *
+ * Refreshed by a light poll (every 60s) and on auth change / when the dropdown
+ * is opened. It deliberately does NOT hold a realtime subscription: this bell is
+ * in the site-wide header for every signed-in user, so a per-user realtime
+ * channel on the `notifications` table meant every notification change was
+ * WAL-decoded + RLS-checked for all connected users at once - which, at scale,
+ * became the dominant load on the database. A 60s poll of a tiny, indexed table
+ * is far cheaper and plenty fresh for a notification bell.
  */
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -23,6 +30,7 @@ export function NotificationBell() {
   const [undoIds, setUndoIds] = useState<string[]>([]);
   const ref = useRef<HTMLDivElement>(null);
   const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reloadRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -77,20 +85,24 @@ export function NotificationBell() {
     };
 
     load();
-    const channel = supabase
-      .channel("notif-bell")
-      .on("postgres_changes", { event: "*", schema: "public", table: "notifications" }, reload)
-      .subscribe();
-    const iv = setInterval(load, 90000);
+    // Light poll only (no realtime subscription - see file header for why).
+    const iv = setInterval(load, 60000);
     const { data: sub } = supabase.auth.onAuthStateChange(() => load());
+    reloadRef.current = reload;
     return () => {
       active = false;
       if (timer) clearTimeout(timer);
       clearInterval(iv);
-      supabase.removeChannel(channel);
+      reloadRef.current = null;
       sub.subscription.unsubscribe();
     };
   }, []);
+
+  // Refresh immediately when the dropdown is opened, so a click always shows
+  // the latest (covers the gap between 60s polls).
+  useEffect(() => {
+    if (open) reloadRef.current?.();
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;

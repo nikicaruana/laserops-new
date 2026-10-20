@@ -29,7 +29,10 @@ export function LiveGameButton() {
       }
     };
     load();
-    const iv = setInterval(load, 30000);
+    // Poll lightly (every 60s) plus on focus/visibility - this runs in the
+    // site-wide header for every signed-in user, so keep the background cadence
+    // modest; returning to the tab triggers an immediate check anyway.
+    const iv = setInterval(load, 60000);
     const onFocus = () => load();
     window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onFocus);
