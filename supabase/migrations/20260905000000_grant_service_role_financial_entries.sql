@@ -1,0 +1,11 @@
+-- =============================================================================
+-- Grant the backend service_role direct access to financial_entries.
+--
+-- The table is admin-RLS-protected and had no service_role grant, so backend
+-- jobs / scripts (which run as service_role, bypassing RLS) got "permission
+-- denied" and silently read 0 rows. This grants the privileges so server-side
+-- reconciliation / backfills can read and write the ledger. RLS is unchanged:
+-- it stays admin-only for every other role; only service_role (the trusted
+-- backend key, which bypasses RLS) is affected.
+-- =============================================================================
+grant select, insert, update, delete on public.financial_entries to service_role;
