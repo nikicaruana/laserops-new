@@ -22,15 +22,15 @@ const LABELS: Record<string, string> = {
   cancelled: "Cancelled",
 };
 
-export function MatchStatusBadge({ status }: { status: string | null }) {
+export function MatchStatusBadge({ status, className = "" }: { status: string | null; className?: string }) {
   const s = status ?? "tentative";
   return (
     <span
-      className={`inline-flex items-center gap-1 border px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-[0.12em] ${
+      className={`inline-flex items-center gap-1 border px-2 py-0.5 text-[0.6rem] font-bold uppercase leading-tight tracking-[0.12em] ${
         STYLES[s] ?? STYLES.completed
-      }`}
+      } ${className}`}
     >
-      {s === "live" && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />}
+      {s === "live" && <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-accent" />}
       {LABELS[s] ?? s}
     </span>
   );

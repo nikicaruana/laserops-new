@@ -209,7 +209,10 @@ export default async function GamesPage({
             {invitedBy && <p className="mt-0.5 text-[0.7rem] text-accent">Invited by {invitedBy}</p>}
           </div>
           <div className="flex shrink-0 flex-col items-end gap-1">
-            <MatchStatusBadge status={g.status} />
+            {/* Wrap the status label to multiple right-aligned lines on narrow
+                screens so a long label ("Awaiting LaserOps Confirmation") stops
+                squeezing the title/date on the left; single line on desktop. */}
+            <MatchStatusBadge status={g.status} className="max-w-[7.5rem] whitespace-normal text-right sm:max-w-none sm:whitespace-nowrap" />
             {g.is_double_xp && (
               <span className="border border-amber-700 bg-amber-950/40 px-1.5 py-0.5 text-[0.5rem] font-bold uppercase tracking-[0.12em] text-amber-300">2XP</span>
             )}
