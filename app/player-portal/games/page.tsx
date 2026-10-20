@@ -269,10 +269,14 @@ export default async function GamesPage({
     );
   };
 
-  // Watch every match on the page so a flip to LIVE (or any change) reflects
-  // instantly, not on the next reload / bell poll.
+  // Realtime-watch only the player's OWN games (live / created / signed-up /
+  // invited) - a flip to LIVE there is what they need to see instantly. We do
+  // NOT subscribe every list viewer to the whole set of open games: that made
+  // (viewers x open games) realtime bindings against a shared set, and the
+  // per-subscriber WAL decode + RLS fan-out became the top DB load. Open games
+  // the player hasn't joined still update on the next navigation / 60s poll.
   const watchIds = Array.from(
-    new Set([...liveGames, ...createdSection, ...signedUpSection, ...invitedSection, ...openGames].map((g) => g.id)),
+    new Set([...liveGames, ...createdSection, ...signedUpSection, ...invitedSection].map((g) => g.id)),
   );
 
   return (
