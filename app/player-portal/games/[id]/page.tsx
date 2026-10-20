@@ -75,7 +75,7 @@ export default async function GameDetailPage({
   if (!match) notFound();
   const location = await resolveMatchLocation((match as { location_id: string | null }).location_id);
 
-  const [{ data: mySignup }, guns, { data: participant }, { data: wlRows }, { data: levelRow }] = await Promise.all([
+  const [{ data: mySignup }, guns, { data: participant }, { data: wlRows }, { data: levelRow }, { data: rosterRows }] = await Promise.all([
     supabase
       .from("match_signups")
       .select("payment_intent, status, paid_at, booked_gun")
@@ -86,6 +86,9 @@ export default async function GameDetailPage({
     supabase.from("match_participants").select("id").eq("match_id", id).eq("account_id", account.id).maybeSingle(),
     supabase.rpc("my_waitlist_positions"),
     supabase.from("player_stats_lifetime").select("current_level").eq("account_id", account.id).maybeSingle(),
+    // Who's signed up - identity only, visible to any viewer of an open game
+    // (private games return rows only to the owner / admin / signed-up members).
+    supabase.rpc("match_roster", { p_match_id: id }),
   ]);
   const viewerLevel = (levelRow as { current_level: number | null } | null)?.current_level ?? 1;
   const beginnerLock =
@@ -95,12 +98,11 @@ export default async function GameDetailPage({
 
   const isCreator = match.created_by === account.id;
   const amSignedUp = Boolean(mySignup && mySignup.status !== "cancelled");
-  // Creator, admin, or anyone signed up can see who's in (ops tags only, definer RPC).
+  // Invite link is still owner/signed-up only.
   const canViewSignups = isCreator || amSignedUp;
-  const { data: signupRows } = canViewSignups
-    ? await supabase.rpc("match_signups_for_organizer", { p_match_id: id })
-    : { data: null };
-  const signups = (signupRows ?? []) as { ops_tag: string | null; profile_pic_url: string | null; level: number | null; rank_badge_url: string | null; status: string; signed_up_at: string; paid_at: string | null; payment_intent: string | null }[];
+  // Roster is identity-only and open to any viewer (the RPC withholds it for a
+  // private game you're not part of), so players can see who's in before joining.
+  const signups = (rosterRows ?? []) as { ops_tag: string | null; profile_pic_url: string | null; level: number | null; rank_badge_url: string | null; status: string }[];
   const reg = match.registered_count ?? 0;
   const min = match.min_players ?? 10;
   const isFull = match.max_players != null && reg >= match.max_players;
@@ -239,8 +241,8 @@ export default async function GameDetailPage({
         </section>
       )}
 
-      {/* Who's signed up – visible to the creator and anyone signed up */}
-      {canViewSignups && signups.length > 0 && (
+      {/* Who's signed up – visible to anyone viewing the game (identity only) */}
+      {signups.length > 0 && (
         <section className="mt-8">
           <h2 className="mb-3 text-sm font-bold uppercase tracking-[0.12em] text-accent">
             Signed up ({signups.filter((s) => s.status === "registered").length})
