@@ -191,6 +191,16 @@ export function CompareView({ allRows, uniqueGunsMap, accolades }: Props) {
     );
   }
 
+  const radar = playerA && radarA ? (
+    <section className="portal-card px-4 py-5 sm:px-6">
+      <h2 className="mb-0.5 text-center text-sm font-bold uppercase tracking-[0.14em] text-accent">Player Radar</h2>
+      <p className="mb-3 text-center text-[0.7rem] text-text-subtle">
+        Each spoke is this player&apos;s standing vs the rated field &mdash; further out is better. Rings are the star bands.
+      </p>
+      <RadarCompare pointsA={radarA} nameA={playerA.nickname} pointsB={radarB} nameB={playerB?.nickname ?? null} />
+    </section>
+  ) : null;
+
   return (
     <div className="flex flex-col gap-3 sm:gap-4">
       {/* ── Compare search bar ─────────────────────────────────
@@ -206,47 +216,29 @@ export function CompareView({ allRows, uniqueGunsMap, accolades }: Props) {
         />
       </div>
 
-      {/* ── Radar: subject player alone, or overlaid with the comparison ── */}
-      {playerA && radarA && (
-        <section className="portal-card px-4 py-5 sm:px-6">
-          <h2 className="mb-0.5 text-center text-sm font-bold uppercase tracking-[0.14em] text-accent">Player Radar</h2>
-          <p className="mb-3 text-center text-[0.7rem] text-text-subtle">
-            Each spoke is this player&apos;s standing vs the rated field &mdash; further out is better. Rings are the star bands.
-          </p>
-          <RadarCompare pointsA={radarA} nameA={playerA.nickname} pointsB={radarB} nameB={playerB?.nickname ?? null} />
-        </section>
-      )}
-
-      {/* ── No compare player yet ──────────────────────────── */}
+      {/* ── No compare player yet: cards + level, then the chart ───── */}
       {!playerB && (
-        <div className="grid grid-cols-2 gap-2 sm:gap-3">
-          {playerA && (
-            <div className="flex flex-col gap-2 sm:gap-3">
-              <ProfileCell data={playerA} />
-              <LevelCell data={playerA} />
+        <>
+          <div className="grid grid-cols-2 gap-2 sm:gap-3">
+            {playerA && (
+              <div className="flex flex-col gap-2 sm:gap-3">
+                <ProfileCell data={playerA} />
+                <LevelCell data={playerA} />
+              </div>
+            )}
+            <div className="flex items-center justify-center border border-dashed border-border bg-bg-elevated/40 px-4 py-12 text-center">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-text-subtle">
+                Search for a player above to start comparing
+              </p>
             </div>
-          )}
-          <div className="flex items-center justify-center border border-dashed border-border bg-bg-elevated/40 px-4 py-12 text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-text-subtle">
-              Search for a player above to start comparing
-            </p>
           </div>
-        </div>
+          {radar}
+        </>
       )}
 
       {/* ── Full comparison grid ───────────────────────────── */}
       {playerA && playerB && winners && (
         <>
-          {/* ── Head to Head overall tally ─────────────────────── */}
-          {tally && recordWinners && (
-            <OverallBanner
-              nameA={playerA.nickname}
-              nameB={playerB.nickname}
-              scoreA={tally.a}
-              scoreB={tally.b}
-            />
-          )}
-
           {/* Profile */}
           <TwoCol>
             <ProfileCell data={playerA} />
@@ -258,6 +250,19 @@ export function CompareView({ allRows, uniqueGunsMap, accolades }: Props) {
             <LevelCell data={playerA} />
             <LevelCell data={playerB} />
           </TwoCol>
+
+          {/* Radar */}
+          {radar}
+
+          {/* ── Head to Head overall tally ─────────────────────── */}
+          {tally && recordWinners && (
+            <OverallBanner
+              nameA={playerA.nickname}
+              nameB={playerB.nickname}
+              scoreA={tally.a}
+              scoreB={tally.b}
+            />
+          )}
 
           {/* ── Stats section ──────────────────────────────────── */}
           <SectionHeader title="Stats" />
