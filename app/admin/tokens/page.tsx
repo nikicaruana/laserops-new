@@ -10,12 +10,17 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { TokenAdminManager } from "@/components/admin/TokenAdminManager";
 import { TokenPackRequests } from "@/components/admin/TokenPackRequests";
+import { TokenLedger, type TokenLedgerRow } from "@/components/admin/TokenLedger";
 
 export const metadata: Metadata = { title: "LaserOps Game Tokens" };
 
+// How many recent ledger rows to load for the collapsible section. The log is
+// append-only and grows forever, so cap it; the section shows the newest first.
+const LEDGER_LIMIT = 300;
+
 export default async function AdminTokensPage() {
   const supabase = await createClient();
-  const [{ data: config }, { data: bundles }, { data: requests }] = await Promise.all([
+  const [{ data: config }, { data: bundles }, { data: requests }, { data: ledger }] = await Promise.all([
     supabase.from("token_config").select("default_validity_months").eq("id", 1).maybeSingle(),
     supabase
       .from("token_bundles")
@@ -26,6 +31,13 @@ export default async function AdminTokensPage() {
       .select("id, bundle_name, tokens, price_eur, created_at, account:accounts!account_id(ops_tag, full_name, email, phone_e164)")
       .eq("status", "pending")
       .order("created_at", { ascending: true }),
+    supabase
+      .from("token_transactions")
+      .select(
+        "id, created_at, delta, kind, eur_amount, note, account:accounts!account_id(ops_tag, full_name), actor:accounts!actor_account_id(ops_tag, full_name), match:matches!match_id(match_code)",
+      )
+      .order("created_at", { ascending: false })
+      .limit(LEDGER_LIMIT),
   ]);
 
   return (
@@ -65,6 +77,28 @@ export default async function AdminTokensPage() {
           sort_order: b.sort_order,
         }))}
       />
+
+      <div className="mt-10">
+        <TokenLedger
+          initial={(ledger ?? []).map((r): TokenLedgerRow => {
+            const acc = Array.isArray(r.account) ? r.account[0] : r.account;
+            const act = Array.isArray(r.actor) ? r.actor[0] : r.actor;
+            const mt = Array.isArray(r.match) ? r.match[0] : r.match;
+            return {
+              id: r.id as string,
+              created_at: r.created_at as string,
+              delta: Number(r.delta),
+              kind: r.kind as TokenLedgerRow["kind"],
+              eur_amount: r.eur_amount != null ? Number(r.eur_amount) : null,
+              note: (r.note as string | null) ?? null,
+              player: acc?.full_name ?? null,
+              playerOps: acc?.ops_tag ?? null,
+              actor: act?.full_name ?? act?.ops_tag ?? null,
+              matchCode: mt?.match_code ?? null,
+            };
+          })}
+        />
+      </div>
     </div>
   );
 }
