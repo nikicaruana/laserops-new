@@ -59,7 +59,8 @@ const monthLabel = (d: Date) => d.toLocaleDateString("en-GB", { month: "short", 
 const dayKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const dayLabel = (d: Date) => d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
 const num = (v: number | string | null | undefined) => (v == null ? 0 : Number(v)) || 0;
-const tokenStr = (n: number) => (n % 1 === 0 ? String(n) : n.toFixed(2));
+const tokenStr = (n: number) =>
+  n.toLocaleString("en-GB", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
 export function FinancialCharts({ from, to }: { from: string; to: string }) {
   const [groupBy, setGroupBy] = useState<GroupBy>("month");
@@ -245,7 +246,7 @@ export function FinancialCharts({ from, to }: { from: string; to: string }) {
             <ResponsiveContainer width="100%" height={groupBy === "game" ? 360 : 330}>
               <BarChart data={buckets} margin={{ top: 8, right: 16, left: 0, bottom: 0 }} barCategoryGap="34%">
                 <CartesianGrid vertical={false} stroke="var(--color-border)" strokeOpacity={0.5} />
-                <YAxis width={Y_WIDTH} tick={{ fill: "var(--color-text-subtle)", fontSize: 11 }} tickFormatter={(v) => `€${Math.round(Number(v))}`} axisLine={false} tickLine={false} />
+                <YAxis width={Y_WIDTH} tick={{ fill: "var(--color-text-subtle)", fontSize: 11 }} tickFormatter={(v) => `€${Math.round(Number(v)).toLocaleString("en-GB")}`} axisLine={false} tickLine={false} />
                 <XAxis dataKey="label" tick={{ fill: "var(--color-text-subtle)", fontSize: 11 }} interval="preserveStartEnd" axisLine={false} tickLine={false} angle={groupBy === "game" ? -30 : 0} textAnchor={groupBy === "game" ? "end" : "middle"} height={groupBy === "game" ? 58 : 24} />
                 <Tooltip cursor={{ fill: "var(--color-text)", fillOpacity: 0.05 }} content={<RevenueTooltip />} />
                 {REVENUE_SERIES.map((s) => (
