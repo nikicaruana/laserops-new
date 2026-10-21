@@ -88,13 +88,25 @@ export function GalleryBrowser({ photos }: { photos: GalleryPhoto[] }) {
   }, []);
 
   const matchOptions = useMemo(() => {
-    const seen = new Map<string, string>();
+    // Photos arrive featured-first, so dedup order is not chronological. Keep the
+    // first-seen date per game and sort the dropdown by it (newest game first,
+    // games with no date last) so the list reads chronologically.
+    const seen = new Map<string, { label: string; playedOn: string | null }>();
     for (const p of photos) {
       if (!p.matchCode || seen.has(p.matchCode)) continue;
       const date = p.playedOn ? new Date(p.playedOn).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "";
-      seen.set(p.matchCode, [p.matchCode, p.matchTitle || date].filter(Boolean).join(" · "));
+      seen.set(p.matchCode, {
+        label: [p.matchCode, p.matchTitle || date].filter(Boolean).join(" · "),
+        playedOn: p.playedOn ?? null,
+      });
     }
-    return [...seen.entries()].map(([code, label]) => ({ code, label }));
+    return [...seen.entries()]
+      .map(([code, v]) => ({ code, label: v.label, playedOn: v.playedOn }))
+      .sort((a, b) => {
+        if (!a.playedOn) return b.playedOn ? 1 : 0;
+        if (!b.playedOn) return -1;
+        return b.playedOn.localeCompare(a.playedOn);
+      });
   }, [photos]);
 
   const years = useMemo(
