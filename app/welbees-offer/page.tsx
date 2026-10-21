@@ -311,7 +311,7 @@ export default async function WelbeesOfferPage() {
         {/* step 4 */}
         <section className="portal-card rounded-[4px] p-[22px]">
           <StepHead n={4} title="Join your 2nd game, free" />
-          <p className="mt-3 text-[14.5px] text-text-muted">Pick your next game, join it, and pay with your token at checkout. No card needed. Same arena, more targets, zero cost.</p>
+          <p className="mt-3 text-[14.5px] text-text-muted">Pick your next game, join it, and pay with your token at checkout. No card needed.</p>
         </section>
 
         <DownArrow />
