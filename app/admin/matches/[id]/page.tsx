@@ -16,7 +16,6 @@ import { MatchAdminActions } from "@/components/admin/MatchAdminActions";
 import { RescheduleMatchButton } from "@/components/admin/RescheduleMatchButton";
 import { LadderResultActions } from "@/components/admin/LadderResultActions";
 import { MatchSquadColours } from "@/components/admin/MatchSquadColours";
-import { SignupPaidToggle } from "@/components/admin/SignupPaidToggle";
 import { EditableMatchTitle } from "@/components/admin/EditableMatchTitle";
 import { CopyInviteLink } from "@/components/portal/CopyInviteLink";
 import { MatchParticipantsManager, type Participant, type ParticipantPayment } from "@/components/admin/MatchParticipantsManager";
@@ -555,7 +554,6 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
                     <th className="px-4 py-3 font-semibold">Phone</th>
                     <th className="px-4 py-3 font-semibold">Paying</th>
                     <th className="px-4 py-3 font-semibold">Gun</th>
-                    <th className="px-4 py-3 font-semibold">Payment</th>
                     <th className="px-4 py-3 font-semibold">Signed up</th>
                   </tr>
                 </thead>
@@ -574,13 +572,6 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
                       </td>
                       <td className="px-4 py-3 text-text-muted">
                         {s.booked_gun ? s.booked_gun : <span className="text-text-subtle">–</span>}
-                      </td>
-                      <td className="px-4 py-3">
-                        {s.account_id ? (
-                          <SignupPaidToggle matchId={match.id} accountId={s.account_id} initialPaid={Boolean(s.paid_at)} paidAmountEur={s.paid_amount_eur ?? null} intent={s.payment_intent} refundStatus={s.refund_status ?? null} />
-                        ) : (
-                          <span className="text-text-subtle">–</span>
-                        )}
                       </td>
                       <td className="px-4 py-3 text-text-muted">{fmtDateTime(s.created_at, null)}</td>
                     </tr>
