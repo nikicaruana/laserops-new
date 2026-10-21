@@ -52,7 +52,7 @@ type Bucket = {
 type FinRow = { category: string | null; direction: string | null; amount_eur: number | string | null; occurred_at: string; match_id: string | null; account_id: string | null };
 type SpendRow = { account_id: string | null; delta: number | string | null; match_id: string | null; created_at: string };
 type MatchRow = { id: string; match_code: string | null; title: string | null; scheduled_at: string | null; played_on: string | null; pricing_mode: string | null };
-type PartRow = { match_id: string | null; paid_at: string | null; payment_intent: string | null };
+type PartRow = { match_id: string | null; account_id: string | null; paid_at: string | null; payment_intent: string | null };
 
 const monthKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 const monthLabel = (d: Date) => d.toLocaleDateString("en-GB", { month: "short", year: "numeric" });
@@ -71,6 +71,9 @@ export function FinancialCharts({ from, to }: { from: string; to: string }) {
   const [opsById, setOpsById] = useState<Map<string, string>>(new Map());
   const [playedByMatch, setPlayedByMatch] = useState<Map<string, number>>(new Map());
   const [paidByMatch, setPaidByMatch] = useState<Map<string, number>>(new Map());
+  // Pay-after-game started after LO-2026-33; games on/before that have no
+  // per-player payment tracking and must be excluded from paid/pending.
+  const [legacyCutoff, setLegacyCutoff] = useState<string | null>(null);
 
   const fromIso = from || new Date(Date.now() - 365 * 86_400_000).toISOString().slice(0, 10);
   const toEndIso = to ? new Date(new Date(to).getTime() + 86_400_000).toISOString() : null;
@@ -87,7 +90,10 @@ export function FinancialCharts({ from, to }: { from: string; to: string }) {
         if (toEndIso) spendQ = spendQ.lte("created_at", toEndIso);
         let gamesQ = supabase.from("matches").select("id, match_code, title, scheduled_at, played_on, pricing_mode").eq("status", "completed").gte("scheduled_at", fromIso).order("scheduled_at");
         if (toEndIso) gamesQ = gamesQ.lte("scheduled_at", toEndIso);
-        const [{ data: finData, error: finErr }, { data: spendData, error: spendErr }, { data: gamesData, error: gamesErr }] = await Promise.all([finQ, spendQ, gamesQ]);
+        const cutoffQ = supabase.from("matches").select("played_on, scheduled_at").eq("match_code", "LO-2026-33").maybeSingle();
+        const [{ data: finData, error: finErr }, { data: spendData, error: spendErr }, { data: gamesData, error: gamesErr }, { data: cutoffData }] = await Promise.all([finQ, spendQ, gamesQ, cutoffQ]);
+        const cutoffRow = cutoffData as { played_on: string | null; scheduled_at: string | null } | null;
+        const cutoff = cutoffRow ? (cutoffRow.played_on || (cutoffRow.scheduled_at ?? "").slice(0, 10) || null) : null;
         if (finErr) throw new Error(finErr.message);
         if (spendErr) throw new Error(spendErr.message);
         if (gamesErr) throw new Error(gamesErr.message);
@@ -102,24 +108,26 @@ export function FinancialCharts({ from, to }: { from: string; to: string }) {
         const missing = [...refIds].filter((id) => !games.some((g) => g.id === id));
         const acctIds = [...new Set([...spendRows.map((r) => r.account_id), ...finRows.filter((r) => r.category === "tokens").map((r) => r.account_id)].filter(Boolean) as string[])];
         const idList = [...refIds];
-        const [missRes, acctRes, partRes, aggRes] = await Promise.all([
+        const [missRes, acctRes, partRes] = await Promise.all([
           missing.length ? supabase.from("matches").select("id, match_code, title, scheduled_at, played_on, pricing_mode").in("id", missing) : Promise.resolve({ data: [] }),
           acctIds.length ? supabase.from("accounts").select("id, ops_tag").in("id", acctIds) : Promise.resolve({ data: [] }),
-          idList.length ? supabase.from("match_participants").select("match_id, paid_at, payment_intent").in("match_id", idList) : Promise.resolve({ data: [] }),
-          idList.length ? supabase.from("match_player_aggregate").select("match_id").in("match_id", idList) : Promise.resolve({ data: [] }),
+          idList.length ? supabase.from("match_participants").select("match_id, account_id, paid_at, payment_intent").in("match_id", idList) : Promise.resolve({ data: [] }),
         ]);
         if (cancelled) return;
+        // "Played" here = account-linked participants who OWE (the pay-after
+        // model tracks payments per participant, not per aggregate row), so a
+        // walk-in without a signup row or a pre-pay-after game can't inflate it.
         const played = new Map<string, number>();
-        for (const a of (aggRes.data ?? []) as { match_id: string }[]) played.set(a.match_id, (played.get(a.match_id) ?? 0) + 1);
         const paid = new Map<string, number>();
         for (const p of (partRes.data ?? []) as PartRow[]) {
-          if (!p.match_id) continue;
+          if (!p.match_id || !p.account_id) continue;
+          played.set(p.match_id, (played.get(p.match_id) ?? 0) + 1);
           if (p.paid_at != null || p.payment_intent === "token") paid.set(p.match_id, (paid.get(p.match_id) ?? 0) + 1);
         }
         setFin(finRows); setSpends(spendRows);
         setMatchList([...games, ...((missRes.data ?? []) as MatchRow[])]);
         setOpsById(new Map(((acctRes.data ?? []) as { id: string; ops_tag: string | null }[]).map((a) => [a.id, a.ops_tag ?? "—"])));
-        setPlayedByMatch(played); setPaidByMatch(paid);
+        setPlayedByMatch(played); setPaidByMatch(paid); setLegacyCutoff(cutoff);
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : "Failed to load chart data.");
       } finally {
@@ -147,6 +155,10 @@ export function FinancialCharts({ from, to }: { from: string; to: string }) {
     // revenue loop below; they just carry no paid/played line.
     for (const m of matchList) {
       if (m.pricing_mode !== "per_player") continue;
+      // Skip pre-pay-after-game games (on/before LO-2026-33): no per-player
+      // payment tracking, so their attendance must not count as "pending".
+      const gameDate = (m.played_on || m.scheduled_at || "").slice(0, 10);
+      if (legacyCutoff && gameDate && gameDate <= legacyCutoff) continue;
       const md = new Date(m.scheduled_at || m.played_on || Date.now());
       const b = groupBy === "game" ? gameBucket(m) : dateBucket(md);
       b.played += playedByMatch.get(m.id) ?? 0;
@@ -181,7 +193,7 @@ export function FinancialCharts({ from, to }: { from: string; to: string }) {
     }
 
     return [...map.values()].sort((a, b) => a.sort - b.sort);
-  }, [fin, spends, matchList, opsById, playedByMatch, paidByMatch, groupBy]);
+  }, [fin, spends, matchList, opsById, playedByMatch, paidByMatch, legacyCutoff, groupBy]);
 
   const hasData = buckets.length > 0;
   const maxTokens = Math.max(1, ...buckets.map((b) => b.tokensUsed));
