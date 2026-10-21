@@ -7,6 +7,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { RecomputeButton } from "@/components/admin/RecomputeButton";
+import { RefreshBoardsButton } from "@/components/admin/RefreshBoardsButton";
 import { AdminNotificationSummary } from "@/components/admin/AdminNotificationSummary";
 import { FinancialSummary } from "@/components/admin/FinancialSummary";
 
@@ -129,8 +130,15 @@ export default async function AdminDashboard() {
             <p className="mt-2 text-[0.65rem] text-text-subtle">
               Last run: {whenText(status?.last_recomputed_at ?? null)}
             </p>
+            <p className="mt-3 max-w-xl text-[0.65rem] text-text-subtle">
+              Just need the public leaderboards / Hall of Fame to pick up a data or config change
+              without a full recompute? Use Refresh public boards to bust their cache.
+            </p>
           </div>
-          <RecomputeButton />
+          <div className="flex flex-col items-start gap-3">
+            <RecomputeButton />
+            <RefreshBoardsButton />
+          </div>
         </div>
       </section>
     </div>
