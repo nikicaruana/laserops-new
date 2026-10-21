@@ -70,12 +70,14 @@ export function AdminNotificationSummary() {
 
   function markRead(id: string) {
     setNotifs((prev) => prev.map((n) => (n.id === id ? { ...n, seen: true } : n)));
-    createClient().rpc("dismiss_admin_notification", { p_id: id });
+    // .then() is required: the supabase query builder is lazy and does not send
+    // the request until it is awaited or then-ed.
+    void createClient().rpc("dismiss_admin_notification", { p_id: id }).then(() => {});
   }
 
   function remove(id: string) {
     setNotifs((prev) => prev.filter((n) => n.id !== id));
-    createClient().rpc("remove_admin_notification", { p_id: id });
+    void createClient().rpc("remove_admin_notification", { p_id: id }).then(() => {});
   }
 
   const unseen = notifs.filter((n) => !n.seen).length;
