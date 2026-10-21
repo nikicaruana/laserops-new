@@ -21,13 +21,25 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
-type Notif = { id: string; priority: number; title: string; message: string | null; href: string | null; seen: boolean };
+type Notif = { id: string; priority: number; title: string; message: string | null; href: string | null; seen: boolean; typeKey: string; followOps: string | null };
+
+/** Pull the followed-you follower's ops tag from the notification (data first,
+ *  then the ?ops= on the profile href for older rows). */
+function followerOps(typeKey: string, href: string | null, data: unknown): string | null {
+  if (typeKey !== "followed_you") return null;
+  const fromData = data && typeof data === "object" ? (data as { ops_tag?: string }).ops_tag : undefined;
+  if (fromData) return fromData;
+  const m = href?.match(/[?&]ops=([^&]+)/);
+  return m ? decodeURIComponent(m[1]) : null;
+}
 
 export function NotificationBell() {
   const [signedIn, setSignedIn] = useState(false);
   const [notifs, setNotifs] = useState<Notif[]>([]);
   const [open, setOpen] = useState(false);
   const [undoIds, setUndoIds] = useState<string[]>([]);
+  // Lowercased ops tags the viewer already follows (to hide "Follow back").
+  const [following, setFollowing] = useState<Set<string>>(new Set());
   const ref = useRef<HTMLDivElement>(null);
   const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reloadRef = useRef<(() => void) | null>(null);
@@ -48,10 +60,10 @@ export function NotificationBell() {
       }
       setSignedIn(true);
       const nowIso = new Date().toISOString();
-      const [{ data: unread }, { data: seen }] = await Promise.all([
+      const [{ data: unread }, { data: seen }, { data: followingRows }] = await Promise.all([
         supabase
           .from("notifications")
-          .select("id, priority, title, body, href")
+          .select("id, priority, title, body, href, type_key, data")
           .is("seen_at", null)
           .lte("deliver_at", nowIso)
           .order("priority", { ascending: true })
@@ -59,21 +71,25 @@ export function NotificationBell() {
           .limit(50),
         supabase
           .from("notifications")
-          .select("id, priority, title, body, href")
+          .select("id, priority, title, body, href, type_key, data")
           .not("seen_at", "is", null)
           .lte("deliver_at", nowIso)
           .order("seen_at", { ascending: false })
           .limit(20),
+        supabase.rpc("my_following"),
       ]);
       if (!active) return;
+      setFollowing(new Set(((followingRows ?? []) as { ops_tag: string | null }[]).map((r) => (r.ops_tag ?? "").toLowerCase()).filter(Boolean)));
       const map = (rows: unknown, isSeen: boolean): Notif[] =>
-        ((rows ?? []) as { id: string; priority: number; title: string; body: string | null; href: string | null }[]).map((n) => ({
+        ((rows ?? []) as { id: string; priority: number; title: string; body: string | null; href: string | null; type_key: string; data: unknown }[]).map((n) => ({
           id: n.id,
           priority: n.priority,
           title: n.title,
           message: n.body,
           href: n.href,
           seen: isSeen,
+          typeKey: n.type_key,
+          followOps: followerOps(n.type_key, n.href, n.data),
         }));
       setNotifs([...map(unread, false), ...map(seen, true)]);
     }
@@ -126,6 +142,13 @@ export function NotificationBell() {
     // .rpc() with no await/.then() never actually sends - the seen state would
     // then revert on the next poll/realtime reload.
     void createClient().rpc("dismiss_notification", { p_id: id }).then(() => {});
+  }
+
+  async function followBack(ops: string) {
+    const key = ops.toLowerCase();
+    setFollowing((prev) => new Set(prev).add(key)); // optimistic
+    const { error } = await createClient().rpc("follow_player", { p_ops_tag: ops });
+    if (error) setFollowing((prev) => { const s = new Set(prev); s.delete(key); return s; });
   }
 
   async function markAllSeen() {
@@ -220,6 +243,24 @@ export function NotificationBell() {
                       <button type="button" onClick={() => { if (!n.seen) markSeenLocal(n.id); }} className={`w-full text-left ${cls}`}>
                         {inner}
                       </button>
+                    )}
+                    {n.followOps && (
+                      <div className={`px-4 pb-2.5 ${n.seen ? "opacity-60" : ""}`}>
+                        {following.has(n.followOps.toLowerCase()) ? (
+                          <span className="inline-flex items-center gap-1 text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-text-subtle">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="h-3 w-3" aria-hidden><path d="M20 6 9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                            Following
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => { if (!n.seen) markSeenLocal(n.id); followBack(n.followOps!); }}
+                            className="inline-flex items-center gap-1 border border-accent/60 px-2.5 py-1 text-[0.6rem] font-bold uppercase tracking-[0.1em] text-accent transition-colors hover:bg-accent/10"
+                          >
+                            Follow back
+                          </button>
+                        )}
+                      </div>
                     )}
                   </li>
                 );
