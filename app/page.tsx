@@ -29,6 +29,14 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
+// Serve the homepage as ISR (regenerated at most every 5 min) instead of
+// rendering per request. Previously the Season Leaders section pulled in the
+// cookie-aware server client, which forced the whole page dynamic (no-store):
+// every visit re-ran all the homepage queries server-side and hung under load.
+// That section now reads cached public data, so the page can be statically
+// generated and served from the edge.
+export const revalidate = 300;
+
 export default async function HomePage() {
   const [homeHero, socialPosts, reviews, beginnerGame] = await Promise.all([
     getHomeHeroConfig(),

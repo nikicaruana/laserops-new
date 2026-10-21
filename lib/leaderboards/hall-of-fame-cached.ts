@@ -81,6 +81,39 @@ export const getCachedXpLevels = unstable_cache(
   opts,
 );
 
+export type SeasonLeadersData = {
+  seasonName: string;
+  challengeName: string;
+  metric: string;
+  entries: Awaited<ReturnType<typeof getSeasonChallengeData>>[number]["entries"];
+};
+
+/**
+ * Homepage "Season Leaders" data (active season's first challenge, top N).
+ * Read through the cookieless public client + cached, so the homepage section
+ * no longer pulls in the cookie-aware server client -- which was forcing the
+ * whole homepage into per-request dynamic rendering (no-store), re-running these
+ * queries on every visit and hanging under load. Cached args (the count) are
+ * part of the key automatically.
+ */
+export const getCachedSeasonLeaders = unstable_cache(
+  async (desiredCount: number): Promise<SeasonLeadersData | null> => {
+    const sb = createPublicClient();
+    const seasons = await getSeasonsFromSupabase(sb);
+    const active = getActiveSeason(seasons);
+    if (!active) return null;
+    const challenges = await getChallengesFromSupabase(sb, active.number);
+    if (challenges.length === 0) return null;
+    const featured = challenges[0];
+    const data = await getSeasonChallengeData(sb, active, [featured]);
+    const entries = (data[0]?.entries ?? []).slice(0, Math.max(1, desiredCount));
+    if (entries.length === 0) return null;
+    return { seasonName: active.name, challengeName: featured.name, metric: featured.metric, entries };
+  },
+  ["home-season-leaders-v1"],
+  opts,
+);
+
 export type CurrentSeasonChallengeLeaders = {
   seasonName: string;
   challenges: { name: string; metricLabel: string; top: { rank: number; nickname: string; formatted: string }[] }[];

@@ -1,13 +1,7 @@
 import Link from "next/link";
 import { cldImage } from "@/lib/cld";
 import { Container } from "@/components/ui/Container";
-import { getActiveSeason } from "@/lib/cms/seasons";
-import { createClient } from "@/lib/supabase/server";
-import {
-  getSeasonsFromSupabase,
-  getChallengesFromSupabase,
-  getSeasonChallengeData,
-} from "@/lib/leaderboards/supabase-challenges";
+import { getCachedSeasonLeaders } from "@/lib/leaderboards/hall-of-fame-cached";
 import { type ChallengeEntry } from "@/lib/leaderboards/season-challenges";
 import { fetchSiteConfig, configBool, configInt } from "@/lib/cms/site-config";
 import { cn } from "@/lib/cn";
@@ -45,22 +39,12 @@ export async function SeasonLeadersSection() {
   }
   const desiredCount = Math.max(1, configInt(config, "homepage_season_leaders_count", 2));
 
-  const supabase = await createClient();
-  const seasons = await getSeasonsFromSupabase(supabase);
-  const activeSeason = getActiveSeason(seasons);
-  if (!activeSeason) return null;
-
-  const challenges = await getChallengesFromSupabase(supabase, activeSeason.number);
-  if (challenges.length === 0) return null;
-
-  const featuredChallenge = challenges[0];
-
-  const challengeData = await getSeasonChallengeData(supabase, activeSeason, [featuredChallenge]);
-  const entries = challengeData[0]?.entries.slice(0, desiredCount) ?? [];
-  if (entries.length === 0) return null;
+  const data = await getCachedSeasonLeaders(desiredCount);
+  if (!data) return null;
+  const { seasonName, challengeName, metric, entries } = data;
 
   const [leader, ...supporting] = entries;
-  const metricLabel = metricLabelFor(featuredChallenge.metric);
+  const metricLabel = metricLabelFor(metric);
 
   return (
     <section className="border-t border-border">
@@ -72,13 +56,13 @@ export async function SeasonLeadersSection() {
             see homepageSubtitleFor() for the rationale. */}
         <div className="text-center">
           <p className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-accent">
-            {activeSeason.name} · Leaders
+            {seasonName} · Leaders
           </p>
           <h2 className="mt-2 text-3xl font-extrabold uppercase tracking-tight sm:text-4xl">
-            Top of the {featuredChallenge.name} ladder
+            Top of the {challengeName} ladder
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-sm text-text-muted sm:text-base">
-            {homepageSubtitleFor(featuredChallenge.metric, entries.length)}
+            {homepageSubtitleFor(metric, entries.length)}
           </p>
         </div>
 
