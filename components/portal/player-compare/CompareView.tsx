@@ -21,6 +21,8 @@ import {
 import { RatingPill } from "@/components/portal/player-summary/RatingPill";
 import { AnimatedValue } from "@/components/portal/player-summary/AnimatedValue";
 import type { PersonalRecord } from "@/lib/player-history/engine";
+import { RadarCompare } from "./RadarCompare";
+import { buildRadarField, radarPointsFor } from "@/lib/player-stats/radar";
 
 /* ============================================================
    Main component
@@ -92,6 +94,15 @@ export function CompareView({ allRows, uniqueGunsMap, accolades }: Props) {
     () => (playerA && playerB ? computeWinners(playerA, playerB, accolades) : null),
     [playerA, playerB],
   );
+
+  // Radar: percentile of each player across the 9 rating stats vs the rated
+  // field. The field is built from every rated player so band rings are stable.
+  const radarField = useMemo(
+    () => buildRadarField(allRows.map((r) => projectComparePlayer(r, uniqueGunsMap[r.Player_Stats_Nickname.trim().toLowerCase()] ?? 0, accolades))),
+    [allRows, uniqueGunsMap, accolades],
+  );
+  const radarA = useMemo(() => (playerA ? radarPointsFor(playerA, radarField) : null), [playerA, radarField]);
+  const radarB = useMemo(() => (playerB ? radarPointsFor(playerB, radarField) : null), [playerB, radarField]);
 
   // Single-match personal records for each selected player, fetched on demand
   // from /api/player-records and cached per ops tag so toggling is cheap.
@@ -194,6 +205,17 @@ export function CompareView({ allRows, uniqueGunsMap, accolades }: Props) {
           currentCompareTag={compareParam}
         />
       </div>
+
+      {/* ── Radar: subject player alone, or overlaid with the comparison ── */}
+      {playerA && radarA && (
+        <section className="portal-card px-4 py-5 sm:px-6">
+          <h2 className="mb-0.5 text-center text-sm font-bold uppercase tracking-[0.14em] text-accent">Player Radar</h2>
+          <p className="mb-3 text-center text-[0.7rem] text-text-subtle">
+            Each spoke is this player&apos;s standing vs the rated field &mdash; further out is better. Rings are the star bands.
+          </p>
+          <RadarCompare pointsA={radarA} nameA={playerA.nickname} pointsB={radarB} nameB={playerB?.nickname ?? null} />
+        </section>
+      )}
 
       {/* ── No compare player yet ──────────────────────────── */}
       {!playerB && (
