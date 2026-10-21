@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
+import { OpsTagCombobox } from "@/components/portal/OpsTagCombobox";
 
 /**
  * PlayerSearch
@@ -47,9 +48,7 @@ export function PlayerSearch({ knownNicknames, currentOpsTag }: PlayerSearchProp
   const searchParams = useSearchParams();
   const [input, setInput] = useState(currentOpsTag);
   const [error, setError] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
   // Stable IDs for accessibility – input/label/datalist association.
-  const datalistId = useId();
   const inputId = useId();
   const errorId = useId();
 
@@ -62,7 +61,11 @@ export function PlayerSearch({ knownNicknames, currentOpsTag }: PlayerSearchProp
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const trimmed = input.trim();
+    commit();
+  }
+
+  function commit(raw: string = input) {
+    const trimmed = raw.trim();
     if (trimmed === "") {
       setError(null);
       // Empty submit clears the URL param (returns to "no player selected" state)
@@ -106,44 +109,17 @@ export function PlayerSearch({ knownNicknames, currentOpsTag }: PlayerSearchProp
       <label htmlFor={inputId} className="sr-only">
         Player ops tag
       </label>
-      <div className="relative flex-1">
-        <input
-          ref={inputRef}
-          id={inputId}
-          type="search"
-          // The native datalist attribute wires this to the <datalist> below
-          // for browser-native autocomplete. Mobile browsers show their own
-          // suggestion UI on top of this – fine.
-          list={datalistId}
-          value={input}
-          onChange={(e) => {
-            setInput(e.target.value);
-            // Clear error on edit so the user isn't shown a stale error
-            // while they're correcting the input.
-            if (error) setError(null);
-          }}
-          placeholder="Enter ops tag…"
-          autoComplete="off"
-          autoCapitalize="off"
-          autoCorrect="off"
-          spellCheck={false}
-          aria-invalid={error !== null}
-          aria-describedby={error ? errorId : undefined}
-          className={cn(
-            "w-full border bg-bg-overlay px-4 py-2.5 text-sm text-text",
-            "rounded-sm placeholder:text-text-subtle",
-            "transition-colors focus:outline-none focus:ring-1",
-            error
-              ? "border-[#a83838] focus:border-[#c44d4d] focus:ring-[#c44d4d]"
-              : "border-border-strong focus:border-accent focus:ring-accent",
-          )}
-        />
-        <datalist id={datalistId}>
-          {knownNicknames.map((n) => (
-            <option key={n} value={n} />
-          ))}
-        </datalist>
-      </div>
+      <OpsTagCombobox
+        value={input}
+        onChange={(v) => { setInput(v); if (error) setError(null); }}
+        options={knownNicknames}
+        onPick={(canonical) => { setInput(canonical); commit(canonical); }}
+        placeholder="Enter ops tag…"
+        invalid={error !== null}
+        inputId={inputId}
+        ariaLabel="Player ops tag"
+        describedById={error ? errorId : undefined}
+      />
       <button
         type="submit"
         className={cn(

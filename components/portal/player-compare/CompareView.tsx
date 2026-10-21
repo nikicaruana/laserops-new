@@ -23,6 +23,7 @@ import { AnimatedValue } from "@/components/portal/player-summary/AnimatedValue"
 import type { PersonalRecord } from "@/lib/player-history/engine";
 import { RadarCompare } from "./RadarCompare";
 import { buildRadarField, radarPointsFor } from "@/lib/player-stats/radar";
+import { OpsTagCombobox } from "@/components/portal/OpsTagCombobox";
 
 /* ============================================================
    Main component
@@ -487,7 +488,6 @@ function CompareSearch({
   const searchParams = useSearchParams();
   const [input, setInput] = useState(currentCompareTag);
   const [error, setError] = useState<string | null>(null);
-  const datalistId = useId();
   const inputId = useId();
 
   useEffect(() => {
@@ -497,7 +497,11 @@ function CompareSearch({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const trimmed = input.trim();
+    commit();
+  }
+
+  function commit(raw: string = input) {
+    const trimmed = raw.trim();
     const next = new URLSearchParams(searchParams.toString());
 
     if (trimmed === "") {
@@ -530,37 +534,16 @@ function CompareSearch({
       <label htmlFor={inputId} className="sr-only">
         Compare with player ops tag
       </label>
-      <div className="relative flex-1">
-        <input
-          id={inputId}
-          type="search"
-          list={datalistId}
-          value={input}
-          onChange={(e) => {
-            setInput(e.target.value);
-            if (error) setError(null);
-          }}
-          placeholder="Enter opponent ops tag…"
-          autoComplete="off"
-          autoCapitalize="off"
-          autoCorrect="off"
-          spellCheck={false}
-          aria-invalid={error !== null}
-          className={cn(
-            "w-full border bg-bg-overlay px-4 py-2.5 text-sm text-text",
-            "rounded-sm placeholder:text-text-subtle",
-            "transition-colors focus:outline-none focus:ring-1",
-            error
-              ? "border-[#a83838] focus:border-[#c44d4d] focus:ring-[#c44d4d]"
-              : "border-border-strong focus:border-accent focus:ring-accent",
-          )}
-        />
-        <datalist id={datalistId}>
-          {knownNicknames.map((n) => (
-            <option key={n} value={n} />
-          ))}
-        </datalist>
-      </div>
+      <OpsTagCombobox
+        value={input}
+        onChange={(v) => { setInput(v); if (error) setError(null); }}
+        options={knownNicknames}
+        onPick={(canonical) => { setInput(canonical); commit(canonical); }}
+        placeholder="Enter opponent ops tag…"
+        invalid={error !== null}
+        inputId={inputId}
+        ariaLabel="Compare with player ops tag"
+      />
       <button
         type="submit"
         className={cn(
