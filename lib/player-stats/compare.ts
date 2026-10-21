@@ -38,6 +38,7 @@ export type ComparePlayerData = {
   matchWinRatePct: number;
   matchWinRatingUrl: string;
   roundsWon: number;
+  roundsTotal: number;
   roundsWinRatePct: number;
   roundsWinRatingUrl: string;
   // Per-match stats
@@ -146,6 +147,7 @@ export function projectComparePlayer(
     matchWinRatePct,
     matchWinRatingUrl: row.Match_Win_Rating_image?.trim() ?? "",
     roundsWon,
+    roundsTotal,
     roundsWinRatePct,
     roundsWinRatingUrl: row.Rounds_WL_Rating_Image?.trim() ?? "",
     killsPerMatch: parseNumericOr(row.Kills_Per_Match, 0),
