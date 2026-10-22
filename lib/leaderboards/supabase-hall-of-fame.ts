@@ -79,9 +79,15 @@ type RecordRow = {
 export async function getAllTimeRecords(
   supabase: SupabaseClient,
 ): Promise<RecordCategory[]> {
+  // The view emits every ranked row per category (one per eligible player), which
+  // across all categories exceeds PostgREST's 1000-row default cap -- silently
+  // dropping whichever category sorts last (that was why Most Kills came back
+  // empty). We only ever show the top 3, so fetch rk <= 5: every category stays
+  // well under the cap and the display still has its top rows.
   const { data } = await supabase
     .from("v_hof_all_time_records")
-    .select("record, ops_tag, profile_pic_url, value, match_code, rk");
+    .select("record, ops_tag, profile_pic_url, value, match_code, rk")
+    .lte("rk", 5);
 
   const byRecord = new Map<string, RecordRow[]>();
   for (const r of (data ?? []) as RecordRow[]) {

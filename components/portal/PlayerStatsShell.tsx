@@ -87,8 +87,12 @@ function PlayerStatsShellInner({ knownNicknames, children }: Props) {
       <PlayerSearchAutoload hasOpsParam={hasPlayer} />
 
       {/* Search bar – always shown; visually above the sub-tabs so the
-          user understands they pick a player first. */}
-      <div className="border-b border-border portal-surface">
+          user understands they pick a player first. `portal-surface` adds a
+          backdrop-filter, which creates a stacking context that would trap the
+          autocomplete dropdown underneath the (DOM-later) sub-tabs and content;
+          relative z-30 lifts the whole search subtree above them so the dropdown
+          renders on top. */}
+      <div className="relative z-30 border-b border-border portal-surface">
         <div className="mx-auto w-full max-w-[90rem] px-4 py-3 sm:px-8 lg:px-12">
           {/* On desktop the full-width search bar looks disproportionately
               large – cap it so it reads as a compact input, not a hero form. */}
