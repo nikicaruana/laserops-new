@@ -206,8 +206,10 @@ export function CompareView({ allRows, uniqueGunsMap, accolades }: Props) {
     <div className="flex flex-col gap-3 sm:gap-4">
       {/* ── Compare search bar ─────────────────────────────────
           Capped to sm:max-w-xs on desktop to match the shell's
-          PlayerSearch bar above. Centred on desktop too. */}
-      <div className="sm:mx-auto sm:max-w-xs">
+          PlayerSearch bar above. Centred on desktop too. relative z-30 keeps the
+          autocomplete dropdown above the (DOM-later) compare cards, whose
+          portal-card backdrop-filter would otherwise paint over it. */}
+      <div className="relative z-30 sm:mx-auto sm:max-w-xs">
         <p className="mb-1.5 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-text-muted">
           Compare against
         </p>
