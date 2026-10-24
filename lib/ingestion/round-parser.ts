@@ -176,6 +176,65 @@ function durationToSeconds(d: string | undefined): number | null {
   return Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3]);
 }
 
+/**
+ * LaserWar exports timestamps in 12-HOUR clock time with NO AM/PM marker, so a
+ * round that runs across 1 o'clock writes "...12:58, 12:59, 01:00, 01:01...".
+ * Read naively as 24-hour, that is a ~12h BACKWARD jump at the boundary, which
+ * makes everything before 1 o'clock look like it happened ~12h AFTER the round
+ * end - so it gets dropped (late_events_dropped), killing the kill count, the
+ * base burns and the winner.
+ *
+ * Unwrap it in place: walk the round's items in file (chronological, append-only)
+ * order and, whenever the time-of-day jumps backward by more than 6h, shift that
+ * item and every later one forward by 12h so the timeline is monotonic. Only the
+ * gross 12h rollover crosses the 6h threshold, so minor same-second reordering is
+ * unaffected. Rewrites EventTime (and the GameStart StartTime) so EVERY downstream
+ * consumer - this parser, effective.ts, display - sees consistent 24-hour times.
+ * Returns the number of items shifted (0 = no rollover; nothing was changed).
+ */
+function unwrap12HourClock(raws: Raw[]): number {
+  const re = /^(\d{4})\.(\d{2})\.(\d{2})\s+(\d{1,2}):(\d{2}):(\d{2})$/;
+  const p2 = (n: number) => String(n).padStart(2, "0");
+  // Position within the 12-hour cycle (12 -> 0, 1 -> 1 ... 11 -> 11), in seconds.
+  const cycleSod = (m: RegExpExecArray) => (Number(m[4]) % 12) * 3600 + Number(m[5]) * 60 + Number(m[6]);
+  const toEpochUTC = (m: RegExpExecArray) =>
+    Math.floor(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]), Number(m[4]) % 24, Number(m[5]), Number(m[6])) / 1000);
+  const fmtUTC = (epochSec: number): string => {
+    const d = new Date(epochSec * 1000);
+    return `${d.getUTCFullYear()}.${p2(d.getUTCMonth() + 1)}.${p2(d.getUTCDate())} ${p2(d.getUTCHours())}:${p2(d.getUTCMinutes())}:${p2(d.getUTCSeconds())}`;
+  };
+
+  // Anchor on the game start (StartTime, else the first parseable timestamp).
+  const gs = raws.find((r) => r.ItemType === "GameStart");
+  const stStr = gs && typeof gs.Item?.StartTime === "string" ? (gs.Item.StartTime as string) : undefined;
+  let anchor = stStr ? re.exec(stStr.trim()) : null;
+  if (!anchor) for (const r of raws) { const m = r.EventTime ? re.exec(r.EventTime.trim()) : null; if (m) { anchor = m; break; } }
+  if (!anchor) return 0;
+  const startEpoch = toEpochUTC(anchor);
+  const startCycle = cycleSod(anchor);
+  const PRE_MARGIN = 3600; // keep items up to 1h before the anchor before it, not +12h later
+
+  // Place a timestamp absolutely: how far FORWARD it sits from the start within
+  // the 12-hour cycle. Order-independent, so interleaving at the 12->1 boundary
+  // (12:59 / 01:00 / 12:59 ...) resolves correctly.
+  const place = (m: RegExpExecArray): number => {
+    let forward = (((cycleSod(m) - startCycle) % 43200) + 43200) % 43200;
+    if (forward >= 43200 - PRE_MARGIN) forward -= 43200;
+    return startEpoch + forward;
+  };
+
+  let changed = 0;
+  for (const r of raws) {
+    const m = r.EventTime ? re.exec(r.EventTime.trim()) : null;
+    if (m) { const fixed = fmtUTC(place(m)); if (fixed !== r.EventTime) { r.EventTime = fixed; changed++; } }
+    if (r.ItemType === "GameStart" && r.Item && typeof r.Item.StartTime === "string") {
+      const sm = re.exec((r.Item.StartTime as string).trim());
+      if (sm) { const sf = fmtUTC(place(sm)); if (sf !== r.Item.StartTime) r.Item.StartTime = sf; }
+    }
+  }
+  return changed;
+}
+
 function headbandFromName(name: string | undefined): number | null {
   if (!name) return null;
   const m = /head\s*0*(\d+)/i.exec(name);
@@ -210,6 +269,14 @@ export function parseRound(
         flags.push({ code: "malformed_line", detail: `line ${i + 1}` });
       }
     }
+  }
+
+  // 1b. Correct the 12-hour clock rollover (12:59 -> 01:00) before any time is
+  // read, so a round crossing 1 o'clock keeps all its events instead of dropping
+  // the pre-1-o'clock half.
+  const rolloverShifted = unwrap12HourClock(raws);
+  if (rolloverShifted > 0) {
+    flags.push({ code: "clock_rollover_corrected", detail: `${rolloverShifted} events shifted +12h (12-hour clock crossed 1 o'clock)` });
   }
 
   // 2. GameStart -> meta, teams, players, bases.
