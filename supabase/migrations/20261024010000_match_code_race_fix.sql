@@ -58,3 +58,14 @@ begin
   return new;
 end;
 $$;
+
+-- --- Clean up sequence pollution from backlog / finance imports ---------------
+-- The LO-WR-25-* finance shells (hidden from the site) and the backlog game
+-- LO-2026-93 were imported with inflated sequence numbers (919-934), so the next
+-- real game would have jumped to LO-2026-935. Null their sequence_no (their
+-- match_code and all data are untouched) so numbering for visible games resumes
+-- cleanly from LO-2026-37. If a future game ever reaches 93, the walk-forward
+-- loop above skips the still-present LO-2026-93 code.
+update public.matches
+  set sequence_no = null
+  where match_code like 'LO-WR-25-%' or match_code = 'LO-2026-93';
