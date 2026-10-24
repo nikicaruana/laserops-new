@@ -48,7 +48,9 @@ export async function POST(req: Request) {
   } catch (e) {
     return NextResponse.json({ error: `Saved, but recompute failed: ${e instanceof Error ? e.message : "unknown"}` }, { status: 500 });
   }
-  const { error: rollupErr } = await supabase.rpc("rollup_match_careers");
+  // Service role: the authenticated role's short statement_timeout cancels this
+  // full recompute ("canceling statement due to statement timeout").
+  const { error: rollupErr } = await svc.rpc("rollup_match_careers");
   if (rollupErr) return NextResponse.json({ error: `Saved & recomputed, but the rollup failed: ${rollupErr.message}` }, { status: 500 });
 
   return NextResponse.json({ ok: true, matches: stats.matches, players: stats.rows });
