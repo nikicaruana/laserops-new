@@ -202,7 +202,12 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   } catch (e) {
     return NextResponse.json({ error: `Scores saved, but the XP/Elo recompute failed: ${e instanceof Error ? e.message : "unknown error"}` }, { status: 500 });
   }
-  const { error: rollupErr } = await supabase.rpc("rollup_match_careers");
+  // Run the career rollup (progression + read-model rebuild) as the SERVICE role,
+  // not the authenticated admin: the authenticated role has a short Postgres
+  // statement_timeout, and this combined recompute exceeds it, which cancelled
+  // the rollup ("canceling statement due to statement timeout"). rollup_match_careers
+  // already permits service_role. It completes in a few seconds this way.
+  const { error: rollupErr } = await svc.rpc("rollup_match_careers");
   if (rollupErr) return NextResponse.json({ error: `Scores saved, but the career rollup failed: ${rollupErr.message}` }, { status: 500 });
 
   // Report is live: tell everyone who played that their report is up (bell for
