@@ -7,6 +7,7 @@
  */
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { recomputeProgression } from "@/lib/ingestion/progression";
 
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -26,7 +27,12 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   } catch (e) {
     return NextResponse.json({ error: `Recompute failed: ${e instanceof Error ? e.message : "unknown error"}` }, { status: 500 });
   }
-  const { error: rollupErr } = await supabase.rpc("rollup_match_careers");
+  // Run the full rollup as the SERVICE role: the authenticated role's short
+  // statement_timeout cancels this combined recompute ("canceling statement due
+  // to statement timeout"). rollup_match_careers already permits service_role.
+  const svc = createServiceClient();
+  if (!svc) return NextResponse.json({ error: "Server is not configured for writes (service role key missing)." }, { status: 500 });
+  const { error: rollupErr } = await svc.rpc("rollup_match_careers");
   if (rollupErr) return NextResponse.json({ error: `Recompute ran, but the rollup failed: ${rollupErr.message}` }, { status: 500 });
 
   return NextResponse.json({ ok: true, matches: stats.matches, players: stats.rows });
