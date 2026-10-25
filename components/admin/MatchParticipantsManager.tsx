@@ -20,6 +20,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
 import { AccountPicker, type PickedAccount } from "@/components/admin/AccountPicker";
+import { Sensitive } from "@/components/admin/Sensitive";
 import { Modal } from "@/components/ui/Modal";
 import { CollapsibleSection } from "@/components/admin/CollapsibleSection";
 import { formatEur } from "@/lib/money";
@@ -407,11 +408,13 @@ export function MatchParticipantsManager({
                       <td className="px-3 py-2.5">
                         <div className="flex flex-col gap-0.5">
                           <span>
-                            <span className="font-semibold text-text">{name ?? "Player"}</span>
+                            {r.account?.full_name
+                              ? <Sensitive className="font-semibold text-text">{r.account.full_name}</Sensitive>
+                              : <span className="font-semibold text-text">{name ?? "Player"}</span>}
                             {r.account?.ops_tag && <span className="ml-2 font-mono text-[0.7rem] text-text-subtle">{r.account.ops_tag}</span>}
                           </span>
                           {r.account?.email && (
-                            <a href={`mailto:${r.account.email}`} className="text-[0.7rem] text-text-subtle underline hover:text-accent">{r.account.email}</a>
+                            <a href={`mailto:${r.account.email}`} className="text-[0.7rem] text-text-subtle underline hover:text-accent"><Sensitive>{r.account.email}</Sensitive></a>
                           )}
                         </div>
                       </td>

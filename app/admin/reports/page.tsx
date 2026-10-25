@@ -15,6 +15,7 @@ import { ManualEntryForm } from "@/components/admin/ManualEntryForm";
 import { FinancialEntriesEditor, type FinEntry } from "@/components/admin/FinancialEntriesEditor";
 import { FinancialCharts } from "@/components/admin/FinancialCharts";
 import { formatEur } from "@/lib/money";
+import { Sensitive } from "@/components/admin/Sensitive";
 
 export const metadata: Metadata = { title: "Financial reports" };
 
@@ -42,7 +43,7 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: "po
   return (
     <div className="border border-border bg-bg-elevated px-4 py-3">
       <p className="text-[0.6rem] font-bold uppercase tracking-[0.16em] text-text-subtle">{label}</p>
-      <p className={`mt-1 text-lg font-bold ${tone === "pos" ? "text-emerald-400" : tone === "neg" ? "text-red-400" : "text-text"}`}>{value}</p>
+      <p className={`mt-1 text-lg font-bold ${tone === "pos" ? "text-emerald-400" : tone === "neg" ? "text-red-400" : "text-text"}`}><Sensitive>{value}</Sensitive></p>
     </div>
   );
 }

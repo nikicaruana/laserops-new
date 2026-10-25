@@ -17,6 +17,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { formatEur } from "@/lib/money";
+import { Sensitive } from "@/components/admin/Sensitive";
 import { cn } from "@/lib/cn";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
@@ -239,7 +240,7 @@ export function FinancialCharts({ from, to }: { from: string; to: string }) {
           <div className="border border-border bg-bg-elevated p-4">
             <div className="mb-1 flex items-center justify-between">
               <p className="text-[0.6rem] font-bold uppercase tracking-[0.16em] text-text-subtle">Revenue (€)</p>
-              <p className="text-xs text-text-muted">Total <span className="font-bold text-emerald-400">{formatEur(totalRevenue)}</span></p>
+              <p className="text-xs text-text-muted">Total <span className="font-bold text-emerald-400"><Sensitive>{formatEur(totalRevenue)}</Sensitive></span></p>
             </div>
             {/* Revenue: x-axis labels sit at the BOTTOM of this panel — i.e. between
                 the two charts. The token panel below hides its own labels. */}
@@ -284,21 +285,21 @@ export function FinancialCharts({ from, to }: { from: string; to: string }) {
                 {buckets.map((b) => (
                   <tr key={b.key} className="border-b border-border/60">
                     <td className="px-3 py-2 text-text">{b.label}{b.isEvent ? " · events" : ""}</td>
-                    <td className="px-3 py-2 text-right text-text-muted">{formatEur(b.game)}</td>
-                    <td className="px-3 py-2 text-right text-text-muted">{formatEur(b.drinks)}</td>
-                    <td className="px-3 py-2 text-right text-text-muted">{formatEur(b.tokens)}</td>
-                    <td className="px-3 py-2 text-right text-text-muted">{formatEur(b.other)}</td>
-                    <td className="px-3 py-2 text-right font-semibold text-text">{formatEur(b.game + b.drinks + b.tokens + b.other)}</td>
+                    <td className="px-3 py-2 text-right text-text-muted"><Sensitive>{formatEur(b.game)}</Sensitive></td>
+                    <td className="px-3 py-2 text-right text-text-muted"><Sensitive>{formatEur(b.drinks)}</Sensitive></td>
+                    <td className="px-3 py-2 text-right text-text-muted"><Sensitive>{formatEur(b.tokens)}</Sensitive></td>
+                    <td className="px-3 py-2 text-right text-text-muted"><Sensitive>{formatEur(b.other)}</Sensitive></td>
+                    <td className="px-3 py-2 text-right font-semibold text-text"><Sensitive>{formatEur(b.game + b.drinks + b.tokens + b.other)}</Sensitive></td>
                     <td className="px-3 py-2 text-right text-text-muted">{b.tokensUsed > 0 ? tokenStr(b.tokensUsed) : "—"}</td>
                   </tr>
                 ))}
                 <tr className="border-t-2 border-border bg-bg-elevated font-bold">
                   <td className="px-3 py-2 text-text">Total</td>
-                  <td className="px-3 py-2 text-right text-text">{formatEur(buckets.reduce((s, b) => s + b.game, 0))}</td>
-                  <td className="px-3 py-2 text-right text-text">{formatEur(buckets.reduce((s, b) => s + b.drinks, 0))}</td>
-                  <td className="px-3 py-2 text-right text-text">{formatEur(buckets.reduce((s, b) => s + b.tokens, 0))}</td>
-                  <td className="px-3 py-2 text-right text-text">{formatEur(buckets.reduce((s, b) => s + b.other, 0))}</td>
-                  <td className="px-3 py-2 text-right text-emerald-400">{formatEur(totalRevenue)}</td>
+                  <td className="px-3 py-2 text-right text-text"><Sensitive>{formatEur(buckets.reduce((s, b) => s + b.game, 0))}</Sensitive></td>
+                  <td className="px-3 py-2 text-right text-text"><Sensitive>{formatEur(buckets.reduce((s, b) => s + b.drinks, 0))}</Sensitive></td>
+                  <td className="px-3 py-2 text-right text-text"><Sensitive>{formatEur(buckets.reduce((s, b) => s + b.tokens, 0))}</Sensitive></td>
+                  <td className="px-3 py-2 text-right text-text"><Sensitive>{formatEur(buckets.reduce((s, b) => s + b.other, 0))}</Sensitive></td>
+                  <td className="px-3 py-2 text-right text-emerald-400"><Sensitive>{formatEur(totalRevenue)}</Sensitive></td>
                   <td className="px-3 py-2 text-right text-text">{tokenStr(totalTokens)}</td>
                 </tr>
               </tbody>

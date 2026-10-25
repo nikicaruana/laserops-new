@@ -13,6 +13,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/cn";
 import { AdminNotificationBell } from "@/components/admin/AdminNotificationBell";
+import { DemoModeToggle } from "@/components/admin/DemoModeToggle";
 
 type Item = { label: string; href?: string };
 
@@ -145,6 +146,7 @@ export function AdminNav() {
       >
         <span aria-hidden>←</span> Back to site
       </Link>
+      <DemoModeToggle />
       {SECTIONS.map((section) => (
         <div key={section.heading}>
           <p className="mb-2 text-[0.6rem] font-bold uppercase tracking-[0.2em] text-text-muted">
