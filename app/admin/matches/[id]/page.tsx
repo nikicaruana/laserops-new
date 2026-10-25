@@ -19,6 +19,7 @@ import { MatchSquadColours } from "@/components/admin/MatchSquadColours";
 import { EditableMatchTitle } from "@/components/admin/EditableMatchTitle";
 import { CopyInviteLink } from "@/components/portal/CopyInviteLink";
 import { MatchParticipantsManager, type Participant, type ParticipantPayment } from "@/components/admin/MatchParticipantsManager";
+import { Sensitive } from "@/components/admin/Sensitive";
 import { IngestPanel, type SavedRound } from "@/components/admin/IngestPanel";
 import { OfflineRoundResults } from "@/components/admin/OfflineRoundResults";
 import { lwaMatchPlayers, isLwa } from "@/lib/ingestion/lwa";
@@ -561,12 +562,12 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
                   {signups.map((s) => (
                     <tr key={s.id} className="border-b border-border last:border-0">
                       <td className="px-4 py-3 font-semibold text-text">
-                        {s.account?.full_name || s.account?.ops_tag || "–"}
+                        {s.account?.full_name ? <Sensitive>{s.account.full_name}</Sensitive> : (s.account?.ops_tag || "–")}
                         {s.account?.full_name && s.account?.ops_tag && (
                           <span className="ml-2 font-mono text-xs text-text-subtle">{s.account.ops_tag}</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 font-mono text-text-muted">{s.account?.phone_e164 || "–"}</td>
+                      <td className="px-4 py-3 font-mono text-text-muted">{s.account?.phone_e164 ? <Sensitive>{s.account.phone_e164}</Sensitive> : "–"}</td>
                       <td className="px-4 py-3 text-text-muted">
                         {s.payment_intent === "on_day" ? "On the day" : s.payment_intent === "online" ? "Online" : "Not chosen"}
                       </td>

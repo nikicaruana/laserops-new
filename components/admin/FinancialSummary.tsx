@@ -14,6 +14,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { formatEur } from "@/lib/money";
+import { Sensitive } from "@/components/admin/Sensitive";
 
 type Entry = {
   occurred_at: string;
@@ -82,7 +83,7 @@ function Delta({ current, previous, goodWhenUp = true }: { current: number; prev
       <span className={tone}>
         {arrow} {Math.abs(pct).toFixed(0)}%
       </span>{" "}
-      vs prev ({formatEur(previous)})
+      vs prev (<Sensitive>{formatEur(previous)}</Sensitive>)
     </p>
   );
 }
@@ -172,7 +173,7 @@ export function FinancialSummary() {
             {metrics.map((m) => (
               <div key={m.label} className="border border-border bg-bg px-5 py-4">
                 <p className="text-[0.6rem] font-bold uppercase tracking-[0.16em] text-text-subtle">{m.label}</p>
-                <p className={`mt-1 text-2xl font-bold tabular-nums ${m.tone}`}>{formatEur(m.cur)}</p>
+                <p className={`mt-1 text-2xl font-bold tabular-nums ${m.tone}`}><Sensitive>{formatEur(m.cur)}</Sensitive></p>
                 <Delta current={m.cur} previous={m.prev} goodWhenUp={m.goodWhenUp} />
               </div>
             ))}
@@ -208,8 +209,7 @@ export function FinancialSummary() {
                         </span>
                       </span>
                       <span className={`shrink-0 font-semibold tabular-nums ${refund ? "text-red-400" : "text-text"}`}>
-                        {refund ? "-" : ""}
-                        {formatEur(amt)}
+                        <Sensitive>{`${refund ? "-" : ""}${formatEur(amt)}`}</Sensitive>
                       </span>
                     </li>
                   );

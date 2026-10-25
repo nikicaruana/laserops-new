@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { formatEur } from "@/lib/money";
+import { Sensitive } from "@/components/admin/Sensitive";
 
 export type DueRow = {
   match_id: string;
@@ -159,12 +160,14 @@ export function PaymentsDueManager({ initial, tokenBalances = {} }: { initial: D
                         <td className="px-4 py-2">
                           <div className="flex flex-col gap-0.5">
                             <span>
-                              <span className="font-semibold text-text">{r.full_name || r.ops_tag || "Player"}</span>
+                              {r.full_name
+                                ? <Sensitive className="font-semibold text-text">{r.full_name}</Sensitive>
+                                : <span className="font-semibold text-text">{r.ops_tag || "Player"}</span>}
                               {r.ops_tag && <span className="ml-2 font-mono text-[0.7rem] text-text-subtle">{r.ops_tag}</span>}
                             </span>
                             {r.email && (
                               <a href={`mailto:${r.email}`} className="text-[0.7rem] text-text-subtle underline hover:text-accent">
-                                {r.email}
+                                <Sensitive>{r.email}</Sensitive>
                               </a>
                             )}
                           </div>

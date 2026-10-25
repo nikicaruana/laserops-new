@@ -619,3 +619,17 @@
 }
 .lo-flash { animation: lo-flash 1.15s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .lo-flash { animation: none; } }
+
+/* --------------------------------------------------------------------------
+   Demo Mode: visually blur customer PII + money figures during a live demo.
+   DemoModeToggle sets data-demo="on" on <html>; elements marked .demo-sensitive
+   (usually via <Sensitive>) blur. Display-only - no data is changed. Off by
+   default, so it never affects players or other admins.
+   -------------------------------------------------------------------------- */
+html[data-demo="on"] .demo-sensitive {
+  filter: blur(0.4em);
+  -webkit-filter: blur(0.4em);
+  user-select: none;
+  pointer-events: none;
+}
+.demo-sensitive { transition: filter 0.15s ease; border-radius: 2px; }

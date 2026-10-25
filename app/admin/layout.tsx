@@ -42,6 +42,13 @@ export default async function AdminLayout({
 
   return (
     <div className="min-h-screen bg-bg">
+      {/* Restore Demo Mode (customer-data blur) pre-paint so it doesn't flash off
+          on navigation between admin pages. Toggled by DemoModeToggle in the nav. */}
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `try{if(localStorage.getItem('laserops:demo-mode')==='1')document.documentElement.setAttribute('data-demo','on')}catch(e){}`,
+        }}
+      />
       <SelectNumberOnFocus />
       <AdminIdleLock />
       {needsStepUp && <AdminStepUpGate canStepUp={canStepUp} />}
