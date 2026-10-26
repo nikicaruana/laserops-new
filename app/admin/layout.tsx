@@ -15,6 +15,7 @@ import { AdminNav } from "@/components/admin/AdminNav";
 import { SelectNumberOnFocus } from "@/components/admin/SelectNumberOnFocus";
 import { AdminIdleLock } from "@/components/admin/AdminIdleLock";
 import { AdminStepUpGate } from "@/components/admin/AdminStepUpGate";
+import { DemoMask } from "@/components/admin/DemoMask";
 
 export const metadata: Metadata = {
   title: { default: "Admin", template: "%s · Admin · LaserOps" },
@@ -50,11 +51,12 @@ export default async function AdminLayout({
         }}
       />
       <SelectNumberOnFocus />
+      <DemoMask />
       <AdminIdleLock />
       {needsStepUp && <AdminStepUpGate canStepUp={canStepUp} />}
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 sm:px-6 lg:flex-row lg:gap-10 lg:px-8 lg:py-12">
         <AdminNav />
-        <main className="min-w-0 flex-1">{children}</main>
+        <main id="admin-main" className="min-w-0 flex-1">{children}</main>
       </div>
     </div>
   );
