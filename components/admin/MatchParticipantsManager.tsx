@@ -134,7 +134,12 @@ export function MatchParticipantsManager({
     const { error: err } = await supabase.rpc("admin_confirm_settlement", { p_match_id: matchId, p_account_id: r.account_id, p_method: method, p_amount_override: amountOverride, p_drinks_override: drinksOverride });
     setBusy(false);
     if (err) return setError(err.message);
-    setRows((prev) => prev.map((x) => (x.id === r.id ? { ...x, paid_at: new Date().toISOString(), payment_intent: "on_day", settlement_method: method, drinks_total_eur: drinksOverride != null ? drinksOverride : x.drinks_total_eur } : x)));
+    // Optimistically reflect the amount the RPC just recorded (game fee + drinks),
+    // so the Paid column shows it immediately instead of 0 until the next refresh.
+    const paidGame = amountOverride != null ? amountOverride : netGameFor(r);
+    const paidDrinks = drinksOverride != null ? drinksOverride : drinksStored(r);
+    const paidAmount = Math.round((paidGame + paidDrinks) * 100) / 100;
+    setRows((prev) => prev.map((x) => (x.id === r.id ? { ...x, paid_at: new Date().toISOString(), paid_amount_eur: paidAmount, payment_intent: "on_day", settlement_method: method, drinks_total_eur: drinksOverride != null ? drinksOverride : x.drinks_total_eur } : x)));
     router.refresh();
   }
   async function undoPaid(r: EditRow) {
