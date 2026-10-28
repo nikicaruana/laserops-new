@@ -18,12 +18,6 @@ const BUSINESS_NAME = "LaserOps Malta";
 const FROM = `LaserOps <${BUSINESS_EMAIL}>`;
 const LOCATION = "LaserOps Malta";
 const SESSION_MINUTES = 180; // ~3h session, matches the booking finish-by rule.
-// Shared "LaserOps Malta" booking Google Calendar. Added as an attendee on the
-// business copy so (when the organiser account has access) the event also lands
-// on that calendar, not just an individual's. A group-calendar address is not a
-// mailbox - it is listed as an attendee, never emailed directly.
-const BOOKING_CALENDAR_EMAIL =
-  "c_88a863328588fc094f7ebbd8cdf8c9bccfc0f22064d452d93117052baff5a17f@group.calendar.google.com";
 
 type MatchRow = {
   id: string;
@@ -156,8 +150,7 @@ export async function sendMatchInvites(
   // send only when explicitly asked, so a new signup doesn't spam the business.
   const includeBusiness = opts?.onlyAccountId ? opts.includeBusiness === true : true;
   if (includeBusiness) {
-    const bookingCalendar: IcsAttendee = { email: BOOKING_CALENDAR_EMAIL, name: "LaserOps Malta Bookings" };
-    await sendInvite(BUSINESS_EMAIL, [...players, businessAttendee, bookingCalendar]);
+    await sendInvite(BUSINESS_EMAIL, [...players, businessAttendee]);
   }
   return { ok: sent > 0, sent, reason: sent === 0 ? lastError ?? "no-recipients" : undefined };
 }
