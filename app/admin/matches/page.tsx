@@ -142,6 +142,18 @@ export default async function AdminMatchesPage({
     rows = rows.filter((m) => selType.includes(categoryOf(m, adminIds)));
   }
 
+  // Always newest-first by when the game actually happens: effective date is
+  // scheduled_at (booked/upcoming) else played_on. Ingested games carry only a
+  // played_on, so a scheduled_at-first sort buried them below finance-backfill
+  // shells (which do have a scheduled_at); a single effective-date timeline fixes
+  // that. Undated rows sort last.
+  const whenMs = (m: Row): number => {
+    const src = m.scheduled_at ?? (m.played_on ? `${m.played_on}T00:00:00Z` : null);
+    const t = src ? new Date(src).getTime() : NaN;
+    return Number.isNaN(t) ? -Infinity : t;
+  };
+  rows.sort((a, b) => whenMs(b) - whenMs(a));
+
   return (
     <div>
       <header className="mb-6 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-5">
@@ -181,7 +193,7 @@ export default async function AdminMatchesPage({
                 <th className="px-3 py-2.5 text-center font-semibold">File</th>
                 <th className="px-3 py-2.5 text-right font-semibold">Rds</th>
                 <th className="px-3 py-2.5 font-semibold">Processed</th>
-                <th className="px-3 py-2.5 text-right font-semibold" />
+                <th className="sticky right-0 z-20 w-px border-l border-border bg-bg-elevated px-3 py-2.5" />
               </tr>
             </thead>
             <tbody>
@@ -192,7 +204,7 @@ export default async function AdminMatchesPage({
                 return (
                   <tr key={m.id} className="border-b border-border last:border-0 align-middle hover:bg-bg-elevated/50">
                     <td className="whitespace-nowrap px-3 py-2.5 font-mono font-semibold text-text">{m.match_code ?? EMPTY}</td>
-                    <td className="max-w-[15rem] truncate px-3 py-2.5 text-text-muted" title={m.title ?? m.match_code ?? ""}>
+                    <td className="max-w-[10rem] truncate px-3 py-2.5 text-text-muted" title={m.title ?? m.match_code ?? ""}>
                       {m.title ?? m.match_code ?? EMPTY}
                     </td>
                     <td className="whitespace-nowrap px-3 py-2.5 text-text-muted">{fmtDateTime(m.scheduled_at, m.played_on)}</td>
@@ -223,12 +235,17 @@ export default async function AdminMatchesPage({
                         </span>
                       )}
                     </td>
-                    <td className="whitespace-nowrap px-3 py-2.5 text-right">
+                    <td className="sticky right-0 z-10 w-px border-l border-border bg-bg-elevated px-3 py-2.5 text-center">
                       <Link
                         href={`/admin/matches/${m.id}`}
-                        className="text-xs font-bold uppercase tracking-[0.12em] text-accent hover:text-accent-soft"
+                        aria-label={`Manage ${m.match_code ?? m.title ?? "match"}`}
+                        title="Manage match"
+                        className="inline-flex h-7 w-7 items-center justify-center border border-border-strong text-accent transition-colors hover:border-accent hover:bg-accent hover:text-bg"
                       >
-                        Manage
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden>
+                          <path d="M5 12h14" />
+                          <path d="M13 6l6 6-6 6" />
+                        </svg>
                       </Link>
                     </td>
                   </tr>
