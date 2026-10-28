@@ -89,7 +89,7 @@ export async function sendMatchInvites(
       sequence: m.calendar_sequence ?? 0,
       method,
       summary: method === "CANCEL" ? `Cancelled: ${label}` : label,
-      description: `Your LaserOps match.\\nDetails and payment: ${gameUrl}`,
+      description: `Your LaserOps game.\nDetails: ${gameUrl}`,
       location: loc?.playingUrl || locationName,
       url: gameUrl,
       start,
