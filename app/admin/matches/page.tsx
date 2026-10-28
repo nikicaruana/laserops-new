@@ -9,14 +9,14 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { MatchStatusBadge } from "@/components/admin/MatchStatusBadge";
+import { MatchFilters } from "@/components/admin/MatchFilters";
 import {
-  MatchFilters,
   STATUS_KEYS,
   TYPE_KEYS,
   DEFAULT_STATUS,
   DEFAULT_TYPE,
   parseSelection,
-} from "@/components/admin/MatchFilters";
+} from "@/lib/admin/match-filters";
 
 export const metadata = { title: "Match Manager" };
 
