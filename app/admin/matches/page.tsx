@@ -70,8 +70,8 @@ function fmtDateTime(iso: string | null, dateOnly: string | null): React.ReactNo
   return d.toLocaleString("en-GB", {
     timeZone: "Europe/Malta",
     day: "2-digit",
-    month: "short",
-    year: "numeric",
+    month: "2-digit",
+    year: "2-digit",
     ...(iso ? { hour: "2-digit", minute: "2-digit" } : {}),
   });
 }
@@ -204,18 +204,13 @@ export default async function AdminMatchesPage({
                 return (
                   <tr key={m.id} className="border-b border-border last:border-0 align-middle hover:bg-bg-elevated/50">
                     <td className="whitespace-nowrap px-3 py-2.5 font-mono font-semibold text-text">{m.match_code ?? EMPTY}</td>
-                    <td className="max-w-[10rem] truncate px-3 py-2.5 text-text-muted" title={m.title ?? m.match_code ?? ""}>
+                    <td className="w-full max-w-0 truncate px-3 py-2.5 text-text-muted" title={m.title ?? m.match_code ?? ""}>
                       {m.title ?? m.match_code ?? EMPTY}
                     </td>
                     <td className="whitespace-nowrap px-3 py-2.5 text-text-muted">{fmtDateTime(m.scheduled_at, m.played_on)}</td>
                     <td className="px-3 py-2.5"><MatchStatusBadge status={m.status} /></td>
-                    <td className="px-3 py-2.5 text-right">
+                    <td className="whitespace-nowrap px-3 py-2.5 text-right">
                       <span className="font-mono tabular-nums text-text">{reg}</span>
-                      {!played && (
-                        <span className="ml-1 text-[0.65rem] text-text-subtle">
-                          ({m.paid_count ?? 0} paid, {m.on_day_count ?? 0} on day)
-                        </span>
-                      )}
                     </td>
                     <td className="px-3 py-2.5 text-center">
                       <ModeBadges online={m.online_round_count} offline={m.offline_round_count} mode={m.scoring_mode} />
