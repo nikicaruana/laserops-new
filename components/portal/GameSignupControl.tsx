@@ -122,6 +122,15 @@ export function GameSignupControl({
       if (/mobile number/i.test(err.message)) setNeedsPhone(true);
       return setError(err.message);
     }
+    // If the game is already confirmed, the roster-wide calendar invites have
+    // already gone out, so send this late joiner their own invite now. Best-effort.
+    if (confirmedOpen) {
+      try {
+        await fetch(`/api/matches/${matchId}/my-invite`, { method: "POST" });
+      } catch {
+        // ignore - signup succeeded regardless
+      }
+    }
     startTransition(() => router.refresh());
   }
 

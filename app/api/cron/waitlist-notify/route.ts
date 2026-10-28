@@ -9,15 +9,17 @@
 import type { NextRequest } from "next/server";
 import { Resend } from "resend";
 import { createServiceClient } from "@/lib/supabase/service";
+import { sendMatchInvites } from "@/lib/calendar-invite";
 
 export const dynamic = "force-dynamic";
 
 type Row = {
   id: string;
   match_id: string;
+  account_id: string | null;
   promoted_at: string | null;
   account: { email: string | null } | null;
-  match: { title: string | null; match_code: string | null; scheduled_at: string | null } | null;
+  match: { title: string | null; match_code: string | null; scheduled_at: string | null; status: string | null } | null;
 };
 
 export async function GET(req: NextRequest) {
@@ -33,7 +35,7 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supabase
     .from("match_signups")
-    .select("id, match_id, promoted_at, account:accounts(email), match:matches(title, match_code, scheduled_at)")
+    .select("id, match_id, account_id, promoted_at, account:accounts(email), match:matches(title, match_code, scheduled_at, status)")
     .eq("status", "registered")
     .not("promoted_at", "is", null)
     .is("promotion_notified_at", null)
@@ -83,6 +85,16 @@ export async function GET(req: NextRequest) {
       notified++;
     } catch {
       // Email failure shouldn't block others.
+    }
+
+    // A promoted player is now a confirmed participant, so send their own calendar
+    // invite too (confirmed/live, dated games only; the business already has it).
+    if (r.account_id && r.match?.scheduled_at && ["confirmed", "live"].includes(r.match?.status ?? "")) {
+      try {
+        await sendMatchInvites(r.match_id, "REQUEST", { onlyAccountId: r.account_id });
+      } catch {
+        // best-effort
+      }
     }
   }
 

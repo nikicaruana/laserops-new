@@ -155,11 +155,23 @@ export function CreateMatchForm() {
       })
       .select("id")
       .single();
-    setSaving(false);
     if (err || !data) {
+      setSaving(false);
       setError(err?.message || "Couldn't create the match.");
       return;
     }
+    // Private bookings are created already "confirmed", so they skip the /confirm
+    // route that emails the .ics calendar invites. Fire them here so the business
+    // (and any registered players) get a calendar event. Best-effort - the booking
+    // is confirmed regardless.
+    if (isPrivate) {
+      try {
+        await fetch(`/api/matches/${data.id}/send-invites`, { method: "POST" });
+      } catch {
+        // ignore - the booking is still created and confirmed
+      }
+    }
+    setSaving(false);
     router.push(`/admin/matches/${data.id}`);
   }
 
