@@ -12,6 +12,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { emitNotification } from "@/lib/notifications";
 import { matchDateLabel, matchTimeRangeLabel } from "@/lib/match-time";
 import { sendMatchInvites } from "@/lib/calendar-invite";
+import { syncBookingCalendar } from "@/lib/google-calendar";
 
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -68,7 +69,10 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     }
   }
 
-  // Calendar invites: players + the business get an .ics for the confirmed game.
+  // Calendar: write the event onto the shared booking calendar (if configured),
+  // and email the .ics to players (the business email copy is skipped when the
+  // booking-calendar API owns the business event).
+  await syncBookingCalendar(id);
   const invites = await sendMatchInvites(id, "REQUEST");
 
   return Response.json({ ok: true, confirmed: true, notified, invitesSent: invites.sent });

@@ -10,6 +10,7 @@ import type { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { sendMatchInvites } from "@/lib/calendar-invite";
+import { syncBookingCalendar } from "@/lib/google-calendar";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -37,6 +38,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (m?.status === "confirmed") {
     const svc = createServiceClient();
     if (svc) await svc.from("matches").update({ calendar_sequence: ((m.calendar_sequence as number) ?? 0) + 1 }).eq("id", id);
+    await syncBookingCalendar(id); // move the booking-calendar event too
     const res = await sendMatchInvites(id, "REQUEST");
     invitesSent = res.sent;
   }
