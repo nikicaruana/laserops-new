@@ -9,7 +9,14 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { MatchStatusBadge } from "@/components/admin/MatchStatusBadge";
-import { MatchDateFilter } from "@/components/admin/MatchDateFilter";
+import {
+  MatchFilters,
+  STATUS_KEYS,
+  TYPE_KEYS,
+  DEFAULT_STATUS,
+  DEFAULT_TYPE,
+  parseSelection,
+} from "@/components/admin/MatchFilters";
 
 export const metadata = { title: "Match Manager" };
 
@@ -38,24 +45,6 @@ type Row = {
   is_double_xp: boolean | null;
   created_by: string | null;
 };
-
-const TABS: { key: string; label: string }[] = [
-  { key: "all", label: "All" },
-  { key: "tentative", label: "Tentative" },
-  { key: "awaiting_confirm", label: "Awaiting OK" },
-  { key: "confirmed", label: "Confirmed" },
-  { key: "live", label: "Live" },
-  { key: "completed", label: "Completed" },
-  { key: "cancelled", label: "Cancelled" },
-];
-
-const TYPE_TABS: { key: string; label: string }[] = [
-  { key: "all", label: "All types" },
-  { key: "laserops_open", label: "LaserOps Open" },
-  { key: "double_xp", label: "Double XP" },
-  { key: "community_open", label: "Community Open" },
-  { key: "private", label: "Private Bookings" },
-];
 
 /** Classify a match into one of the type tabs. LaserOps vs Community is by
  *  whether the creator is an admin account (else it is player-created). */
@@ -118,31 +107,39 @@ export default async function AdminMatchesPage({
   searchParams: Promise<{ status?: string; from?: string; to?: string; type?: string }>;
 }) {
   const { status, from, to, type } = await searchParams;
-  const active = TABS.find((t) => t.key === status)?.key ?? "all";
-  const activeType = TYPE_TABS.find((t) => t.key === type)?.key ?? "all";
+  // Multi-select filters. Absent param -> default selection; "none" -> empty.
+  const selStatus = parseSelection(status, STATUS_KEYS, DEFAULT_STATUS);
+  const selType = parseSelection(type, TYPE_KEYS, DEFAULT_TYPE);
 
   const supabase = await createClient();
-  let query = supabase
-    .from("matches")
-    .select(
-      "id, match_code, title, status, scheduled_at, played_on, round_count, source_file_type, scoring_mode, online_round_count, offline_round_count, xp_distributed_at, elo_calculated_at, results_stale_at, registered_count, paid_count, on_day_count, is_private, is_double_xp, created_by, match_player_aggregate(count)",
-    )
-    .order("scheduled_at", { ascending: false, nullsFirst: false })
-    .order("played_on", { ascending: false, nullsFirst: false })
-    .limit(500);
-  if (active !== "all") query = query.eq("status", active);
-
-  const { data } = await query;
-  let rows = (data ?? []) as Row[];
+  let rows: Row[] = [];
+  // Status filter: no statuses selected -> no results; every status selected ->
+  // no filter (show all, including any legacy/null status); a subset -> filter.
+  if (selStatus.length > 0) {
+    let query = supabase
+      .from("matches")
+      .select(
+        "id, match_code, title, status, scheduled_at, played_on, round_count, source_file_type, scoring_mode, online_round_count, offline_round_count, xp_distributed_at, elo_calculated_at, results_stale_at, registered_count, paid_count, on_day_count, is_private, is_double_xp, created_by, match_player_aggregate(count)",
+      )
+      .order("scheduled_at", { ascending: false, nullsFirst: false })
+      .order("played_on", { ascending: false, nullsFirst: false })
+      .limit(500);
+    if (selStatus.length < STATUS_KEYS.length) query = query.in("status", selStatus);
+    const { data } = await query;
+    rows = (data ?? []) as Row[];
+  }
   // Date-range filter on each match's effective date (inclusive).
   if (from) rows = rows.filter((m) => { const d = effectiveDate(m); return d != null && d >= from; });
   if (to) rows = rows.filter((m) => { const d = effectiveDate(m); return d != null && d <= to; });
-  // Type filter (LaserOps/Community/Double XP/Private). Needs admin account ids
-  // to tell LaserOps-created from player-created open games.
-  if (activeType !== "all") {
+  // Type filter (LaserOps/Community/Double XP/Private): no types selected -> no
+  // results; every type selected -> no filter; a subset -> classify + keep.
+  // Needs admin account ids to tell LaserOps-created from player-created games.
+  if (selType.length === 0) {
+    rows = [];
+  } else if (selType.length < TYPE_KEYS.length) {
     const { data: adminRows } = await supabase.from("accounts").select("id").eq("is_admin", true);
     const adminIds = new Set(((adminRows ?? []) as { id: string }[]).map((a) => a.id));
-    rows = rows.filter((m) => categoryOf(m, adminIds) === activeType);
+    rows = rows.filter((m) => selType.includes(categoryOf(m, adminIds)));
   }
 
   return (
@@ -164,61 +161,11 @@ export default async function AdminMatchesPage({
         </Link>
       </header>
 
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          {TABS.map((t) => {
-            const params = new URLSearchParams();
-            if (t.key !== "all") params.set("status", t.key);
-            if (activeType !== "all") params.set("type", activeType);
-            if (from) params.set("from", from);
-            if (to) params.set("to", to);
-            const qs = params.toString();
-            return (
-              <Link
-                key={t.key}
-                href={qs ? `/admin/matches?${qs}` : "/admin/matches"}
-                className={`border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] ${
-                  t.key === active
-                    ? "border-accent bg-bg-elevated text-accent"
-                    : "border-border-strong text-text-muted hover:border-accent hover:text-accent"
-                }`}
-              >
-                {t.label}
-              </Link>
-            );
-          })}
-        </div>
-        <MatchDateFilter />
-      </div>
-
-      <div className="mb-6 flex flex-wrap items-center gap-2">
-        {TYPE_TABS.map((t) => {
-          const params = new URLSearchParams();
-          if (active !== "all") params.set("status", active);
-          if (t.key !== "all") params.set("type", t.key);
-          if (from) params.set("from", from);
-          if (to) params.set("to", to);
-          const qs = params.toString();
-          return (
-            <Link
-              key={t.key}
-              href={qs ? `/admin/matches?${qs}` : "/admin/matches"}
-              className={`border px-3 py-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.1em] ${
-                t.key === activeType
-                  ? "border-accent bg-accent/10 text-accent"
-                  : "border-border-strong text-text-muted hover:border-accent hover:text-accent"
-              }`}
-            >
-              {t.label}
-            </Link>
-          );
-        })}
-      </div>
+      <MatchFilters selStatus={selStatus} selType={selType} />
 
       {rows.length === 0 ? (
         <p className="border border-dashed border-border px-4 py-10 text-center text-sm text-text-muted">
-          No matches{active === "all" ? "" : ` with status "${active}"`}
-          {from || to ? " in that date range" : ""}.
+          No matches match the selected filters{from || to ? " in that date range" : ""}.
         </p>
       ) : (
         <div className="overflow-x-auto border border-border">
