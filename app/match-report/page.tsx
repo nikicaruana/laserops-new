@@ -141,7 +141,10 @@ async function MatchContent({
 
   const { report } = result;
   const player = selectedPlayer ? findPlayerInReport(report, selectedPlayer) : undefined;
-  const photos = await fetchMatchPhotosByCode(supabase, matchId);
+  // Use the resolved canonical code, not the raw URL param: the param may be the
+  // match UUID (stable report link) or a legacy code, but photos are keyed by the
+  // live match code.
+  const photos = await fetchMatchPhotosByCode(supabase, report.game.matchId);
 
   // A player may only share their OWN stats: resolve the signed-in account's
   // ops tag so the share button only appears on their own card. Admins can tag

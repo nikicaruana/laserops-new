@@ -45,7 +45,9 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   // Same report type + href + payload as the publish route.
   const perPlayer = (m.pricing_mode as string | null) === "per_player";
   const matchCode = (m.match_code as string | null) ?? null;
-  const href = matchCode ? `/match-report?match=${encodeURIComponent(matchCode)}` : "/player-portal/player-stats";
+  // Link by the stable match UUID (not the code), matching the publish route, so
+  // the dedup key lines up and the link survives any future renumber.
+  const href = `/match-report?match=${encodeURIComponent(id)}`;
   const reportType = perPlayer ? "match_report_settle" : "match_report_live";
   const matchLabel = (m.title as string | null) || matchCode || "your recent game";
   const schedAt = (m.scheduled_at as string | null) || null;

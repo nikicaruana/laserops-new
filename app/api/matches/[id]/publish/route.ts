@@ -195,6 +195,13 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   }).eq("id", id);
   if (mErr) return NextResponse.json({ error: `Match stamp failed: ${mErr.message}` }, { status: 500 });
 
+  // The LO-YYYY-NN code is minted by the matches_before_write trigger when status
+  // becomes 'completed' (above), so re-read it for the notification labels. The
+  // report links themselves use the stable match UUID, not the code, so they
+  // survive any future renumber.
+  const { data: mAfter } = await svc.from("matches").select("match_code").eq("id", id).maybeSingle();
+  const mintedCode = (mAfter?.match_code as string | null) ?? (mFlags?.match_code as string | null) ?? null;
+
   // Roll the match into careers: chronological XP/level/Elo back-fill across all
   // matches, then rebuild lifetime stats + grant level rewards + clear stale flags.
   try {
@@ -217,8 +224,8 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   try {
     const reportRecent = Date.now() - new Date(playedOn).getTime() < 14 * 86400000;
     if (reportRecent) {
-      const matchCode = (mFlags?.match_code as string | null) ?? null;
-      const rlHref = matchCode ? `/match-report?match=${encodeURIComponent(matchCode)}` : "/player-portal/player-stats";
+      const matchCode = mintedCode;
+      const rlHref = `/match-report?match=${encodeURIComponent(id)}`;
       const matchLabel = (mFlags?.title as string | null) || matchCode || "your recent game";
       const schedAt = (mFlags?.scheduled_at as string | null) || null;
       const matchDate = schedAt ? matchDateLabel(schedAt) : "";
@@ -255,7 +262,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     const settleRecent = Date.now() - new Date(playedOn).getTime() < 14 * 86400000;
     if (perPlayer && settleRecent) {
       const suHref = `/player-portal/pay/${id}`;
-      const suCode = (mFlags?.match_code as string | null) ?? null;
+      const suCode = mintedCode;
       const suLabel = (mFlags?.title as string | null) || suCode || "your recent game";
       const suSched = (mFlags?.scheduled_at as string | null) || null;
       const suDate = suSched ? ` on ${matchDateLabel(suSched)}` : "";
