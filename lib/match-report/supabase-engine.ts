@@ -135,30 +135,46 @@ export async function fetchMatchReportSupabase(
   supabase: SupabaseClient,
   matchId: string,
 ): Promise<MatchReportResult> {
-  const { data: match } = await supabase
-    .from("matches")
-    .select("id, match_code, year, sequence_no, source_game_id, is_private, is_double_xp, winning_team_colour, net_result_summary, played_on, ladder_id, home_squad_id, away_squad_id, home_squad_colour, away_squad_colour, scoring_mode, online_round_count, offline_round_count")
-    .eq("match_code", matchId)
-    .maybeSingle<{
-      id: string;
-      match_code: string;
-      year: number | null;
-      sequence_no: number | null;
-      source_game_id: string | null;
-      is_private: boolean | null;
-      is_double_xp: boolean | null;
-      winning_team_colour: string | null;
-      net_result_summary: Summary | null;
-      played_on: string | null;
-      ladder_id: string | null;
-      home_squad_id: string | null;
-      away_squad_id: string | null;
-      home_squad_colour: string | null;
-      away_squad_colour: string | null;
-      scoring_mode: string | null;
-      online_round_count: number | null;
-      offline_round_count: number | null;
-    }>();
+  // The link identifier can be the match UUID (the stable form the app now emits
+  // in report notifications + emails, immune to renumbering), the live LO-YYYY-NN
+  // code (search box, player history, older links), or a retired code recorded in
+  // legacy_codes (e.g. a game that was renumbered and whose old code is not reused
+  // by any other game). Resolve in that order; the live code always wins.
+  const matchCols =
+    "id, match_code, year, sequence_no, source_game_id, is_private, is_double_xp, winning_team_colour, net_result_summary, played_on, ladder_id, home_squad_id, away_squad_id, home_squad_colour, away_squad_colour, scoring_mode, online_round_count, offline_round_count";
+  type MatchRow = {
+    id: string;
+    match_code: string;
+    year: number | null;
+    sequence_no: number | null;
+    source_game_id: string | null;
+    is_private: boolean | null;
+    is_double_xp: boolean | null;
+    winning_team_colour: string | null;
+    net_result_summary: Summary | null;
+    played_on: string | null;
+    ladder_id: string | null;
+    home_squad_id: string | null;
+    away_squad_id: string | null;
+    home_squad_colour: string | null;
+    away_squad_colour: string | null;
+    scoring_mode: string | null;
+    online_round_count: number | null;
+    offline_round_count: number | null;
+  };
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(matchId);
+  let match: MatchRow | null = null;
+  if (isUuid) {
+    const { data } = await supabase.from("matches").select(matchCols).eq("id", matchId).maybeSingle<MatchRow>();
+    match = data ?? null;
+  } else {
+    const { data } = await supabase.from("matches").select(matchCols).eq("match_code", matchId).maybeSingle<MatchRow>();
+    match = data ?? null;
+    if (!match) {
+      const { data: legacy } = await supabase.from("matches").select(matchCols).contains("legacy_codes", [matchId]).maybeSingle<MatchRow>();
+      match = legacy ?? null;
+    }
+  }
 
   if (!match) return { ok: false, reason: "match-not-found" };
 
