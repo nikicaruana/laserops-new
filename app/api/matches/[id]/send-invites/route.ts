@@ -12,6 +12,7 @@
 import type { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { sendMatchInvites } from "@/lib/calendar-invite";
+import { syncBookingCalendar } from "@/lib/google-calendar";
 
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -36,6 +37,12 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     return Response.json({ ok: false, error: "Calendar invites are only sent once a game is confirmed." }, { status: 400 });
   }
 
+  const cal = await syncBookingCalendar(id);
   const res = await sendMatchInvites(id, "REQUEST");
-  return Response.json({ ok: res.ok, sent: res.sent, reason: res.reason });
+  return Response.json({
+    ok: res.ok || cal.ok,
+    sent: res.sent,
+    reason: res.reason,
+    calendar: cal.ok ? "added" : cal.reason,
+  });
 }

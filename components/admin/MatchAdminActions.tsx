@@ -54,9 +54,15 @@ export function MatchAdminActions({
     setInviteMsg(null);
     try {
       const res = await fetch(`/api/matches/${matchId}/send-invites`, { method: "POST" });
-      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; sent?: number; error?: string; reason?: string };
+      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; sent?: number; error?: string; reason?: string; calendar?: string };
       if (!res.ok || !data.ok) throw new Error(data.error || data.reason || "Couldn't send the calendar invite.");
-      setInviteMsg(`Calendar invite sent to ${data.sent ?? 0} recipient${data.sent === 1 ? "" : "s"} (business + any registered players).`);
+      const players = data.sent ?? 0;
+      const emailed = players > 0 ? ` + emailed ${players} player${players === 1 ? "" : "s"}` : "";
+      setInviteMsg(
+        data.calendar === "added"
+          ? `Added to the LaserOps Malta Bookings calendar${emailed}.`
+          : `Calendar invite emailed to ${players} recipient${players === 1 ? "" : "s"}.`,
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : "Couldn't send the calendar invite.");
     }

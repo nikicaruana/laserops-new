@@ -12,6 +12,7 @@ import { Resend } from "resend";
 import { createServiceClient } from "@/lib/supabase/service";
 import { buildIcs, type IcsAttendee } from "@/lib/ics";
 import { resolveMatchLocation } from "@/lib/locations";
+import { isBookingCalendarConfigured } from "@/lib/google-calendar";
 
 const BUSINESS_EMAIL = "bookings@laseropsmalta.com";
 const BUSINESS_NAME = "LaserOps Malta";
@@ -148,7 +149,11 @@ export async function sendMatchInvites(
   }
   // Business copy (full roster). Always on a roster-wide send; on a single-player
   // send only when explicitly asked, so a new signup doesn't spam the business.
-  const includeBusiness = opts?.onlyAccountId ? opts.includeBusiness === true : true;
+  // SKIP it entirely when the booking-calendar API is configured - that owns the
+  // business event (written straight onto the shared calendar), so emailing
+  // bookings@ too would create a duplicate.
+  const includeBusiness =
+    (opts?.onlyAccountId ? opts.includeBusiness === true : true) && !isBookingCalendarConfigured();
   if (includeBusiness) {
     await sendInvite(BUSINESS_EMAIL, [...players, businessAttendee]);
   }

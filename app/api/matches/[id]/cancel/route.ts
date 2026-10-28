@@ -11,6 +11,7 @@ import type { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { sendMatchInvites } from "@/lib/calendar-invite";
+import { removeBookingCalendar } from "@/lib/google-calendar";
 
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -33,6 +34,9 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   if (error) return Response.json({ ok: false, error: error.message }, { status: 400 });
 
   const svc = createServiceClient();
+
+  // Remove the booking-calendar event (no-op if there was none / API off).
+  await removeBookingCalendar(id);
 
   // Confirmed games had calendar invites -> send an .ics CANCEL.
   let invitesCancelled = 0;
