@@ -42,7 +42,26 @@ export function MatchAdminActions({
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [inviteMsg, setInviteMsg] = useState<string | null>(null);
   const [gate, setGate] = useState<Gate | null>(null);
+
+  // Email the .ics calendar invite to the business + any registered players.
+  // Not 2FA-gated (it only sends an invite, moves no money). Surfaces the real
+  // Resend outcome so a bad key / unverified domain is visible, not swallowed.
+  async function sendInvites() {
+    setBusy(true);
+    setError(null);
+    setInviteMsg(null);
+    try {
+      const res = await fetch(`/api/matches/${matchId}/send-invites`, { method: "POST" });
+      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; sent?: number; error?: string; reason?: string };
+      if (!res.ok || !data.ok) throw new Error(data.error || data.reason || "Couldn't send the calendar invite.");
+      setInviteMsg(`Calendar invite sent to ${data.sent ?? 0} recipient${data.sent === 1 ? "" : "s"} (business + any registered players).`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't send the calendar invite.");
+    }
+    setBusy(false);
+  }
 
   // Starting a match notifies every registered player, so warn loudly when it
   // is not due to start soon (the common accidental-start case). Games also go
@@ -202,6 +221,18 @@ export function MatchAdminActions({
         </>
       )}
 
+      {(s === "confirmed" || s === "live") && (
+        <button
+          type="button"
+          onClick={sendInvites}
+          disabled={busy}
+          title="Email the .ics calendar invite to the business and any registered players"
+          className="border border-border-strong px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-text-muted hover:border-accent hover:text-accent disabled:opacity-50"
+        >
+          Send calendar invite
+        </button>
+      )}
+
       {s !== "completed" && s !== "cancelled" && s !== "live" && (
         <button
           type="button"
@@ -225,6 +256,7 @@ export function MatchAdminActions({
       )}
 
       {error && <span className="text-xs text-red-400">{error}</span>}
+      {inviteMsg && <span className="text-xs text-emerald-300">{inviteMsg}</span>}
 
       <TotpGate
         open={gate !== null}

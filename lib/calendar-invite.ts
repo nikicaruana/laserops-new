@@ -120,18 +120,27 @@ export async function sendMatchInvites(
   // invite lists only that player (plus the business as organiser), so no player
   // ever sees another player's email address; the business's copy lists everyone.
   let sent = 0;
+  let lastError: string | null = null;
   const sendInvite = async (to: string, attendees: IcsAttendee[]): Promise<void> => {
     try {
-      await resend.emails.send({
+      const { error } = await resend.emails.send({
         from: FROM,
         to: [to],
         subject,
         html: bodyHtml,
         attachments: [{ filename: "invite.ics", content: icsContentFor(attendees), contentType }],
       });
+      // Resend returns { error } (it does NOT throw) for API-level failures such
+      // as a bad key, an unverified domain or a rejected recipient. Record it and
+      // do NOT count the send, so callers see the true outcome instead of a false
+      // success. One failed invite still shouldn't stop the rest.
+      if (error) {
+        lastError = error.message || "send rejected";
+        return;
+      }
       sent++;
-    } catch {
-      // Keep going; one failed invite shouldn't stop the rest.
+    } catch (e) {
+      lastError = e instanceof Error ? e.message : "send failed";
     }
   };
   for (const p of players) {
@@ -143,5 +152,5 @@ export async function sendMatchInvites(
   if (includeBusiness) {
     await sendInvite(BUSINESS_EMAIL, [...players, businessAttendee]);
   }
-  return { ok: true, sent };
+  return { ok: sent > 0, sent, reason: sent === 0 ? lastError ?? "no-recipients" : undefined };
 }
