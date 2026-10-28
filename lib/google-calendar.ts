@@ -2,44 +2,37 @@
  * lib/google-calendar.ts
  * --------------------------------------------------------------------
  * Writes booking events DIRECTLY onto the shared "LaserOps Malta Bookings"
- * Google Calendar via the Calendar API (service-account auth). A confirmed game
- * then appears on that calendar automatically - no emailed-invite "accept" step,
- * correct source calendar, no junk guests. Players still get their own .ics email
- * invites (lib/calendar-invite.ts); this owns ONLY the business/booking copy.
+ * Google Calendar via the Calendar API, authenticated as an INTERNAL Workspace
+ * user over OAuth (refresh token). Acting as the calendar owner avoids the
+ * Workspace restrictions that block an external service account (no key, no
+ * external-sharing grant). A confirmed game appears on the calendar
+ * automatically - no emailed-invite "accept" step, correct source, no junk guests.
+ * Players still get their own .ics email invites (lib/calendar-invite.ts); this
+ * owns ONLY the business/booking copy.
  *
  * Config (server-only; every function no-ops cleanly if absent):
- *   GOOGLE_SERVICE_ACCOUNT_KEY  - the service-account JSON key (raw JSON or base64)
+ *   GOOGLE_OAUTH_CLIENT_ID      - OAuth client id (Internal app)
+ *   GOOGLE_OAUTH_CLIENT_SECRET  - OAuth client secret
+ *   GOOGLE_OAUTH_REFRESH_TOKEN  - refresh token minted by the calendar owner,
+ *                                 scope https://www.googleapis.com/auth/calendar
  *   GOOGLE_BOOKING_CALENDAR_ID  - target calendar id (c_...@group.calendar.google.com)
- * The service account must be shared on that calendar with "Make changes to events".
- *
- * Auth is the service-account JWT-bearer flow, signed with node:crypto (RS256) -
- * no extra npm dependency.
  */
-import crypto from "node:crypto";
 import { createServiceClient } from "@/lib/supabase/service";
 import { resolveMatchLocation } from "@/lib/locations";
 
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
-const SCOPE = "https://www.googleapis.com/auth/calendar";
 const TZ = "Europe/Malta";
 const DEFAULT_MINUTES = 180;
 
-type Creds = { clientEmail: string; privateKey: string; calendarId: string };
+type Creds = { clientId: string; clientSecret: string; refreshToken: string; calendarId: string };
 
 function getCreds(): Creds | null {
-  const raw = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+  const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
+  const refreshToken = process.env.GOOGLE_OAUTH_REFRESH_TOKEN;
   const calendarId = process.env.GOOGLE_BOOKING_CALENDAR_ID;
-  if (!raw || !calendarId) return null;
-  try {
-    const text = raw.trim().startsWith("{") ? raw : Buffer.from(raw, "base64").toString("utf8");
-    const json = JSON.parse(text) as { client_email?: string; private_key?: string };
-    if (!json.client_email || !json.private_key) return null;
-    // A key pasted raw into an env var can arrive with literal "\n" instead of
-    // real newlines; normalise so the PEM parses.
-    return { clientEmail: json.client_email, privateKey: json.private_key.replace(/\\n/g, "\n"), calendarId };
-  } catch {
-    return null;
-  }
+  if (!clientId || !clientSecret || !refreshToken || !calendarId) return null;
+  return { clientId, clientSecret, refreshToken, calendarId };
 }
 
 /** Whether the booking-calendar API is set up. When true, the email path skips the
@@ -48,21 +41,17 @@ export function isBookingCalendarConfigured(): boolean {
   return getCreds() !== null;
 }
 
-function b64url(input: string | Buffer): string {
-  return Buffer.from(input).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
-
 async function getAccessToken(c: Creds): Promise<string | null> {
   try {
-    const now = Math.floor(Date.now() / 1000);
-    const header = b64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
-    const claim = b64url(JSON.stringify({ iss: c.clientEmail, scope: SCOPE, aud: TOKEN_URL, iat: now, exp: now + 3600 }));
-    const signingInput = `${header}.${claim}`;
-    const signature = b64url(crypto.createSign("RSA-SHA256").update(signingInput).sign(c.privateKey));
     const res = await fetch(TOKEN_URL, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({ grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion: `${signingInput}.${signature}` }),
+      body: new URLSearchParams({
+        grant_type: "refresh_token",
+        client_id: c.clientId,
+        client_secret: c.clientSecret,
+        refresh_token: c.refreshToken,
+      }),
     });
     if (!res.ok) return null;
     const data = (await res.json()) as { access_token?: string };
