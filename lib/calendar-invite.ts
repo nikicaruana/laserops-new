@@ -28,7 +28,11 @@ type MatchRow = {
   location_id: string | null;
 };
 
-export async function sendMatchInvites(matchId: string, method: "REQUEST" | "CANCEL"): Promise<{ ok: boolean; sent: number; reason?: string }> {
+export async function sendMatchInvites(
+  matchId: string,
+  method: "REQUEST" | "CANCEL",
+  opts?: { onlyAccountId?: string; includeBusiness?: boolean },
+): Promise<{ ok: boolean; sent: number; reason?: string }> {
   const svc = createServiceClient();
   if (!svc) return { ok: false, sent: 0, reason: "service-role-missing" };
   const resendKey = process.env.RESEND_API_KEY;
@@ -42,16 +46,28 @@ export async function sendMatchInvites(matchId: string, method: "REQUEST" | "CAN
   const m = match as MatchRow | null;
   if (!m?.scheduled_at) return { ok: false, sent: 0, reason: "no-schedule" };
 
-  const { data: signupRows } = await svc
-    .from("match_signups")
-    .select("account:accounts(email, full_name)")
-    .eq("match_id", matchId)
-    .eq("status", "registered");
   type AccountEmbed = { email: string | null; full_name: string | null };
-  const players: IcsAttendee[] = ((signupRows ?? []) as unknown as { account: AccountEmbed | AccountEmbed[] | null }[])
-    .map((r) => (Array.isArray(r.account) ? r.account[0] : r.account))
-    .filter((a): a is AccountEmbed => Boolean(a?.email))
-    .map((a) => ({ email: a.email as string, name: a.full_name }));
+  let players: IcsAttendee[];
+  if (opts?.onlyAccountId) {
+    // Single-player send (someone who signed up AFTER the game was confirmed):
+    // invite just that player, not the whole roster again.
+    const { data: acc } = await svc
+      .from("accounts")
+      .select("email, full_name")
+      .eq("id", opts.onlyAccountId)
+      .maybeSingle<AccountEmbed>();
+    players = acc?.email ? [{ email: acc.email, name: acc.full_name }] : [];
+  } else {
+    const { data: signupRows } = await svc
+      .from("match_signups")
+      .select("account:accounts(email, full_name)")
+      .eq("match_id", matchId)
+      .eq("status", "registered");
+    players = ((signupRows ?? []) as unknown as { account: AccountEmbed | AccountEmbed[] | null }[])
+      .map((r) => (Array.isArray(r.account) ? r.account[0] : r.account))
+      .filter((a): a is AccountEmbed => Boolean(a?.email))
+      .map((a) => ({ email: a.email as string, name: a.full_name }));
+  }
 
   const appUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.laseropsmalta.com";
   const gameUrl = `${appUrl}/player-portal/games/${m.id}`;
@@ -121,6 +137,11 @@ export async function sendMatchInvites(matchId: string, method: "REQUEST" | "CAN
   for (const p of players) {
     await sendInvite(p.email, [p]);
   }
-  await sendInvite(BUSINESS_EMAIL, [...players, businessAttendee]);
+  // Business copy (full roster). Always on a roster-wide send; on a single-player
+  // send only when explicitly asked, so a new signup doesn't spam the business.
+  const includeBusiness = opts?.onlyAccountId ? opts.includeBusiness === true : true;
+  if (includeBusiness) {
+    await sendInvite(BUSINESS_EMAIL, [...players, businessAttendee]);
+  }
   return { ok: true, sent };
 }
