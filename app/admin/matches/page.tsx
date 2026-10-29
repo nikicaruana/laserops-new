@@ -180,7 +180,48 @@ export default async function AdminMatchesPage({
           No matches match the selected filters{from || to ? " in that date range" : ""}.
         </p>
       ) : (
-        <div className="overflow-x-auto border border-border">
+        <>
+          {/* Mobile: stacked cards (the wide table is unreadable on a phone) */}
+          <div className="space-y-2 sm:hidden">
+            {rows.map((m) => {
+              const played = m.status === "completed";
+              const entriesCount = m.match_player_aggregate?.[0]?.count ?? 0;
+              const reg = played ? entriesCount : m.registered_count ?? 0;
+              return (
+                <Link
+                  key={m.id}
+                  href={`/admin/matches/${m.id}`}
+                  className="block border border-border bg-bg-elevated/30 px-4 py-3 active:bg-bg-elevated"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="min-w-0 flex-1 truncate text-sm font-semibold text-text">
+                      {m.title ?? m.match_code ?? "Match"}
+                    </p>
+                    <MatchStatusBadge status={m.status} />
+                  </div>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.7rem] text-text-muted">
+                    <span className="font-mono text-text-subtle">{m.match_code ?? "No ID"}</span>
+                    <span aria-hidden className="text-text-subtle">·</span>
+                    <span>{fmtDateTime(m.scheduled_at, m.played_on)}</span>
+                    <span aria-hidden className="text-text-subtle">·</span>
+                    <span className="font-mono tabular-nums">{reg} {played ? "played" : "signed up"}</span>
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    <ModeBadges online={m.online_round_count} offline={m.offline_round_count} mode={m.scoring_mode} />
+                    <span className={`inline-block rounded px-2 py-0.5 text-[0.55rem] font-bold uppercase tracking-[0.1em] ${m.xp_distributed_at ? "bg-accent/15 text-accent" : "bg-bg text-text-subtle"}`}>
+                      {m.xp_distributed_at ? "✓ XP" : "XP pending"}
+                    </span>
+                    <span className={`inline-block rounded px-2 py-0.5 text-[0.55rem] font-bold uppercase tracking-[0.1em] ${m.results_stale_at ? "bg-amber-500/15 text-amber-300" : m.elo_calculated_at ? "bg-accent/15 text-accent" : "bg-bg text-text-subtle"}`}>
+                      {m.results_stale_at ? "⟳ ELO stale" : m.elo_calculated_at ? "✓ ELO" : "ELO pending"}
+                    </span>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* Desktop / tablet: full table */}
+          <div className="hidden overflow-x-auto border border-border sm:block">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-border bg-bg-elevated text-[0.58rem] uppercase tracking-[0.12em] text-text-muted">
@@ -248,7 +289,8 @@ export default async function AdminMatchesPage({
               })}
             </tbody>
           </table>
-        </div>
+          </div>
+        </>
       )}
     </div>
   );
