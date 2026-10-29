@@ -18,6 +18,8 @@ import { effectiveWithResolutions, unreviewedCount, type RoundResolutions } from
 import { isLwa, lwaToCsv, lwaPlayerCounters, lwaMatchPlayers } from "@/lib/ingestion/lwa";
 import type { ScoreFormula } from "@/lib/scoring/formula";
 import { createClient } from "@/lib/supabase/client";
+import { Modal } from "@/components/ui/Modal";
+import { NON_ISSUE_FLAG_CODES, URGENCY_META, flagInfo, flagReferenceList } from "@/lib/ingestion/flag-info";
 
 const OPERATOR_ID = "00000000-0000-0000-0000-000000000001";
 
@@ -67,6 +69,7 @@ export function IngestPanel({
   const [winnerOverrides, setWinnerOverrides] = useState<Record<string, string | null>>(
     () => Object.fromEntries(rounds.map((r) => [r.id, r.winner_override ?? null])),
   );
+  const [refOpen, setRefOpen] = useState(false); // flag reference (all flags + definitions)
   async function saveWinner(roundId: string, value: string | null) {
     setWinnerOverrides((prev) => ({ ...prev, [roundId]: value }));
     const supabase = createClient();
@@ -153,6 +156,13 @@ export function IngestPanel({
         <p className="text-[0.7rem] text-text-subtle">
           One JSON file per round (online), or a single .lwa / CSV for a whole offline match. Saved to this match.
         </p>
+        <button
+          type="button"
+          onClick={() => setRefOpen(true)}
+          className="ml-auto inline-flex items-center gap-1.5 border border-border-strong px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.1em] text-text-muted hover:border-accent hover:text-accent"
+        >
+          <span aria-hidden>ⓘ</span> Flag reference
+        </button>
       </div>
 
       {error && (
@@ -185,6 +195,34 @@ export function IngestPanel({
           onRemove={() => remove(sr.id)}
         />
       ))}
+
+      {refOpen && (
+        <Modal title="Flag reference" onClose={() => setRefOpen(false)} maxWidth="max-w-2xl">
+          <p className="mb-4 text-xs text-text-muted">
+            Flags are possible issues the parser noticed while reading a round file - things to be aware of before you
+            trust the stats. Most are handled automatically; the urgency says how much attention each one needs. (Spawn
+            kills and spawn damage are normal gameplay stats, not flags.)
+          </p>
+          <div className="space-y-2.5">
+            {flagReferenceList().map(({ code, info }) => {
+              const u = URGENCY_META[info.urgency];
+              return (
+                <div key={code} className="border border-border bg-bg-elevated px-3 py-2.5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[0.55rem] font-bold uppercase tracking-[0.1em] ${u.badge}`}>
+                      <span className={`h-1.5 w-1.5 rounded-full ${u.dot}`} aria-hidden />
+                      {u.label}
+                    </span>
+                    <span className="text-sm font-semibold text-text">{info.label}</span>
+                    <span className="font-mono text-[0.65rem] text-text-subtle">{code}</span>
+                  </div>
+                  <p className="mt-1.5 text-xs leading-relaxed text-text-muted">{info.description}</p>
+                </div>
+              );
+            })}
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
@@ -240,8 +278,9 @@ function RoundPreview({
   const ambiguities = r.ambiguous_captures ?? [];
   const unreviewed = unreviewedCount(r, resolutions);
   const effectiveWinner = winnerOverride === "draw" ? null : (winnerOverride || r.result.winner_team);
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false); // round file collapsed by default
   const [streaksOpen, setStreaksOpen] = useState(false); // per-file streaks list, collapsed by default
+  const [flagModal, setFlagModal] = useState<{ code: string; detail?: string } | null>(null);
   const [csvResult, setCsvResult] = useState<null | { checked: number; issues: { player: string; field: string; json: number; csv: number }[]; source: string }>(null);
   const [convertedCsv, setConvertedCsv] = useState<{ name: string; text: string } | null>(null);
 
@@ -328,6 +367,9 @@ function RoundPreview({
   const captures = r.events.captures.length;
   const spawnKills = r.ingestion_flags.find((f) => f.code === "spawn_kills")?.detail ?? "0";
   const durationMin = r.meta.duration_seconds != null ? Math.round(r.meta.duration_seconds / 60) : "–";
+  // Flags = possible PARSING ISSUES only. Spawn kills/damage are gameplay stats
+  // (shown in the table + facts), so they're filtered out of the Flags display.
+  const issueFlags = r.ingestion_flags.filter((f) => !NON_ISSUE_FLAG_CODES.has(f.code));
 
   const facts: [string, string][] = [
     ["Round", `#${index}`],
@@ -348,8 +390,8 @@ function RoundPreview({
         <button type="button" onClick={() => setOpen((o) => !o)} className="group flex items-center gap-3 text-left hover:opacity-90" aria-expanded={open}>
           <span className="text-2xl leading-none text-accent transition-transform">{open ? "▾" : "▸"}</span>
           <span className="flex flex-col">
-            <span className="font-mono text-sm font-bold text-text">{name}</span>
-            <span className="text-[0.6rem] uppercase tracking-[0.12em] text-text-subtle">{open ? "Click to collapse" : "Click to expand"}</span>
+            <span className="text-sm font-bold text-text">Round {index}</span>
+            <span className="font-mono text-[0.6rem] text-text-subtle">{name}</span>
           </span>
         </button>
         <div className="flex items-center gap-3">
@@ -358,9 +400,9 @@ function RoundPreview({
               ⚠ {unreviewed} to review
             </span>
           )}
-          {r.ingestion_flags.length > 0 && (
+          {issueFlags.length > 0 && (
             <span className="text-[0.6rem] font-bold uppercase tracking-[0.1em] text-amber-300">
-              {r.ingestion_flags.length} flag{r.ingestion_flags.length === 1 ? "" : "s"}
+              {issueFlags.length} flag{issueFlags.length === 1 ? "" : "s"}
             </span>
           )}
           <button
@@ -584,20 +626,58 @@ function RoundPreview({
         </div>
       )}
 
-      {r.ingestion_flags.length > 0 && (
+      {issueFlags.length > 0 && (
         <div className="border-t border-border px-4 py-2.5">
-          <p className="mb-1 text-[0.55rem] font-semibold uppercase tracking-[0.12em] text-text-subtle">Flags</p>
+          <p className="mb-1.5 text-[0.55rem] font-semibold uppercase tracking-[0.12em] text-text-subtle">
+            Flags <span className="text-text-subtle/70">· click for details</span>
+          </p>
           <div className="flex flex-wrap gap-1.5">
-            {r.ingestion_flags.map((fl, i) => (
-              <span key={i} className="border border-amber-700/60 bg-amber-950/30 px-2 py-0.5 text-[0.65rem] text-amber-300">
-                {fl.code}
-                {fl.detail ? `: ${fl.detail}` : ""}
-              </span>
-            ))}
+            {issueFlags.map((fl, i) => {
+              const info = flagInfo(fl.code);
+              const u = URGENCY_META[info.urgency];
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setFlagModal({ code: fl.code, detail: fl.detail })}
+                  title="Click for a plain-English explanation"
+                  className={`inline-flex items-center gap-1.5 border px-2 py-0.5 text-[0.65rem] ${u.chip}`}
+                >
+                  <span className={`h-1.5 w-1.5 rounded-full ${u.dot}`} aria-hidden />
+                  {info.label}
+                  {fl.detail ? <span className="opacity-70">· {fl.detail}</span> : null}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
       </>)}
+
+      {flagModal && (() => {
+        const info = flagInfo(flagModal.code);
+        const u = URGENCY_META[info.urgency];
+        return (
+          <Modal title={info.label} onClose={() => setFlagModal(null)} maxWidth="max-w-md">
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[0.55rem] font-bold uppercase tracking-[0.1em] ${u.badge}`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${u.dot}`} aria-hidden />
+                  {u.label} urgency
+                </span>
+                <span className="font-mono text-[0.65rem] text-text-subtle">{flagModal.code}</span>
+              </div>
+              <p className="text-sm leading-relaxed text-text-muted">{info.description}</p>
+              {flagModal.detail && (
+                <div className="border border-border bg-bg-elevated px-3 py-2">
+                  <p className="text-[0.55rem] font-semibold uppercase tracking-[0.12em] text-text-subtle">This round</p>
+                  <p className="mt-1 font-mono text-xs text-text">{flagModal.detail}</p>
+                </div>
+              )}
+            </div>
+          </Modal>
+        );
+      })()}
     </div>
   );
 }
