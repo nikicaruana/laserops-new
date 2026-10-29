@@ -1,9 +1,10 @@
 /**
  * app/admin/matches/[id]/page.tsx
  * --------------------------------------------------------------------
- * Match detail – lifecycle/processing summary, admin lifecycle actions, the
- * signups (for upcoming games) and the player entries (for played games).
- * Entry add/edit/merge and JSON/CSV ingestion arrive in later phases.
+ * Match detail. The body is organised into collapsed lifecycle groups
+ * (Booking & pre-game / Match setup / Live game / After the game) so the page
+ * opens clean; the group matching the game's current status is highlighted and
+ * lifted to the top. A compact header + overview stays always-visible above them.
  */
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -30,6 +31,7 @@ import { LiveIngestWatcher } from "@/components/admin/LiveIngestWatcher";
 import { LiveFeedToggle } from "@/components/admin/LiveFeedToggle";
 import { NativeWatcherSetup } from "@/components/admin/NativeWatcherSetup";
 import { CollapsibleSection } from "@/components/admin/CollapsibleSection";
+import { LifecycleGroup } from "@/components/admin/LifecycleGroup";
 import { RealtimeMatchRefresh } from "@/components/admin/RealtimeMatchRefresh";
 import { MatchPhotosManager } from "@/components/admin/MatchPhotosManager";
 import { fetchMatchPhotos } from "@/lib/match-photos";
@@ -332,10 +334,32 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
     ingestedHeadbands.add(n);
     offlineTeamByHb[n] = pl.team;
     const acc = pl.shots > 0 ? Math.round((pl.hits / pl.shots) * 100) : 0;
-    offlineStatByHb[n] = pl.frags + "K \u00b7 " + pl.deaths + "D \u00b7 " + acc + "%";
+    offlineStatByHb[n] = pl.frags + "K · " + pl.deaths + "D · " + acc + "%";
   }
   const ingestByHeadband: Record<number, { stat: string | null; team: string | null }> = {};
   for (const n of ingestedHeadbands) ingestByHeadband[n] = { stat: offlineStatByHb[n] ?? null, team: offlineTeamByHb[n] ?? null };
+
+  // ---- Lifecycle grouping -------------------------------------------------
+  // The body is split into collapsed phase groups; the one matching the current
+  // status is highlighted and lifted to the top (CSS order). Everything is
+  // collapsed by default so a freshly-opened match reads clean.
+  const phase: "pregame" | "live" | "completed" | null =
+    match.status === "live"
+      ? "live"
+      : match.status === "completed"
+        ? "completed"
+        : ["tentative", "awaiting_confirm", "confirmed"].includes(match.status ?? "")
+          ? "pregame"
+          : null;
+  const preLive = ["tentative", "awaiting_confirm", "confirmed"].includes(match.status ?? "");
+  const hasRoster = showRoster || Object.keys(ingestByHeadband).length > 0;
+  // Pre-game group only renders when it actually has something (signups/invite,
+  // team balancer, or slot contention) - avoids an empty group on played games.
+  const hasPregame =
+    !isPlayed ||
+    ((participants.length > 0 || signups.length > 0) && !match.xp_distributed_at) ||
+    contenders.length > 0;
+  const hasResults = ingestRounds.length > 0 || offlinePlayers.length > 0 || !!match.xp_distributed_at;
 
   return (
     <div>
@@ -366,123 +390,13 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         )}
       </header>
 
-      {(participants.length > 0 || signups.length > 0) && !match.xp_distributed_at && (
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border border-accent/40 bg-accent/5 px-4 py-3">
-          <div>
-            <p className="text-sm font-semibold text-text">Team balancer</p>
-            <p className="text-xs text-text-subtle">Split the roster into two ELO-balanced teams, with fraggers and objective players spread evenly.</p>
-          </div>
-          <Link
-            href={`/admin/matches/${match.id}/teams`}
-            className="border border-accent bg-accent px-4 py-2 text-[0.65rem] font-bold uppercase tracking-[0.12em] text-bg transition-opacity hover:opacity-90"
-          >
-            Create teams
-          </Link>
-        </div>
-      )}
-
+      {/* Lifecycle actions — always visible */}
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <MatchAdminActions matchId={match.id} status={match.status} scheduledAt={match.scheduled_at} />
         <RescheduleMatchButton matchId={match.id} status={match.status} scheduledAt={match.scheduled_at} />
       </div>
 
-      {/* Match results: publish / re-publish (re-scores from the line-up) + recompute, with a stale flag. */}
-      {(ingestRounds.length > 0 || offlinePlayers.length > 0 || !!match.xp_distributed_at) && (
-        <MatchResultsBox matchId={match.id} published={!!match.xp_distributed_at} stale={!!match.results_stale_at} />
-      )}
-
-      {squadPair?.home && squadPair.away && (
-        <div className="mb-8 space-y-4">
-          <MatchSquadColours
-            matchId={match.id}
-            homeName={squadPair.home.name}
-            awayName={squadPair.away.name}
-            colours={teamColours}
-            initialHomeColour={match.home_squad_colour}
-            initialAwayColour={match.away_squad_colour}
-          />
-          {isLadderMatch && (
-            <LadderResultActions
-              matchId={match.id}
-              homeSquadId={squadPair.home.id}
-              homeName={squadPair.home.name}
-              homeColour={match.home_squad_colour}
-              awaySquadId={squadPair.away.id}
-              awayName={squadPair.away.name}
-              awayColour={match.away_squad_colour}
-              winnerSquadId={match.winner_squad_id}
-            />
-          )}
-        </div>
-      )}
-
-      {contenders.length > 0 && (
-        <div className="mb-8 border border-amber-700 bg-amber-950/30 px-5 py-4">
-          <p className="text-sm font-bold uppercase tracking-[0.1em] text-amber-300">
-            Slot contention · {contenders.length} overlapping game{contenders.length === 1 ? "" : "s"}
-          </p>
-          <p className="mt-1 text-xs text-text-muted">
-            {firstToQuorum
-              ? firstToQuorum.self
-                ? "This game reached quorum first – it's the one to keep."
-                : "Another overlapping game reached quorum first. Consider cancelling this one."
-              : "None have reached quorum yet. The first to hit its minimum is the one to keep."}
-          </p>
-          <ul className="mt-3 space-y-1.5">
-            {contenders.map((c) => (
-              <li key={c.id} className="flex flex-wrap items-center gap-3 text-xs">
-                <Link href={`/admin/matches/${c.id}`} className="font-semibold text-accent hover:text-accent-soft">
-                  {c.title || c.match_code || "Match"}
-                </Link>
-                <span className="text-text-muted">{fmtDateTime(c.scheduled_at, null)}</span>
-                <MatchStatusBadge status={c.status} />
-                <span className="text-text-subtle">{c.registered_count ?? 0} registered</span>
-                {c.reached_quorum_at && (
-                  <span className={firstToQuorum && firstToQuorum.id === c.id ? "font-bold text-amber-300" : "text-text-subtle"}>
-                    quorum {fmtDateTime(c.reached_quorum_at, null)}
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      <div className="mb-8">
-        <p className="mb-2 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-text-muted">Scoring mode</p>
-        <div className="max-w-md">
-          <MatchModeToggle matchId={match.id} mode={scoringMode} />
-        </div>
-        <p className="mt-2 text-[0.65rem] text-text-subtle">
-          {isOfflineMatch
-            ? "Offline: upload the .lwa below, enter round results, then publish - scored kill-only across every round."
-            : "Online: ingest the per-round JSON as the game runs."}
-        </p>
-      </div>
-
-      {match.status === "live" && match.entry_code && (
-        <div className="mb-8 flex flex-wrap items-center gap-5 border border-accent bg-accent/10 px-5 py-4">
-          <div>
-            <p className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-accent">Join code</p>
-            <p className="font-mono text-4xl font-extrabold tracking-[0.3em] text-accent">{match.entry_code}</p>
-          </div>
-          <p className="max-w-xs text-xs text-text-muted">
-            Read this out to players on site. They enter it under &quot;Join live game&quot; to be added
-            to this match.
-          </p>
-        </div>
-      )}
-
-      <div className="mb-8">
-        <p className="mb-2 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-text-muted">
-          Invite link
-        </p>
-        <CopyInviteLink code={match.invite_code} />
-        <p className="mt-1.5 text-[0.65rem] text-text-subtle">
-          Share this so players can view the game and sign up.
-        </p>
-      </div>
-
+      {/* Overview — at a glance, always visible */}
       <div className="mb-6 max-w-md">
         <PlayerBar reg={match.registered_count ?? 0} min={match.min_players ?? 10} max={match.max_players} status={match.status} />
       </div>
@@ -521,237 +435,411 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         </Fact>
       </div>
 
-      {["tentative", "awaiting_confirm", "confirmed"].includes(match.status ?? "") && (
-        <MatchPricingEditor
-          matchId={match.id}
-          price={match.price_eur != null ? Number(match.price_eur) : null}
-          pricingMode={match.pricing_mode ?? null}
-          deposit={match.deposit_eur != null ? Number(match.deposit_eur) : null}
-        />
-      )}
-
-      {["tentative", "awaiting_confirm", "confirmed"].includes(match.status ?? "") && (
-        <MatchLocationEditor matchId={match.id} currentLocationId={(match as { location_id: string | null }).location_id} />
-      )}
-
-      {/* Players: payments + headbands (component renders both collapsible sub-sections) */}
-      {(showRoster || Object.keys(ingestByHeadband).length > 0) && (
-        <MatchParticipantsManager matchId={match.id} initial={participants} guns={guns} drinks={drinks} payments={payments} ingest={ingestByHeadband} published={!!match.xp_distributed_at} perPlayer={match.pricing_mode === "per_player"} priceEur={match.price_eur} tokenBalances={tokenBalances} />
-      )}
-
-      {/* Signups (booking side) – shown for open games and private bookings */}
-      {!isPlayed && (
-        <CollapsibleSection title="Signups" count={signups.length} defaultOpen={false}>
-          {signups.length === 0 ? (
-            <p className="border border-dashed border-border px-4 py-10 text-center text-sm text-text-muted">
-              No signups yet. Players sign up from the games list on their account.
-            </p>
-          ) : (
-            <div className="overflow-x-auto border border-border">
-              <table className="w-full min-w-[640px] text-left text-sm">
-                <thead>
-                  <tr className="border-b border-border bg-bg-elevated text-[0.6rem] uppercase tracking-[0.14em] text-text-muted">
-                    <th className="px-4 py-3 font-semibold">Player</th>
-                    <th className="px-4 py-3 font-semibold">Phone</th>
-                    <th className="px-4 py-3 font-semibold">Paying</th>
-                    <th className="px-4 py-3 font-semibold">Gun</th>
-                    <th className="px-4 py-3 font-semibold">Signed up</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {signups.map((s) => (
-                    <tr key={s.id} className="border-b border-border last:border-0">
-                      <td className="px-4 py-3 font-semibold text-text">
-                        {s.account?.full_name ? <Sensitive>{s.account.full_name}</Sensitive> : (s.account?.ops_tag || "–")}
-                        {s.account?.full_name && s.account?.ops_tag && (
-                          <span className="ml-2 font-mono text-xs text-text-subtle">{s.account.ops_tag}</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 font-mono text-text-muted">{s.account?.phone_e164 ? <Sensitive>{s.account.phone_e164}</Sensitive> : "–"}</td>
-                      <td className="px-4 py-3 text-text-muted">
-                        {s.payment_intent === "on_day" ? "On the day" : s.payment_intent === "online" ? "Online" : "Not chosen"}
-                      </td>
-                      <td className="px-4 py-3 text-text-muted">
-                        {s.booked_gun ? s.booked_gun : <span className="text-text-subtle">–</span>}
-                      </td>
-                      <td className="px-4 py-3 text-text-muted">{fmtDateTime(s.created_at, null)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CollapsibleSection>
-      )}
-
-      {/* Entries (played side) */}
-      {isPlayed && (
-        <CollapsibleSection title="Player entries" count={entries.length} defaultOpen={false}>
-          {entries.length === 0 ? (
-            <p className="border border-dashed border-border px-4 py-10 text-center text-sm text-text-muted">
-              No entries yet. Players joining a live match or a JSON/CSV import will populate this.
-            </p>
-          ) : (
-            <div className="overflow-x-auto border border-border">
-              <table className="w-full min-w-[820px] text-left text-sm">
-                <thead>
-                  <tr className="border-b border-border bg-bg-elevated text-[0.6rem] uppercase tracking-[0.14em] text-text-muted">
-                    <th className="px-4 py-3 font-semibold">Player</th>
-                    <th className="px-4 py-3 font-semibold">Headband</th>
-                    <th className="px-4 py-3 font-semibold">Team</th>
-                    <th className="px-4 py-3 font-semibold">Gun</th>
-                    <th className="px-4 py-3 text-right font-semibold">Score</th>
-                    <th className="px-4 py-3 text-right font-semibold">K</th>
-                    <th className="px-4 py-3 text-right font-semibold">D</th>
-                    <th className="px-4 py-3 text-right font-semibold">K/D</th>
-                    <th className="px-4 py-3 text-right font-semibold">Acc</th>
-                    <th className="px-4 py-3 text-right font-semibold">XP</th>
-                    <th className="px-4 py-3 text-center font-semibold">Linked</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {entries.map((e) => (
-                    <tr key={e.id} className="border-b border-border last:border-0 hover:bg-bg-elevated/50">
-                      <td className="px-4 py-3">
-                        <span className="font-semibold text-text">{e.nickname ?? "–"}</span>
-                        {e.was_winner && <span className="ml-2 text-[0.6rem] font-bold uppercase text-accent">Win</span>}
-                      </td>
-                      <td className="px-4 py-3 font-mono text-text-muted">{e.headset_label ?? "–"}</td>
-                      <td className="px-4 py-3 text-text-muted">{e.team_colour ?? "–"}</td>
-                      <td className="px-4 py-3 text-text-muted">{e.gun_used ?? "–"}</td>
-                      <td className="px-4 py-3 text-right font-mono tabular-nums text-text">{e.score ?? "–"}</td>
-                      <td className="px-4 py-3 text-right font-mono tabular-nums text-text-muted">{e.frags ?? "–"}</td>
-                      <td className="px-4 py-3 text-right font-mono tabular-nums text-text-muted">{e.deaths ?? "–"}</td>
-                      <td className="px-4 py-3 text-right font-mono tabular-nums text-text-muted">
-                        {e.kd === null || e.kd === undefined ? "–" : e.kd.toFixed(2)}
-                      </td>
-                      <td className="px-4 py-3 text-right font-mono tabular-nums text-text-muted">
-                        {e.accuracy === null || e.accuracy === undefined ? "–" : `${Math.round(e.accuracy * 100)}%`}
-                      </td>
-                      <td className="px-4 py-3 text-right font-mono tabular-nums text-text-muted">{e.xp_total ?? "–"}</td>
-                      <td className="px-4 py-3 text-center">
-                        {e.account_id ? (
-                          <span className="text-accent" title="Linked to an account">●</span>
-                        ) : (
-                          <span className="text-text-subtle/50" title="Unresolved (no linked account)">○</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CollapsibleSection>
-      )}
-
-      {/* Live feed – toggle on to stream; off (default) for private bookings */}
-      <CollapsibleSection
-        defaultOpen={false}
-        title="Live feed"
-        subtitle="Stream the game live to players' phones + a venue screen. Turn it on for public games; leave it off for private bookings (upload JSONs manually instead)."
-      >
-        {isOfflineMatch ? (
-          <p className="border border-border bg-bg-elevated px-4 py-3 text-sm text-text-muted">
-            The live feed isn&apos;t available for offline games. They&apos;re scored from a .lwa after the match, not streamed live. Switch this match to Online to use it.
-          </p>
-        ) : (
-          <LiveFeedToggle matchId={match.id} enabled={!!match.live_feed_enabled} />
-        )}
-        {!isOfflineMatch && match.live_feed_enabled && (
-          <div className="mt-5 space-y-5 border-t border-border pt-5">
-            <div>
-              <Link href={`/admin/matches/${match.id}/live`} className="text-xs font-semibold uppercase tracking-[0.12em] text-accent hover:text-accent-soft">
-                Open global live view →
-              </Link>
-              <span className="ml-2 text-[0.65rem] text-text-subtle">Bases, global kill feed &amp; leaderboard — for a venue screen. Players get their own view in the portal.</span>
-            </div>
-
-            {/* Game-day checklist */}
-            <details className="rounded border border-accent/40 bg-accent/5">
-              <summary className="cursor-pointer px-4 py-2.5 text-xs font-bold uppercase tracking-[0.12em] text-accent">Game-day checklist</summary>
-              <div className="border-t border-border p-4">
-                <ol className="ml-4 list-decimal space-y-1.5 text-[0.72rem] text-text-muted">
-                  <li><strong className="text-text">Before:</strong> Live feed <strong>on</strong> (above) and headbands assigned to players (Identity resolution) so names show live.</li>
-                  <li>On the tablet, start the <strong>watcher</strong> (run-live-lasertag-watcher.bat) and point it at the AlphaTag folder.</li>
-                  <li>Set the match <strong>Live</strong> (Start match, above) — the watcher auto-attaches to it.</li>
-                  <li>Open the <strong>global live view</strong> on the venue screen (link above). Players open <em>Game Portal → the live game</em> on their phones.</li>
-                  <li>Play. Rounds stream automatically; the feed switches round as each new file starts.</li>
-                  <li><strong className="text-text">After:</strong> stop the watcher, review any capture ambiguities (Ingest data), then <strong>Publish scores</strong> (2FA). Turn Live feed off if you like.</li>
-                </ol>
-                <p className="mt-2 text-[0.65rem] text-text-subtle">Tip: download the watcher from the live site (not localhost) so its URL + token are correct for the tablet.</p>
+      {/* ---- Lifecycle groups (active stage first & highlighted; all collapsed) ---- */}
+      <div className="flex flex-col gap-4">
+        {/* Booking & pre-game ------------------------------------------------ */}
+        {hasPregame && (
+          <LifecycleGroup
+            title="Booking & pre-game"
+            hint="Signups, teams & invite"
+            active={phase === "pregame"}
+            order={phase === "pregame" ? 0 : 2}
+          >
+            {/* Team balancer */}
+            {(participants.length > 0 || signups.length > 0) && !match.xp_distributed_at && (
+              <div className="flex flex-wrap items-center justify-between gap-3 border border-accent/40 bg-accent/5 px-4 py-3">
+                <div>
+                  <p className="text-sm font-semibold text-text">Team balancer</p>
+                  <p className="text-xs text-text-subtle">Split the roster into two ELO-balanced teams, with fraggers and objective players spread evenly.</p>
+                </div>
+                <Link
+                  href={`/admin/matches/${match.id}/teams`}
+                  className="border border-accent bg-accent px-4 py-2 text-[0.65rem] font-bold uppercase tracking-[0.12em] text-bg transition-opacity hover:opacity-90"
+                >
+                  Create teams
+                </Link>
               </div>
-            </details>
+            )}
 
-            {/* Native background watcher — the robust path (keeps running when Chrome is minimised). */}
-            {ingestToken && <NativeWatcherSetup token={ingestToken} />}
+            {/* Invite link */}
+            {!isPlayed && (
+              <div>
+                <p className="mb-2 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-text-muted">Invite link</p>
+                <CopyInviteLink code={match.invite_code} />
+                <p className="mt-1.5 text-[0.65rem] text-text-subtle">Share this so players can view the game and sign up.</p>
+              </div>
+            )}
 
-            {/* Browser watcher — quick test / no install; needs the tab open + in front. */}
-            <details className="rounded border border-border bg-bg-elevated">
-              <summary className="cursor-pointer px-4 py-2.5 text-xs font-bold uppercase tracking-[0.12em] text-text-muted">
-                Quick test in the browser (no install)
-              </summary>
-              <div className="border-t border-border p-4">
-                <p className="mb-3 text-[0.65rem] text-text-subtle">
-                  For a quick test only — this needs the tab left open <strong>and in front</strong> (a minimised tab stalls). Use the native watcher above for real games.
+            {/* Signups (booking side) */}
+            {!isPlayed && (
+              <CollapsibleSection title="Signups" count={signups.length} defaultOpen={false}>
+                {signups.length === 0 ? (
+                  <p className="border border-dashed border-border px-4 py-10 text-center text-sm text-text-muted">
+                    No signups yet. Players sign up from the games list on their account.
+                  </p>
+                ) : (
+                  <div className="overflow-x-auto border border-border">
+                    <table className="w-full min-w-[640px] text-left text-sm">
+                      <thead>
+                        <tr className="border-b border-border bg-bg-elevated text-[0.6rem] uppercase tracking-[0.14em] text-text-muted">
+                          <th className="px-4 py-3 font-semibold">Player</th>
+                          <th className="px-4 py-3 font-semibold">Phone</th>
+                          <th className="px-4 py-3 font-semibold">Paying</th>
+                          <th className="px-4 py-3 font-semibold">Gun</th>
+                          <th className="px-4 py-3 font-semibold">Signed up</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {signups.map((s) => (
+                          <tr key={s.id} className="border-b border-border last:border-0">
+                            <td className="px-4 py-3 font-semibold text-text">
+                              {s.account?.full_name ? <Sensitive>{s.account.full_name}</Sensitive> : (s.account?.ops_tag || "–")}
+                              {s.account?.full_name && s.account?.ops_tag && (
+                                <span className="ml-2 font-mono text-xs text-text-subtle">{s.account.ops_tag}</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 font-mono text-text-muted">{s.account?.phone_e164 ? <Sensitive>{s.account.phone_e164}</Sensitive> : "–"}</td>
+                            <td className="px-4 py-3 text-text-muted">
+                              {s.payment_intent === "on_day" ? "On the day" : s.payment_intent === "online" ? "Online" : "Not chosen"}
+                            </td>
+                            <td className="px-4 py-3 text-text-muted">
+                              {s.booked_gun ? s.booked_gun : <span className="text-text-subtle">–</span>}
+                            </td>
+                            <td className="px-4 py-3 text-text-muted">{fmtDateTime(s.created_at, null)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CollapsibleSection>
+            )}
+
+            {/* Slot contention */}
+            {contenders.length > 0 && (
+              <div className="border border-amber-700 bg-amber-950/30 px-5 py-4">
+                <p className="text-sm font-bold uppercase tracking-[0.1em] text-amber-300">
+                  Slot contention · {contenders.length} overlapping game{contenders.length === 1 ? "" : "s"}
                 </p>
-                <LiveIngestWatcher matchId={match.id} isLive={match.status === "live"} />
+                <p className="mt-1 text-xs text-text-muted">
+                  {firstToQuorum
+                    ? firstToQuorum.self
+                      ? "This game reached quorum first – it's the one to keep."
+                      : "Another overlapping game reached quorum first. Consider cancelling this one."
+                    : "None have reached quorum yet. The first to hit its minimum is the one to keep."}
+                </p>
+                <ul className="mt-3 space-y-1.5">
+                  {contenders.map((c) => (
+                    <li key={c.id} className="flex flex-wrap items-center gap-3 text-xs">
+                      <Link href={`/admin/matches/${c.id}`} className="font-semibold text-accent hover:text-accent-soft">
+                        {c.title || c.match_code || "Match"}
+                      </Link>
+                      <span className="text-text-muted">{fmtDateTime(c.scheduled_at, null)}</span>
+                      <MatchStatusBadge status={c.status} />
+                      <span className="text-text-subtle">{c.registered_count ?? 0} registered</span>
+                      {c.reached_quorum_at && (
+                        <span className={firstToQuorum && firstToQuorum.id === c.id ? "font-bold text-amber-300" : "text-text-subtle"}>
+                          quorum {fmtDateTime(c.reached_quorum_at, null)}
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
               </div>
-            </details>
-          </div>
+            )}
+          </LifecycleGroup>
         )}
-      </CollapsibleSection>
 
-      {/* Ingest data (preview) */}
-      <CollapsibleSection
-        defaultOpen={false}
-        title="Ingest data"
-        subtitle="Upload the round JSON file(s) to preview the extracted stats. Preview only for now; committing stats (XP / ELO) turns on once the parser is validated against a real game file."
-      >
-        <IngestPanel
-          matchId={match.id}
-          rounds={ingestRounds}
-          headbandLabels={headbandLabels}
-          formula={scoreFormula}
-          voidSpawn={voidSpawn}
-          streakDefs={streakDefs}
-          tradeMinHoldSeconds={tradeMinHoldSeconds}
-          spawnWindowSeconds={spawnWindowSeconds}
-          recaptureWindowSeconds={recaptureWindowSeconds}
-          recapturePoints={recapturePoints}
-        />
-      </CollapsibleSection>
+        {/* Match setup — pricing & location (setup phase only) --------------- */}
+        {preLive && (
+          <LifecycleGroup title="Match setup" hint="Pricing & location" order={1}>
+            <MatchPricingEditor
+              matchId={match.id}
+              price={match.price_eur != null ? Number(match.price_eur) : null}
+              pricingMode={match.pricing_mode ?? null}
+              deposit={match.deposit_eur != null ? Number(match.deposit_eur) : null}
+            />
+            <MatchLocationEditor matchId={match.id} currentLocationId={(match as { location_id: string | null }).location_id} />
+          </LifecycleGroup>
+        )}
 
-      {/* Offline round results – marshal enters per-round winners */}
-      {isOfflineMatch && (
-        <CollapsibleSection
-          defaultOpen={false}
-          title="Offline rounds"
-          subtitle="The offline file and its per-round winners. Offline files don't record the winner, so enter the winning team of each offline round (numbered after the online rounds). Save before publishing."
+        {/* Live game -------------------------------------------------------- */}
+        <LifecycleGroup
+          title="Live game"
+          hint="Headbands, live feed & game data"
+          active={phase === "live"}
+          order={phase === "live" ? 0 : 3}
         >
-          <OfflineRoundResults
-            matchId={match.id}
-            teamColours={offlineTeamColours}
-            initial={offlineRoundResults}
-            startRound={ingestRounds.length + 1}
-            offlineFile={offlineFile}
-          />
-        </CollapsibleSection>
-      )}
+          {/* Join code */}
+          {match.status === "live" && match.entry_code && (
+            <div className="flex flex-wrap items-center gap-5 border border-accent bg-accent/10 px-5 py-4">
+              <div>
+                <p className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-accent">Join code</p>
+                <p className="font-mono text-4xl font-extrabold tracking-[0.3em] text-accent">{match.entry_code}</p>
+              </div>
+              <p className="max-w-xs text-xs text-text-muted">
+                Read this out to players on site. They enter it under &quot;Join live game&quot; to be added
+                to this match.
+              </p>
+            </div>
+          )}
 
-      {/* Match photos – uploaded to Cloudinary + the gallery, shown in the report */}
-      <CollapsibleSection
-        defaultOpen={false}
-        title="Photos"
-        count={matchPhotos.length}
-        subtitle="Upload photos from this match. They appear in the match report's Images section and in the public gallery. Players can tag themselves from the report."
-      >
-        <MatchPhotosManager
-          matchId={match.id}
-          notifiedAt={photosNotifiedAt}
-          initial={matchPhotos.map((p) => ({ id: p.id, url: p.url, caption: p.caption, width: p.width, height: p.height, featuredHome: p.featuredHome, taggedOps: p.taggedOps }))}
-        />
-      </CollapsibleSection>
+          {/* Scoring mode */}
+          <div>
+            <p className="mb-2 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-text-muted">Scoring mode</p>
+            <div className="max-w-md">
+              <MatchModeToggle matchId={match.id} mode={scoringMode} />
+            </div>
+            <p className="mt-2 text-[0.65rem] text-text-subtle">
+              {isOfflineMatch
+                ? "Offline: upload the .lwa below, enter round results, then publish - scored kill-only across every round."
+                : "Online: ingest the per-round JSON as the game runs."}
+            </p>
+          </div>
+
+          {/* Players & headbands */}
+          {hasRoster && (
+            <MatchParticipantsManager
+              matchId={match.id}
+              initial={participants}
+              guns={guns}
+              drinks={drinks}
+              payments={payments}
+              ingest={ingestByHeadband}
+              published={!!match.xp_distributed_at}
+              perPlayer={match.pricing_mode === "per_player"}
+              priceEur={match.price_eur}
+              tokenBalances={tokenBalances}
+              only="headbands"
+            />
+          )}
+
+          {/* Live feed */}
+          <CollapsibleSection
+            defaultOpen={false}
+            title="Live feed"
+            subtitle="Stream the game live to players' phones + a venue screen. Turn it on for public games; leave it off for private bookings (upload JSONs manually instead)."
+          >
+            {isOfflineMatch ? (
+              <p className="border border-border bg-bg-elevated px-4 py-3 text-sm text-text-muted">
+                The live feed isn&apos;t available for offline games. They&apos;re scored from a .lwa after the match, not streamed live. Switch this match to Online to use it.
+              </p>
+            ) : (
+              <LiveFeedToggle matchId={match.id} enabled={!!match.live_feed_enabled} />
+            )}
+            {!isOfflineMatch && match.live_feed_enabled && (
+              <div className="mt-5 space-y-5 border-t border-border pt-5">
+                <div>
+                  <Link href={`/admin/matches/${match.id}/live`} className="text-xs font-semibold uppercase tracking-[0.12em] text-accent hover:text-accent-soft">
+                    Open global live view →
+                  </Link>
+                  <span className="ml-2 text-[0.65rem] text-text-subtle">Bases, global kill feed &amp; leaderboard — for a venue screen. Players get their own view in the portal.</span>
+                </div>
+
+                {/* Game-day checklist */}
+                <details className="rounded border border-accent/40 bg-accent/5">
+                  <summary className="cursor-pointer px-4 py-2.5 text-xs font-bold uppercase tracking-[0.12em] text-accent">Game-day checklist</summary>
+                  <div className="border-t border-border p-4">
+                    <ol className="ml-4 list-decimal space-y-1.5 text-[0.72rem] text-text-muted">
+                      <li><strong className="text-text">Before:</strong> Live feed <strong>on</strong> (above) and headbands assigned to players (Identity resolution) so names show live.</li>
+                      <li>On the tablet, start the <strong>watcher</strong> (run-live-lasertag-watcher.bat) and point it at the AlphaTag folder.</li>
+                      <li>Set the match <strong>Live</strong> (Start match, above) — the watcher auto-attaches to it.</li>
+                      <li>Open the <strong>global live view</strong> on the venue screen (link above). Players open <em>Game Portal → the live game</em> on their phones.</li>
+                      <li>Play. Rounds stream automatically; the feed switches round as each new file starts.</li>
+                      <li><strong className="text-text">After:</strong> stop the watcher, review any capture ambiguities (Game data), then <strong>Publish scores</strong> (2FA). Turn Live feed off if you like.</li>
+                    </ol>
+                    <p className="mt-2 text-[0.65rem] text-text-subtle">Tip: download the watcher from the live site (not localhost) so its URL + token are correct for the tablet.</p>
+                  </div>
+                </details>
+
+                {/* Native background watcher — the robust path (keeps running when Chrome is minimised). */}
+                {ingestToken && <NativeWatcherSetup token={ingestToken} />}
+
+                {/* Browser watcher — quick test / no install; needs the tab open + in front. */}
+                <details className="rounded border border-border bg-bg-elevated">
+                  <summary className="cursor-pointer px-4 py-2.5 text-xs font-bold uppercase tracking-[0.12em] text-text-muted">
+                    Quick test in the browser (no install)
+                  </summary>
+                  <div className="border-t border-border p-4">
+                    <p className="mb-3 text-[0.65rem] text-text-subtle">
+                      For a quick test only — this needs the tab left open <strong>and in front</strong> (a minimised tab stalls). Use the native watcher above for real games.
+                    </p>
+                    <LiveIngestWatcher matchId={match.id} isLive={match.status === "live"} />
+                  </div>
+                </details>
+              </div>
+            )}
+          </CollapsibleSection>
+
+          {/* Game data (round ingest preview) */}
+          <CollapsibleSection
+            defaultOpen={false}
+            title="Game data"
+            subtitle="Upload the round JSON file(s) to preview the extracted stats. Preview only for now; committing stats (XP / ELO) turns on once the parser is validated against a real game file."
+          >
+            <IngestPanel
+              matchId={match.id}
+              rounds={ingestRounds}
+              headbandLabels={headbandLabels}
+              formula={scoreFormula}
+              voidSpawn={voidSpawn}
+              streakDefs={streakDefs}
+              tradeMinHoldSeconds={tradeMinHoldSeconds}
+              spawnWindowSeconds={spawnWindowSeconds}
+              recaptureWindowSeconds={recaptureWindowSeconds}
+              recapturePoints={recapturePoints}
+            />
+          </CollapsibleSection>
+
+          {/* Offline round results – marshal enters per-round winners */}
+          {isOfflineMatch && (
+            <CollapsibleSection
+              defaultOpen={false}
+              title="Offline rounds"
+              subtitle="The offline file and its per-round winners. Offline files don't record the winner, so enter the winning team of each offline round (numbered after the online rounds). Save before publishing."
+            >
+              <OfflineRoundResults
+                matchId={match.id}
+                teamColours={offlineTeamColours}
+                initial={offlineRoundResults}
+                startRound={ingestRounds.length + 1}
+                offlineFile={offlineFile}
+              />
+            </CollapsibleSection>
+          )}
+        </LifecycleGroup>
+
+        {/* After the game --------------------------------------------------- */}
+        <LifecycleGroup
+          title="After the game"
+          hint="Payments, results & photos"
+          active={phase === "completed"}
+          order={phase === "completed" ? 0 : 4}
+        >
+          {/* Players & payments */}
+          {showRoster && (
+            <MatchParticipantsManager
+              matchId={match.id}
+              initial={participants}
+              guns={guns}
+              drinks={drinks}
+              payments={payments}
+              ingest={ingestByHeadband}
+              published={!!match.xp_distributed_at}
+              perPlayer={match.pricing_mode === "per_player"}
+              priceEur={match.price_eur}
+              tokenBalances={tokenBalances}
+              only="payments"
+            />
+          )}
+
+          {/* Results: publish / re-publish + recompute, with a stale flag */}
+          {hasResults && (
+            <MatchResultsBox matchId={match.id} published={!!match.xp_distributed_at} stale={!!match.results_stale_at} />
+          )}
+
+          {/* Squad / ladder result recording */}
+          {squadPair?.home && squadPair.away && (
+            <div className="space-y-4">
+              <MatchSquadColours
+                matchId={match.id}
+                homeName={squadPair.home.name}
+                awayName={squadPair.away.name}
+                colours={teamColours}
+                initialHomeColour={match.home_squad_colour}
+                initialAwayColour={match.away_squad_colour}
+              />
+              {isLadderMatch && (
+                <LadderResultActions
+                  matchId={match.id}
+                  homeSquadId={squadPair.home.id}
+                  homeName={squadPair.home.name}
+                  homeColour={match.home_squad_colour}
+                  awaySquadId={squadPair.away.id}
+                  awayName={squadPair.away.name}
+                  awayColour={match.away_squad_colour}
+                  winnerSquadId={match.winner_squad_id}
+                />
+              )}
+            </div>
+          )}
+
+          {/* Player entries (played side) */}
+          {isPlayed && (
+            <CollapsibleSection title="Player entries" count={entries.length} defaultOpen={false}>
+              {entries.length === 0 ? (
+                <p className="border border-dashed border-border px-4 py-10 text-center text-sm text-text-muted">
+                  No entries yet. Players joining a live match or a JSON/CSV import will populate this.
+                </p>
+              ) : (
+                <div className="overflow-x-auto border border-border">
+                  <table className="w-full min-w-[820px] text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-border bg-bg-elevated text-[0.6rem] uppercase tracking-[0.14em] text-text-muted">
+                        <th className="px-4 py-3 font-semibold">Player</th>
+                        <th className="px-4 py-3 font-semibold">Headband</th>
+                        <th className="px-4 py-3 font-semibold">Team</th>
+                        <th className="px-4 py-3 font-semibold">Gun</th>
+                        <th className="px-4 py-3 text-right font-semibold">Score</th>
+                        <th className="px-4 py-3 text-right font-semibold">K</th>
+                        <th className="px-4 py-3 text-right font-semibold">D</th>
+                        <th className="px-4 py-3 text-right font-semibold">K/D</th>
+                        <th className="px-4 py-3 text-right font-semibold">Acc</th>
+                        <th className="px-4 py-3 text-right font-semibold">XP</th>
+                        <th className="px-4 py-3 text-center font-semibold">Linked</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {entries.map((e) => (
+                        <tr key={e.id} className="border-b border-border last:border-0 hover:bg-bg-elevated/50">
+                          <td className="px-4 py-3">
+                            <span className="font-semibold text-text">{e.nickname ?? "–"}</span>
+                            {e.was_winner && <span className="ml-2 text-[0.6rem] font-bold uppercase text-accent">Win</span>}
+                          </td>
+                          <td className="px-4 py-3 font-mono text-text-muted">{e.headset_label ?? "–"}</td>
+                          <td className="px-4 py-3 text-text-muted">{e.team_colour ?? "–"}</td>
+                          <td className="px-4 py-3 text-text-muted">{e.gun_used ?? "–"}</td>
+                          <td className="px-4 py-3 text-right font-mono tabular-nums text-text">{e.score ?? "–"}</td>
+                          <td className="px-4 py-3 text-right font-mono tabular-nums text-text-muted">{e.frags ?? "–"}</td>
+                          <td className="px-4 py-3 text-right font-mono tabular-nums text-text-muted">{e.deaths ?? "–"}</td>
+                          <td className="px-4 py-3 text-right font-mono tabular-nums text-text-muted">
+                            {e.kd === null || e.kd === undefined ? "–" : e.kd.toFixed(2)}
+                          </td>
+                          <td className="px-4 py-3 text-right font-mono tabular-nums text-text-muted">
+                            {e.accuracy === null || e.accuracy === undefined ? "–" : `${Math.round(e.accuracy * 100)}%`}
+                          </td>
+                          <td className="px-4 py-3 text-right font-mono tabular-nums text-text-muted">{e.xp_total ?? "–"}</td>
+                          <td className="px-4 py-3 text-center">
+                            {e.account_id ? (
+                              <span className="text-accent" title="Linked to an account">●</span>
+                            ) : (
+                              <span className="text-text-subtle/50" title="Unresolved (no linked account)">○</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CollapsibleSection>
+          )}
+
+          {/* Match photos */}
+          <CollapsibleSection
+            defaultOpen={false}
+            title="Photos"
+            count={matchPhotos.length}
+            subtitle="Upload photos from this match. They appear in the match report's Images section and in the public gallery. Players can tag themselves from the report."
+          >
+            <MatchPhotosManager
+              matchId={match.id}
+              notifiedAt={photosNotifiedAt}
+              initial={matchPhotos.map((p) => ({ id: p.id, url: p.url, caption: p.caption, width: p.width, height: p.height, featuredHome: p.featuredHome, taggedOps: p.taggedOps }))}
+            />
+          </CollapsibleSection>
+        </LifecycleGroup>
+      </div>
     </div>
   );
 }

@@ -83,6 +83,7 @@ export function MatchParticipantsManager({
   perPlayer = true,
   priceEur = null,
   tokenBalances = {},
+  only,
 }: {
   matchId: string;
   initial: Participant[];
@@ -97,6 +98,10 @@ export function MatchParticipantsManager({
   priceEur?: number | null;
   /** Current game-token balance per account_id (for the Tokens column). */
   tokenBalances?: Record<string, number>;
+  /** Render only one sub-section. Omit for both (back-compat). The two sub-sections
+   *  live in different lifecycle groups on the match page, so each is rendered
+   *  separately; they re-sync via router.refresh() after any edit. */
+  only?: "payments" | "headbands";
 }) {
   const router = useRouter();
   const [rows, setRows] = useState<EditRow[]>(
@@ -375,6 +380,7 @@ export function MatchParticipantsManager({
       )}
 
       {/* ----- Players & payments ----------------------------------------- */}
+      {only !== "headbands" && (
       <CollapsibleSection
         defaultOpen={false}
         title="Players & payments"
@@ -484,8 +490,10 @@ export function MatchParticipantsManager({
           </div>
         )}
       </CollapsibleSection>
+      )}
 
       {/* ----- Players & headbands ---------------------------------------- */}
+      {only !== "payments" && (
       <CollapsibleSection
         defaultOpen={false}
         title="Players & headbands"
@@ -706,6 +714,7 @@ export function MatchParticipantsManager({
           </div>
         </div>
       </CollapsibleSection>
+      )}
 
       {/* Profile-link pickers live in a modal (portaled to body) so the search
           results are never clipped by the roster table's horizontal scroll. */}
