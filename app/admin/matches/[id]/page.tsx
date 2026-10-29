@@ -351,12 +351,13 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         : ["tentative", "awaiting_confirm", "confirmed"].includes(match.status ?? "")
           ? "pregame"
           : null;
-  const preLive = ["tentative", "awaiting_confirm", "confirmed"].includes(match.status ?? "");
   const hasRoster = showRoster || Object.keys(ingestByHeadband).length > 0;
-  // Pre-game group only renders when it actually has something (signups/invite,
-  // team balancer, or slot contention) - avoids an empty group on played games.
+  // All lifecycle groups stay on the page through later stages (ordered below the
+  // active one). The pre-game group still hides only when it would be truly empty
+  // - no signups ever, no pending team balancer, no slot contention.
   const hasPregame =
     !isPlayed ||
+    signups.length > 0 ||
     ((participants.length > 0 || signups.length > 0) && !match.xp_distributed_at) ||
     contenders.length > 0;
   const hasResults = ingestRounds.length > 0 || offlinePlayers.length > 0 || !!match.xp_distributed_at;
@@ -470,8 +471,8 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
               </div>
             )}
 
-            {/* Signups (booking side) */}
-            {!isPlayed && (
+            {/* Signups (booking side) — kept as the booking record after play too */}
+            {(!isPlayed || signups.length > 0) && (
               <CollapsibleSection title="Signups" count={signups.length} defaultOpen={false}>
                 {signups.length === 0 ? (
                   <p className="border border-dashed border-border px-4 py-10 text-center text-sm text-text-muted">
@@ -550,18 +551,16 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
           </LifecycleGroup>
         )}
 
-        {/* Match setup — pricing & location (setup phase only) --------------- */}
-        {preLive && (
-          <LifecycleGroup title="Match setup" hint="Pricing & location" order={1}>
-            <MatchPricingEditor
-              matchId={match.id}
-              price={match.price_eur != null ? Number(match.price_eur) : null}
-              pricingMode={match.pricing_mode ?? null}
-              deposit={match.deposit_eur != null ? Number(match.deposit_eur) : null}
-            />
-            <MatchLocationEditor matchId={match.id} currentLocationId={(match as { location_id: string | null }).location_id} />
-          </LifecycleGroup>
-        )}
+        {/* Match setup — pricing & location (always available) -------------- */}
+        <LifecycleGroup title="Match setup" hint="Pricing & location" order={1}>
+          <MatchPricingEditor
+            matchId={match.id}
+            price={match.price_eur != null ? Number(match.price_eur) : null}
+            pricingMode={match.pricing_mode ?? null}
+            deposit={match.deposit_eur != null ? Number(match.deposit_eur) : null}
+          />
+          <MatchLocationEditor matchId={match.id} currentLocationId={(match as { location_id: string | null }).location_id} />
+        </LifecycleGroup>
 
         {/* Live game -------------------------------------------------------- */}
         <LifecycleGroup
