@@ -38,7 +38,10 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   }
 
   const cal = await syncBookingCalendar(id);
-  const res = await sendMatchInvites(id, "REQUEST");
+  // Idempotent re-send: the booking-calendar event is PATCHed in place, and only
+  // players who have not already been invited are emailed, so clicking this more
+  // than once never duplicates an invite to an attendee.
+  const res = await sendMatchInvites(id, "REQUEST", { skipAlreadyInvited: true });
   return Response.json({
     ok: res.ok || cal.ok,
     sent: res.sent,

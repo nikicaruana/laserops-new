@@ -45,6 +45,6 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     .maybeSingle();
   if (signup?.status !== "registered") return Response.json({ ok: true, sent: 0 });
 
-  const res = await sendMatchInvites(id, "REQUEST", { onlyAccountId: account.id });
+  const res = await sendMatchInvites(id, "REQUEST", { onlyAccountId: account.id, skipAlreadyInvited: true });
   return Response.json({ ok: res.ok, sent: res.sent });
 }

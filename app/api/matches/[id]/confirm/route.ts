@@ -73,7 +73,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   // and email the .ics to players (the business email copy is skipped when the
   // booking-calendar API owns the business event).
   await syncBookingCalendar(id);
-  const invites = await sendMatchInvites(id, "REQUEST");
+  const invites = await sendMatchInvites(id, "REQUEST", { skipAlreadyInvited: true });
 
   return Response.json({ ok: true, confirmed: true, notified, invitesSent: invites.sent });
 }

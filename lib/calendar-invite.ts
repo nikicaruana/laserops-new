@@ -32,7 +32,7 @@ type MatchRow = {
 export async function sendMatchInvites(
   matchId: string,
   method: "REQUEST" | "CANCEL",
-  opts?: { onlyAccountId?: string; includeBusiness?: boolean },
+  opts?: { onlyAccountId?: string; includeBusiness?: boolean; skipAlreadyInvited?: boolean },
 ): Promise<{ ok: boolean; sent: number; reason?: string }> {
   const svc = createServiceClient();
   if (!svc) return { ok: false, sent: 0, reason: "service-role-missing" };
@@ -48,26 +48,46 @@ export async function sendMatchInvites(
   if (!m?.scheduled_at) return { ok: false, sent: 0, reason: "no-schedule" };
 
   type AccountEmbed = { email: string | null; full_name: string | null };
-  let players: IcsAttendee[];
+  type SignupRow = { id: string; invite_sent_at: string | null; account: AccountEmbed | AccountEmbed[] | null };
+  // A recipient carries its signup row id so a successful REQUEST send can stamp
+  // invite_sent_at. That stamp is what makes a re-send idempotent per player: a
+  // later manual re-send (or new-signup invite) skips anyone already invited.
+  type Recipient = { email: string; name: string | null; signupId: string | null };
+  // skipAlreadyInvited: only email players not yet invited. Set by the manual
+  // "Send calendar invite" button and the new-signup / waitlist paths, so they
+  // don't spam the roster. Reschedule/cancel leave it off (they reach everyone).
+  const skipSent = opts?.skipAlreadyInvited === true;
+  let recipients: Recipient[];
   if (opts?.onlyAccountId) {
     // Single-player send (someone who signed up AFTER the game was confirmed):
     // invite just that player, not the whole roster again.
-    const { data: acc } = await svc
-      .from("accounts")
-      .select("email, full_name")
-      .eq("id", opts.onlyAccountId)
-      .maybeSingle<AccountEmbed>();
-    players = acc?.email ? [{ email: acc.email, name: acc.full_name }] : [];
-  } else {
-    const { data: signupRows } = await svc
+    const { data: signup } = await svc
       .from("match_signups")
-      .select("account:accounts(email, full_name)")
+      .select("id, invite_sent_at, account:accounts(email, full_name)")
+      .eq("match_id", matchId)
+      .eq("account_id", opts.onlyAccountId)
+      .eq("status", "registered")
+      .maybeSingle<SignupRow>();
+    const acc = signup ? (Array.isArray(signup.account) ? signup.account[0] : signup.account) : null;
+    const already = Boolean(signup?.invite_sent_at);
+    recipients =
+      acc?.email && signup && !(skipSent && already)
+        ? [{ email: acc.email, name: acc.full_name, signupId: signup.id }]
+        : [];
+  } else {
+    let q = svc
+      .from("match_signups")
+      .select("id, invite_sent_at, account:accounts(email, full_name)")
       .eq("match_id", matchId)
       .eq("status", "registered");
-    players = ((signupRows ?? []) as unknown as { account: AccountEmbed | AccountEmbed[] | null }[])
-      .map((r) => (Array.isArray(r.account) ? r.account[0] : r.account))
-      .filter((a): a is AccountEmbed => Boolean(a?.email))
-      .map((a) => ({ email: a.email as string, name: a.full_name }));
+    if (skipSent) q = q.is("invite_sent_at", null);
+    const { data: signupRows } = await q;
+    recipients = ((signupRows ?? []) as unknown as SignupRow[])
+      .map((r): Recipient | null => {
+        const a = Array.isArray(r.account) ? r.account[0] : r.account;
+        return a?.email ? { email: a.email, name: a.full_name ?? null, signupId: r.id } : null;
+      })
+      .filter((r): r is Recipient => r !== null);
   }
 
   const appUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.laseropsmalta.com";
@@ -122,7 +142,7 @@ export async function sendMatchInvites(
   // ever sees another player's email address; the business's copy lists everyone.
   let sent = 0;
   let lastError: string | null = null;
-  const sendInvite = async (to: string, attendees: IcsAttendee[]): Promise<void> => {
+  const sendInvite = async (to: string, attendees: IcsAttendee[], signupId: string | null): Promise<void> => {
     try {
       const { error } = await resend.emails.send({
         from: FROM,
@@ -140,12 +160,17 @@ export async function sendMatchInvites(
         return;
       }
       sent++;
+      // Stamp the player as invited so a later re-send skips them. REQUEST only -
+      // a CANCEL shouldn't mark anyone as freshly invited.
+      if (signupId && method === "REQUEST") {
+        await svc.from("match_signups").update({ invite_sent_at: new Date().toISOString() }).eq("id", signupId);
+      }
     } catch (e) {
       lastError = e instanceof Error ? e.message : "send failed";
     }
   };
-  for (const p of players) {
-    await sendInvite(p.email, [p]);
+  for (const p of recipients) {
+    await sendInvite(p.email, [{ email: p.email, name: p.name }], p.signupId);
   }
   // Business copy (full roster). Always on a roster-wide send; on a single-player
   // send only when explicitly asked, so a new signup doesn't spam the business.
@@ -155,7 +180,11 @@ export async function sendMatchInvites(
   const includeBusiness =
     (opts?.onlyAccountId ? opts.includeBusiness === true : true) && !isBookingCalendarConfigured();
   if (includeBusiness) {
-    await sendInvite(BUSINESS_EMAIL, [...players, businessAttendee]);
+    await sendInvite(
+      BUSINESS_EMAIL,
+      [...recipients.map((r) => ({ email: r.email, name: r.name })), businessAttendee],
+      null,
+    );
   }
   return { ok: sent > 0, sent, reason: sent === 0 ? lastError ?? "no-recipients" : undefined };
 }
