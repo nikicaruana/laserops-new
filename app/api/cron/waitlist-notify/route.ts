@@ -91,7 +91,7 @@ export async function GET(req: NextRequest) {
     // invite too (confirmed/live, dated games only; the business already has it).
     if (r.account_id && r.match?.scheduled_at && ["confirmed", "live"].includes(r.match?.status ?? "")) {
       try {
-        await sendMatchInvites(r.match_id, "REQUEST", { onlyAccountId: r.account_id });
+        await sendMatchInvites(r.match_id, "REQUEST", { onlyAccountId: r.account_id, skipAlreadyInvited: true });
       } catch {
         // best-effort
       }
