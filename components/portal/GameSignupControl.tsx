@@ -89,7 +89,9 @@ export function GameSignupControl({
   const [needsPhone, setNeedsPhone] = useState(false);
   const [booking, setBooking] = useState(false);
 
-  const open = status === "tentative" || status === "awaiting_confirm" || status === "confirmed";
+  // Signups stay open while a game is LIVE too (latecomers). Pay-after-game means
+  // there's no payment gate; the waitlist still catches a full game.
+  const open = status === "tentative" || status === "awaiting_confirm" || status === "confirmed" || status === "live";
   const registered = mySignup?.status === "registered";
   const waitlisted = mySignup?.status === "waitlisted";
   // Gun booking + the "settle after the game" note only apply once confirmed.
