@@ -303,7 +303,21 @@ export function buildMatchReportV2(
     colour, name: teamNames[colour] ?? colour, roundsWon: roundsWonByTeam[colour] ?? 0,
     playerNames: [...teamMembers[colour]].sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
   }));
-  const matchWinner = Object.entries(roundsWonByTeam).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+  // Match winner: the team that won the most rounds, with an even round split
+  // (e.g. 2-2) broken by the higher total team score; a genuine tie on BOTH
+  // rounds and score is a true draw (null). Mirrors computeOfflineMatchCommit.
+  const teamScoreTotals: Record<string, number> = {};
+  for (const p of players) teamScoreTotals[p.team] = (teamScoreTotals[p.team] ?? 0) + p.totalScore;
+  let topRoundWins = 0;
+  for (const wins of Object.values(roundsWonByTeam)) if (wins > topRoundWins) topRoundWins = wins;
+  const winLeaders = Object.entries(roundsWonByTeam).filter(([, w]) => w === topRoundWins && w > 0).map(([t]) => t);
+  let matchWinner: string | null = null;
+  if (winLeaders.length === 1) {
+    matchWinner = winLeaders[0];
+  } else if (winLeaders.length > 1) {
+    const ranked = [...winLeaders].sort((a, b) => (teamScoreTotals[b] ?? 0) - (teamScoreTotals[a] ?? 0));
+    if ((teamScoreTotals[ranked[0]] ?? 0) > (teamScoreTotals[ranked[1]] ?? 0)) matchWinner = ranked[0];
+  }
 
   return {
     matchId: meta.matchId, label: meta.label, date: meta.date ?? (parsed[0]?.meta.start_time ?? null),

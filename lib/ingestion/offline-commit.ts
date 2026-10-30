@@ -93,16 +93,15 @@ export function computeOfflineMatchCommit(
     if (p.frags > g.bestFrags) { g.bestFrags = p.frags; g.primaryHeadband = p.headband; g.team = p.team; }
   }
 
-  // --- 2. Rounds (marshal-entered) -> wins per team + match winner ---------
+  // --- 2. Rounds (marshal-entered) -> wins per team ------------------------
   const roundsWonByTeam: Record<string, number> = {};
   for (const r of roundResults) if (r.winnerColour) roundsWonByTeam[r.winnerColour] = (roundsWonByTeam[r.winnerColour] ?? 0) + 1;
   const roundCount = roundResults.length;
-  let winner: string | null = null; let topWins = 0; let tied = false;
-  for (const [team, wins] of Object.entries(roundsWonByTeam)) {
-    if (wins > topWins) { winner = team; topWins = wins; tied = false; }
-    else if (wins === topWins) tied = true;
-  }
-  if (tied) winner = null; // an even split leaves no match winner
+  // Team(s) that won the most rounds. Usually one; more than one is an even
+  // round split (e.g. 2-2) that we break on team score once scoring is done.
+  let topWins = 0;
+  for (const wins of Object.values(roundsWonByTeam)) if (wins > topWins) topWins = wins;
+  const roundLeaders = Object.entries(roundsWonByTeam).filter(([, w]) => w === topWins && w > 0).map(([t]) => t);
 
   // --- 3. Per-player scoring ----------------------------------------------
   type Scored = Group & { accuracy: number; kd: number; score: number };
@@ -115,6 +114,17 @@ export function computeOfflineMatchCommit(
 
   const teamScore: Record<string, number> = {};
   for (const s of scored) teamScore[s.team] = (teamScore[s.team] ?? 0) + s.score;
+
+  // Match winner: the team that won the most rounds. An even round split (e.g.
+  // 2-2) is broken by the higher total team score; only a genuine tie on BOTH
+  // rounds and score leaves no winner (a true draw).
+  let winner: string | null = null;
+  if (roundLeaders.length === 1) {
+    winner = roundLeaders[0];
+  } else if (roundLeaders.length > 1) {
+    const ranked = [...roundLeaders].sort((a, b) => (teamScore[b] ?? 0) - (teamScore[a] ?? 0));
+    if ((teamScore[ranked[0]] ?? 0) > (teamScore[ranked[1]] ?? 0)) winner = ranked[0];
+  }
   const scores = scored.map((s) => s.score);
   const kills = scored.map((s) => s.frags);
   const deathsArr = scored.map((s) => s.deaths);
