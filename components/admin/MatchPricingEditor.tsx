@@ -42,7 +42,9 @@ export function MatchPricingEditor({
   function start() {
     const priceN = p.trim() === "" ? null : Number(p);
     if (priceN != null && (!Number.isFinite(priceN) || priceN < 0)) return setMsg({ ok: false, text: "Enter a valid price." });
-    if (mode === "per_player" && !(Number(priceN) > 0)) return setMsg({ ok: false, text: "Per-player pricing needs a price above 0." });
+    // Per-player needs a deliberate price, but 0 is allowed: an organiser-paid
+    // game where players only settle drinks/extras online (no game fee charged).
+    if (mode === "per_player" && priceN == null) return setMsg({ ok: false, text: "Per-player pricing needs a price. Enter 0 for an organiser-paid game where players only settle drinks/extras." });
     const depN = dep.trim() === "" ? null : Number(dep);
     if (depN != null && (!Number.isFinite(depN) || depN < 0)) return setMsg({ ok: false, text: "Enter a valid deposit." });
     setMsg(null);
@@ -75,8 +77,9 @@ export function MatchPricingEditor({
       <h2 className="mb-1 text-sm font-semibold uppercase tracking-[0.12em] text-accent">Pricing</h2>
       <p className="mb-4 max-w-2xl text-xs text-text-subtle">
         Set how this game is paid. <span className="text-text">Per player</span> lets each player pay online (token or
-        card) or offline; <span className="text-text">flat rate</span> is a single lump sum settled offline. Changes
-        require two-factor authentication.
+        card) or offline; <span className="text-text">flat rate</span> is a single lump sum settled offline. Set a
+        per-player price of <span className="text-text">0</span> for an organiser-paid game where players still settle
+        their own drinks online. Changes require two-factor authentication.
       </p>
       <div className="flex flex-wrap items-start gap-x-5 gap-y-4">
         <div>
