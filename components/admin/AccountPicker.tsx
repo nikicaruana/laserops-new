@@ -3,15 +3,19 @@
 /**
  * components/admin/AccountPicker.tsx
  * --------------------------------------------------------------------
- * Search accounts by ops tag / name and pick one – for linking a headband or a
- * walk-in roster entry to a real profile (identity resolution). Admin-only read
- * (accounts_select_admin RLS). No PII surfaced beyond ops tag + name.
+ * Search accounts by ops tag / name / email and pick one – for linking a headband
+ * or a walk-in roster entry to a real profile (identity resolution). Admin-only
+ * read (accounts RLS: own row, or admin reads all), so email is never exposed to
+ * a non-admin here - they'd only ever match their own row.
  */
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/cn";
 
 export type PickedAccount = { id: string; ops_tag: string | null; full_name: string | null };
+// Results also carry email for display (to disambiguate same-named players); it's
+// not part of PickedAccount since callers only need id / ops_tag / name.
+type AccountResult = PickedAccount & { email: string | null };
 
 export function AccountPicker({
   onPick,
@@ -26,7 +30,7 @@ export function AccountPicker({
   className?: string;
 }) {
   const [q, setQ] = useState("");
-  const [results, setResults] = useState<PickedAccount[]>([]);
+  const [results, setResults] = useState<AccountResult[]>([]);
   const [busy, setBusy] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -43,11 +47,11 @@ export function AccountPicker({
       const like = `%${term.replace(/[%_]/g, "")}%`;
       const { data } = await supabase
         .from("accounts")
-        .select("id, ops_tag, full_name")
-        .or(`ops_tag.ilike.${like},full_name.ilike.${like}`)
+        .select("id, ops_tag, full_name, email")
+        .or(`ops_tag.ilike.${like},full_name.ilike.${like},email.ilike.${like}`)
         .limit(8);
       setBusy(false);
-      setResults((data ?? []) as PickedAccount[]);
+      setResults((data ?? []) as AccountResult[]);
     }, 250);
     return () => {
       if (timer.current) clearTimeout(timer.current);
@@ -62,7 +66,7 @@ export function AccountPicker({
           value={q}
           onChange={(e) => setQ(e.target.value)}
           onKeyDown={(e) => e.key === "Escape" && onCancel?.()}
-          placeholder="Search ops tag or name…"
+          placeholder="Search ops tag, name or email…"
           className="h-9 w-full rounded-none border border-border-strong bg-bg-elevated px-2 text-sm text-text placeholder:text-text-subtle focus:border-accent focus:outline-none"
         />
         {onCancel && (
@@ -80,11 +84,14 @@ export function AccountPicker({
           <button
             key={a.id}
             type="button"
-            onClick={() => onPick(a)}
-            className="flex w-full items-center justify-between gap-2 px-2 py-1.5 text-left text-sm hover:bg-bg-elevated"
+            onClick={() => onPick({ id: a.id, ops_tag: a.ops_tag, full_name: a.full_name })}
+            className="flex w-full flex-col gap-0.5 px-2 py-1.5 text-left hover:bg-bg-elevated"
           >
-            <span className="truncate text-text">{a.full_name || a.ops_tag || "Player"}</span>
-            {a.ops_tag && <span className="shrink-0 font-mono text-xs text-text-subtle">{a.ops_tag}</span>}
+            <span className="flex items-center justify-between gap-2">
+              <span className="truncate text-sm text-text">{a.full_name || a.ops_tag || "Player"}</span>
+              {a.ops_tag && <span className="shrink-0 font-mono text-xs text-text-subtle">{a.ops_tag}</span>}
+            </span>
+            {a.email && <span className="truncate text-[0.7rem] text-text-subtle">{a.email}</span>}
           </button>
         ))}
       </div>
