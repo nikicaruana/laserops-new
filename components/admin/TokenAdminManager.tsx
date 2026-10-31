@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/Button";
 import { TotpGate } from "@/components/admin/TotpGate";
 import { createClient } from "@/lib/supabase/client";
 import { formatEur } from "@/lib/money";
-import { AccountPicker } from "@/components/admin/AccountPicker";
+import { RecipientPicker, type Recipient, type MatchOption } from "@/components/admin/RecipientPicker";
 
 type Bundle = {
   id: string;
@@ -44,9 +44,11 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 export function TokenAdminManager({
   defaultValidityMonths,
   initialBundles,
+  matches,
 }: {
   defaultValidityMonths: number;
   initialBundles: Bundle[];
+  matches: MatchOption[];
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -139,8 +141,8 @@ export function TokenAdminManager({
     });
   }
 
-  // ---- manual grant / refund ----
-  const [opsTag, setOpsTag] = useState("");
+  // ---- manual grant / refund (one or many players) ----
+  const [recipients, setRecipients] = useState<Recipient[]>([]);
   const [amount, setAmount] = useState("");
   const [grantValidity, setGrantValidity] = useState("");
   const [note, setNote] = useState("");
@@ -148,56 +150,42 @@ export function TokenAdminManager({
   const [granting, setGranting] = useState(false);
   const [grantMsg, setGrantMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
-  async function startGrant() {
-    setGranting(true);
+  function startGrant() {
     setGrantMsg(null);
     const amt = Number(amount);
-    if (!opsTag.trim() || !Number.isFinite(amt) || amt <= 0) {
-      setGranting(false);
-      setGrantMsg({ ok: false, text: "Enter an ops tag and a positive amount." });
-      return;
-    }
-    // Resolve the player (admins can read accounts) before the 2FA step.
-    const { data: acct, error: lookupErr } = await supabase
-      .from("accounts")
-      .select("id, ops_tag")
-      .ilike("ops_tag", opsTag.trim())
-      .maybeSingle();
-    setGranting(false);
-    if (lookupErr || !acct) {
-      setGrantMsg({ ok: false, text: `No player found with ops tag “${opsTag.trim()}”.` });
-      return;
-    }
+    if (recipients.length === 0) return setGrantMsg({ ok: false, text: "Add at least one player." });
+    if (!Number.isFinite(amt) || amt <= 0) return setGrantMsg({ ok: false, text: "Enter a positive amount." });
     const vm = grantValidity.trim() ? Math.max(1, Math.round(Number(grantValidity))) : null;
-    const p = { acctId: acct.id, opsTag: acct.ops_tag ?? opsTag.trim(), amt, vm };
-    requireTotp(mode === "grant" ? "this token grant" : "this token refund", () => confirmGrant(p));
+    const verb = mode === "grant" ? "grant" : "refund";
+    requireTotp(`this token ${verb} to ${recipients.length} player${recipients.length === 1 ? "" : "s"}`, () => confirmGrant(amt, vm));
   }
 
-  async function confirmGrant(p: { acctId: string; opsTag: string; amt: number; vm: number | null }) {
+  // Bulk: one RPC call per recipient (the grant/refund RPCs are per-account).
+  // Report how many succeeded and name the ones that didn't, so a single bad row
+  // never hides the rest.
+  async function confirmGrant(amt: number, vm: number | null) {
     setGranting(true);
     setGrantMsg(null);
-    const { error } =
-      mode === "grant"
-        ? await supabase.rpc("admin_grant_tokens", {
-            p_acct: p.acctId,
-            p_amount: p.amt,
-            p_validity_months: p.vm,
-            p_note: note.trim() || null,
-          })
-        : await supabase.rpc("admin_refund_tokens", {
-            p_acct: p.acctId,
-            p_amount: p.amt,
-            p_match_id: null,
-            p_note: note.trim() || null,
-          });
-    setGranting(false);
-    if (error) {
-      setGrantMsg({ ok: false, text: error.message });
-      return;
+    let ok = 0;
+    const fails: string[] = [];
+    for (const r of recipients) {
+      const { error } =
+        mode === "grant"
+          ? await supabase.rpc("admin_grant_tokens", { p_acct: r.id, p_amount: amt, p_validity_months: vm, p_note: note.trim() || null })
+          : await supabase.rpc("admin_refund_tokens", { p_acct: r.id, p_amount: amt, p_match_id: null, p_note: note.trim() || null });
+      if (error) fails.push(`${r.ops_tag || r.id}: ${error.message}`);
+      else ok++;
     }
-    setGrantMsg({ ok: true, text: `${mode === "grant" ? "Granted" : "Refunded"} ${p.amt} token(s) to ${p.opsTag}.` });
-    setAmount("");
-    setNote("");
+    setGranting(false);
+    const verbed = mode === "grant" ? "Granted" : "Refunded";
+    if (fails.length === 0) {
+      setGrantMsg({ ok: true, text: `${verbed} ${amt} token(s) to ${ok} player${ok === 1 ? "" : "s"}.` });
+      setRecipients([]);
+      setAmount("");
+      setNote("");
+    } else {
+      setGrantMsg({ ok: false, text: `${verbed} for ${ok}, failed for ${fails.length}: ${fails.slice(0, 3).join("; ")}${fails.length > 3 ? "…" : ""}` });
+    }
     router.refresh();
   }
 
@@ -205,7 +193,7 @@ export function TokenAdminManager({
   // Backed by admin_grant_xp_boost (admin-gated definer); boosts live in their own
   // balance/ledger (player_xp_boosts) and are spent at game sign-in, separate from
   // game tokens. Grant-only by design - there is no admin refund for boosts.
-  const [boostAcct, setBoostAcct] = useState<{ id: string; ops_tag: string } | null>(null);
+  const [boostRecipients, setBoostRecipients] = useState<Recipient[]>([]);
   const [boostType, setBoostType] = useState<"double" | "one_five">("double");
   const [boostQty, setBoostQty] = useState("1");
   const [boostBusy, setBoostBusy] = useState(false);
@@ -215,24 +203,29 @@ export function TokenAdminManager({
   function startBoostGrant() {
     setBoostMsg(null);
     const qty = Math.round(Number(boostQty));
-    if (!boostAcct) return setBoostMsg({ ok: false, text: "Pick a player first." });
+    if (boostRecipients.length === 0) return setBoostMsg({ ok: false, text: "Add at least one player." });
     if (!Number.isFinite(qty) || qty <= 0) return setBoostMsg({ ok: false, text: "Enter a whole number of boosts (1 or more)." });
-    requireTotp(`granting ${qty} ${boostLabel(boostType)} boost${qty === 1 ? "" : "s"}`, () => confirmBoostGrant(qty));
+    requireTotp(`granting ${qty} ${boostLabel(boostType)} boost${qty === 1 ? "" : "s"} to ${boostRecipients.length} player${boostRecipients.length === 1 ? "" : "s"}`, () => confirmBoostGrant(qty));
   }
 
   async function confirmBoostGrant(qty: number) {
-    if (!boostAcct) return;
     setBoostBusy(true);
     setBoostMsg(null);
-    const { error } = await supabase.rpc("admin_grant_xp_boost", {
-      p_acct: boostAcct.id,
-      p_type: boostType,
-      p_qty: qty,
-    });
+    let ok = 0;
+    const fails: string[] = [];
+    for (const r of boostRecipients) {
+      const { error } = await supabase.rpc("admin_grant_xp_boost", { p_acct: r.id, p_type: boostType, p_qty: qty });
+      if (error) fails.push(`${r.ops_tag || r.id}: ${error.message}`);
+      else ok++;
+    }
     setBoostBusy(false);
-    if (error) return setBoostMsg({ ok: false, text: error.message });
-    setBoostMsg({ ok: true, text: `Granted ${qty} ${boostLabel(boostType)} boost${qty === 1 ? "" : "s"} to ${boostAcct.ops_tag || "player"}.` });
-    setBoostQty("1");
+    if (fails.length === 0) {
+      setBoostMsg({ ok: true, text: `Granted ${qty} ${boostLabel(boostType)} boost${qty === 1 ? "" : "s"} to ${ok} player${ok === 1 ? "" : "s"}.` });
+      setBoostRecipients([]);
+      setBoostQty("1");
+    } else {
+      setBoostMsg({ ok: false, text: `Granted for ${ok}, failed for ${fails.length}: ${fails.slice(0, 3).join("; ")}${fails.length > 3 ? "…" : ""}` });
+    }
     router.refresh();
   }
 
@@ -368,20 +361,10 @@ export function TokenAdminManager({
             </button>
           ))}
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <RecipientPicker value={recipients} onChange={setRecipients} matches={matches} />
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <div>
-            <label className={labelCls}>Player ops tag</label>
-            {opsTag ? (
-              <div className="flex h-11 items-center gap-2 border border-border-strong bg-bg px-3">
-                <span className="text-sm font-semibold text-accent">{opsTag}</span>
-                <button type="button" onClick={() => setOpsTag("")} className="ml-auto text-xs text-text-subtle hover:text-accent">Change</button>
-              </div>
-            ) : (
-              <AccountPicker onPick={(a) => setOpsTag(a.ops_tag ?? "")} autoFocus={false} />
-            )}
-          </div>
-          <div>
-            <label className={labelCls}>Tokens</label>
+            <label className={labelCls}>Tokens{recipients.length > 1 ? " (each player)" : ""}</label>
             <input
               className={input}
               type="number"
@@ -405,7 +388,7 @@ export function TokenAdminManager({
               />
             </div>
           )}
-          <div className={mode === "grant" ? "" : "sm:col-span-1"}>
+          <div>
             <label className={labelCls}>Note</label>
             <input
               className={input}
@@ -417,13 +400,16 @@ export function TokenAdminManager({
         </div>
         <div className="mt-4 flex items-center gap-4">
           <Button variant="primary" size="md" onClick={startGrant} disabled={granting}>
-            {granting ? "Working…" : mode === "grant" ? "Grant tokens" : "Refund tokens"}
+            {granting
+              ? "Working…"
+              : `${mode === "grant" ? "Grant" : "Refund"} tokens${recipients.length > 1 ? ` (${recipients.length})` : ""}`}
           </Button>
           {grantMsg && <span className={`text-xs ${grantMsg.ok ? "text-emerald-400" : "text-red-400"}`}>{grantMsg.text}</span>}
         </div>
         <p className="mt-3 text-xs text-text-subtle">
-          Every change on this page - validity, bundles, and token grants/refunds - requires two-factor authentication.
-          Refunds credit fractional tokens (e.g. 0.4) as a new lot the player can spend toward their next game.
+          Add one player or many (or pull in everyone from a game); the amount above is given to each. Every change on
+          this page - validity, bundles, and token grants/refunds - requires two-factor authentication. Refunds credit
+          fractional tokens (e.g. 0.4) as a new lot the player can spend toward their next game.
         </p>
       </Card>
 
@@ -443,20 +429,10 @@ export function TokenAdminManager({
             </button>
           ))}
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <RecipientPicker value={boostRecipients} onChange={setBoostRecipients} matches={matches} />
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <div>
-            <label className={labelCls}>Player ops tag</label>
-            {boostAcct ? (
-              <div className="flex h-11 items-center gap-2 border border-border-strong bg-bg px-3">
-                <span className="text-sm font-semibold text-accent">{boostAcct.ops_tag || "Player"}</span>
-                <button type="button" onClick={() => setBoostAcct(null)} className="ml-auto text-xs text-text-subtle hover:text-accent">Change</button>
-              </div>
-            ) : (
-              <AccountPicker onPick={(a) => setBoostAcct({ id: a.id, ops_tag: a.ops_tag ?? "" })} autoFocus={false} />
-            )}
-          </div>
-          <div>
-            <label className={labelCls}>Number of boosts</label>
+            <label className={labelCls}>Number of boosts{boostRecipients.length > 1 ? " (each player)" : ""}</label>
             <input
               className={input}
               type="number"
@@ -470,14 +446,15 @@ export function TokenAdminManager({
         </div>
         <div className="mt-4 flex items-center gap-4">
           <Button variant="primary" size="md" onClick={startBoostGrant} disabled={boostBusy}>
-            {boostBusy ? "Working…" : `Grant ${boostLabel(boostType)} boost`}
+            {boostBusy ? "Working…" : `Grant ${boostLabel(boostType)} boost${boostRecipients.length > 1 ? ` (${boostRecipients.length})` : ""}`}
           </Button>
           {boostMsg && <span className={`text-xs ${boostMsg.ok ? "text-emerald-400" : "text-red-400"}`}>{boostMsg.text}</span>}
         </div>
         <p className="mt-3 text-xs text-text-subtle">
-          XP boosts are separate from game tokens: the player applies one at game sign-in to multiply that game&apos;s XP
-          (a boost can&apos;t be used on a game that is already Double XP). Granting requires two-factor authentication.
-          There is no refund for boosts - grant only.
+          Add one player or many (or pull in everyone from a game); the count above is given to each. XP boosts are
+          separate from game tokens: the player applies one at game sign-in to multiply that game&apos;s XP (a boost
+          can&apos;t be used on a game that is already Double XP). Granting requires two-factor authentication. There is
+          no refund for boosts - grant only.
         </p>
       </Card>
 

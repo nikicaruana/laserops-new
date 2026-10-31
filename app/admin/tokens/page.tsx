@@ -11,6 +11,7 @@ import { createClient } from "@/lib/supabase/server";
 import { TokenAdminManager } from "@/components/admin/TokenAdminManager";
 import { TokenPackRequests } from "@/components/admin/TokenPackRequests";
 import { TokenLedger, type TokenLedgerRow } from "@/components/admin/TokenLedger";
+import { XpBoostLedger, type XpBoostLedgerRow } from "@/components/admin/XpBoostLedger";
 
 export const metadata: Metadata = { title: "LaserOps Game Tokens" };
 
@@ -20,7 +21,7 @@ const LEDGER_LIMIT = 300;
 
 export default async function AdminTokensPage() {
   const supabase = await createClient();
-  const [{ data: config }, { data: bundles }, { data: requests }, { data: ledger }] = await Promise.all([
+  const [{ data: config }, { data: bundles }, { data: requests }, { data: ledger }, { data: boostLedger }, { data: recentMatches }] = await Promise.all([
     supabase.from("token_config").select("default_validity_months").eq("id", 1).maybeSingle(),
     supabase
       .from("token_bundles")
@@ -38,7 +39,27 @@ export default async function AdminTokensPage() {
       )
       .order("created_at", { ascending: false })
       .limit(LEDGER_LIMIT),
+    supabase
+      .from("xp_boost_ledger")
+      .select(
+        "id, created_at, boost_type, delta, kind, reason, level, account:accounts!account_id(ops_tag, full_name), actor:accounts!actor_account_id(ops_tag, full_name), match:matches!match_id(match_code)",
+      )
+      .order("created_at", { ascending: false })
+      .limit(LEDGER_LIMIT),
+    // Recent completed games, for the "add everyone from a game" bulk-recipient
+    // picker in the grant tools (codes only mint on completion).
+    supabase
+      .from("matches")
+      .select("id, match_code, title, scheduled_at")
+      .not("match_code", "is", null)
+      .order("scheduled_at", { ascending: false })
+      .limit(60),
   ]);
+
+  const matchOptions = (recentMatches ?? []).map((m) => ({
+    id: m.id as string,
+    label: [m.match_code, m.title].filter(Boolean).join(" · ") || (m.match_code as string),
+  }));
 
   return (
     <div>
@@ -76,6 +97,7 @@ export default async function AdminTokensPage() {
           is_active: b.is_active,
           sort_order: b.sort_order,
         }))}
+        matches={matchOptions}
       />
 
       <div className="mt-10">
@@ -91,6 +113,29 @@ export default async function AdminTokensPage() {
               kind: r.kind as TokenLedgerRow["kind"],
               eur_amount: r.eur_amount != null ? Number(r.eur_amount) : null,
               note: (r.note as string | null) ?? null,
+              player: acc?.full_name ?? null,
+              playerOps: acc?.ops_tag ?? null,
+              actor: act?.full_name ?? act?.ops_tag ?? null,
+              matchCode: mt?.match_code ?? null,
+            };
+          })}
+        />
+      </div>
+
+      <div className="mt-10">
+        <XpBoostLedger
+          initial={(boostLedger ?? []).map((r): XpBoostLedgerRow => {
+            const acc = Array.isArray(r.account) ? r.account[0] : r.account;
+            const act = Array.isArray(r.actor) ? r.actor[0] : r.actor;
+            const mt = Array.isArray(r.match) ? r.match[0] : r.match;
+            return {
+              id: r.id as string,
+              created_at: r.created_at as string,
+              boostType: r.boost_type as XpBoostLedgerRow["boostType"],
+              delta: Number(r.delta),
+              kind: r.kind as XpBoostLedgerRow["kind"],
+              reason: (r.reason as string | null) ?? null,
+              level: r.level != null ? Number(r.level) : null,
               player: acc?.full_name ?? null,
               playerOps: acc?.ops_tag ?? null,
               actor: act?.full_name ?? act?.ops_tag ?? null,
