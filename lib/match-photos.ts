@@ -109,6 +109,7 @@ export async function fetchPlayerTaggedPhotos(
   supabase: SupabaseServer,
   opsTag: string,
   limit = 12,
+  offset = 0,
 ): Promise<PlayerTaggedPhoto[]> {
   const tag = opsTag.trim();
   if (!tag) return [];
@@ -123,12 +124,15 @@ export async function fetchPlayerTaggedPhotos(
   const photoIds = [...new Set(((tagRows ?? []) as { photo_id: string }[]).map((t) => t.photo_id))];
   if (photoIds.length === 0) return [];
 
+  // Order by created_at desc with id as a tiebreaker so paging (range by offset)
+  // is stable when several photos share a timestamp.
   const { data: rows, error } = await supabase
     .from("match_photos")
     .select("id, secure_url, width, height, caption, created_at, match_id")
     .in("id", photoIds)
     .order("created_at", { ascending: false })
-    .limit(limit);
+    .order("id", { ascending: false })
+    .range(offset, offset + limit - 1);
   if (error) console.error("[match-photos] player-tagged read failed:", error.message);
   if (!rows || rows.length === 0) return [];
 

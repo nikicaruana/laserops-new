@@ -24,10 +24,16 @@ export function TaggedPhotosGrid({
   photos,
   opsTag,
   limit = 6,
+  pageSize = 24,
+  hasMore: initialHasMore = false,
 }: {
   photos: PlayerTaggedPhoto[];
   opsTag: string;
   limit?: number;
+  /** How many more photos to fetch per "Load more" click. */
+  pageSize?: number;
+  /** Whether the server has more tagged photos beyond the first page it sent. */
+  hasMore?: boolean;
 }) {
   const [list, setList] = useState<PlayerTaggedPhoto[]>(photos);
   const [expanded, setExpanded] = useState(false);
@@ -35,12 +41,33 @@ export function TaggedPhotosGrid({
   const [viewerOps, setViewerOps] = useState("");
   const [composer, setComposer] = useState<Composer | null>(null);
   const [sharing, setSharing] = useState(false);
+  const [hasMore, setHasMore] = useState(initialHasMore);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   // Re-sync when the parent passes a different profile's photos. useState only
   // seeds the INITIAL value, so without this the grid keeps showing the previous
   // profile's photos after a client-side nav - e.g. your OWN tagged photos would
   // wrongly persist when you open someone else's summary.
-  useEffect(() => { setList(photos); setExpanded(false); setLightbox(null); }, [photos]);
+  useEffect(() => { setList(photos); setExpanded(false); setLightbox(null); setHasMore(initialHasMore); }, [photos, initialHasMore]);
+
+  async function loadMore() {
+    if (loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const qs = new URLSearchParams({ ops: opsTag, offset: String(list.length), limit: String(pageSize) });
+      const res = await fetch(`/api/photos/tagged?${qs.toString()}`);
+      const j = (await res.json()) as { photos: PlayerTaggedPhoto[]; hasMore: boolean };
+      // De-dupe defensively in case a new tag shifted the ordering between pages.
+      const seen = new Set(list.map((p) => p.id));
+      const fresh = (j.photos ?? []).filter((p) => !seen.has(p.id));
+      setList((cur) => [...cur, ...fresh]);
+      setHasMore(Boolean(j.hasMore));
+    } catch {
+      /* leave the button so the viewer can retry */
+    } finally {
+      setLoadingMore(false);
+    }
+  }
 
   // The share / remove-tag actions act on the signed-in viewer, so only offer
   // them when the viewer is looking at their OWN profile.
@@ -73,7 +100,9 @@ export function TaggedPhotosGrid({
   }
 
   const shown = expanded ? list : list.slice(0, limit);
-  const hiddenCount = list.length - limit;
+  // "View all" appears while collapsed if there's anything past the preview -
+  // either already-loaded photos or more the server can still send.
+  const canExpand = list.length > limit || hasMore;
 
   const lightboxImages: LightboxImage[] = list.map((p) => ({
     secureUrl: p.url,
@@ -160,14 +189,27 @@ export function TaggedPhotosGrid({
         ))}
       </div>
 
-      {!expanded && hiddenCount > 0 && (
+      {!expanded && canExpand && (
         <div className="mt-4 text-center">
           <button
             type="button"
             onClick={() => setExpanded(true)}
             className="border border-border-strong px-5 py-2 text-xs font-bold uppercase tracking-[0.12em] text-text-muted transition-colors hover:border-accent hover:text-accent"
           >
-            View all {list.length}
+            View all{hasMore ? "" : ` ${list.length}`}
+          </button>
+        </div>
+      )}
+
+      {expanded && hasMore && (
+        <div className="mt-4 text-center">
+          <button
+            type="button"
+            onClick={loadMore}
+            disabled={loadingMore}
+            className="border border-border-strong px-5 py-2 text-xs font-bold uppercase tracking-[0.12em] text-text-muted transition-colors hover:border-accent hover:text-accent disabled:opacity-60"
+          >
+            {loadingMore ? "Loading…" : "Load more"}
           </button>
         </div>
       )}

@@ -37,6 +37,9 @@ export const metadata: Metadata = {
   title: "Summary",
 };
 
+// Tagged photos load a page at a time; the grid fetches the next page on demand.
+const PHOTOS_PAGE = 24;
+
 export default async function PlayerSummaryPage({
   searchParams,
 }: {
@@ -53,19 +56,22 @@ export default async function PlayerSummaryPage({
   let social: Social | null = null;
   let squads: SquadChip[] = [];
   let photos: PlayerTaggedPhoto[] = [];
+  let photosHasMore = false;
   let streaks: StreakItem[] = [];
   let masteryGuns: GunMastery[] = [];
   if (result) {
     const [{ data: socialRows }, { data: squadRows }, taggedPhotos, { data: streakDefs }, { data: streakEarned }] = await Promise.all([
       supabase.rpc("player_social", { p_ops_tag: opsTag }),
       supabase.rpc("player_squads", { p_ops_tag: opsTag }),
-      fetchPlayerTaggedPhotos(supabase, opsTag, 24),
+      // One extra beyond the first page so we know whether to show "Load more".
+      fetchPlayerTaggedPhotos(supabase, opsTag, PHOTOS_PAGE + 1),
       supabase.from("streak_definitions").select("streak_key, name, description, badge_url, tier").eq("is_active", true).order("tier", { ascending: false }).order("name"),
       supabase.from("v_hof_streak_leaders").select("streak_key, times_earned").eq("ops_tag", opsTag),
     ]);
     social = ((socialRows ?? []) as Social[])[0] ?? null;
     squads = (squadRows ?? []) as SquadChip[];
-    photos = taggedPhotos;
+    photosHasMore = taggedPhotos.length > PHOTOS_PAGE;
+    photos = taggedPhotos.slice(0, PHOTOS_PAGE);
     const earnedMap = new Map<string, number>();
     for (const r of (streakEarned ?? []) as { streak_key: string; times_earned: number }[]) earnedMap.set(r.streak_key, Number(r.times_earned) || 0);
     streaks = ((streakDefs ?? []) as { streak_key: string; name: string; description: string | null; badge_url: string | null; tier: number }[]).map((d) => ({
@@ -95,6 +101,7 @@ export default async function PlayerSummaryPage({
           social={social}
           squads={squads}
           photos={photos}
+          photosHasMore={photosHasMore}
           streaks={streaks}
           masteryGuns={masteryGuns}
         />
@@ -157,6 +164,7 @@ function SummaryBody({
   social,
   squads,
   photos,
+  photosHasMore,
   streaks,
   masteryGuns,
 }: {
@@ -168,6 +176,7 @@ function SummaryBody({
   social: Social | null;
   squads: SquadChip[];
   photos: PlayerTaggedPhoto[];
+  photosHasMore: boolean;
   streaks: StreakItem[];
   masteryGuns: GunMastery[];
 }) {
@@ -207,7 +216,7 @@ function SummaryBody({
         <StatsSection row={row} ratingUnlocked={ratingUnlocked} />
       </CollapsibleSection>
       <CollapsibleSection title="Photos">
-        <TaggedPhotosGrid photos={photos} opsTag={opsTag} limit={6} />
+        <TaggedPhotosGrid photos={photos} opsTag={opsTag} limit={6} pageSize={PHOTOS_PAGE} hasMore={photosHasMore} />
       </CollapsibleSection>
       <CollapsibleSection title="Accolades">
         <AccoladesSection data={accolades} />
