@@ -274,9 +274,13 @@ export function buildMatchReportV2(
       objectiveScore = Math.ceil(a.captures * capturePoints + a.recaptures * recapturePoints + a.hold * holdPerSecond);
     }
     const streakScore = a.streakPoints;
+    // `points` is the value of ONE streak of this kind (per-each); the display
+    // multiplies by `count` for the total. Storing a total here and multiplying
+    // again in the tile double-counts the count (see StreakTile). Sort by the
+    // total (points * count) so the biggest contributors still lead.
     const streaks: PlayerStreak[] = Object.entries(a.streaks)
-      .map(([key, count]) => ({ key, name: streakNameOf(key), count, points: streakPointsOf(key) * count }))
-      .sort((x, y) => y.points - x.points);
+      .map(([key, count]) => ({ key, name: streakNameOf(key), count, points: streakPointsOf(key) }))
+      .sort((x, y) => y.points * y.count - x.points * x.count);
     const pp = killMatrix.perPlayer[a.name] ?? { killed: [], killedBy: [], nemesis: null };
     return {
       id: a.id, name: a.name, team: a.team, frags: f, deaths: a.deaths, kd: Math.round(kd * 100) / 100,
