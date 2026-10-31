@@ -201,6 +201,41 @@ export function TokenAdminManager({
     router.refresh();
   }
 
+  // ---- grant XP boosts (2x / 1.5x) ----
+  // Backed by admin_grant_xp_boost (admin-gated definer); boosts live in their own
+  // balance/ledger (player_xp_boosts) and are spent at game sign-in, separate from
+  // game tokens. Grant-only by design - there is no admin refund for boosts.
+  const [boostAcct, setBoostAcct] = useState<{ id: string; ops_tag: string } | null>(null);
+  const [boostType, setBoostType] = useState<"double" | "one_five">("double");
+  const [boostQty, setBoostQty] = useState("1");
+  const [boostBusy, setBoostBusy] = useState(false);
+  const [boostMsg, setBoostMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const boostLabel = (t: "double" | "one_five") => (t === "double" ? "2x XP" : "1.5x XP");
+
+  function startBoostGrant() {
+    setBoostMsg(null);
+    const qty = Math.round(Number(boostQty));
+    if (!boostAcct) return setBoostMsg({ ok: false, text: "Pick a player first." });
+    if (!Number.isFinite(qty) || qty <= 0) return setBoostMsg({ ok: false, text: "Enter a whole number of boosts (1 or more)." });
+    requireTotp(`granting ${qty} ${boostLabel(boostType)} boost${qty === 1 ? "" : "s"}`, () => confirmBoostGrant(qty));
+  }
+
+  async function confirmBoostGrant(qty: number) {
+    if (!boostAcct) return;
+    setBoostBusy(true);
+    setBoostMsg(null);
+    const { error } = await supabase.rpc("admin_grant_xp_boost", {
+      p_acct: boostAcct.id,
+      p_type: boostType,
+      p_qty: qty,
+    });
+    setBoostBusy(false);
+    if (error) return setBoostMsg({ ok: false, text: error.message });
+    setBoostMsg({ ok: true, text: `Granted ${qty} ${boostLabel(boostType)} boost${qty === 1 ? "" : "s"} to ${boostAcct.ops_tag || "player"}.` });
+    setBoostQty("1");
+    router.refresh();
+  }
+
   return (
     <div>
       {/* Config */}
@@ -389,6 +424,60 @@ export function TokenAdminManager({
         <p className="mt-3 text-xs text-text-subtle">
           Every change on this page - validity, bundles, and token grants/refunds - requires two-factor authentication.
           Refunds credit fractional tokens (e.g. 0.4) as a new lot the player can spend toward their next game.
+        </p>
+      </Card>
+
+      {/* Grant XP boosts */}
+      <Card title="Grant XP boosts">
+        <div className="mb-4 inline-flex border border-border-strong">
+          {(["double", "one_five"] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setBoostType(t)}
+              className={`px-4 py-2 text-xs font-semibold uppercase tracking-[0.1em] transition ${
+                boostType === t ? "bg-accent text-black" : "text-text-muted hover:text-accent"
+              }`}
+            >
+              {boostLabel(t)}
+            </button>
+          ))}
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div>
+            <label className={labelCls}>Player ops tag</label>
+            {boostAcct ? (
+              <div className="flex h-11 items-center gap-2 border border-border-strong bg-bg px-3">
+                <span className="text-sm font-semibold text-accent">{boostAcct.ops_tag || "Player"}</span>
+                <button type="button" onClick={() => setBoostAcct(null)} className="ml-auto text-xs text-text-subtle hover:text-accent">Change</button>
+              </div>
+            ) : (
+              <AccountPicker onPick={(a) => setBoostAcct({ id: a.id, ops_tag: a.ops_tag ?? "" })} autoFocus={false} />
+            )}
+          </div>
+          <div>
+            <label className={labelCls}>Number of boosts</label>
+            <input
+              className={input}
+              type="number"
+              min={1}
+              step="1"
+              value={boostQty}
+              onChange={(e) => setBoostQty(e.target.value)}
+              placeholder="e.g. 1"
+            />
+          </div>
+        </div>
+        <div className="mt-4 flex items-center gap-4">
+          <Button variant="primary" size="md" onClick={startBoostGrant} disabled={boostBusy}>
+            {boostBusy ? "Working…" : `Grant ${boostLabel(boostType)} boost`}
+          </Button>
+          {boostMsg && <span className={`text-xs ${boostMsg.ok ? "text-emerald-400" : "text-red-400"}`}>{boostMsg.text}</span>}
+        </div>
+        <p className="mt-3 text-xs text-text-subtle">
+          XP boosts are separate from game tokens: the player applies one at game sign-in to multiply that game&apos;s XP
+          (a boost can&apos;t be used on a game that is already Double XP). Granting requires two-factor authentication.
+          There is no refund for boosts - grant only.
         </p>
       </Card>
 
