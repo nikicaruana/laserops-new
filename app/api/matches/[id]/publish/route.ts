@@ -214,8 +214,20 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   // statement_timeout, and this combined recompute exceeds it, which cancelled
   // the rollup ("canceling statement due to statement timeout"). rollup_match_careers
   // already permits service_role. It completes in a few seconds this way.
-  const { error: rollupErr } = await svc.rpc("rollup_match_careers");
-  if (rollupErr) return NextResponse.json({ error: `Scores saved, but the career rollup failed: ${rollupErr.message}` }, { status: 500 });
+  //
+  // The rollup rebuilds lifetime read-models + leaderboards; it does NOT affect
+  // the per-match report or the post-game emails below. So a failure here must
+  // NOT abort the publish and swallow those emails (it used to early-return,
+  // which is exactly how a hiccuped publish sent zero match-report emails). Retry
+  // once for a transient timeout, then carry on with a non-fatal warning — the
+  // admin can re-run "Recompute XP & ELO" to rebuild the leaderboards.
+  let rollupWarning: string | null = null;
+  let rollupErr = (await svc.rpc("rollup_match_careers")).error;
+  if (rollupErr) rollupErr = (await svc.rpc("rollup_match_careers")).error;
+  if (rollupErr) {
+    console.error("[publish] career rollup failed (non-fatal):", rollupErr.message);
+    rollupWarning = `Scores and emails are done, but the career rollup failed, so lifetime stats and leaderboards may be out of date until you re-run "Recompute XP & ELO". (${rollupErr.message})`;
+  }
 
   // Report is live: tell everyone who played that their report is up (bell for
   // all who played, email for those with an address). Recency-guarded (14d) so
@@ -319,5 +331,5 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
 
   // Refresh the cached, player-agnostic leaderboard/Hall of Fame boards.
   revalidateTag("leaderboards");
-  return NextResponse.json({ ok: true, players: result.aggregates.length, awards: result.awards.length, winner: result.winnerColour });
+  return NextResponse.json({ ok: true, players: result.aggregates.length, awards: result.awards.length, winner: result.winnerColour, warning: rollupWarning ?? undefined });
 }
