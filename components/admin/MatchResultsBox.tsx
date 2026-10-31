@@ -30,20 +30,23 @@ export function MatchResultsBox({
   const [busy, setBusy] = useState<Action | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [warn, setWarn] = useState<string | null>(null);
 
   async function run(action: Action) {
     setBusy(action);
     setErr(null);
     setMsg(null);
+    setWarn(null);
     try {
       const res = await fetch(`/api/matches/${matchId}/${action}`, { method: "POST" });
       const data = (await res.json().catch(() => ({}))) as {
         ok?: boolean; error?: string; players?: number; winner?: string | null; matches?: number;
-        sent?: number; recipients?: string[]; skipped?: number;
+        sent?: number; recipients?: string[]; skipped?: number; warning?: string;
       };
       if (!res.ok || !data.ok) {
         setErr(data.error || (action === "publish" ? "Publish failed." : action === "recompute" ? "Recompute failed." : "Sending report emails failed."));
       } else {
+        if (data.warning) setWarn(data.warning);
         if (action === "publish") setMsg(`Published — ${data.players} players${data.winner ? `, winner ${data.winner}` : ""}.`);
         else if (action === "recompute") setMsg(`Recomputed ${data.players} players across ${data.matches} matches.`);
         else setMsg((data.sent ?? 0) > 0
@@ -109,6 +112,7 @@ export function MatchResultsBox({
       </div>
       <p className="mt-2 text-[0.65rem] text-text-subtle">All require 2FA. Publishing is blocked until every capture ambiguity is reviewed. &ldquo;Email report to new players&rdquo; only reaches players who haven&rsquo;t been emailed yet (e.g. a corrected walk-in) — it never re-scores or double-sends.</p>
       {msg && <p className="mt-2 text-xs text-emerald-300">{msg}</p>}
+      {warn && <p className="mt-2 text-xs text-amber-300">⚠ {warn}</p>}
       {err && <p className="mt-2 text-xs text-red-400">{err}</p>}
       <TotpGate
         open={pending !== null}
