@@ -13,6 +13,7 @@ import { MatchStatusBadge } from "@/components/admin/MatchStatusBadge";
 import { PlayerBar } from "@/components/portal/PlayerBar";
 import { MatchPricingEditor } from "@/components/admin/MatchPricingEditor";
 import { MatchLocationEditor } from "@/components/admin/MatchLocationEditor";
+import { MatchSetupEditor } from "@/components/admin/MatchSetupEditor";
 import { MatchAdminActions } from "@/components/admin/MatchAdminActions";
 import { RescheduleMatchButton } from "@/components/admin/RescheduleMatchButton";
 import { LadderResultActions } from "@/components/admin/LadderResultActions";
@@ -106,7 +107,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
     supabase
       .from("matches")
       .select(
-        "id, match_code, title, status, scheduled_at, played_on, round_count, source_file_type, xp_distributed_at, elo_calculated_at, results_stale_at, live_feed_enabled, winning_team_colour, is_private, is_double_xp, min_players, max_players, price_eur, pricing_mode, deposit_eur, registered_count, paid_count, on_day_count, reached_quorum_at, entry_code, invite_code, ladder_id, home_squad_id, away_squad_id, winner_squad_id, home_squad_colour, away_squad_colour, scoring_mode, location_id",
+        "id, match_code, title, status, scheduled_at, played_on, round_count, source_file_type, xp_distributed_at, elo_calculated_at, results_stale_at, live_feed_enabled, winning_team_colour, is_private, is_double_xp, is_beginner, beginner_max_level, min_players, max_players, price_eur, pricing_mode, deposit_eur, registered_count, paid_count, on_day_count, reached_quorum_at, entry_code, invite_code, ladder_id, home_squad_id, away_squad_id, winner_squad_id, home_squad_colour, away_squad_colour, scoring_mode, location_id",
       )
       .eq("id", id)
       .maybeSingle(),
@@ -551,8 +552,17 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
           </LifecycleGroup>
         )}
 
-        {/* Match setup — pricing & location (always available) -------------- */}
-        <LifecycleGroup title="Match setup" hint="Pricing & location" order={1}>
+        {/* Match setup — type, capacity, pricing & location (always available) */}
+        <LifecycleGroup title="Match setup" hint="Type, capacity, pricing & location" order={1}>
+          <MatchSetupEditor
+            matchId={match.id}
+            isPrivate={!!match.is_private}
+            isDoubleXp={!!match.is_double_xp}
+            minPlayers={match.min_players ?? null}
+            maxPlayers={match.max_players ?? null}
+            isBeginner={!!(match as { is_beginner: boolean | null }).is_beginner}
+            beginnerMaxLevel={(match as { beginner_max_level: number | null }).beginner_max_level ?? null}
+          />
           <MatchPricingEditor
             matchId={match.id}
             price={match.price_eur != null ? Number(match.price_eur) : null}
