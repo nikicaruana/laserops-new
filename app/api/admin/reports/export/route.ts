@@ -38,7 +38,10 @@ export async function GET(req: NextRequest) {
   const type = url.searchParams.get("type") || "token_ledger";
   const from = url.searchParams.get("from");
   const to = url.searchParams.get("to");
-  // Make `to` inclusive of the whole day.
+  // Which date the range filters on for the financial ledger: "game"
+  // (effective_date) or "payment" (occurred_at). Default game.
+  const basis = url.searchParams.get("basis") === "payment" ? "payment" : "game";
+  // Make `to` inclusive of the whole day (for the timestamp column).
   const toEnd = to ? new Date(new Date(to).getTime() + 86_400_000).toISOString() : null;
 
   // Resolve ops tags for a set of account ids in one query.
@@ -59,9 +62,14 @@ export async function GET(req: NextRequest) {
     let q = supabase
       .from("financial_entries")
       .select("occurred_at, game_date, direction, category, amount_eur, method, account_id, match_id, source, source_ref, note")
-      .order("occurred_at", { ascending: false });
-    if (from) q = q.gte("occurred_at", from);
-    if (toEnd) q = q.lte("occurred_at", toEnd);
+      .order(basis === "game" ? "effective_date" : "occurred_at", { ascending: false });
+    if (basis === "game") {
+      if (from) q = q.gte("effective_date", from);
+      if (to) q = q.lte("effective_date", to);
+    } else {
+      if (from) q = q.gte("occurred_at", from);
+      if (toEnd) q = q.lte("occurred_at", toEnd);
+    }
     const { data } = await q;
     const t = await tags((data ?? []).map((r) => r.account_id));
     filename = "financial-ledger.csv";

@@ -48,11 +48,14 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: "po
   );
 }
 
-export default async function ReportsPage({ searchParams }: { searchParams: Promise<{ type?: string; from?: string; to?: string }> }) {
+export default async function ReportsPage({ searchParams }: { searchParams: Promise<{ type?: string; from?: string; to?: string; basis?: string }> }) {
   const sp = await searchParams;
   const type = sp.type === "token_ledger" ? "token_ledger" : sp.type === "charts" ? "charts" : "financial";
   const from = sp.from || "";
   const to = sp.to || "";
+  // Which date the From/To range filters on: "game" (effective_date — game date
+  // when the entry has one, else payment date) or "payment" (occurred_at).
+  const basis = sp.basis === "payment" ? "payment" : "game";
   const toEnd = to ? new Date(new Date(to).getTime() + 86_400_000).toISOString() : null;
 
   // Charts tab: a client component fetches + renders its own data (admin RLS),
@@ -67,8 +70,8 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
             Revenue over time by type, plus token-usage frequency. Range: <span className="text-text">{rangeLabel}</span>.
           </p>
         </header>
-        <ReportControls type={type} from={from} to={to} />
-        <FinancialCharts from={from} to={to} />
+        <ReportControls type={type} from={from} to={to} basis={basis} />
+        <FinancialCharts from={from} to={to} basis={basis} />
       </div>
     );
   }
@@ -139,10 +142,16 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
     let q = supabase
       .from("financial_entries")
       .select("id, occurred_at, game_date, direction, category, amount_eur, method, account_id, match_id, note")
-      .order("occurred_at", { ascending: false })
+      .order(basis === "game" ? "effective_date" : "occurred_at", { ascending: false })
       .limit(FETCH_LIMIT);
-    if (from) q = q.gte("occurred_at", from);
-    if (toEnd) q = q.lte("occurred_at", toEnd);
+    if (basis === "game") {
+      // effective_date is a plain date — bounds are inclusive on both ends.
+      if (from) q = q.gte("effective_date", from);
+      if (to) q = q.lte("effective_date", to);
+    } else {
+      if (from) q = q.gte("occurred_at", from);
+      if (toEnd) q = q.lte("occurred_at", toEnd);
+    }
     const { data } = await q;
     const rows = data ?? [];
     total = rows.length;
@@ -207,7 +216,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         </p>
       </header>
 
-      <ReportControls type={type} from={from} to={to} />
+      <ReportControls type={type} from={from} to={to} basis={basis} />
 
       {type === "financial" && <ManualEntryForm games={gameOptions} />}
 

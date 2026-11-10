@@ -19,16 +19,21 @@ const TYPES = [
   { key: "charts", label: "Charts" },
 ] as const;
 
-export function ReportControls({ type, from, to }: { type: string; from: string; to: string }) {
+export function ReportControls({ type, from, to, basis }: { type: string; from: string; to: string; basis: string }) {
   const router = useRouter();
   const [f, setF] = useState(from);
   const [t, setT] = useState(to);
+  const [b, setB] = useState(basis);
+  // The date-basis dropdown only makes sense for money entries (game vs payment
+  // date). The token ledger has only its one timestamp, so hide it there.
+  const showBasis = type !== "token_ledger";
 
   function apply(nextType = type) {
     const p = new URLSearchParams();
     p.set("type", nextType);
     if (f) p.set("from", f);
     if (t) p.set("to", t);
+    if (b && b !== "game") p.set("basis", b);
     router.push(`/admin/reports?${p.toString()}`);
   }
 
@@ -37,6 +42,7 @@ export function ReportControls({ type, from, to }: { type: string; from: string;
     p.set("type", type);
     if (from) p.set("from", from);
     if (to) p.set("to", to);
+    if (basis && basis !== "game") p.set("basis", basis);
     return `/api/admin/reports/export?${p.toString()}`;
   })();
 
@@ -61,6 +67,15 @@ export function ReportControls({ type, from, to }: { type: string; from: string;
         ))}
       </div>
       <div className="flex flex-wrap items-end gap-3">
+        {showBasis && (
+          <div>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.1em] text-text-muted">Filter by</label>
+            <select value={b} onChange={(e) => setB(e.target.value)} className={input}>
+              <option value="game">Game date</option>
+              <option value="payment">Payment date</option>
+            </select>
+          </div>
+        )}
         <div>
           <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.1em] text-text-muted">From</label>
           <input type="date" value={f} onChange={(e) => setF(e.target.value)} className={input} />

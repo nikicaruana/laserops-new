@@ -60,13 +60,15 @@ const monthLabel = (d: Date) => d.toLocaleDateString("en-GB", { month: "short", 
 const dayKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const dayLabel = (d: Date) => d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
 const num = (v: number | string | null | undefined) => (v == null ? 0 : Number(v)) || 0;
-// Game/drinks revenue is reported on the day the game was PLAYED (game_date);
-// token packs and other entries fall back to their payment date (occurred_at).
-const effDate = (r: FinRow) => new Date(r.game_date ? `${r.game_date}T00:00:00` : r.occurred_at);
+// The date a row is reported on. By game date (default): the day the game was
+// played (game_date) for game/drinks, else the payment day. By payment date:
+// always the payment day (occurred_at).
+const effDate = (r: FinRow, basis: string) =>
+  basis === "payment" ? new Date(r.occurred_at) : new Date(r.game_date ? `${r.game_date}T00:00:00` : r.occurred_at);
 const tokenStr = (n: number) =>
   n.toLocaleString("en-GB", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
-export function FinancialCharts({ from, to }: { from: string; to: string }) {
+export function FinancialCharts({ from, to, basis = "game" }: { from: string; to: string; basis?: string }) {
   const [groupBy, setGroupBy] = useState<GroupBy>("month");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -89,8 +91,14 @@ export function FinancialCharts({ from, to }: { from: string; to: string }) {
       setLoading(true); setError(null);
       try {
         const supabase = createClient();
-        let finQ = supabase.from("financial_entries").select("category, direction, amount_eur, occurred_at, game_date, match_id, account_id").gte("occurred_at", fromIso).order("occurred_at");
-        if (toEndIso) finQ = finQ.lte("occurred_at", toEndIso);
+        let finQ = supabase.from("financial_entries").select("category, direction, amount_eur, occurred_at, game_date, match_id, account_id").order("occurred_at");
+        if (basis === "game") {
+          finQ = finQ.gte("effective_date", fromIso);
+          if (to) finQ = finQ.lte("effective_date", to);
+        } else {
+          finQ = finQ.gte("occurred_at", fromIso);
+          if (toEndIso) finQ = finQ.lte("occurred_at", toEndIso);
+        }
         let spendQ = supabase.from("token_transactions").select("account_id, delta, match_id, created_at").eq("kind", "spend").gte("created_at", fromIso).order("created_at");
         if (toEndIso) spendQ = spendQ.lte("created_at", toEndIso);
         let gamesQ = supabase.from("matches").select("id, match_code, title, scheduled_at, played_on, pricing_mode").eq("status", "completed").gte("scheduled_at", fromIso).order("scheduled_at");
@@ -140,7 +148,7 @@ export function FinancialCharts({ from, to }: { from: string; to: string }) {
       }
     })();
     return () => { cancelled = true; };
-  }, [fromIso, toEndIso]);
+  }, [fromIso, toEndIso, to, basis]);
 
   const buckets = useMemo<Bucket[]>(() => {
     const map = new Map<string, Bucket>();
@@ -173,7 +181,7 @@ export function FinancialCharts({ from, to }: { from: string; to: string }) {
 
     // Revenue
     for (const r of fin) {
-      const d = effDate(r);
+      const d = effDate(r, basis);
       const signed = (r.direction === "refund" ? -1 : 1) * num(r.amount_eur);
       let b: Bucket;
       if (groupBy === "game" && r.match_id) { const m = matchById.get(r.match_id); b = m ? gameBucket(m) : ensure(`g:${r.match_id}`, "Game", d.getTime()); }
@@ -198,7 +206,7 @@ export function FinancialCharts({ from, to }: { from: string; to: string }) {
     }
 
     return [...map.values()].sort((a, b) => a.sort - b.sort);
-  }, [fin, spends, matchList, opsById, playedByMatch, paidByMatch, legacyCutoff, groupBy]);
+  }, [fin, spends, matchList, opsById, playedByMatch, paidByMatch, legacyCutoff, groupBy, basis]);
 
   const hasData = buckets.length > 0;
   const maxTokens = Math.max(1, ...buckets.map((b) => b.tokensUsed));
@@ -217,7 +225,11 @@ export function FinancialCharts({ from, to }: { from: string; to: string }) {
             </button>
           ))}
         </div>
-        <span className="text-xs text-text-subtle">Date range is set by the From / To filter above. Game &amp; drinks revenue is grouped by the day the game was played; token packs by purchase date.</span>
+        <span className="text-xs text-text-subtle">
+          {basis === "payment"
+            ? "Grouped and filtered by payment date (when each payment was resolved)."
+            : "Game & drinks revenue is grouped by the day the game was played; token packs by purchase date. Switch “Filter by” above to use payment date instead."}
+        </span>
       </div>
 
       {/* Legend — identity never colour-alone. */}
