@@ -138,7 +138,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
     // financial ledger
     let q = supabase
       .from("financial_entries")
-      .select("id, occurred_at, direction, category, amount_eur, method, account_id, match_id, note")
+      .select("id, occurred_at, game_date, direction, category, amount_eur, method, account_id, match_id, note")
       .order("occurred_at", { ascending: false })
       .limit(FETCH_LIMIT);
     if (from) q = q.gte("occurred_at", from);
@@ -174,6 +174,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
     financialEntries = shown.map((r) => ({
       id: r.id as string,
       date: String(r.occurred_at ?? "").slice(0, 10),
+      gameDate: r.game_date ? String(r.game_date).slice(0, 10) : "",
       direction: r.direction as string,
       category: r.category as string,
       amountEur: Number(r.amount_eur),

@@ -17,7 +17,8 @@ import { formatEur } from "@/lib/money";
 
 export type FinEntry = {
   id: string;
-  date: string; // YYYY-MM-DD
+  date: string; // YYYY-MM-DD — payment / resolution date (occurred_at)
+  gameDate: string; // YYYY-MM-DD — day the game was played; "" for non-game entries
   direction: string; // payment | refund
   category: string; // game | drinks | tokens | other
   amountEur: number;
@@ -148,7 +149,7 @@ export function FinancialEntriesEditor({ initial }: { initial: FinEntry[] }) {
         <table className="w-full min-w-[820px] text-left text-sm">
           <thead>
             <tr className="border-b border-border bg-bg-elevated">
-              {["Date", "Direction", "Category", "Game", "Amount", "Method", "Player", "Note", ...(editing ? [""] : [])].map((h, i) => (
+              {["Payment date", "Game date", "Direction", "Category", "Game", "Amount", "Method", "Player", "Note", ...(editing ? [""] : [])].map((h, i) => (
                 <th key={i} className="px-3 py-2 text-[0.6rem] font-bold uppercase tracking-[0.14em] text-text-subtle">{h}</th>
               ))}
             </tr>
@@ -160,6 +161,7 @@ export function FinancialEntriesEditor({ initial }: { initial: FinEntry[] }) {
                 return (
                   <tr key={r.id} className="border-b border-border/60">
                     <td className="px-3 py-2 text-text-muted">{fmtDate(r.date)}</td>
+                    <td className="px-3 py-2 text-text-muted">{r.gameDate ? fmtDate(r.gameDate) : "—"}</td>
                     <td className={`px-3 py-2 ${r.direction === "refund" ? "text-red-400" : "text-text-muted"}`}>{r.direction === "refund" ? "Refund" : "Payment"}</td>
                     <td className="px-3 py-2 text-text-muted capitalize">{r.category}</td>
                     <td className="px-3 py-2 text-text-muted">{r.matchCode}</td>
@@ -175,6 +177,7 @@ export function FinancialEntriesEditor({ initial }: { initial: FinEntry[] }) {
                   <td className="px-2 py-1.5">
                     <input type="date" className={inp} value={r.date} disabled={del} onChange={(e) => set(r.id, "date", e.target.value)} />
                   </td>
+                  <td className="px-3 py-1.5 text-xs text-text-subtle">{r.gameDate ? fmtDate(r.gameDate) : "—"}</td>
                   <td className="px-2 py-1.5">
                     <select className={inp} value={r.direction} disabled={del} onChange={(e) => set(r.id, "direction", e.target.value)}>
                       <option value="payment">Payment</option>
@@ -214,7 +217,7 @@ export function FinancialEntriesEditor({ initial }: { initial: FinEntry[] }) {
             })}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={editing ? 9 : 8} className="px-3 py-8 text-center text-sm text-text-muted">No entries in this range.</td>
+                <td colSpan={editing ? 10 : 9} className="px-3 py-8 text-center text-sm text-text-muted">No entries in this range.</td>
               </tr>
             )}
           </tbody>

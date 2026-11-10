@@ -50,7 +50,7 @@ type Bucket = {
   isEvent: boolean;                                             // by-game: a non-game event bar
 };
 
-type FinRow = { category: string | null; direction: string | null; amount_eur: number | string | null; occurred_at: string; match_id: string | null; account_id: string | null };
+type FinRow = { category: string | null; direction: string | null; amount_eur: number | string | null; occurred_at: string; game_date: string | null; match_id: string | null; account_id: string | null };
 type SpendRow = { account_id: string | null; delta: number | string | null; match_id: string | null; created_at: string };
 type MatchRow = { id: string; match_code: string | null; title: string | null; scheduled_at: string | null; played_on: string | null; pricing_mode: string | null };
 type PartRow = { match_id: string | null; account_id: string | null; paid_at: string | null; payment_intent: string | null };
@@ -60,6 +60,9 @@ const monthLabel = (d: Date) => d.toLocaleDateString("en-GB", { month: "short", 
 const dayKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const dayLabel = (d: Date) => d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
 const num = (v: number | string | null | undefined) => (v == null ? 0 : Number(v)) || 0;
+// Game/drinks revenue is reported on the day the game was PLAYED (game_date);
+// token packs and other entries fall back to their payment date (occurred_at).
+const effDate = (r: FinRow) => new Date(r.game_date ? `${r.game_date}T00:00:00` : r.occurred_at);
 const tokenStr = (n: number) =>
   n.toLocaleString("en-GB", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
@@ -86,7 +89,7 @@ export function FinancialCharts({ from, to }: { from: string; to: string }) {
       setLoading(true); setError(null);
       try {
         const supabase = createClient();
-        let finQ = supabase.from("financial_entries").select("category, direction, amount_eur, occurred_at, match_id, account_id").gte("occurred_at", fromIso).order("occurred_at");
+        let finQ = supabase.from("financial_entries").select("category, direction, amount_eur, occurred_at, game_date, match_id, account_id").gte("occurred_at", fromIso).order("occurred_at");
         if (toEndIso) finQ = finQ.lte("occurred_at", toEndIso);
         let spendQ = supabase.from("token_transactions").select("account_id, delta, match_id, created_at").eq("kind", "spend").gte("created_at", fromIso).order("created_at");
         if (toEndIso) spendQ = spendQ.lte("created_at", toEndIso);
@@ -170,7 +173,7 @@ export function FinancialCharts({ from, to }: { from: string; to: string }) {
 
     // Revenue
     for (const r of fin) {
-      const d = new Date(r.occurred_at);
+      const d = effDate(r);
       const signed = (r.direction === "refund" ? -1 : 1) * num(r.amount_eur);
       let b: Bucket;
       if (groupBy === "game" && r.match_id) { const m = matchById.get(r.match_id); b = m ? gameBucket(m) : ensure(`g:${r.match_id}`, "Game", d.getTime()); }
@@ -214,7 +217,7 @@ export function FinancialCharts({ from, to }: { from: string; to: string }) {
             </button>
           ))}
         </div>
-        <span className="text-xs text-text-subtle">Date range is set by the From / To filter above.</span>
+        <span className="text-xs text-text-subtle">Date range is set by the From / To filter above. Game &amp; drinks revenue is grouped by the day the game was played; token packs by purchase date.</span>
       </div>
 
       {/* Legend — identity never colour-alone. */}

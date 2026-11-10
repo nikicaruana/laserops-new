@@ -63,7 +63,7 @@ export function PaymentsDueManager({ initial, tokenBalances = {} }: { initial: D
     setBusy(true);
     setError(null);
     const supabase = createClient();
-    const m = method[keyOf(r)] ?? r.settlement_method ?? "cash";
+    const m = method[keyOf(r)] ?? r.settlement_method ?? "revolut";
     const ovRaw = amt[keyOf(r)];
     const ov = ovRaw !== undefined && ovRaw !== "" ? Number(ovRaw) : NaN;
     const dRaw = drinksAmt[keyOf(r)];
@@ -202,7 +202,7 @@ export function PaymentsDueManager({ initial, tokenBalances = {} }: { initial: D
                               <label className="flex items-center justify-end gap-1 text-[0.55rem] uppercase tracking-[0.08em] text-text-subtle">Drinks €
                                 <input type="number" step="0.01" min="0" placeholder="0" value={drinksAmt[k] ?? (drinks > 0 ? String(drinks) : "")} onChange={(e) => setDrinksAmt((s) => ({ ...s, [k]: e.target.value }))} className="h-6 w-16 rounded-none border border-border-strong bg-bg px-1.5 text-xs text-text focus:border-accent focus:outline-none" /></label>
                             </div>
-                            <select className="h-7 rounded-none border border-border-strong bg-bg px-1.5 text-xs text-text focus:border-accent focus:outline-none" value={method[k] ?? r.settlement_method ?? "cash"} onChange={(e) => setMethod((s) => ({ ...s, [k]: e.target.value }))}>
+                            <select className="h-7 rounded-none border border-border-strong bg-bg px-1.5 text-xs text-text focus:border-accent focus:outline-none" value={method[k] ?? r.settlement_method ?? "revolut"} onChange={(e) => setMethod((s) => ({ ...s, [k]: e.target.value }))}>
                               <option value="cash">Cash</option>
                               <option value="revolut">Revolut</option>
                             </select>

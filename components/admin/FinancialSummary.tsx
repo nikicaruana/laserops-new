@@ -18,6 +18,7 @@ import { Sensitive } from "@/components/admin/Sensitive";
 
 type Entry = {
   occurred_at: string;
+  game_date: string | null;
   direction: string;
   category: string;
   amount_eur: number | string;
@@ -26,6 +27,10 @@ type Entry = {
   note: string | null;
 };
 type Period = "mtd" | "qtd" | "ytd";
+
+// Game/drinks revenue counts toward the period of the day the game was PLAYED
+// (game_date); everything else counts on its payment date (occurred_at).
+const effTime = (e: Entry) => new Date(e.game_date ? `${e.game_date}T00:00:00` : e.occurred_at).getTime();
 
 const CAT_LABEL: Record<string, string> = { tokens: "Tokens", game: "Game", drinks: "Drinks", other: "Other" };
 
@@ -61,7 +66,7 @@ function sums(entries: Entry[], start: Date, end: Date) {
   let payments = 0,
     refunds = 0;
   for (const e of entries) {
-    const t = new Date(e.occurred_at).getTime();
+    const t = effTime(e);
     if (t < start.getTime() || t > end.getTime()) continue;
     const amt = Number(e.amount_eur) || 0;
     if (e.direction === "refund") refunds += amt;
@@ -100,7 +105,7 @@ export function FinancialSummary() {
     (async () => {
       const { data } = await supabase
         .from("financial_entries")
-        .select("occurred_at, direction, category, amount_eur, account_id, match_id, note")
+        .select("occurred_at, game_date, direction, category, amount_eur, account_id, match_id, note")
         .gte("occurred_at", from)
         .order("occurred_at", { ascending: false });
       const list = (data ?? []) as Entry[];
@@ -130,7 +135,7 @@ export function FinancialSummary() {
     const prev = sums(entries, prevStart, prevEnd);
     const inPeriod = entries
       .filter((e) => {
-        const t = new Date(e.occurred_at).getTime();
+        const t = effTime(e);
         return t >= start.getTime() && t <= end.getTime();
       })
       .slice(0, 10);

@@ -58,16 +58,17 @@ export async function GET(req: NextRequest) {
   if (type === "financial") {
     let q = supabase
       .from("financial_entries")
-      .select("occurred_at, direction, category, amount_eur, method, account_id, match_id, source, source_ref, note")
+      .select("occurred_at, game_date, direction, category, amount_eur, method, account_id, match_id, source, source_ref, note")
       .order("occurred_at", { ascending: false });
     if (from) q = q.gte("occurred_at", from);
     if (toEnd) q = q.lte("occurred_at", toEnd);
     const { data } = await q;
     const t = await tags((data ?? []).map((r) => r.account_id));
     filename = "financial-ledger.csv";
-    headers = ["Date", "Direction", "Category", "Amount EUR", "Method", "Player", "Match", "Source", "Ref", "Note"];
+    headers = ["Payment date", "Game date", "Direction", "Category", "Amount EUR", "Method", "Player", "Match", "Source", "Ref", "Note"];
     rows = (data ?? []).map((r) => ({
-      Date: fmtDate(r.occurred_at),
+      "Payment date": fmtDate(r.occurred_at),
+      "Game date": r.game_date ? String(r.game_date).slice(0, 10) : "",
       Direction: r.direction,
       Category: r.category,
       "Amount EUR": (r.direction === "refund" ? "-" : "") + Number(r.amount_eur).toFixed(2),

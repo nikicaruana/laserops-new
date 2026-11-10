@@ -465,11 +465,11 @@ export function MatchParticipantsManager({
                                 <label className="flex items-center justify-end gap-1 text-[0.55rem] uppercase tracking-[0.08em] text-text-subtle">Drinks €
                                   <input type="number" step="0.01" min="0" placeholder="0" value={drinksInput[r.id] ?? (drinksStored(r) > 0 ? String(drinksStored(r)) : "")} onChange={(e) => setDrinksInput((s) => ({ ...s, [r.id]: e.target.value }))} className="h-6 w-16 rounded-none border border-border-strong bg-bg px-1.5 text-xs text-text focus:border-accent focus:outline-none" /></label>
                               </div>
-                              <select className="h-7 rounded-none border border-border-strong bg-bg px-1.5 text-xs text-text focus:border-accent focus:outline-none" value={paySel[r.id] ?? r.settlement_method ?? "cash"} onChange={(e) => setPaySel((s) => ({ ...s, [r.id]: e.target.value }))}>
+                              <select className="h-7 rounded-none border border-border-strong bg-bg px-1.5 text-xs text-text focus:border-accent focus:outline-none" value={paySel[r.id] ?? r.settlement_method ?? "revolut"} onChange={(e) => setPaySel((s) => ({ ...s, [r.id]: e.target.value }))}>
                                 <option value="cash">Cash</option>
                                 <option value="revolut">Revolut</option>
                               </select>
-                              <button type="button" onClick={() => markPaid(r, paySel[r.id] ?? r.settlement_method ?? "cash")} disabled={busy} className="whitespace-nowrap border border-accent bg-accent/10 px-3 py-1.5 text-[0.6rem] font-bold uppercase tracking-[0.1em] text-accent hover:bg-accent/20 disabled:opacity-50">Mark paid</button>
+                              <button type="button" onClick={() => markPaid(r, paySel[r.id] ?? r.settlement_method ?? "revolut")} disabled={busy} className="whitespace-nowrap border border-accent bg-accent/10 px-3 py-1.5 text-[0.6rem] font-bold uppercase tracking-[0.1em] text-accent hover:bg-accent/20 disabled:opacity-50">Mark paid</button>
                             </div>
                             <button type="button" onClick={() => openDrinks(r)} disabled={busy} className="text-[0.55rem] uppercase tracking-[0.1em] text-text-subtle hover:text-accent disabled:opacity-50">Itemise drinks</button>
                           </div>
