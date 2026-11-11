@@ -1,11 +1,14 @@
 /**
  * app/api/admin/vouchers/pdf/route.ts
  * --------------------------------------------------------------------
- * Printable prize-voucher sheet. Admin-gated. Lays out the vouchers of a batch
- * as card-style blocks (3 per A4 page) with the LaserOps logo, a "1 game token"
- * value, a QR code that opens /player-portal/claim?code=<code>, the short backup
- * code, and the expiry. Scanning the QR runs the normal claim flow (sign up /
- * in first if needed, then the token is granted once).
+ * Printable prize-voucher sheet. Admin-gated. Two-sided, card-style, 3 cards per
+ * A4 page on a #fede00 yellow ground. For each group of 3 vouchers it lays down a
+ * FRONT page (logo only) immediately followed by a BACK page (the "1 game token"
+ * value, numbered redeem steps, the short backup code, the expiry, and the QR that
+ * opens /player-portal/claim?code=<code>). Print duplex, flipping on the LONG edge,
+ * then cut into 3 strips — each strip is a logo-front / details-back voucher.
+ * Scanning the QR runs the normal claim flow (sign up / in first if needed, then
+ * the token is granted once).
  *
  * Query: ?label=<batch label>  (use "(no label)" for the unlabeled batch), or
  * ?ids=<id,id,...>. ?all=1 includes claimed/void too (default: unclaimed only).
@@ -88,21 +91,40 @@ export async function GET(req: NextRequest) {
     doc.on("end", () => resolve(Buffer.concat(chunks)));
     doc.on("error", reject);
 
-    const PAGE_W = 595.28;
+    const PAGE_W = 595.28, PAGE_H = 841.89;
+    const YELLOW = "#fede00";
     const L = 40, R = 555.28, CW = R - L;
     const PER_PAGE = 3;
     const gap = 16;
     const topY = 36;
-    const cardH = (841.89 - topY - 24 - gap * (PER_PAGE - 1)) / PER_PAGE;
+    const cardH = (PAGE_H - topY - 24 - gap * (PER_PAGE - 1)) / PER_PAGE;
+    const host = brand.siteUrl.replace(/^https?:\/\//, "");
+    const slotY = (slot: number) => topY + slot * (cardH + gap);
 
-    vouchers.forEach((v, i) => {
-      const slot = i % PER_PAGE;
-      if (i > 0 && slot === 0) doc.addPage();
-      const cy = topY + slot * (cardH + gap);
+    // Fill the whole sheet yellow (full-bleed) so every cut card is yellow.
+    const paintBg = () => doc.rect(0, 0, PAGE_W, PAGE_H).fill(YELLOW);
+    // Dashed cut guide around each card — visible on yellow, sharp corners.
+    const cardFrame = (cy: number) =>
+      doc.rect(L, cy, CW, cardH).lineWidth(0.75).dash(4, { space: 3 }).strokeColor("#00000055").stroke().undash();
 
-      // Sharp-cornered card frame so the cards cut cleanly on straight lines.
-      doc.rect(L, cy, CW, cardH).lineWidth(1).strokeColor("#c9c9c9").stroke();
+    // FRONT face: the logo only, centred on the yellow card.
+    const drawFront = (cy: number) => {
+      cardFrame(cy);
+      if (logo) {
+        const lw = 360;
+        const lh = lw * (145 / 800); // logo is 800×145
+        doc.image(logo, L + (CW - lw) / 2, cy + (cardH - lh) / 2, { width: lw });
+      } else {
+        doc.font("bold").fontSize(34).fillColor("#111")
+          .text("LASEROPS", L, cy + cardH / 2 - 28, { width: CW, align: "center", lineBreak: false });
+        doc.font("semi").fontSize(10).fillColor("#333")
+          .text("TACTICAL LASER TAG", L, doc.y + 4, { width: CW, align: "center", characterSpacing: 3, lineBreak: false });
+      }
+    };
 
+    // BACK face: value, redeem steps, backup code, expiry, and the QR.
+    const drawBack = (v: Voucher, cy: number, qrIndex: number) => {
+      cardFrame(cy);
       const pad = 24;
       const qrSize = Math.min(cardH - pad * 2, 150);
       const qrX = R - pad - qrSize;
@@ -110,18 +132,7 @@ export async function GET(req: NextRequest) {
       const textX = L + pad;
       const textW = qrX - 20 - textX;
 
-      // Logo — prominent; it already carries the "Tactical Laser Tag" tagline.
       let ty = cy + pad;
-      if (logo) {
-        doc.image(logo, textX, ty, { fit: [255, 48] });
-        ty += 58;
-      } else {
-        doc.font("bold").fontSize(20).fillColor("#111").text("LASEROPS", textX, ty, { lineBreak: false });
-        doc.font("semi").fontSize(8).fillColor("#555").text("TACTICAL LASER TAG", textX, doc.y + 2, { characterSpacing: 2.5, lineBreak: false });
-        ty = doc.y + 16;
-      }
-
-      // Value
       const tok = Number(v.tokens) || 1;
       doc.font("bold").fontSize(22).fillColor("#111")
         .text(`${tok} GAME TOKEN${tok === 1 ? "" : "S"}`, textX, ty, { width: textW, lineBreak: false });
@@ -135,21 +146,37 @@ export async function GET(req: NextRequest) {
       ];
       steps.forEach((s, n) => {
         doc.font("bold").fontSize(9).fillColor("#111").text(`${n + 1}`, textX, ty, { continued: true, lineBreak: false });
-        doc.font("med").fontSize(9).fillColor("#555").text(`   ${s}`, { width: textW });
+        doc.font("med").fontSize(9).fillColor("#333").text(`   ${s}`, { width: textW });
         ty = doc.y + 3;
       });
       ty += 8;
 
-      // Backup code — kept quiet; the QR is the main path.
-      doc.font("med").fontSize(9).fillColor("#9a9a9a")
+      // Backup code — kept quiet; the QR is the main path. Darkened for yellow.
+      doc.font("med").fontSize(9).fillColor("#444")
         .text(`Code  ${v.claim_code}`, textX, ty, { lineBreak: false, characterSpacing: 0.8 });
-      doc.font("med").fontSize(8.5).fillColor("#9a9a9a")
-        .text(`Valid until ${fmtDate(v.expires_at)}  ·  1 token = 1 game  ·  ${brand.siteUrl.replace(/^https?:\/\//, "")}/claim`, textX, ty + 15, { width: textW, lineBreak: false });
+      doc.font("med").fontSize(8.5).fillColor("#444")
+        .text(`Valid until ${fmtDate(v.expires_at)}  ·  1 token = 1 game  ·  ${host}/claim`, textX, ty + 15, { width: textW, lineBreak: false });
 
-      // QR
-      doc.image(qrBuffers[i], qrX, qrY, { width: qrSize, height: qrSize });
-      doc.font("med").fontSize(7.5).fillColor("#888").text("Scan to claim", qrX, qrY + qrSize + 3, { width: qrSize, align: "center", lineBreak: false });
-    });
+      // White tile behind the QR for a clean quiet zone against the yellow.
+      doc.rect(qrX - 6, qrY - 6, qrSize + 12, qrSize + 12).fill("#ffffff");
+      doc.image(qrBuffers[qrIndex], qrX, qrY, { width: qrSize, height: qrSize });
+      doc.font("med").fontSize(7.5).fillColor("#555").text("Scan to claim", qrX, qrY + qrSize + 3, { width: qrSize, align: "center", lineBreak: false });
+    };
+
+    // Per group of 3: a page of fronts, then a page of backs in the same slots.
+    // Duplex-print flipping on the long edge so each card gets its own back.
+    let firstPage = true;
+    for (let g = 0; g < vouchers.length; g += PER_PAGE) {
+      const group = vouchers.slice(g, g + PER_PAGE);
+      if (!firstPage) doc.addPage();
+      firstPage = false;
+      paintBg();
+      group.forEach((_, slot) => drawFront(slotY(slot)));
+
+      doc.addPage();
+      paintBg();
+      group.forEach((v, slot) => drawBack(v, slotY(slot), g + slot));
+    }
 
     doc.end();
   });

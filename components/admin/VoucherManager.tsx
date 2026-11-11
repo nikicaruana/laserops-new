@@ -6,8 +6,9 @@
  * Mint and manage printable prize vouchers. Each voucher is a token_gift worth
  * N game tokens, redeemed by scanning a QR that opens /player-portal/claim (sign
  * up / in first if needed, then granted once). Generate a batch, download the
- * print-ready PDF (3 cards per A4), and void a batch's unclaimed vouchers if a
- * sheet is lost. Minting and voiding step up through 2FA, like the other
+ * print-ready PDF (two-sided yellow cards, 3 per A4 — duplex, flip on long edge),
+ * and void a batch's unclaimed vouchers if a sheet is lost. Minting and voiding
+ * step up through 2FA, like the other
  * value-affecting token actions.
  */
 import { useState } from "react";
