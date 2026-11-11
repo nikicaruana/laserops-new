@@ -69,12 +69,14 @@ export async function GET(req: NextRequest) {
   const vouchers = (data ?? []) as Voucher[];
   if (vouchers.length === 0) return new Response("No vouchers to print for that batch.", { status: 404 });
 
-  // Pre-render the QR PNGs (dark on transparent-white) for each voucher.
+  // Pre-render the QR PNGs for each voucher. Black modules on the same yellow as
+  // the card, so the code sits directly on the ground with no white tile — the
+  // contrast is still well within scanner tolerance.
   const claimBase = `${brand.siteUrl}/player-portal/claim`;
   const qrBuffers = await Promise.all(
     vouchers.map((v) =>
       QRCode.toBuffer(`${claimBase}?code=${encodeURIComponent(v.claim_code)}`, {
-        type: "png", margin: 1, width: 360, color: { dark: "#111111ff", light: "#ffffffff" },
+        type: "png", margin: 1, width: 360, color: { dark: "#111111ff", light: "#fede00ff" },
       }),
     ),
   );
@@ -122,45 +124,65 @@ export async function GET(req: NextRequest) {
       }
     };
 
-    // BACK face: value, redeem steps, backup code, expiry, and the QR.
+    // BACK face: value, redeem steps, backup code, expiry, terms, and the QR.
+    // Everything in near-black on the yellow ground so it reads boldly; the QR
+    // shares the yellow background (no white tile).
     const drawBack = (v: Voucher, cy: number, qrIndex: number) => {
       cardFrame(cy);
-      const pad = 24;
-      const qrSize = Math.min(cardH - pad * 2, 150);
+      const pad = 26;
+      const qrSize = 140;
       const qrX = R - pad - qrSize;
-      const qrY = cy + (cardH - qrSize) / 2;
+      const qrY = cy + (cardH - qrSize) / 2 - 2;
       const textX = L + pad;
-      const textW = qrX - 20 - textX;
-
-      let ty = cy + pad;
+      const textW = qrX - 24 - textX;
       const tok = Number(v.tokens) || 1;
-      doc.font("bold").fontSize(22).fillColor("#111")
-        .text(`${tok} GAME TOKEN${tok === 1 ? "" : "S"}`, textX, ty, { width: textW, lineBreak: false });
-      ty = doc.y + 7;
 
-      // How to redeem — numbered steps.
+      // Manual line advances throughout — pdfkit's doc.y is unreliable after
+      // lineBreak:false runs, so every line's y is tracked explicitly.
+      let ty = cy + pad;
+
+      // Heading + short accent rule.
+      doc.font("bold").fontSize(21).fillColor("#111")
+        .text(`${tok} GAME TOKEN${tok === 1 ? "" : "S"}`, textX, ty, { width: textW, lineBreak: false });
+      ty += 30;
+      doc.moveTo(textX, ty).lineTo(textX + 48, ty).lineWidth(2.5).strokeColor("#111").stroke();
+      ty += 15;
+
+      // How to redeem — eyebrow + numbered steps.
+      doc.font("bold").fontSize(7.5).fillColor("#111")
+        .text("HOW TO REDEEM", textX, ty, { characterSpacing: 1.6, lineBreak: false });
+      ty += 15;
       const steps = [
         "Scan the QR code with your phone camera.",
         "Sign in, or create your free LaserOps account.",
         "Tap “Claim” to add the token to your account.",
       ];
       steps.forEach((s, n) => {
-        doc.font("bold").fontSize(9).fillColor("#111").text(`${n + 1}`, textX, ty, { continued: true, lineBreak: false });
-        doc.font("med").fontSize(9).fillColor("#333").text(`   ${s}`, { width: textW });
-        ty = doc.y + 3;
+        doc.font("bold").fontSize(9.5).fillColor("#111").text(`${n + 1}`, textX, ty, { continued: true, lineBreak: false });
+        doc.font("med").fontSize(9.5).fillColor("#1a1a1a").text(`   ${s}`, { lineBreak: false });
+        ty += 16;
       });
-      ty += 8;
+      ty += 9;
 
-      // Backup code — kept quiet; the QR is the main path. Darkened for yellow.
-      doc.font("med").fontSize(9).fillColor("#444")
-        .text(`Code  ${v.claim_code}`, textX, ty, { lineBreak: false, characterSpacing: 0.8 });
-      doc.font("med").fontSize(8.5).fillColor("#444")
-        .text(`Valid until ${fmtDate(v.expires_at)}  ·  1 token = 1 game  ·  ${host}/claim`, textX, ty + 15, { width: textW, lineBreak: false });
+      // Backup code — label + prominent code.
+      doc.font("semi").fontSize(7).fillColor("#4a4a2e")
+        .text("BACKUP CODE", textX, ty, { characterSpacing: 1.4, lineBreak: false });
+      ty += 12;
+      doc.font("bold").fontSize(12.5).fillColor("#111")
+        .text(v.claim_code, textX, ty, { characterSpacing: 1.4, lineBreak: false });
+      ty += 20;
 
-      // White tile behind the QR for a clean quiet zone against the yellow.
-      doc.rect(qrX - 6, qrY - 6, qrSize + 12, qrSize + 12).fill("#ffffff");
+      // Validity + terms reference.
+      doc.font("semi").fontSize(7.5).fillColor("#222")
+        .text(`Valid until ${fmtDate(v.expires_at)}   ·   1 token = 1 game`, textX, ty, { lineBreak: false });
+      ty += 12;
+      doc.font("med").fontSize(7).fillColor("#3a3a2a")
+        .text(`Game tokens are subject to our Terms & Conditions at ${host}/terms`, textX, ty, { width: textW });
+
+      // QR — directly on the yellow, with a bold caption under it.
       doc.image(qrBuffers[qrIndex], qrX, qrY, { width: qrSize, height: qrSize });
-      doc.font("med").fontSize(7.5).fillColor("#555").text("Scan to claim", qrX, qrY + qrSize + 3, { width: qrSize, align: "center", lineBreak: false });
+      doc.font("bold").fontSize(8).fillColor("#111")
+        .text("SCAN TO CLAIM", qrX, qrY + qrSize + 6, { width: qrSize, align: "center", characterSpacing: 1, lineBreak: false });
     };
 
     // Per group of 3: a page of fronts, then a page of backs in the same slots.
