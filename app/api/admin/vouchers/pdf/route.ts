@@ -125,10 +125,20 @@ export async function GET(req: NextRequest) {
       const tok = Number(v.tokens) || 1;
       doc.font("bold").fontSize(22).fillColor("#111")
         .text(`${tok} GAME TOKEN${tok === 1 ? "" : "S"}`, textX, ty, { width: textW, lineBreak: false });
-      ty = doc.y + 5;
-      doc.font("med").fontSize(9.5).fillColor("#555")
-        .text("Prize voucher. Scan the QR to add it to your LaserOps account. New here? You'll sign up first, then it's yours.", textX, ty, { width: textW, lineGap: 1.5 });
-      ty = doc.y + 12;
+      ty = doc.y + 7;
+
+      // How to redeem — numbered steps.
+      const steps = [
+        "Scan the QR code with your phone camera.",
+        "Sign in, or create your free LaserOps account.",
+        "Tap “Claim” to add the token to your account.",
+      ];
+      steps.forEach((s, n) => {
+        doc.font("bold").fontSize(9).fillColor("#111").text(`${n + 1}`, textX, ty, { continued: true, lineBreak: false });
+        doc.font("med").fontSize(9).fillColor("#555").text(`   ${s}`, { width: textW });
+        ty = doc.y + 3;
+      });
+      ty += 8;
 
       // Backup code — kept quiet; the QR is the main path.
       doc.font("med").fontSize(9).fillColor("#9a9a9a")
