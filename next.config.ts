@@ -7,7 +7,7 @@ const nextConfig: NextConfig = {
   // Montserrat TTFs from disk, so trace those files into that function.
   serverExternalPackages: ["pdfkit"],
   outputFileTracingIncludes: {
-    "/api/admin/vouchers/pdf": ["./public/fonts/Montserrat-*.ttf", "./public/brand/laserops-logo-black.png"],
+    "/api/admin/vouchers/pdf": ["./public/fonts/Montserrat-*.ttf", "./public/brand/laserops-wordmark-print.png"],
   },
   // Lint runs in the editor/CI, not during the production build (a stale
   // eslint-disable directive for an unconfigured rule was failing `next build`).

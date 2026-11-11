@@ -26,7 +26,10 @@ export const runtime = "nodejs";
 type Voucher = { claim_code: string; tokens: number; expires_at: string | null; status: string };
 
 const FONT_DIR = path.join(process.cwd(), "public", "fonts");
-const LOGO_PATH = path.join(process.cwd(), "public", "brand", "laserops-logo-black.png");
+// Print-resolution wordmark (2000x373, transparent, rasterised from the vector
+// logo) so the prominent front logo stays crisp at ~400 DPI.
+const LOGO_PATH = path.join(process.cwd(), "public", "brand", "laserops-wordmark-print.png");
+const LOGO_RATIO = 373 / 2000;
 const F_BOLD = path.join(FONT_DIR, "Montserrat-ExtraBold.ttf");
 const F_SEMI = path.join(FONT_DIR, "Montserrat-SemiBold.ttf");
 const F_MED = path.join(FONT_DIR, "Montserrat-Medium.ttf");
@@ -114,7 +117,7 @@ export async function GET(req: NextRequest) {
       cardFrame(cy);
       if (logo) {
         const lw = 360;
-        const lh = lw * (145 / 800); // logo is 800×145
+        const lh = lw * LOGO_RATIO;
         doc.image(logo, L + (CW - lw) / 2, cy + (cardH - lh) / 2, { width: lw });
       } else {
         doc.font("bold").fontSize(34).fillColor("#111")
