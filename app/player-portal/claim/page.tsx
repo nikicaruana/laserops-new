@@ -27,9 +27,10 @@ export default async function ClaimGiftPage({ searchParams }: { searchParams: Pr
   return (
     <Container size="narrow" className="py-16">
       <div className="mx-auto max-w-md portal-card p-8 text-center">
-        <h1 className="text-2xl font-bold uppercase tracking-[0.12em] text-accent">You&apos;ve got a gift</h1>
+        <h1 className="text-2xl font-bold uppercase tracking-[0.12em] text-accent">Claim your tokens</h1>
         <p className="mt-3 text-sm text-text-muted">
-          Someone gifted you LaserOps game tokens. 1 token = 1 free game. Claim them to add them to your account.
+          This code adds LaserOps game tokens to your account. 1 token = 1 free game. Claim it to drop the tokens
+          straight into your wallet.
         </p>
         <div className="mt-6">
           {code ? (

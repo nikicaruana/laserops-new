@@ -10,6 +10,7 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { TokenAdminManager } from "@/components/admin/TokenAdminManager";
 import { TokenPackRequests } from "@/components/admin/TokenPackRequests";
+import { VoucherManager, type VoucherBatch } from "@/components/admin/VoucherManager";
 import { TokenLedger, type TokenLedgerRow } from "@/components/admin/TokenLedger";
 import { XpBoostLedger, type XpBoostLedgerRow } from "@/components/admin/XpBoostLedger";
 
@@ -21,7 +22,7 @@ const LEDGER_LIMIT = 300;
 
 export default async function AdminTokensPage() {
   const supabase = await createClient();
-  const [{ data: config }, { data: bundles }, { data: requests }, { data: ledger }, { data: boostLedger }, { data: recentMatches }] = await Promise.all([
+  const [{ data: config }, { data: bundles }, { data: requests }, { data: ledger }, { data: boostLedger }, { data: recentMatches }, { data: voucherBatches }] = await Promise.all([
     supabase.from("token_config").select("default_validity_months").eq("id", 1).maybeSingle(),
     supabase
       .from("token_bundles")
@@ -54,6 +55,7 @@ export default async function AdminTokensPage() {
       .not("match_code", "is", null)
       .order("scheduled_at", { ascending: false })
       .limit(60),
+    supabase.rpc("admin_voucher_batches"),
   ]);
 
   const matchOptions = (recentMatches ?? []).map((m) => ({
@@ -99,6 +101,20 @@ export default async function AdminTokensPage() {
         }))}
         matches={matchOptions}
       />
+
+      <div className="mt-10">
+        <VoucherManager
+          initialBatches={((voucherBatches ?? []) as VoucherBatch[]).map((b) => ({
+            batch_label: b.batch_label,
+            total: Number(b.total),
+            unclaimed: Number(b.unclaimed),
+            claimed: Number(b.claimed),
+            voided: Number(b.voided),
+            tokens_each: Number(b.tokens_each),
+            last_created: b.last_created,
+          }))}
+        />
+      </div>
 
       <div className="mt-10">
         <TokenLedger

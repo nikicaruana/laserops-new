@@ -2,6 +2,13 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // pdfkit loads its own font data at runtime; keep it external so bundling
+  // doesn't break that. The voucher-PDF route also reads the brand logo + the
+  // Montserrat TTFs from disk, so trace those files into that function.
+  serverExternalPackages: ["pdfkit"],
+  outputFileTracingIncludes: {
+    "/api/admin/vouchers/pdf": ["./public/fonts/Montserrat-*.ttf", "./public/brand/laserops-logo-black.png"],
+  },
   // Lint runs in the editor/CI, not during the production build (a stale
   // eslint-disable directive for an unconfigured rule was failing `next build`).
   eslint: { ignoreDuringBuilds: true },
