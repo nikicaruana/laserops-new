@@ -72,7 +72,6 @@ export async function GET(req: NextRequest) {
   const vouchers = (data ?? []) as Voucher[];
   if (vouchers.length === 0) return new Response("No vouchers to print for that batch.", { status: 404 });
 
-  try {
   // Pre-render the QR PNGs for each voucher. Black modules on the same yellow as
   // the card, so the code sits directly on the ground with no white tile — the
   // contrast is still well within scanner tolerance.
@@ -214,20 +213,4 @@ export async function GET(req: NextRequest) {
       "Content-Disposition": `attachment; filename="${fname}"`,
     },
   });
-  } catch (e) {
-    // Temporary diagnostic: surface the real failure to the admin so we can see
-    // whether it is a missing traced asset (fonts/logo) or a pdfkit error.
-    const diag = {
-      cwd: process.cwd(),
-      boldExists: fs.existsSync(F_BOLD),
-      semiExists: fs.existsSync(F_SEMI),
-      medExists: fs.existsSync(F_MED),
-      logoExists: fs.existsSync(LOGO_PATH),
-      error: String((e as { stack?: string })?.stack ?? e),
-    };
-    return new Response("VOUCHER PDF ERROR\n" + JSON.stringify(diag, null, 2), {
-      status: 500,
-      headers: { "Content-Type": "text/plain" },
-    });
-  }
 }
