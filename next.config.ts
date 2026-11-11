@@ -14,7 +14,10 @@ const nextConfig: NextConfig = {
     "/api/admin/vouchers/pdf": [
       "./public/fonts/Montserrat-*.ttf",
       "./public/brand/laserops-wordmark-print.png",
-      "./node_modules/pdfkit/js/standard-fonts/*.cjs",
+      // pdfkit's standard fonts require nested CJS chunks (e.g.
+      // standard-fonts/chunks/standardGlyphNames-*.cjs); trace every pdfkit CJS
+      // file so none of its dynamic requires 500 the function.
+      "./node_modules/pdfkit/js/**/*.cjs",
       "./node_modules/pdfkit/js/data/*.afm",
     ],
   },
