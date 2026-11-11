@@ -5,9 +5,18 @@ const nextConfig: NextConfig = {
   // pdfkit loads its own font data at runtime; keep it external so bundling
   // doesn't break that. The voucher-PDF route also reads the brand logo + the
   // Montserrat TTFs from disk, so trace those files into that function.
+  // pdfkit dynamically require()s its standard-font modules (e.g.
+  // standard-fonts/Helvetica.cjs) when a PDFDocument is constructed; the dynamic
+  // require is invisible to Vercel's file tracer, so those files must be traced
+  // explicitly or generation 500s with "Cannot find module ... Helvetica.cjs".
   serverExternalPackages: ["pdfkit"],
   outputFileTracingIncludes: {
-    "/api/admin/vouchers/pdf": ["./public/fonts/Montserrat-*.ttf", "./public/brand/laserops-wordmark-print.png"],
+    "/api/admin/vouchers/pdf": [
+      "./public/fonts/Montserrat-*.ttf",
+      "./public/brand/laserops-wordmark-print.png",
+      "./node_modules/pdfkit/js/standard-fonts/*.cjs",
+      "./node_modules/pdfkit/js/data/*.afm",
+    ],
   },
   // Lint runs in the editor/CI, not during the production build (a stale
   // eslint-disable directive for an unconfigured rule was failing `next build`).
