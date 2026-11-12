@@ -6,7 +6,7 @@
  * Mint and manage printable prize vouchers. Each voucher is a token_gift worth
  * N game tokens, redeemed by scanning a QR that opens /player-portal/claim (sign
  * up / in first if needed, then granted once). Generate a batch, download the
- * print-ready PDF (two-sided yellow cards, 3 per A4 — duplex, flip on long edge),
+ * print-ready PDF (two-sided cards in colour or B&W, 3 per A4— duplex, flip on long edge),
  * and void a batch's unclaimed vouchers if a sheet is lost. Minting and voiding
  * step up through 2FA, like the other
  * value-affecting token actions.
@@ -33,7 +33,8 @@ const lbl = "mb-1.5 block text-[0.65rem] font-semibold uppercase tracking-[0.12e
 function fmtDate(iso: string | null): string {
   return iso ? new Date(iso).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "";
 }
-const pdfHref = (label: string) => `/api/admin/vouchers/pdf?label=${encodeURIComponent(label)}`;
+const pdfHref = (label: string, bw = false) =>
+  `/api/admin/vouchers/pdf?label=${encodeURIComponent(label)}${bw ? "&bw=1" : ""}`;
 
 export function VoucherManager({ initialBatches }: { initialBatches: VoucherBatch[] }) {
   const router = useRouter();
@@ -133,12 +134,12 @@ export function VoucherManager({ initialBatches }: { initialBatches: VoucherBatc
               <thead>
                 <tr className="border-b border-border bg-bg text-[0.6rem] uppercase tracking-[0.14em] text-text-muted">
                   <th className="px-4 py-2.5 font-semibold">Batch</th>
-                  <th className="px-3 py-2.5 text-center font-semibold">Tokens</th>
+                  <th className="px-3 py-2.5 text-center font-semibold">Tokens each</th>
                   <th className="px-3 py-2.5 text-center font-semibold">Unclaimed</th>
                   <th className="px-3 py-2.5 text-center font-semibold">Claimed</th>
                   <th className="px-3 py-2.5 text-center font-semibold">Void</th>
                   <th className="px-3 py-2.5 font-semibold">Created</th>
-                  <th className="px-3 py-2.5 text-right font-semibold">Actions</th>
+                  <th className="px-4 py-2.5 text-right font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -152,11 +153,27 @@ export function VoucherManager({ initialBatches }: { initialBatches: VoucherBatc
                     <td className="px-3 py-2.5 text-center text-text-muted">{b.claimed}</td>
                     <td className="px-3 py-2.5 text-center text-text-subtle">{b.voided || "—"}</td>
                     <td className="px-3 py-2.5 text-text-muted">{fmtDate(b.last_created)}</td>
-                    <td className="px-3 py-2.5">
-                      <div className="flex items-center justify-end gap-3">
-                        <a href={pdfHref(b.batch_label)} target="_blank" rel="noopener" className="text-[0.65rem] font-bold uppercase tracking-[0.1em] text-accent hover:text-accent-soft">
-                          PDF (unclaimed)
-                        </a>
+                    <td className="px-4 py-2.5">
+                      <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
+                        {b.unclaimed > 0 ? (
+                          <span
+                            className="inline-flex items-center gap-2 text-[0.65rem] font-bold uppercase tracking-[0.1em]"
+                            title={`Prints the ${b.unclaimed} still-unclaimed voucher${b.unclaimed === 1 ? "" : "s"} in this batch`}
+                          >
+                            <span className="text-text-subtle">Print</span>
+                            <a href={pdfHref(b.batch_label)} target="_blank" rel="noopener" className="text-accent hover:text-accent-soft">
+                              Colour
+                            </a>
+                            <span className="text-text-subtle/60">·</span>
+                            <a href={pdfHref(b.batch_label, true)} target="_blank" rel="noopener" className="text-accent hover:text-accent-soft">
+                              B&amp;W
+                            </a>
+                          </span>
+                        ) : (
+                          <span className="text-[0.65rem] font-semibold uppercase tracking-[0.1em] text-text-subtle">
+                            Nothing to print
+                          </span>
+                        )}
                         {b.unclaimed > 0 && b.batch_label !== "(no label)" && (
                           <button
                             type="button"

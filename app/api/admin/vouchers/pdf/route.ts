@@ -12,6 +12,7 @@
  *
  * Query: ?label=<batch label>  (use "(no label)" for the unlabeled batch), or
  * ?ids=<id,id,...>. ?all=1 includes claimed/void too (default: unclaimed only).
+ * ?bw=1 renders a black-on-white sheet for mono printers (default: yellow colour).
  */
 import type { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
@@ -72,14 +73,22 @@ export async function GET(req: NextRequest) {
   const vouchers = (data ?? []) as Voucher[];
   if (vouchers.length === 0) return new Response("No vouchers to print for that batch.", { status: 404 });
 
-  // Pre-render the QR PNGs for each voucher. Black modules on the same yellow as
-  // the card, so the code sits directly on the ground with no white tile — the
-  // contrast is still well within scanner tolerance.
+  // Colour (yellow ground) is the default; ?bw=1 renders a black-and-white sheet
+  // for mono printers / plain paper. One palette drives both so the layout and
+  // the QR light colour stay in step with the card ground.
+  const bw = url.searchParams.get("bw") === "1";
+  const P = bw
+    ? { ground: "#ffffff", ink: "#000000", ink2: "#1a1a1a", sub: "#333333", label: "#555555", rule: "#000000", frame: "#00000055", qrDark: "#000000ff", qrLight: "#ffffffff" }
+    : { ground: "#fede00", ink: "#111111", ink2: "#1a1a1a", sub: "#222222", label: "#4a4a2e", rule: "#111111", frame: "#00000055", qrDark: "#111111ff", qrLight: "#fede00ff" };
+
+  // Pre-render the QR PNGs for each voucher. Dark modules on the same ground as
+  // the card (yellow or white), so the code sits directly on the ground with no
+  // contrasting tile — contrast stays well within scanner tolerance either way.
   const claimBase = `${brand.siteUrl}/player-portal/claim`;
   const qrBuffers = await Promise.all(
     vouchers.map((v) =>
       QRCode.toBuffer(`${claimBase}?code=${encodeURIComponent(v.claim_code)}`, {
-        type: "png", margin: 1, width: 360, color: { dark: "#111111ff", light: "#fede00ff" },
+        type: "png", margin: 1, width: 360, color: { dark: P.qrDark, light: P.qrLight },
       }),
     ),
   );
@@ -97,7 +106,6 @@ export async function GET(req: NextRequest) {
     doc.on("error", reject);
 
     const PAGE_W = 595.28, PAGE_H = 841.89;
-    const YELLOW = "#fede00";
     const L = 40, R = 555.28, CW = R - L;
     const PER_PAGE = 3;
     const gap = 16;
@@ -106,11 +114,12 @@ export async function GET(req: NextRequest) {
     const host = brand.siteUrl.replace(/^https?:\/\//, "");
     const slotY = (slot: number) => topY + slot * (cardH + gap);
 
-    // Fill the whole sheet yellow (full-bleed) so every cut card is yellow.
-    const paintBg = () => doc.rect(0, 0, PAGE_W, PAGE_H).fill(YELLOW);
-    // Dashed cut guide around each card — visible on yellow, sharp corners.
+    // Fill the whole sheet with the ground colour (full-bleed) so every cut card
+    // carries it to the edge.
+    const paintBg = () => doc.rect(0, 0, PAGE_W, PAGE_H).fill(P.ground);
+    // Dashed cut guide around each card — sharp corners.
     const cardFrame = (cy: number) =>
-      doc.rect(L, cy, CW, cardH).lineWidth(0.75).dash(4, { space: 3 }).strokeColor("#00000055").stroke().undash();
+      doc.rect(L, cy, CW, cardH).lineWidth(0.75).dash(4, { space: 3 }).strokeColor(P.frame).stroke().undash();
 
     // FRONT face: the logo only, centred on the yellow card.
     const drawFront = (cy: number) => {
@@ -120,16 +129,16 @@ export async function GET(req: NextRequest) {
         const lh = lw * LOGO_RATIO;
         doc.image(logo, L + (CW - lw) / 2, cy + (cardH - lh) / 2, { width: lw });
       } else {
-        doc.font("bold").fontSize(34).fillColor("#111")
+        doc.font("bold").fontSize(34).fillColor(P.ink)
           .text("LASEROPS", L, cy + cardH / 2 - 28, { width: CW, align: "center", lineBreak: false });
-        doc.font("semi").fontSize(10).fillColor("#333")
+        doc.font("semi").fontSize(10).fillColor(P.sub)
           .text("TACTICAL LASER TAG", L, doc.y + 4, { width: CW, align: "center", characterSpacing: 3, lineBreak: false });
       }
     };
 
     // BACK face: value, redeem steps, backup code, expiry, terms, and the QR.
-    // Everything in near-black on the yellow ground so it reads boldly; the QR
-    // shares the yellow background (no white tile).
+    // Everything in near-black on the ground so it reads boldly; the QR shares the
+    // card ground (no contrasting tile).
     const drawBack = (v: Voucher, cy: number, qrIndex: number) => {
       cardFrame(cy);
       const pad = 26;
@@ -145,14 +154,14 @@ export async function GET(req: NextRequest) {
       let ty = cy + pad;
 
       // Heading + short accent rule.
-      doc.font("bold").fontSize(21).fillColor("#111")
+      doc.font("bold").fontSize(21).fillColor(P.ink)
         .text(`${tok} GAME TOKEN${tok === 1 ? "" : "S"}`, textX, ty, { width: textW, lineBreak: false });
       ty += 30;
-      doc.moveTo(textX, ty).lineTo(textX + 48, ty).lineWidth(2.5).strokeColor("#111").stroke();
+      doc.moveTo(textX, ty).lineTo(textX + 48, ty).lineWidth(2.5).strokeColor(P.rule).stroke();
       ty += 15;
 
       // How to redeem — eyebrow + numbered steps.
-      doc.font("bold").fontSize(7.5).fillColor("#111")
+      doc.font("bold").fontSize(7.5).fillColor(P.ink)
         .text("HOW TO REDEEM", textX, ty, { characterSpacing: 1.6, lineBreak: false });
       ty += 15;
       const steps = [
@@ -161,30 +170,30 @@ export async function GET(req: NextRequest) {
         "Tap “Claim” to add the token to your account.",
       ];
       steps.forEach((s, n) => {
-        doc.font("bold").fontSize(9.5).fillColor("#111").text(`${n + 1}`, textX, ty, { continued: true, lineBreak: false });
-        doc.font("med").fontSize(9.5).fillColor("#1a1a1a").text(`   ${s}`, { lineBreak: false });
+        doc.font("bold").fontSize(9.5).fillColor(P.ink).text(`${n + 1}`, textX, ty, { continued: true, lineBreak: false });
+        doc.font("med").fontSize(9.5).fillColor(P.ink2).text(`   ${s}`, { lineBreak: false });
         ty += 16;
       });
       ty += 9;
 
       // Backup code — label + prominent code.
-      doc.font("semi").fontSize(7).fillColor("#4a4a2e")
+      doc.font("semi").fontSize(7).fillColor(P.label)
         .text("BACKUP CODE", textX, ty, { characterSpacing: 1.4, lineBreak: false });
       ty += 12;
-      doc.font("bold").fontSize(12.5).fillColor("#111")
+      doc.font("bold").fontSize(12.5).fillColor(P.ink)
         .text(v.claim_code, textX, ty, { characterSpacing: 1.4, lineBreak: false });
       ty += 20;
 
       // Validity + terms reference.
-      doc.font("semi").fontSize(7.5).fillColor("#222")
+      doc.font("semi").fontSize(7.5).fillColor(P.sub)
         .text(`Valid until ${fmtDate(v.expires_at)}   ·   1 token = 1 game`, textX, ty, { lineBreak: false });
       ty += 12;
-      doc.font("med").fontSize(7).fillColor("#3a3a2a")
+      doc.font("med").fontSize(7).fillColor(P.sub)
         .text(`Game tokens are subject to our Terms & Conditions at ${host}/terms`, textX, ty, { width: textW });
 
-      // QR — directly on the yellow, with a bold caption under it.
+      // QR — directly on the ground, with a bold caption under it.
       doc.image(qrBuffers[qrIndex], qrX, qrY, { width: qrSize, height: qrSize });
-      doc.font("bold").fontSize(8).fillColor("#111")
+      doc.font("bold").fontSize(8).fillColor(P.ink)
         .text("SCAN TO CLAIM", qrX, qrY + qrSize + 6, { width: qrSize, align: "center", characterSpacing: 1, lineBreak: false });
     };
 
@@ -206,7 +215,7 @@ export async function GET(req: NextRequest) {
     doc.end();
   });
 
-  const fname = `laserops-vouchers-${(label ?? "batch").replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.pdf`;
+  const fname = `laserops-vouchers-${(label ?? "batch").replace(/[^a-z0-9]+/gi, "-").toLowerCase()}${bw ? "-bw" : ""}.pdf`;
   return new Response(new Uint8Array(pdf), {
     headers: {
       "Content-Type": "application/pdf",
