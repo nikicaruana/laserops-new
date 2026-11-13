@@ -256,9 +256,13 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   const offlineTeamColours = [...new Set([...offlinePlayers.map((p) => p.team), ...ingestRounds.flatMap((r) => r.parsed.players.map((pl) => pl.team))].filter(Boolean))];
   // Marshal-entered per-round winners (offline). Defensive read for the same reason.
   let offlineRoundResults: (string | null)[] = [];
+  let offlineRoundTeams: string[][] = [];
   if (isOfflineMatch) {
-    const { data: orr, error: orrErr } = await supabase.from("matches").select("offline_round_results").eq("id", id).maybeSingle();
-    if (!orrErr && orr) offlineRoundResults = ((orr as { offline_round_results: (string | null)[] | null }).offline_round_results) ?? [];
+    const { data: orr, error: orrErr } = await supabase.from("matches").select("offline_round_results, offline_round_teams").eq("id", id).maybeSingle();
+    if (!orrErr && orr) {
+      offlineRoundResults = ((orr as { offline_round_results: (string | null)[] | null }).offline_round_results) ?? [];
+      offlineRoundTeams = ((orr as { offline_round_teams: string[][] | null }).offline_round_teams) ?? [];
+    }
   }
 
   // Scoring formula (prefer domination) + spawn-camp consequence for the on-the-fly
@@ -712,6 +716,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
                 matchId={match.id}
                 teamColours={offlineTeamColours}
                 initial={offlineRoundResults}
+                initialTeams={offlineRoundTeams}
                 startRound={ingestRounds.length + 1}
                 offlineFile={offlineFile}
               />

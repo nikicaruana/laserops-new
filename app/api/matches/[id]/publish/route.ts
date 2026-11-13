@@ -80,7 +80,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   };
 
   // Match flags + date (date drives date-scoped gun damage for offline).
-  const { data: mFlags } = await supabase.from("matches").select("played_on, scheduled_at, is_double_xp, offline_round_results, scoring_mode, title, match_code, duration_minutes, pricing_mode, exclude_headbands").eq("id", id).maybeSingle();
+  const { data: mFlags } = await supabase.from("matches").select("played_on, scheduled_at, is_double_xp, offline_round_results, offline_round_teams, scoring_mode, title, match_code, duration_minutes, pricing_mode, exclude_headbands").eq("id", id).maybeSingle();
   const excludeHeadbands = ((mFlags?.exclude_headbands as number[] | null) ?? undefined);
   const now = new Date().toISOString();
   const playedOn = (mFlags?.played_on as string | null) || ((mFlags?.scheduled_at as string | null)?.slice(0, 10)) || now.slice(0, 10);
@@ -97,6 +97,11 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     const jsonRows = ingested.filter((r) => !isLwa(r.raw_file as string));
     const lwaRows = ingested.filter((r) => isLwa(r.raw_file as string));
     const offlineWinners = ((mFlags?.offline_round_results ?? []) as (string | null)[]).map((c) => c || null);
+    // Participating teams per offline round (round robin); null/absent per round
+    // means "not recorded" and the scorer falls back to full attendance.
+    const offlineParticipants = ((mFlags?.offline_round_teams ?? []) as (string[] | null)[]).map(
+      (p) => (Array.isArray(p) ? p.filter(Boolean) : null),
+    );
     // Date-scoped gun damage (offline damage = hits × gun profile; Unknown Gun fallback).
     const { data: gd } = await supabase.rpc("all_gun_damage_at", { p_at: playedOn });
     const dmgMap = new Map(((gd ?? []) as { name: string; damage: number | null }[]).map((x) => [String(x.name).toLowerCase().trim(), Number(x.damage) || 0]));
@@ -141,7 +146,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
       if (offlineWinners.length === 0) return NextResponse.json({ error: "Enter the round results for the offline rounds before publishing." }, { status: 400 });
       const roundResults = offlineWinners.map((w) => ({ winnerColour: w }));
       offlineRoundCount = offlineWinners.length;
-      result = computeOfflineMatchCommit(players, roundResults, identity, gunDamage, cfg, isDoubleXp, scoringRuntime.formula, accoladeByKey);
+      result = computeOfflineMatchCommit(players, roundResults, identity, gunDamage, cfg, isDoubleXp, scoringRuntime.formula, accoladeByKey, offlineParticipants);
     }
   } else {
     // Online: JSON event-stream rounds.

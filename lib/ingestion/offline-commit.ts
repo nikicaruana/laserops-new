@@ -73,6 +73,12 @@ export function computeOfflineMatchCommit(
   isDoubleXp = false,
   formula?: ScoreFormula,
   accoladeByKey?: Map<string, { id: string; xp: number }>,
+  /** Colours that took part in each round, in round order (e.g. a 1v1v1 round
+   *  robin where only two of three teams play each round). When given, a team's
+   *  rounds_played is the number of rounds it actually appeared in, so sat-out
+   *  rounds aren't counted as losses. Absent/empty -> everyone played every round
+   *  (the historical assumption; unchanged for ordinary offline games). */
+  roundParticipants?: (string[] | null)[],
 ): CommitResult {
   // --- 1. Merge headbands that resolve to the same account -----------------
   const groups = new Map<string, Group>();
@@ -97,6 +103,18 @@ export function computeOfflineMatchCommit(
   const roundsWonByTeam: Record<string, number> = {};
   for (const r of roundResults) if (r.winnerColour) roundsWonByTeam[r.winnerColour] = (roundsWonByTeam[r.winnerColour] ?? 0) + 1;
   const roundCount = roundResults.length;
+
+  // Rounds each team actually PLAYED. When the marshal recorded the two teams in
+  // each round (round robin), a team's played-count is the rounds it appeared in;
+  // otherwise everyone is assumed to have played every round (legacy offline).
+  const teamRoundsPlayed: Record<string, number> = {};
+  if (roundParticipants && roundParticipants.some((p) => p && p.length)) {
+    for (const parts of roundParticipants) for (const c of parts ?? []) if (c) teamRoundsPlayed[c] = (teamRoundsPlayed[c] ?? 0) + 1;
+  }
+  const roundsPlayedFor = (team: string) => {
+    const rp = teamRoundsPlayed[team];
+    return rp && rp > 0 ? rp : roundCount;
+  };
   // Team(s) that won the most rounds. Usually one; more than one is an even
   // round split (e.g. 2-2) that we break on team score once scoring is done.
   let topWins = 0;
@@ -185,7 +203,7 @@ export function computeOfflineMatchCommit(
       score_performance_delta: Math.round(s.score - matchAvg), xp_multiplier: mult,
       score_rank: rankOf(scores, s.score), kills_rank: rankOf(kills, s.frags), deaths_rank: rankOf(deathsArr, s.deaths, false),
       kd_rank: rankOf(kds, s.kd), accuracy_rank: rankOf(accs, s.accuracy), damage_rank: rankOf(dmgs, s.damage),
-      was_winner: isWinner, rounds_won: roundsWonByTeam[s.team] ?? 0, rounds_lost: roundCount - (roundsWonByTeam[s.team] ?? 0), rounds_played: roundCount, rounds_won_present: roundsWonByTeam[s.team] ?? 0, online_rounds_played: 0,
+      was_winner: isWinner, rounds_won: roundsWonByTeam[s.team] ?? 0, rounds_lost: Math.max(0, roundsPlayedFor(s.team) - (roundsWonByTeam[s.team] ?? 0)), rounds_played: roundsPlayedFor(s.team), rounds_won_present: roundsWonByTeam[s.team] ?? 0, online_rounds_played: 0,
       team_score: teamScore[s.team] ?? 0, opponent_team_score: oppTeam ? teamScore[oppTeam] ?? 0 : 0,
       xp_from_points: xpb.xpFromPoints, xp_from_wins: xpb.xpFromWins, xp_from_accolades: xpb.xpFromAccolades, xp_total: xpb.xpTotal,
       // Offline: no event timeline -> no streaks, nemesis, kill lists.
