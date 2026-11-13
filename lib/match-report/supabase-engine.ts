@@ -79,8 +79,8 @@ type AggRow = {
 };
 
 type Summary = {
-  round_wins?: { Red?: number; Blue?: number; Yellow?: number };
-  team_ratings?: { Red?: number; Blue?: number; Yellow?: number };
+  round_wins?: { Red?: number; Blue?: number; Yellow?: number; Green?: number };
+  team_ratings?: { Red?: number; Blue?: number; Yellow?: number; Green?: number };
   winning_team?: string | null;
   losing_team?: string | null;
   winning_rounds?: number | null;
@@ -392,9 +392,10 @@ function buildGameInfo(
     onlineRoundCount: match.online_round_count ?? undefined,
     offlineRoundCount: match.offline_round_count ?? undefined,
     teams: {
-      red: { roundWins: rw.Red ?? 0, rating: tr.Red ?? 0 },
-      blue: { roundWins: rw.Blue ?? 0, rating: tr.Blue ?? 0 },
-      yellow: { roundWins: rw.Yellow ?? 0, rating: tr.Yellow ?? 0 },
+      red: { roundWins: rw.Red ?? 0, rating: tr.Red ?? 0, badge: teamBadge.get("red") ?? "" },
+      blue: { roundWins: rw.Blue ?? 0, rating: tr.Blue ?? 0, badge: teamBadge.get("blue") ?? "" },
+      yellow: { roundWins: rw.Yellow ?? 0, rating: tr.Yellow ?? 0, badge: teamBadge.get("yellow") ?? "" },
+      green: { roundWins: rw.Green ?? 0, rating: tr.Green ?? 0, badge: teamBadge.get("green") ?? "" },
     },
     winningTeam: winning,
     losingTeam: losing,

@@ -123,7 +123,13 @@ export function computeMatchCommit(
       match_rating: avgRatingScore > 0 ? Math.round((ratingScores[i] / avgRatingScore) * 100) / 100 : 0, match_average_score: Math.round(matchAvg), score_performance_delta: Math.round(p.totalScore - matchAvg), xp_multiplier: mult,
       score_rank: rankOf(scores, p.totalScore), kills_rank: rankOf(kills, p.frags), deaths_rank: rankOf(deaths, p.deaths, false),
       kd_rank: rankOf(kds, p.kd), accuracy_rank: rankOf(accs, p.accuracy), damage_rank: rankOf(dmgs, p.damage),
-      was_winner: isWinner, rounds_won: teamRoundsWon, rounds_lost: report.roundCount - teamRoundsWon, rounds_played: p.roundsPlayed ?? R, rounds_won_present: p.roundsWonPresent ?? teamRoundsWon, online_rounds_played: p.onlineRoundsPlayed ?? R,
+      // rounds_lost is scoped to rounds the player actually PLAYED (played minus
+      // present wins), not total match rounds. For a normal game where everyone
+      // plays every round this equals roundCount - teamRoundsWon (unchanged); it
+      // only differs when a team sits rounds out (e.g. a 1v1v1 round robin, or a
+      // late joiner), where "total - wins" would wrongly count sat-out rounds as
+      // losses and dilute win-rate + Elo round-share.
+      was_winner: isWinner, rounds_won: teamRoundsWon, rounds_lost: Math.max(0, (p.roundsPlayed ?? R) - (p.roundsWonPresent ?? teamRoundsWon)), rounds_played: p.roundsPlayed ?? R, rounds_won_present: p.roundsWonPresent ?? teamRoundsWon, online_rounds_played: p.onlineRoundsPlayed ?? R,
       team_score: teamScore[p.team] ?? 0, opponent_team_score: oppTeam ? teamScore[oppTeam] ?? 0 : 0,
       xp_from_points: xpPoints, xp_from_wins: xpWins, xp_from_accolades: xpAcc, xp_total: xpb.xpTotal,
       streaks: p.streaks.map((s) => ({ key: s.key, count: s.count, points: s.points })),

@@ -45,7 +45,7 @@ type GameIdMapRaw = Record<string, string> & {
   Losing_Team_Badge: string;
 };
 
-export type TeamColor = "Red" | "Blue" | "Yellow";
+export type TeamColor = "Red" | "Blue" | "Yellow" | "Green";
 
 export type GameInfo = {
   matchId: string;
@@ -60,13 +60,15 @@ export type GameInfo = {
   onlineRoundCount?: number;
   /** Offline rounds in this match (hybrid). */
   offlineRoundCount?: number;
-  // Per-team data – stored for all three colours regardless of whether
+  // Per-team data – stored for all four colours regardless of whether
   // each team played. Consumers filter by non-zero rating/rounds to
-  // know which teams actually participated.
+  // know which teams actually participated. `badge` is the team-colour
+  // badge URL (from the teams table), used by the multi-team layout.
   teams: {
-    red: { roundWins: number; rating: number };
-    blue: { roundWins: number; rating: number };
-    yellow: { roundWins: number; rating: number };
+    red: { roundWins: number; rating: number; badge: string };
+    blue: { roundWins: number; rating: number; badge: string };
+    yellow: { roundWins: number; rating: number; badge: string };
+    green: { roundWins: number; rating: number; badge: string };
   };
   // Outcome – derived from the sheet's pre-computed Winning_Team field.
   // Useful for rendering the "blue won 5-0" narrative when there's a
@@ -110,15 +112,21 @@ export async function fetchGameIdMap(): Promise<GameInfo[]> {
         red: {
           roundWins: parseNumericOr(row.Red_Round_Wins, 0),
           rating: parseNumericOr(row.Red_Team_Rating, 0),
+          badge: "",
         },
         blue: {
           roundWins: parseNumericOr(row.Blue_Round_Wins, 0),
           rating: parseNumericOr(row.Blue_Team_Rating, 0),
+          badge: "",
         },
         yellow: {
           roundWins: parseNumericOr(row.Yellow_Round_Wins, 0),
           rating: parseNumericOr(row.Yellow_Team_Rating, 0),
+          badge: "",
         },
+        // Legacy sheet source has no Green column; round-robin games come
+        // through the Supabase engine, which populates green properly.
+        green: { roundWins: 0, rating: 0, badge: "" },
       },
       winningTeam: (row.Winning_Team ?? "").trim(),
       losingTeam: (row.Losing_Team ?? "").trim(),

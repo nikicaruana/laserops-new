@@ -26,6 +26,15 @@ const TYPE_META: Record<MatchType, { label: string; hint: string }> = {
   private: { label: "Private booking", hint: "Not shown on the public games list - a direct booking." },
 };
 
+type GameStyle = "1v1_default" | "1v1v1_round_robin";
+
+const STYLE_META: Record<GameStyle, { label: string; hint: string }> = {
+  "1v1_default": { label: "1v1 default", hint: "Standard two-team game, one team against another. The default for all games." },
+  "1v1v1_round_robin": { label: "1v1v1 round robin", hint: "Three teams play two at a time across the rounds; the team that wins the most rounds wins. All three team badges show on the report." },
+};
+
+const isGameStyle = (v: string | null): v is GameStyle => v === "1v1_default" || v === "1v1v1_round_robin";
+
 const input =
   "h-11 w-full rounded-none border border-border-strong bg-bg-elevated px-3 text-sm text-text focus:border-accent focus:outline-none";
 const lbl = "mb-1.5 block text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-text-muted";
@@ -39,6 +48,7 @@ export function MatchSetupEditor({
   matchId,
   isPrivate,
   isDoubleXp,
+  gameStyle,
   minPlayers,
   maxPlayers,
   isBeginner,
@@ -47,6 +57,7 @@ export function MatchSetupEditor({
   matchId: string;
   isPrivate: boolean;
   isDoubleXp: boolean;
+  gameStyle: string | null;
   minPlayers: number | null;
   maxPlayers: number | null;
   isBeginner: boolean;
@@ -56,6 +67,7 @@ export function MatchSetupEditor({
   const supabase = createClient();
 
   const [matchType, setMatchType] = useState<MatchType>(typeOf(isPrivate, isDoubleXp));
+  const [styleVal, setStyleVal] = useState<GameStyle>(isGameStyle(gameStyle) ? gameStyle : "1v1_default");
   const [minVal, setMinVal] = useState(minPlayers != null ? String(minPlayers) : "");
   const [maxVal, setMaxVal] = useState(maxPlayers != null ? String(maxPlayers) : "");
   const [beginner, setBeginner] = useState(isBeginner);
@@ -82,6 +94,7 @@ export function MatchSetupEditor({
       .update({
         is_private: privateType,
         is_double_xp: matchType === "double_xp",
+        game_style: styleVal,
         min_players: minVal.trim() === "" ? null : Number(minVal),
         max_players: maxVal.trim() === "" ? null : Number(maxVal),
         is_beginner: beginnerOn,
@@ -99,6 +112,16 @@ export function MatchSetupEditor({
       <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.12em] text-accent">Game setup</h2>
 
       <div className="grid gap-4 sm:grid-cols-2">
+        <div className="sm:col-span-2">
+          <label className={lbl}>Game style</label>
+          <select className={input} value={styleVal} onChange={(e) => setStyleVal(e.target.value as GameStyle)}>
+            {(Object.keys(STYLE_META) as GameStyle[]).map((s) => (
+              <option key={s} value={s}>{STYLE_META[s].label}</option>
+            ))}
+          </select>
+          <p className="mt-1.5 text-[0.65rem] text-text-subtle">{STYLE_META[styleVal].hint}</p>
+        </div>
+
         <div className="sm:col-span-2">
           <label className={lbl}>Match type</label>
           <select className={input} value={matchType} onChange={(e) => setMatchType(e.target.value as MatchType)}>

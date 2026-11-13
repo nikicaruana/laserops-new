@@ -214,7 +214,7 @@ export function buildPreviewReport(opts: Opts): MatchReport {
     gameNo: "1",
     isPrivate: false,
     isDoubleXp: false,
-    teams: { red: { roundWins: 3, rating: 5010 }, blue: { roundWins: 2, rating: 4820 }, yellow: { roundWins: 0, rating: 0 } },
+    teams: { red: { roundWins: 3, rating: 5010, badge: "" }, blue: { roundWins: 2, rating: 4820, badge: "" }, yellow: { roundWins: 0, rating: 0, badge: "" }, green: { roundWins: 0, rating: 0, badge: "" } },
     winningTeam: "Red",
     losingTeam: "Blue",
     winningTeamRounds: 3,

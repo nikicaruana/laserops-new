@@ -107,7 +107,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
     supabase
       .from("matches")
       .select(
-        "id, match_code, title, status, scheduled_at, played_on, round_count, source_file_type, xp_distributed_at, elo_calculated_at, results_stale_at, live_feed_enabled, winning_team_colour, is_private, is_double_xp, is_beginner, beginner_max_level, min_players, max_players, price_eur, pricing_mode, deposit_eur, registered_count, paid_count, on_day_count, reached_quorum_at, entry_code, invite_code, ladder_id, home_squad_id, away_squad_id, winner_squad_id, home_squad_colour, away_squad_colour, scoring_mode, location_id",
+        "id, match_code, title, status, scheduled_at, played_on, round_count, source_file_type, xp_distributed_at, elo_calculated_at, results_stale_at, live_feed_enabled, winning_team_colour, is_private, is_double_xp, game_style, is_beginner, beginner_max_level, min_players, max_players, price_eur, pricing_mode, deposit_eur, registered_count, paid_count, on_day_count, reached_quorum_at, entry_code, invite_code, ladder_id, home_squad_id, away_squad_id, winner_squad_id, home_squad_colour, away_squad_colour, scoring_mode, location_id",
       )
       .eq("id", id)
       .maybeSingle(),
@@ -558,6 +558,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
             matchId={match.id}
             isPrivate={!!match.is_private}
             isDoubleXp={!!match.is_double_xp}
+            gameStyle={(match as { game_style: string | null }).game_style ?? null}
             minPlayers={match.min_players ?? null}
             maxPlayers={match.max_players ?? null}
             isBeginner={!!(match as { is_beginner: boolean | null }).is_beginner}

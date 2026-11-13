@@ -199,31 +199,51 @@ function TeamColumn({
 
 function MultiTeamLayout({ game, teams }: { game: GameInfo; teams: ActiveTeam[] }) {
   // Determine which team color won (highest round count). All winning
-  // team highlights flow from this.
-  const maxRounds = Math.max(...teams.map((t) => t.roundWins));
+  // team highlights flow from this. Guard maxRounds > 0 so a 0-0-0 game
+  // doesn't light up every team.
+  const maxRounds = Math.max(0, ...teams.map((t) => t.roundWins));
   void game;
+  // Static column classes (Tailwind can't see interpolated `grid-cols-${n}`).
+  // Three teams sit 3-up on every width (badges shrink on mobile); a rare
+  // four-team game wraps 2x2 on phones, 4-up on desktop.
+  const cols =
+    teams.length >= 4 ? "grid-cols-2 sm:grid-cols-4" : teams.length === 3 ? "grid-cols-3" : "grid-cols-2";
   return (
-    <div className={cn("grid gap-4 sm:gap-6", `sm:grid-cols-${teams.length}`)}>
+    <div className={cn("grid gap-2 sm:gap-6", cols)}>
       {teams.map((t) => {
-        const isWinner = t.roundWins === maxRounds;
+        const isWinner = maxRounds > 0 && t.roundWins === maxRounds;
         return (
           <div
             key={t.color}
-            className="flex flex-col items-center gap-2 border border-border/60 bg-bg p-4"
+            className="flex flex-col items-center gap-1.5 border border-border/60 bg-bg p-3 sm:gap-2 sm:p-4"
           >
+            {/* Team badge – shrinks hard on mobile so three fit across a phone;
+                falls back to the colour name when a team has no badge set. */}
+            {t.badge !== "" ? (
+              <img
+                src={cldImage(t.badge, { h: 224 })}
+                alt={`${t.color} team badge`}
+                loading="lazy"
+                className="block h-12 w-auto sm:h-24"
+              />
+            ) : (
+              <p className={cn("text-xs font-bold uppercase tracking-[0.1em] sm:text-sm", isWinner ? "text-accent" : "text-text")}>
+                {t.color}
+              </p>
+            )}
             <p
               className={cn(
-                "font-mono text-3xl font-bold tabular-nums sm:text-4xl",
+                "font-mono text-2xl font-bold tabular-nums sm:text-4xl",
                 isWinner ? "text-accent" : "text-text",
               )}
             >
               {t.roundWins}
             </p>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-subtle sm:text-sm">
+            <p className="text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-text-subtle sm:text-sm sm:tracking-[0.16em]">
               Score:{" "}
               <span
                 className={cn(
-                  "font-mono text-sm sm:text-base",
+                  "font-mono text-xs sm:text-base",
                   isWinner ? "text-accent" : "text-text-muted",
                 )}
               >
@@ -243,15 +263,17 @@ type ActiveTeam = {
   color: TeamColor;
   roundWins: number;
   rating: number;
+  badge: string;
 };
 
-type TeamColor = "Red" | "Blue" | "Yellow";
+type TeamColor = "Red" | "Blue" | "Yellow" | "Green";
 
 function activeTeams(game: GameInfo): ActiveTeam[] {
   const candidates: ActiveTeam[] = [
-    { color: "Red", roundWins: game.teams.red.roundWins, rating: game.teams.red.rating },
-    { color: "Blue", roundWins: game.teams.blue.roundWins, rating: game.teams.blue.rating },
-    { color: "Yellow", roundWins: game.teams.yellow.roundWins, rating: game.teams.yellow.rating },
+    { color: "Red", roundWins: game.teams.red.roundWins, rating: game.teams.red.rating, badge: game.teams.red.badge },
+    { color: "Blue", roundWins: game.teams.blue.roundWins, rating: game.teams.blue.rating, badge: game.teams.blue.badge },
+    { color: "Yellow", roundWins: game.teams.yellow.roundWins, rating: game.teams.yellow.rating, badge: game.teams.yellow.badge },
+    { color: "Green", roundWins: game.teams.green.roundWins, rating: game.teams.green.rating, badge: game.teams.green.badge },
   ];
   return candidates.filter((t) => t.roundWins > 0 || t.rating > 0);
 }
