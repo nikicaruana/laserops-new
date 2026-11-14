@@ -350,6 +350,7 @@ function PlayerRow({
               player.teamColorLower === "blue" && "text-blue-400",
               player.teamColorLower === "red" && "text-red-400",
               player.teamColorLower === "yellow" && "text-accent",
+              player.teamColorLower === "green" && "text-green-400",
             )}
           >
             {player.teamColor || "–"}

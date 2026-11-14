@@ -227,7 +227,7 @@ function MultiTeamLayout({ game, teams }: { game: GameInfo; teams: ActiveTeam[] 
                 className="block h-12 w-auto sm:h-24"
               />
             ) : (
-              <p className={cn("text-xs font-bold uppercase tracking-[0.1em] sm:text-sm", isWinner ? "text-accent" : "text-text")}>
+              <p className={cn("text-xs font-bold uppercase tracking-[0.1em] sm:text-sm", TEAM_TEXT[t.color])}>
                 {t.color}
               </p>
             )}
@@ -267,6 +267,15 @@ type ActiveTeam = {
 };
 
 type TeamColor = "Red" | "Blue" | "Yellow" | "Green";
+
+// Team-colour text classes, matching the per-team colouring used in the players
+// table (yellow uses the accent token).
+const TEAM_TEXT: Record<TeamColor, string> = {
+  Red: "text-red-400",
+  Blue: "text-blue-400",
+  Yellow: "text-accent",
+  Green: "text-green-400",
+};
 
 function activeTeams(game: GameInfo): ActiveTeam[] {
   const candidates: ActiveTeam[] = [

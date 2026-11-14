@@ -416,7 +416,8 @@ function TeamPill({ team }: { team: string }) {
         colorLower === "blue" && "border-blue-400 text-blue-400",
         colorLower === "red" && "border-red-400 text-red-400",
         colorLower === "yellow" && "border-accent text-accent",
-        !["blue", "red", "yellow"].includes(colorLower) && "border-border-strong text-text-muted",
+        colorLower === "green" && "border-green-400 text-green-400",
+        !["blue", "red", "yellow", "green"].includes(colorLower) && "border-border-strong text-text-muted",
       )}
     >
       {team || "–"}
