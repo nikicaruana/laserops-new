@@ -12,6 +12,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Container } from "@/components/ui/Container";
+import { Button } from "@/components/ui/Button";
 import { BuyBundleButton } from "@/components/portal/BuyBundleButton";
 import { createClient } from "@/lib/supabase/server";
 import { formatEur } from "@/lib/money";
@@ -56,8 +57,7 @@ export default async function StorePage() {
       <div className="mx-auto max-w-2xl">
         <h1 className="text-center text-2xl font-bold uppercase tracking-[0.12em] text-text sm:text-3xl">Store</h1>
         <p className="mt-3 text-center text-sm text-text-muted">
-          Game tokens in a bundle save you money. 1 token = 1 game. Request a pack and the LaserOps team will be in touch to
-          arrange payment (cash or Revolut) and add the tokens to your account.
+          1 token = 1 game. Buy a bundle, gift a token to another player, or order printed gift vouchers.
         </p>
         {loggedIn ? (
           <p className="mt-2 flex flex-wrap items-center justify-center gap-1 text-center text-xs text-text-subtle">
@@ -76,24 +76,6 @@ export default async function StorePage() {
             </Link>{" "}
             to request a pack, gift a token, and track your tokens.
           </p>
-        )}
-
-        {loggedIn && (
-          <div className="mt-4 flex justify-center">
-            <Link
-              href="/player-portal/store/gift"
-              className="inline-flex items-center gap-2 border border-border-strong px-4 py-2 text-xs font-semibold uppercase tracking-[0.1em] text-text-muted transition hover:border-accent hover:text-accent"
-            >
-              <svg aria-hidden viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 12 20 22 4 22 4 12" />
-                <rect x="2" y="7" width="20" height="5" />
-                <line x1="12" y1="22" x2="12" y2="7" />
-                <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
-                <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
-              </svg>
-              Gift a game token to a player
-            </Link>
-          </div>
         )}
 
         {/* Gift-voucher enquiry CTA. Open to everyone - buy printed game-token
@@ -128,11 +110,55 @@ export default async function StorePage() {
           <Link href="/terms" className="underline hover:text-accent">Terms &amp; Conditions</Link>.
         </div>
 
-        {list.length === 0 ? (
-          <p className="mt-10 text-center text-text-muted">No bundles are available right now. Check back soon.</p>
-        ) : (
-          <div className="mt-10 grid gap-5 sm:grid-cols-2">
-            {list.map((b) => {
+        <div className="mt-10 grid gap-5 sm:grid-cols-2">
+          {/* Gift a single game token to another player (signed-in players). Sits
+              alongside the bundles; one coin with a bow instead of a stack. */}
+          {loggedIn && (
+            <div className="flex flex-col portal-card p-6 text-center">
+              <h2 className="text-lg font-bold uppercase tracking-[0.08em] text-text">Gift a Game Token</h2>
+
+              {coinSrc && (
+                <div className="mt-5 flex items-center justify-center" aria-hidden>
+                  <div className="relative">
+                    <img
+                      src={coinSrc}
+                      alt=""
+                      loading="lazy"
+                      className="h-20 w-20 object-contain drop-shadow-[0_3px_6px_rgba(0,0,0,0.55)]"
+                    />
+                    {/* Ribbon bow perched on top of the coin. */}
+                    <svg
+                      aria-hidden
+                      viewBox="0 0 64 44"
+                      className="absolute left-1/2 top-0 h-8 w-14 -translate-x-1/2 -translate-y-[58%] text-accent drop-shadow-[0_2px_3px_rgba(0,0,0,0.45)]"
+                    >
+                      <g fill="currentColor">
+                        <path d="M30 24 L23 43 L30 37 Z" />
+                        <path d="M34 24 L41 43 L34 37 Z" />
+                        <path d="M32 22 C 19 6, 3 9, 8 20 C 11 26, 25 25, 32 22 Z" />
+                        <path d="M32 22 C 45 6, 61 9, 56 20 C 53 26, 39 25, 32 22 Z" />
+                      </g>
+                      <rect x="27" y="16" width="10" height="12" rx="3.5" fill="currentColor" />
+                      <rect x="27" y="16" width="10" height="12" rx="3.5" fill="rgba(0,0,0,0.18)" />
+                    </svg>
+                  </div>
+                </div>
+              )}
+
+              <p className="mt-4 text-sm text-text-muted">
+                Send another player a token (or half), with a message.
+              </p>
+              <p className="mt-1 text-xs text-text-subtle">We&apos;ll arrange payment with you.</p>
+
+              <div className="mt-auto pt-6">
+                <Button href="/player-portal/store/gift" variant="primary" size="md" className="w-full">
+                  Gift a token
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {list.map((b) => {
               const tokens = Number(b.tokens);
               const price = Number(b.price_eur);
               const perGame = tokens > 0 ? price / tokens : 0;
@@ -172,12 +198,14 @@ export default async function StorePage() {
                 </div>
               );
             })}
-          </div>
+        </div>
+        {list.length === 0 && (
+          <p className="mt-8 text-center text-text-muted">No bundles are available right now. Check back soon.</p>
         )}
 
         <p className="mt-8 text-center text-xs text-text-subtle">
-          No online payment needed - request a pack and we&apos;ll arrange payment with you (cash or Revolut). Tokens are
-          added to your account once payment is settled.
+          No online payment needed - request a pack or gift and we&apos;ll arrange payment with you (cash or Revolut).
+          Tokens are added to the account once payment is settled.
         </p>
 
         <details className="group mt-8 portal-card">
