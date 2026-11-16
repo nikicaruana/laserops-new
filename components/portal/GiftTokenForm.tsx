@@ -6,7 +6,8 @@
  * Gift a game token (or half a game token) to another existing player, with an
  * optional message. No online payment: this raises a request the LaserOps team
  * settles by hand (same as a token pack), then the token lands on the recipient.
- * Recipient is chosen via the public search_players typeahead (ops tag / name).
+ * Recipient is chosen via the public search_players typeahead, which matches on
+ * the ops tag ONLY (the public handle) and never exposes real names.
  */
 import { useEffect, useRef, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -18,7 +19,8 @@ const inputClass =
 const labelClass =
   "mb-1.5 block text-xs font-semibold uppercase tracking-[0.1em] text-text-muted";
 
-type Player = { id: string; ops_tag: string | null; full_name: string | null; profile_pic_url: string | null };
+// Only the public ops tag + avatar are ever returned - never a real name.
+type Player = { id: string; ops_tag: string | null; profile_pic_url: string | null };
 type Status = "idle" | "submitting" | "success" | "error";
 
 function PlayerAvatar({ p, size = 32 }: { p: Player; size?: number }) {
@@ -31,7 +33,7 @@ function PlayerAvatar({ p, size = 32 }: { p: Player; size?: number }) {
       className="flex items-center justify-center rounded-full bg-bg-elevated text-xs font-bold text-text-muted"
       style={{ width: size, height: size }}
     >
-      {(p.ops_tag || p.full_name || "?").slice(0, 1).toUpperCase()}
+      {(p.ops_tag || "?").slice(0, 1).toUpperCase()}
     </div>
   );
 }
@@ -106,7 +108,7 @@ export function GiftTokenForm({ singleTokenPrice }: { singleTokenPrice: number }
         <h2 className="text-xl font-extrabold tracking-tight text-text">Gift request sent!</h2>
         <p className="mt-2 text-sm text-text-muted">
           We&apos;ll be in touch to arrange payment ({formatEur(price)}). Once it&apos;s settled,{" "}
-          <span className="font-semibold text-text">{recipient?.ops_tag || recipient?.full_name || "your player"}</span>{" "}
+          <span className="font-semibold text-text">{recipient?.ops_tag || "your player"}</span>{" "}
           gets {amount === 1 ? "a game token" : "half a game token"} and a notification letting them know it&apos;s from you.
         </p>
       </div>
@@ -128,8 +130,7 @@ export function GiftTokenForm({ singleTokenPrice }: { singleTokenPrice: number }
           <div className="flex items-center gap-3 border border-accent bg-accent/5 px-4 py-3">
             <PlayerAvatar p={recipient} />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-text">{recipient.full_name || recipient.ops_tag}</p>
-              {recipient.ops_tag && <p className="truncate font-mono text-xs text-text-subtle">{recipient.ops_tag}</p>}
+              <p className="truncate font-mono text-sm font-semibold text-text">{recipient.ops_tag}</p>
             </div>
             <button
               type="button"
@@ -150,7 +151,7 @@ export function GiftTokenForm({ singleTokenPrice }: { singleTokenPrice: number }
               type="text"
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Search by ops tag or name"
+              placeholder="Search by ops tag"
               autoComplete="off"
               className={inputClass}
             />
@@ -173,8 +174,7 @@ export function GiftTokenForm({ singleTokenPrice }: { singleTokenPrice: number }
                     >
                       <PlayerAvatar p={p} />
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-text">{p.full_name || p.ops_tag}</p>
-                        {p.ops_tag && <p className="truncate font-mono text-xs text-text-subtle">{p.ops_tag}</p>}
+                        <p className="truncate font-mono text-sm font-semibold text-text">{p.ops_tag}</p>
                       </div>
                     </button>
                   ))
