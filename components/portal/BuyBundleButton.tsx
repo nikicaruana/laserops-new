@@ -7,12 +7,24 @@
  * snapshots the bundle and alerts admins; the LaserOps team then settles the
  * payment (cash / Revolut) and grants the tokens by hand. On success the button
  * is replaced by a "we'll be in touch" confirmation.
+ *
+ * The store is open to everyone, but requesting a pack needs an account (we grant
+ * tokens to it), so a signed-out visitor gets a "Sign in to request" link that
+ * returns them here afterwards.
  */
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
 
-export function BuyBundleButton({ bundleId, label = "Request this pack" }: { bundleId: string; label?: string }) {
+export function BuyBundleButton({
+  bundleId,
+  label = "Request this pack",
+  loggedIn = true,
+}: {
+  bundleId: string;
+  label?: string;
+  loggedIn?: boolean;
+}) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -33,6 +45,17 @@ export function BuyBundleButton({ bundleId, label = "Request this pack" }: { bun
       return;
     }
     setDone(true);
+  }
+
+  if (!loggedIn) {
+    const next = encodeURIComponent("/player-portal/store");
+    return (
+      <a href={`/player-portal/login?next=${next}`} className="block w-full">
+        <Button variant="primary" size="md" className="w-full">
+          Sign in to request
+        </Button>
+      </a>
+    );
   }
 
   if (done) {

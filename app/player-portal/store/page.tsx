@@ -4,13 +4,13 @@
  * The LaserOps store. Shows the game-token bundles a player can request. A bundle
  * is a pack of tokens (1 token = 1 free game). There is NO online payment: a
  * player requests a pack, the LaserOps team is alerted, settles the payment (cash
- * or Revolut) and grants the tokens by hand. Auth-gated; prices are read from
- * token_bundles (server-authoritative). The game-token coin art
- * (reward_images.game_token, admin-uploaded) is the hero of each bundle card.
+ * or Revolut) and grants the tokens by hand. Open to everyone (no login needed to
+ * browse); requesting a pack prompts sign-in. Prices are read from token_bundles
+ * (server-authoritative). The game-token coin art (reward_images.game_token,
+ * admin-uploaded) is the hero of each bundle card.
  */
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { Container } from "@/components/ui/Container";
 import { BuyBundleButton } from "@/components/portal/BuyBundleButton";
 import { createClient } from "@/lib/supabase/server";
@@ -34,7 +34,7 @@ export default async function StorePage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/player-portal/login?next=/player-portal/store");
+  const loggedIn = Boolean(user);
 
   const [{ data: bundles }, { data: balance }, { data: coin }] = await Promise.all([
     supabase
@@ -42,7 +42,8 @@ export default async function StorePage() {
       .select("id, name, tokens, price_eur, validity_months")
       .eq("is_active", true)
       .order("sort_order", { ascending: true, nullsFirst: false }),
-    supabase.rpc("my_token_balance"),
+    // Balance is per-player; only meaningful (and only queried) when signed in.
+    loggedIn ? supabase.rpc("my_token_balance") : Promise.resolve({ data: null }),
     supabase.from("reward_images").select("image_url").eq("key", "game_token").maybeSingle(),
   ]);
 
@@ -58,15 +59,51 @@ export default async function StorePage() {
           Game tokens in a bundle save you money. 1 token = 1 game. Request a pack and the LaserOps team will be in touch to
           arrange payment (cash or Revolut) and add the tokens to your account.
         </p>
-        <p className="mt-2 flex flex-wrap items-center justify-center gap-1 text-center text-xs text-text-subtle">
-          You currently have
-          {coinSrc && <img src={coinSrc} alt="" className="inline-block h-4 w-4 object-contain" />}
-          <span className="font-semibold text-accent">{fmtTokens(Number(balance ?? 0))}</span>
-          {Number(balance ?? 0) === 1 ? "token" : "tokens"}.{" "}
-          <Link href="/player-portal/profile" className="underline hover:text-accent">
-            View your wallet
-          </Link>
-        </p>
+        {loggedIn ? (
+          <p className="mt-2 flex flex-wrap items-center justify-center gap-1 text-center text-xs text-text-subtle">
+            You currently have
+            {coinSrc && <img src={coinSrc} alt="" className="inline-block h-4 w-4 object-contain" />}
+            <span className="font-semibold text-accent">{fmtTokens(Number(balance ?? 0))}</span>
+            {Number(balance ?? 0) === 1 ? "token" : "tokens"}.{" "}
+            <Link href="/player-portal/profile" className="underline hover:text-accent">
+              View your wallet
+            </Link>
+          </p>
+        ) : (
+          <p className="mt-2 text-center text-xs text-text-subtle">
+            <Link href="/player-portal/login?next=/player-portal/store" className="underline hover:text-accent">
+              Sign in
+            </Link>{" "}
+            to request a pack and track your tokens.
+          </p>
+        )}
+
+        {/* Gift-voucher enquiry CTA. Open to everyone - buy printed game-token
+            vouchers in bulk for gifts, parties, or a prize pool. */}
+        <Link
+          href="/player-portal/store/vouchers"
+          className="group mt-6 flex flex-col overflow-hidden rounded-sm portal-card transition hover:border-accent sm:flex-row"
+        >
+          <img
+            src="/images/store/voucher-promo.webp"
+            alt="LaserOps Game Token gift vouchers"
+            className="h-40 w-full object-cover sm:h-auto sm:w-44 sm:shrink-0"
+          />
+          <div className="flex flex-1 flex-col justify-center p-5">
+            <p className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-accent">New</p>
+            <h2 className="mt-1 text-lg font-bold uppercase tracking-[0.06em] text-text">Game Token Vouchers</h2>
+            <p className="mt-1.5 text-sm text-text-muted">
+              Printed gift vouchers loaded with game tokens - great for gifts, parties, or a prize pool. Enquire about
+              buying a batch.
+            </p>
+            <span className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-accent transition group-hover:gap-2.5">
+              Enquire now
+              <svg aria-hidden viewBox="0 0 12 10" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="square">
+                <path d="M7 1l4 4-4 4M11 5H1" />
+              </svg>
+            </span>
+          </div>
+        </Link>
 
         <div className="mt-6 border-l-2 border-accent/70 bg-accent/5 px-4 py-3 text-left text-xs leading-relaxed text-text-muted">
           <span className="font-semibold text-text">Before you request:</span> 1 token = 1 game. Tokens expire after the validity period shown on each bundle, and once expired they can&apos;t be used or refunded. Tokens are non-transferable and have no cash value. Full terms are below and in our{" "}
@@ -112,7 +149,7 @@ export default async function StorePage() {
                     <p className="mt-2 text-xs text-text-subtle">Valid for {b.validity_months} months from purchase.</p>
                   ) : null}
                   <div className="mt-auto pt-6">
-                    <BuyBundleButton bundleId={b.id} label={`Request · ${formatEur(price)}`} />
+                    <BuyBundleButton bundleId={b.id} label={`Request · ${formatEur(price)}`} loggedIn={loggedIn} />
                   </div>
                 </div>
               );
