@@ -74,8 +74,26 @@ export default async function StorePage() {
             <Link href="/player-portal/login?next=/player-portal/store" className="underline hover:text-accent">
               Sign in
             </Link>{" "}
-            to request a pack and track your tokens.
+            to request a pack, gift a token, and track your tokens.
           </p>
+        )}
+
+        {loggedIn && (
+          <div className="mt-4 flex justify-center">
+            <Link
+              href="/player-portal/store/gift"
+              className="inline-flex items-center gap-2 border border-border-strong px-4 py-2 text-xs font-semibold uppercase tracking-[0.1em] text-text-muted transition hover:border-accent hover:text-accent"
+            >
+              <svg aria-hidden viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 12 20 22 4 22 4 12" />
+                <rect x="2" y="7" width="20" height="5" />
+                <line x1="12" y1="22" x2="12" y2="7" />
+                <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
+                <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
+              </svg>
+              Gift a game token to a player
+            </Link>
+          </div>
         )}
 
         {/* Gift-voucher enquiry CTA. Open to everyone - buy printed game-token
@@ -87,7 +105,7 @@ export default async function StorePage() {
           <img
             src="/images/store/voucher-promo.webp"
             alt="LaserOps Game Token gift vouchers"
-            className="h-40 w-full object-cover sm:h-auto sm:w-44 sm:shrink-0"
+            className="h-48 w-full object-cover sm:h-auto sm:w-80 sm:shrink-0 sm:self-stretch"
           />
           <div className="flex flex-1 flex-col justify-center p-5">
             <p className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-accent">New</p>

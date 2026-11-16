@@ -10,6 +10,7 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { TokenAdminManager } from "@/components/admin/TokenAdminManager";
 import { TokenPackRequests } from "@/components/admin/TokenPackRequests";
+import { TokenGiftRequests } from "@/components/admin/TokenGiftRequests";
 import { VoucherManager, type VoucherBatch } from "@/components/admin/VoucherManager";
 import { TokenLedger, type TokenLedgerRow } from "@/components/admin/TokenLedger";
 import { XpBoostLedger, type XpBoostLedgerRow } from "@/components/admin/XpBoostLedger";
@@ -22,7 +23,7 @@ const LEDGER_LIMIT = 300;
 
 export default async function AdminTokensPage() {
   const supabase = await createClient();
-  const [{ data: config }, { data: bundles }, { data: requests }, { data: ledger }, { data: boostLedger }, { data: recentMatches }, { data: voucherBatches }] = await Promise.all([
+  const [{ data: config }, { data: bundles }, { data: requests }, { data: giftRequests }, { data: ledger }, { data: boostLedger }, { data: recentMatches }, { data: voucherBatches }] = await Promise.all([
     supabase.from("token_config").select("default_validity_months").eq("id", 1).maybeSingle(),
     supabase
       .from("token_bundles")
@@ -31,6 +32,11 @@ export default async function AdminTokensPage() {
     supabase
       .from("token_pack_requests")
       .select("id, bundle_name, tokens, price_eur, created_at, account:accounts!account_id(ops_tag, full_name, email, phone_e164)")
+      .eq("status", "pending")
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("token_gift_requests")
+      .select("id, tokens, price_eur, message, created_at, buyer:accounts!buyer_account_id(ops_tag, full_name, email, phone_e164), recipient:accounts!recipient_account_id(ops_tag, full_name)")
       .eq("status", "pending")
       .order("created_at", { ascending: true }),
     supabase
@@ -84,6 +90,22 @@ export default async function AdminTokensPage() {
             price_eur: Number(r.price_eur),
             created_at: r.created_at as string,
             account: acc ? { ops_tag: acc.ops_tag ?? null, full_name: acc.full_name ?? null, email: acc.email ?? null, phone: acc.phone_e164 ?? null } : null,
+          };
+        })}
+      />
+
+      <TokenGiftRequests
+        initial={(giftRequests ?? []).map((r) => {
+          const buyer = Array.isArray(r.buyer) ? r.buyer[0] : r.buyer;
+          const recipient = Array.isArray(r.recipient) ? r.recipient[0] : r.recipient;
+          return {
+            id: r.id as string,
+            tokens: Number(r.tokens),
+            price_eur: Number(r.price_eur),
+            message: (r.message as string | null) ?? null,
+            created_at: r.created_at as string,
+            buyer: buyer ? { ops_tag: buyer.ops_tag ?? null, full_name: buyer.full_name ?? null, email: buyer.email ?? null, phone: buyer.phone_e164 ?? null } : null,
+            recipient: recipient ? { ops_tag: recipient.ops_tag ?? null, full_name: recipient.full_name ?? null } : null,
           };
         })}
       />
